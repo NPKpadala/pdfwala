@@ -263,7 +263,7 @@ def compress_pdf():
                     except: pass
             doc.save(out, deflate=True, garbage=4)
             new_size = os.path.getsize(out)
-            doc.close() # CLOSED AFTER GETTING SIZE
+            doc.close()
             reduction = round((1 - new_size / orig_size) * 100, 1) if orig_size else 0
         return ok("Compressed", path=out, reduction_pct=reduction)
     except Exception: return err("Compression failed", 500)
@@ -277,17 +277,64 @@ def pdf_to_image():
     try:
         with temp_upload(f) as path:
             doc = fitz.open(path)
-            page_count = len(doc) # CAPTURE COUNT WHILE OPEN
+            page_count = len(doc)
             zip_buf = io.BytesIO()
             with zipfile.ZipFile(zip_buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
                 for i, page in enumerate(doc):
                     pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72))
                     zf.writestr(f"page_{i+1:03d}.{fmt}", pix.tobytes(fmt))
-            doc.close() # CLOSED AFTER PROCESSING
+            doc.close()
             out = output_path("images.zip")
             with open(out, "wb") as fh: fh.write(zip_buf.getvalue())
         return ok(f"Exported {page_count} images", path=out)
     except Exception: return err("Export failed", 500)
+
+@app.route("/api/split", methods=["POST"])
+@rate_limited()
+def split_pdf():
+    f = request.files.get("file")
+    mode = request.form.get("mode", "all") 
+    ranges = request.form.get("ranges", "")
+    
+    try:
+        validation_err = validate_file(f, Config.ALLOWED_PDF_EXT)
+        if validation_err: return err(validation_err)
+
+        with temp_upload(f) as path:
+            reader = PdfReader(path)
+            total_pages = len(reader.pages)
+            
+            pages_to_keep = []
+            if mode == "all":
+                pages_to_keep = list(range(total_pages))
+            else:
+                for part in ranges.split(','):
+                    part = part.strip()
+                    if '-' in part:
+                        start, end = map(int, part.split('-'))
+                        pages_to_keep.extend(range(start-1, end))
+                    else:
+                        pages_to_keep.append(int(part) - 1)
+
+            out = output_path("split_pages.zip")
+            zip_buf = io.BytesIO()
+            
+            with zipfile.ZipFile(zip_buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+                for idx in pages_to_keep:
+                    if 0 <= idx < total_pages:
+                        writer = PdfWriter()
+                        writer.add_page(reader.pages[idx])
+                        page_io = io.BytesIO()
+                        writer.write(page_io)
+                        zf.writestr(f"page_{idx+1}.pdf", page_io.getvalue())
+
+            with open(out, "wb") as fh:
+                fh.write(zip_buf.getvalue())
+                
+        return ok(f"Split into {len(pages_to_keep)} files", path=out)
+    except Exception as e:
+        log.error(f"Split error: {str(e)}")
+        return err("Split failed", 500)
 
 @app.route("/api/health")
 def health():
