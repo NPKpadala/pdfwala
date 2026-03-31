@@ -37,7 +37,7 @@
   --amber-500: #F59E0B;
   --rose-500: #F43F5E;
   --rose-400: #FB7185;
-  --bg:        var(--ink-900);
+  --bg:         var(--ink-900);
   --bg-2:      var(--ink-800);
   --bg-3:      var(--ink-700);
   --bg-glass:  rgba(17,24,39,0.7);
@@ -594,7 +594,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 </head>
 <body>
 
-<!-- NAVBAR -->
 <nav class="nav" role="banner">
   <div class="nav-inner">
     <a class="nav-logo" href="#" aria-label="PDFWala Home">
@@ -614,7 +613,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </div>
 </nav>
 
-<!-- HERO -->
 <section class="hero" role="main">
   <div class="hero-mesh" aria-hidden="true"></div>
   <div class="hero-grid" aria-hidden="true"></div>
@@ -684,7 +682,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </div>
 </section>
 
-<!-- TABS -->
 <div class="tabs-bar" role="navigation" aria-label="Tool categories">
   <div class="tabs-inner">
     <button class="tab-btn active" onclick="filterCat('all',this)">All Tools</button>
@@ -697,7 +694,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </div>
 </div>
 
-<!-- TOOLS GRID -->
 <section class="tools-section" id="tools" aria-label="PDF Tools">
   <div class="section-header reveal">
     <div class="section-kicker">Toolkit</div>
@@ -805,7 +801,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </div>
 </section>
 
-<!-- WHY SECTION -->
 <section class="why-section" id="why" aria-label="Why PDFWala">
   <div class="why-inner">
     <div class="why-header reveal">
@@ -837,7 +832,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </div>
 </section>
 
-<!-- FOOTER -->
 <footer>
   <div class="footer-inner">
     <div class="footer-grid">
@@ -882,7 +876,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </div>
 </footer>
 
-<!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="overlayClick(event)" role="dialog" aria-modal="true">
   <div class="modal" id="modalBox">
     <button class="modal-close" onclick="closeModal()" aria-label="Close">
@@ -892,7 +885,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast" role="status" aria-live="polite">
   <div class="toast-bar"></div>
   <span id="toastMsg"></span>
@@ -900,14 +892,13 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 
 <script>
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-// Relative path works with Nginx reverse proxy. Change to full URL if needed.
 const API = '';
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let currentTool    = null;
 let selectedFiles  = [];
 let lastFilename   = null;
-let lastDownloadUrl = null; // ✅ FIX: store the full resolved download URL
+let lastDownloadUrl = null;
 
 // ─── BACKEND HEALTH CHECK ─────────────────────────────────────────────────────
 async function checkBackend() {
@@ -1003,11 +994,11 @@ const TOOLS = {
       <div class="form-group">
         <div class="form-label">Rotation</div>
         <div class="radio-group">
-          <div class="radio-chip active" onclick="radioSelect(this,'degrees','90')">90° Clockwise</div>
-          <div class="radio-chip" onclick="radioSelect(this,'degrees','180')">180°</div>
-          <div class="radio-chip" onclick="radioSelect(this,'degrees','270')">90° Counter</div>
+          <div class="radio-chip active" onclick="radioSelect(this,'angle','90')">90° Clockwise</div>
+          <div class="radio-chip" onclick="radioSelect(this,'angle','180')">180°</div>
+          <div class="radio-chip" onclick="radioSelect(this,'angle','270')">90° Counter</div>
         </div>
-        <input type="hidden" id="degrees" value="90"/>
+        <input type="hidden" id="angle" value="90"/>
       </div>
       <div class="form-group">
         <label class="form-label">Pages</label>
@@ -1028,10 +1019,10 @@ const TOOLS = {
         <div class="form-group">
           <label class="form-label">Color</label>
           <select class="form-select" id="color">
-            <option value="gray">Gray</option>
-            <option value="red">Red</option>
-            <option value="blue">Blue</option>
-            <option value="black">Black</option>
+            <option value="808080">Gray</option>
+            <option value="FF0000">Red</option>
+            <option value="0000FF">Blue</option>
+            <option value="000000">Black</option>
           </select>
         </div>
         <div class="form-group">
@@ -1073,11 +1064,8 @@ const TOOLS = {
         <div class="form-group">
           <label class="form-label">Position</label>
           <select class="form-select" id="position">
-            <option value="bottom-center">Bottom Center</option>
-            <option value="bottom-left">Bottom Left</option>
-            <option value="bottom-right">Bottom Right</option>
-            <option value="top-center">Top Center</option>
-            <option value="top-right">Top Right</option>
+            <option value="bottom">Bottom Center</option>
+            <option value="top">Top Center</option>
           </select>
         </div>
         <div class="form-group">
@@ -1237,22 +1225,22 @@ python app.py</div>
     </button>
   `;
 
-  // Split mode toggle
   if (toolId === 'split') {
-    document.getElementById('mode').addEventListener('change', () => {
-      document.getElementById('rangeGroup').style.display =
-        document.getElementById('mode').value === 'range' ? 'block' : 'none';
-    });
+    const modeEl = document.getElementById('mode');
+    if(modeEl) {
+      // Need a listener because hidden inputs don't trigger change on manual value update
+      const observer = new MutationObserver(() => {
+        document.getElementById('rangeGroup').style.display = modeEl.value === 'range' ? 'block' : 'none';
+      });
+      observer.observe(modeEl, { attributes: true });
+    }
   }
 
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
-// ─── CLOSE MODAL ─────────────────────────────────────────────────────────────
-function overlayClick(e) {
-  if (e.target === document.getElementById('modalOverlay')) closeModal();
-}
+function overlayClick(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
   document.body.style.overflow = '';
@@ -1261,7 +1249,6 @@ function closeModal() {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-// ─── FILE HANDLING ────────────────────────────────────────────────────────────
 function onDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
 function onDragLeave() { document.getElementById('dropZone').classList.remove('dragover'); }
 function onDrop(e) {
@@ -1276,7 +1263,6 @@ function handleFiles(files) {
   selectedFiles = tool.multi ? [...selectedFiles, ...files] : [files[0]];
   renderFileList();
   document.getElementById('actionBtn').disabled = selectedFiles.length === 0;
-  // Reset result + download on new file pick
   document.getElementById('resultBlock').classList.remove('show');
   document.getElementById('downloadBtn').style.display = 'none';
   lastFilename = null;
@@ -1293,33 +1279,28 @@ function renderFileList() {
     </div>
   `).join('');
 }
-
 function removeFile(i) {
   selectedFiles.splice(i, 1);
   renderFileList();
   document.getElementById('actionBtn').disabled = selectedFiles.length === 0;
 }
-
 function fmtSize(b) {
   if (b < 1024) return b + ' B';
   if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
   return (b / 1048576).toFixed(1) + ' MB';
 }
 
-// ─── PROCESS ──────────────────────────────────────────────────────────────────
 async function processFile() {
   if (!currentTool || !selectedFiles.length) return;
   const tool = TOOLS[currentTool];
+  const actionBtn = document.getElementById('actionBtn');
+  const pb = document.getElementById('progressBlock');
+  const pf = document.getElementById('progressFill');
+  const pt = document.getElementById('progressText');
+  const rb = document.getElementById('resultBlock');
+  const db = document.getElementById('downloadBtn');
+  const sb = document.getElementById('setupBox');
 
-  const actionBtn   = document.getElementById('actionBtn');
-  const pb          = document.getElementById('progressBlock');
-  const pf          = document.getElementById('progressFill');
-  const pt          = document.getElementById('progressText');
-  const rb          = document.getElementById('resultBlock');
-  const db          = document.getElementById('downloadBtn');
-  const sb          = document.getElementById('setupBox');
-
-  // Reset UI
   actionBtn.disabled = true;
   actionBtn.innerHTML = `<div class="dot-loader"><span style="background:#fff"></span><span style="background:#fff"></span><span style="background:#fff"></span></div>&nbsp;Processing…`;
   pb.classList.add('show');
@@ -1328,7 +1309,6 @@ async function processFile() {
   sb.classList.remove('show');
   pf.style.width = '0';
 
-  // Fake progress ticker
   let pct = 0;
   const ticker = setInterval(() => {
     pct = Math.min(pct + Math.random() * 12, 88);
@@ -1341,13 +1321,10 @@ async function processFile() {
     if (tool.multi) selectedFiles.forEach(f => fd.append(tool.field, f));
     else fd.append(tool.field, selectedFiles[0]);
 
-    // Collect all optional form fields
-    [
-      'mode','ranges','quality','format','dpi','degrees','pages',
-      'text','color','opacity','password','password2',
-      'position','start','prefix','action','order',
-      'left','right','top','bottom','font_size'
-    ].forEach(id => {
+    ['mode','ranges','quality','format','dpi','angle','pages',
+     'text','color','opacity','password','password2',
+     'position','start','prefix','action','order',
+     'left','right','top','bottom'].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
       let val = el.value;
@@ -1355,43 +1332,22 @@ async function processFile() {
       fd.append(id, val);
     });
 
-    const res  = await fetch(API + tool.endpoint, { method: 'POST', body: fd });
+    const res = await fetch(API + tool.endpoint, { method: 'POST', body: fd });
     const data = await res.json();
-
-    // ✅ DEBUG: log Flask response so you can verify key names
-    console.log('Flask response:', JSON.stringify(data));
-
     clearInterval(ticker);
     pf.style.width = '100%';
     pt.textContent = 'Done!';
-
-    if (data.success) {
-      showResult('success', data);
-    } else {
-      showResult('error', data);
-    }
-
+    showResult(data.success ? 'success' : 'error', data);
   } catch (err) {
     clearInterval(ticker);
     pf.style.width = '0';
-    console.error('Fetch error:', err);
-    // Show setup box only if it looks like a network/CORS error
-    if (/fetch|Failed to fetch|NetworkError/i.test(err.message)) {
-      sb.classList.add('show');
-    } else {
-      showResult('error', { message: 'An unexpected error occurred.', error: err.message });
-    }
+    if (/fetch|NetworkError/i.test(err.message)) sb.classList.add('show');
+    else showResult('error', { message: 'Unexpected error.', error: err.message });
   }
-
-  // ✅ FIX: restore button but keep disabled if no files
   actionBtn.disabled = selectedFiles.length === 0;
-  actionBtn.innerHTML = `
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-    Process File`;
+  actionBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Process File`;
 }
 
-// ─── SHOW RESULT ──────────────────────────────────────────────────────────────
-// ✅ FIXED: handles filename / file_id / output_file / download_url from Flask
 function showResult(type, data) {
   const rb = document.getElementById('resultBlock');
   const ri = document.getElementById('resultInner');
@@ -1401,72 +1357,74 @@ function showResult(type, data) {
 
   rb.classList.add('show');
   ri.className = 'result-inner ' + type;
-
   const icon = type === 'success' ? '✓' : '✕';
+
+  if (type === 'success' && data.page_count !== undefined) {
+      rt.textContent = icon + ' File Analysis Complete';
+      rm.innerHTML = `
+          <div style="margin-top: 12px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; color: var(--text-2); font-size: 13px;">
+              <table style="width: 100%; border-collapse: collapse;">
+                  <tr style="border-bottom: 1px solid var(--border);"><td style="padding: 6px 0;">📄 <strong>Pages:</strong></td><td style="text-align: right; color: var(--text);">${data.page_count}</td></tr>
+                  <tr style="border-bottom: 1px solid var(--border);"><td style="padding: 6px 0;">⚖️ <strong>Size:</strong></td><td style="text-align: right; color: var(--text);">${data.size_human}</td></tr>
+                  <tr style="border-bottom: 1px solid var(--border);"><td style="padding: 6px 0;">👤 <strong>Author:</strong></td><td style="text-align: right; color: var(--text);">${data.author || 'Unknown'}</td></tr>
+                  <tr style="border-bottom: 1px solid var(--border);"><td style="padding: 6px 0;">🔒 <strong>Locked:</strong></td><td style="text-align: right; color: var(--text);">${data.encrypted ? 'Yes' : 'No'}</td></tr>
+                  <tr><td style="padding: 6px 0;">📐 <strong>Dimensions:</strong></td><td style="text-align: right; color: var(--text);">${data.page_sizes[0].width_pt} x ${data.page_sizes[0].height_pt} pt</td></tr>
+              </table>
+          </div>`;
+      db.style.display = 'none';
+      toast('Analysis Complete', 'success');
+      return;
+  }
+
   rt.textContent = icon + ' ' + (data.message || data.error || 'Processing failed');
-
-  // Build pills
   const pills = [];
-  if (data.pages)          pills.push(data.pages + ' pages');
-  if (data.size_human)     pills.push(data.size_human);
-  if (data.reduction_pct)  pills.push(data.reduction_pct + '% smaller');
-  if (data.expires_in)     pills.push('Expires in ' + data.expires_in);
+  if (data.pages) pills.push(data.pages + ' pages');
+  if (data.size_human) pills.push(data.size_human);
+  if (data.reduction_pct) pills.push(data.reduction_pct + '% smaller');
   if (type === 'success' && data.encrypted !== undefined) pills.push('Encrypted: ' + (data.encrypted ? 'Yes' : 'No'));
-  if (data.title)          pills.push('Title: ' + data.title);
-  if (data.author)         pills.push('Author: ' + data.author);
-
   rm.innerHTML = pills.map(p => `<span class="result-pill">${p}</span>`).join('');
 
   if (type === 'success') {
-    // ✅ Accept any key Flask might use for the filename
-    const fileKey = data.filename || data.file_id || data.output_file || data.output || null;
-    // ✅ Accept a full URL if Flask sends one, or build it from the key
-    const resolvedUrl = data.download_url || (fileKey ? API + '/download/' + fileKey : null);
-
+    const resolvedUrl = data.download_url || (data.filename ? API + '/download/' + data.filename : null);
     if (resolvedUrl) {
-      lastFilename    = fileKey || 'processed_file';
+      lastFilename = data.filename || 'processed_file';
       lastDownloadUrl = resolvedUrl;
-      // ✅ Force show with inline style — bypasses any CSS specificity issues
       db.style.display = 'flex';
-      toast('File ready — click Download below.', 'success');
+      toast('File ready!', 'success');
     } else {
-      // Success but no file (e.g., PDF Info tool)
       db.style.display = 'none';
       toast(data.message || 'Done!', 'success');
     }
   } else {
     db.style.display = 'none';
-    toast(data.error || 'Something went wrong.', 'error');
+    toast(data.error || 'Error.', 'error');
   }
 }
 
-// ─── DOWNLOAD ─────────────────────────────────────────────────────────────────
-// ✅ FIXED: uses anchor-click method — most reliable cross-browser download trigger
 function downloadResult() {
   if (!lastDownloadUrl) return;
   const a = document.createElement('a');
   a.href = lastDownloadUrl;
   a.download = lastFilename || 'processed.pdf';
-  a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
 }
 
-// ─── RADIO CHIPS ──────────────────────────────────────────────────────────────
 function radioSelect(el, fieldId, value) {
   el.closest('.radio-group').querySelectorAll('.radio-chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   const hidden = document.getElementById(fieldId);
-  if (hidden) { hidden.value = value; hidden.dispatchEvent(new Event('change')); }
+  if (hidden) {
+      hidden.value = value;
+      // Trigger update for split mode specifically
+      if(fieldId === 'mode') {
+         document.getElementById('rangeGroup').style.display = value === 'range' ? 'block' : 'none';
+      }
+  }
 }
 
-// ─── COMING SOON ──────────────────────────────────────────────────────────────
-function comingSoon(name) {
-  toast(name + ' is coming soon — stay tuned!', 'success');
-}
-
-// ─── TOAST ────────────────────────────────────────────────────────────────────
+function comingSoon(name) { toast(name + ' is coming soon!', 'success'); }
 function toast(msg, type = 'success') {
   const t = document.getElementById('toast');
   document.getElementById('toastMsg').textContent = msg;
