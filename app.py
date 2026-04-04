@@ -54,7 +54,7 @@ class Config:
     ALLOWED_ALL_EXT   = ALLOWED_PDF_EXT | ALLOWED_IMAGE_EXT
 
 for folder in [Config.UPLOAD_FOLDER, Config.OUTPUT_FOLDER]:
-    os.makedirs(folder, exist_ok=True)
+         os.makedirs(folder, exist_ok=True)
 
 # ─────────────────────────────────────────────────────────────────
 # APP INIT
