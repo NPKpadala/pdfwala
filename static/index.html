@@ -187,137 +187,35 @@ input,select,textarea{font-family:inherit}
   align-items:center;justify-content:center;transition:all var(--t);
 }
 /* Mobile drawer */
-<!-- Mobile nav drawer - COMPLETE VERSION -->
-<div class="mob-nav" id="mobNav">
-  <!-- PDF Tools -->
-  <div class="mob-section">
-    <button class="mob-section-btn" onclick="toggleMobSec(this)">
-      📄 PDF Tools
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6L8 10L12 6"/></svg>
-    </button>
-    <div class="mob-sub"><div class="mob-sub-inner">
-      <div class="mob-cat">📦 Organize</div>
-      <a class="mob-link" onclick="openTool('merge');closeMob()">🔗 Merge PDF</a>
-      <a class="mob-link" onclick="openTool('split');closeMob()">✂️ Split PDF</a>
-      <a class="mob-link" onclick="openTool('organize');closeMob()">📋 Organize PDF</a>
-      <a class="mob-link" onclick="openTool('remove-pages');closeMob()">🗑️ Remove Pages</a>
-      <a class="mob-link" onclick="openTool('extract-pages');closeMob()">📤 Extract Pages</a>
-      
-      <div class="mob-cat">⚡ Optimize</div>
-      <a class="mob-link" onclick="openTool('compress');closeMob()">🗜️ Compress PDF</a>
-      <a class="mob-link" onclick="openTool('repair-pdf');closeMob()">🔧 Repair PDF</a>
-      <a class="mob-link" onclick="openTool('ocr-pdf');closeMob()">🔍 OCR PDF</a>
-      
-      <div class="mob-cat">✏️ Edit</div>
-      <a class="mob-link" onclick="openTool('rotate');closeMob()">🔄 Rotate PDF</a>
-      <a class="mob-link" onclick="openTool('watermark');closeMob()">💧 Watermark</a>
-      <a class="mob-link" onclick="openTool('page-numbers');closeMob()">🔢 Page Numbers</a>
-      <a class="mob-link" onclick="openTool('crop');closeMob()">📐 Crop PDF</a>
-      <a class="mob-link" onclick="openTool('info');closeMob()">ℹ️ PDF Info</a>
-      
-      <div class="mob-cat">🔄 Convert</div>
-      <a class="mob-link" onclick="openTool('pdf-to-image');closeMob()">🖼️ PDF to Image</a>
-      <a class="mob-link" onclick="openTool('pdf-to-word');closeMob()">📝 PDF to Word</a>
-      <a class="mob-link" onclick="openTool('pdf-to-excel');closeMob()">📊 PDF to Excel</a>
-      <a class="mob-link" onclick="openTool('pdf-to-ppt');closeMob()">📑 PDF to PPT</a>
-    </div></div>
-  </div>
-
-  <!-- Image Tools (NEW - Was Missing) -->
-  <div class="mob-section">
-    <button class="mob-section-btn" onclick="toggleMobSec(this)">
-      🖼️ Image Tools
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6L8 10L12 6"/></svg>
-    </button>
-    <div class="mob-sub"><div class="mob-sub-inner">
-      <div class="mob-cat">🔄 Convert</div>
-      <a class="mob-link" onclick="openTool('image-to-pdf');closeMob()">📷 Image to PDF</a>
-      <a class="mob-link" onclick="openTool('jpg-to-pdf');closeMob()">🟨 JPG to PDF</a>
-      <a class="mob-link" onclick="openTool('webp-to-jpg');closeMob()">🔄 WebP to JPG</a>
-      <a class="mob-link" onclick="openTool('png-to-jpg');closeMob()">🔄 PNG to JPG</a>
-      
-      <div class="mob-cat">🛠️ Tools</div>
-      <a class="mob-link" onclick="openTool('compress-image');closeMob()">🗜️ Compress Image</a>
-      <a class="mob-link" onclick="openTool('resize-image');closeMob()">📏 Resize Image</a>
-      <a class="mob-link" onclick="openTool('image-to-word');closeMob()">📝 Image to Word</a>
-      <a class="mob-link" onclick="openTool('image-to-excel');closeMob()">📊 Image to Excel</a>
-    </div></div>
-  </div>
-
-  <!-- Word Tools -->
-  <div class="mob-section">
-    <button class="mob-section-btn" onclick="toggleMobSec(this)">
-      📝 Word Tools
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6L8 10L12 6"/></svg>
-    </button>
-    <div class="mob-sub"><div class="mob-sub-inner">
-      <div class="mob-cat">📄 Convert from Word</div>
-      <a class="mob-link" onclick="openTool('word-to-pdf');closeMob()">📄 Word to PDF</a>
-      <a class="mob-link" onclick="openTool('word-to-jpg');closeMob()">🖼️ Word to JPG</a>
-      <a class="mob-link" onclick="openTool('word-to-png');closeMob()">🖼️ Word to PNG</a>
-      <a class="mob-link" onclick="openTool('word-to-txt');closeMob()">📝 Word to TXT</a>
-      <a class="mob-link" onclick="openTool('word-to-excel');closeMob()">📊 Word to Excel</a>
-      <a class="mob-link" onclick="openTool('word-to-ppt');closeMob()">📑 Word to PPT</a>
-      <a class="mob-link" onclick="openTool('word-to-html');closeMob()">🌐 Word to HTML</a>
-      <a class="mob-link" onclick="openTool('word-to-json');closeMob()">🔄 Word to JSON</a>
-      
-      <div class="mob-cat">🔧 Tools</div>
-      <a class="mob-link" onclick="openTool('compress-word');closeMob()">🗜️ Compress Word</a>
-      <a class="mob-link" onclick="openTool('protect-word');closeMob()">🔒 Protect Word</a>
-      <a class="mob-link" onclick="openTool('unlock-word');closeMob()">🔓 Unlock Word</a>
-      <a class="mob-link" onclick="openTool('edit-word');closeMob()">✏️ Edit Word</a>
-    </div></div>
-  </div>
-
-  <!-- Excel Tools -->
-  <div class="mob-section">
-    <button class="mob-section-btn" onclick="toggleMobSec(this)">
-      📊 Excel Tools
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6L8 10L12 6"/></svg>
-    </button>
-    <div class="mob-sub"><div class="mob-sub-inner">
-      <div class="mob-cat">📊 Convert from Excel</div>
-      <a class="mob-link" onclick="openTool('excel-to-pdf');closeMob()">📄 Excel to PDF</a>
-      <a class="mob-link" onclick="openTool('excel-to-csv');closeMob()">📋 Excel to CSV</a>
-      <a class="mob-link" onclick="openTool('excel-to-jpg');closeMob()">🖼️ Excel to JPG</a>
-      <a class="mob-link" onclick="openTool('excel-to-png');closeMob()">🖼️ Excel to PNG</a>
-      <a class="mob-link" onclick="openTool('excel-to-word');closeMob()">📝 Excel to Word</a>
-      <a class="mob-link" onclick="openTool('excel-to-ppt');closeMob()">📑 Excel to PPT</a>
-      <a class="mob-link" onclick="openTool('excel-to-html');closeMob()">🌐 Excel to HTML</a>
-      <a class="mob-link" onclick="openTool('excel-to-json');closeMob()">🔄 Excel to JSON</a>
-      
-      <div class="mob-cat">🔧 Tools</div>
-      <a class="mob-link" onclick="openTool('compress-excel');closeMob()">🗜️ Compress Excel</a>
-      <a class="mob-link" onclick="openTool('protect-excel');closeMob()">🔒 Protect Excel</a>
-      <a class="mob-link" onclick="openTool('unlock-excel');closeMob()">🔓 Unlock Excel</a>
-      <a class="mob-link" onclick="openTool('repair-excel');closeMob()">🔧 Repair Excel</a>
-    </div></div>
-  </div>
-
-  <!-- Security Tools -->
-  <div class="mob-section">
-    <button class="mob-section-btn" onclick="toggleMobSec(this)">
-      🔐 Security
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6L8 10L12 6"/></svg>
-    </button>
-    <div class="mob-sub"><div class="mob-sub-inner">
-      <div class="mob-cat">🔒 PDF Security</div>
-      <a class="mob-link" onclick="openTool('protect');closeMob()">🔒 Protect PDF</a>
-      <a class="mob-link" onclick="openTool('unlock');closeMob()">🔓 Unlock PDF</a>
-      <a class="mob-link" onclick="openTool('sign-pdf');closeMob()">✍️ Sign PDF</a>
-      <a class="mob-link" onclick="openTool('redact-pdf');closeMob()">🖊️ Redact PDF</a>
-      <a class="mob-link" onclick="openTool('compare-pdf');closeMob()">⚖️ Compare PDF</a>
-    </div></div>
-  </div>
-
-  <!-- All Tools Link -->
-  <div class="mob-section" style="border-bottom:none">
-    <a class="mob-link" style="font-size:15px;font-weight:600;padding:14px 0;color:var(--accent)" 
-       onclick="document.getElementById('tools').scrollIntoView({behavior:'smooth'});closeMob()">
-      🧰 All Tools (50+)
-    </a>
-  </div>
-</div>
+.mob-nav{
+  display:none;position:fixed;inset:0;z-index:490;
+  background:var(--bg);padding:76px 20px 20px;
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .35s var(--ease);
+}
+.mob-nav.open{transform:translateX(0)}
+.mob-section{border-bottom:1px solid var(--border)}
+.mob-section-btn{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;padding:14px 0;font-size:15px;font-weight:600;
+  color:var(--text);background:none;border:none;text-align:left;cursor:pointer;
+}
+.mob-section-btn svg{width:16px;height:16px;transition:transform var(--t);color:var(--text-3)}
+.mob-section-btn.active svg{transform:rotate(180deg)}
+.mob-sub{max-height:0;overflow:hidden;transition:max-height .35s var(--ease)}
+.mob-sub.open{max-height:2000px}
+.mob-sub-inner{padding-bottom:12px}
+.mob-cat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);padding:8px 0 4px}
+.mob-link{
+  display:block;padding:8px 12px;font-size:13.5px;color:var(--text-2);
+  border-radius:var(--r-sm);transition:color var(--t),background var(--t);cursor:pointer;
+}
+.mob-link:hover{color:var(--text);background:var(--bg-3)}
+@media(max-width:1080px){
+  .nav-links{display:none}
+  .mob-btn{display:flex}
+  .mob-nav{display:block}
+}
 /* ═══════════════════════════════════════════════
    HERO
 ═══════════════════════════════════════════════ */
@@ -1249,7 +1147,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 <div class="modal-overlay" id="modalOverlay" onclick="overlayClick(event)" role="dialog" aria-modal="true" aria-label="PDF Tool"><div class="modal" id="modalBox"><button class="modal-close" onclick="closeModal()" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><div id="modalContent"></div></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"><div class="toast-bar"></div><span id="toastMsg"></span></div>
 <script>
-const API = 'http://140.245.255.221';
+const API = '';
 let currentTool = null, selectedFiles = [], lastFilename = null, lastDownloadUrl = null;
 async function checkBackend(){try{const r=await fetch(API+'/api/health');if(!r.ok)throw 0;console.log('✅ Backend connected');return true}catch{console.warn('⚠️ Backend not reachable');return false}}window.addEventListener('load',checkBackend);
 const TOOLS = {
