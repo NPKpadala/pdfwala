@@ -1,34 +1,41 @@
-FROM ubuntu:22.04
+# Dockerfile — PDFWala Production
+FROM python:3.11-slim
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV BASE_DIR=/home/opc/pdfwala
-
-# System dependencies
-RUN apt-get update && apt-get install -y \
-    python3.11 python3.11-dev python3-pip \
+# ─── System dependencies ──────────────────────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice \
-    tesseract-ocr tesseract-ocr-eng tesseract-ocr-spa tesseract-ocr-fra \
+    libreoffice-calc \
+    libreoffice-writer \
+    libreoffice-impress \
     ghostscript \
-    poppler-utils \
-    default-jre-headless \
+    tesseract-ocr \
+    tesseract-ocr-eng \
     wkhtmltopdf \
-    libgl1-mesa-glx \
+    curl \
+    libgl1 \
     libglib2.0-0 \
-    fonts-liberation \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# ─── Working directory ────────────────────────────────────────────
 WORKDIR /app
 
+# ─── Python dependencies ──────────────────────────────────────────
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
+# ─── Application files ────────────────────────────────────────────
 COPY app.py .
-COPY static/ ./static/
+COPY gunicorn.conf.py .
 
-RUN mkdir -p /home/opc/pdfwala/uploads /home/opc/pdfwala/outputs /home/opc/pdfwala/static
+# ─── Directories ──────────────────────────────────────────────────
+RUN mkdir -p /app/uploads /app/outputs /app/static
 
+# ─── Non-root user ────────────────────────────────────────────────
+RUN useradd -m -u 1001 pdfwala && \
+    chown -R pdfwala:pdfwala /app
+USER pdfwala
+
+# ─── Start ────────────────────────────────────────────────────────
 EXPOSE 5000
-
 CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]
