@@ -1,40 +1,34 @@
-# Use a slim Python image to keep the size manageable
-FROM python:3.11-slim
+FROM ubuntu:22.04
 
-# 1. Install Linux System Dependencies (The "Engines")
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV BASE_DIR=/home/opc/pdfwala
+
+# System dependencies
 RUN apt-get update && apt-get install -y \
-    gcc \
-    libffi-dev \
-    libjpeg-dev \
-    zlib1g-dev \
-    libpng-dev \
-    curl \
-    # REQUIRED: For OCR (pytesseract)
-    tesseract-ocr \
-    # REQUIRED: For PDF-to-Image (pdf2image)
+    python3.11 python3.11-dev python3-pip \
+    libreoffice \
+    tesseract-ocr tesseract-ocr-eng tesseract-ocr-spa tesseract-ocr-fra \
+    ghostscript \
     poppler-utils \
-    # REQUIRED: For Word/Excel to PDF (LibreOffice Headless)
-    libreoffice-writer \
-    libreoffice-calc \
+    default-jre-headless \
+    wkhtmltopdf \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Set working directory
 WORKDIR /app
 
-# 3. Install Python Dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-# 4. Copy application code
-COPY . .
+COPY app.py .
+COPY static/ ./static/
 
-# 5. Create necessary folders and set permissions
-RUN mkdir -p /tmp/pdfwala/uploads /tmp/pdfwala/outputs static logs && \
-    useradd -m -u 1001 pdfwala && \
-    chown -R pdfwala:pdfwala /app /tmp/pdfwala
+RUN mkdir -p /home/opc/pdfwala/uploads /home/opc/pdfwala/outputs /home/opc/pdfwala/static
 
-# 6. Switch to non-root user for security
-USER pdfwala
+EXPOSE 5000
 
-# 7. Start the application
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "app:app"]
+CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]
