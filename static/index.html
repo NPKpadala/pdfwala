@@ -3,215 +3,276 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<meta name="description" content="PDFWala — Fast, secure, and free PDF processing. Merge, split, compress and more. No sign-up required."/>
+<meta name="description" content="PDFWala — Fast, secure, and free PDF tools. Merge, split, compress, convert and more. No sign-up required."/>
 <meta name="theme-color" content="#0A0E1A"/>
 <title>PDFWala — All-in-One PDF Tools</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet"/>
 <style>
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════ */
 :root {
-  --ink-900: #0A0E1A;
-  --ink-800: #111827;
-  --ink-700: #1A2235;
-  --ink-600: #222D42;
-  --ink-500: #2E3D58;
-  --ink-400: #4A5878;
-  --ink-300: #6B7A9A;
-  --ink-200: #9AA5BE;
-  --ink-100: #C8D0E0;
-  --ink-50:  #EDF0F7;
-  --blue-700: #1D4ED8;
-  --blue-600: #2563EB;
-  --blue-500: #3B82F6;
-  --blue-400: #60A5FA;
-  --blue-300: #93C5FD;
-  --violet-700: #6D28D9;
-  --violet-600: #7C3AED;
-  --violet-500: #8B5CF6;
-  --violet-400: #A78BFA;
-  --cyan-500: #06B6D4;
-  --cyan-400: #22D3EE;
-  --emerald-500: #10B981;
-  --emerald-400: #34D399;
-  --amber-500: #F59E0B;
-  --rose-500: #F43F5E;
-  --rose-400: #FB7185;
-  --bg:         var(--ink-900);
-  --bg-2:      var(--ink-800);
-  --bg-3:      var(--ink-700);
-  --bg-glass:  rgba(17,24,39,0.7);
-  --border:    rgba(255,255,255,0.08);
-  --border-2:  rgba(255,255,255,0.04);
-  --text:      var(--ink-50);
-  --text-2:    var(--ink-200);
-  --text-3:    var(--ink-300);
-  --accent:    var(--blue-500);
-  --accent-2:  var(--violet-500);
-  --glow-blue:   0 0 40px rgba(59,130,246,0.25);
-  --glow-violet: 0 0 40px rgba(139,92,246,0.2);
-  --r-sm: 8px; --r: 12px; --r-lg: 16px; --r-xl: 20px; --r-2xl: 28px;
-  --sh-sm: 0 1px 3px rgba(0,0,0,.3);
-  --sh:    0 4px 20px rgba(0,0,0,.4);
-  --sh-lg: 0 12px 48px rgba(0,0,0,.5);
-  --sh-xl: 0 24px 80px rgba(0,0,0,.6);
-  --ease:  cubic-bezier(0.4,0,0.2,1);
-  --t:     0.2s var(--ease);
-  --t-lg:  0.35s var(--ease);
-  --font: 'DM Sans', system-ui, sans-serif;
-  --font-h: 'Bricolage Grotesque', system-ui, sans-serif;
+  --ink-900:#0A0E1A; --ink-800:#111827; --ink-700:#1A2235; --ink-600:#222D42;
+  --ink-500:#2E3D58; --ink-400:#4A5878; --ink-300:#6B7A9A; --ink-200:#9AA5BE;
+  --ink-100:#C8D0E0; --ink-50:#EDF0F7;
+  --blue-700:#1D4ED8; --blue-600:#2563EB; --blue-500:#3B82F6;
+  --blue-400:#60A5FA; --blue-300:#93C5FD;
+  --violet-700:#6D28D9; --violet-600:#7C3AED; --violet-500:#8B5CF6; --violet-400:#A78BFA;
+  --cyan-500:#06B6D4; --cyan-400:#22D3EE;
+  --emerald-500:#10B981; --emerald-400:#34D399;
+  --amber-500:#F59E0B; --amber-400:#FBBF24;
+  --rose-500:#F43F5E; --rose-400:#FB7185;
+  --bg:var(--ink-900); --bg-2:var(--ink-800); --bg-3:var(--ink-700);
+  --bg-glass:rgba(10,14,26,0.85);
+  --border:rgba(255,255,255,0.08); --border-hover:rgba(255,255,255,0.14);
+  --text:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-300);
+  --accent:var(--blue-500); --accent-2:var(--violet-500);
+  --r-sm:8px; --r:12px; --r-lg:16px; --r-xl:20px; --r-2xl:28px;
+  --sh:0 4px 20px rgba(0,0,0,.4); --sh-lg:0 12px 48px rgba(0,0,0,.5);
+  --sh-xl:0 24px 80px rgba(0,0,0,.6); --sh-card:0 8px 32px rgba(0,0,0,.35);
+  --ease:cubic-bezier(0.4,0,0.2,1); --t:0.2s var(--ease); --t-lg:0.35s var(--ease);
+  --font:'DM Sans',system-ui,sans-serif; --font-h:'Bricolage Grotesque',system-ui,sans-serif;
 }
 [data-theme="light"] {
-  --bg:        #F8FAFF;
-  --bg-2:      #FFFFFF;
-  --bg-3:      #EEF2FB;
-  --bg-glass:  rgba(255,255,255,0.8);
-  --border:    rgba(0,0,0,0.07);
-  --border-2:  rgba(0,0,0,0.04);
-  --text:      #0F172A;
-  --text-2:    #475569;
-  --text-3:    #94A3B8;
-  --accent:    var(--blue-600);
-  --accent-2:  var(--violet-600);
-  --sh-sm: 0 1px 3px rgba(0,0,0,.06);
-  --sh:    0 4px 20px rgba(0,0,0,.08);
-  --sh-lg: 0 12px 48px rgba(0,0,0,.1);
-  --sh-xl: 0 24px 80px rgba(0,0,0,.12);
+  --bg:#F8FAFF; --bg-2:#FFFFFF; --bg-3:#EEF2FB;
+  --bg-glass:rgba(248,250,255,0.92);
+  --border:rgba(0,0,0,0.07); --border-hover:rgba(0,0,0,0.12);
+  --text:#0F172A; --text-2:#475569; --text-3:#94A3B8;
+  --accent:var(--blue-600); --accent-2:var(--violet-600);
+  --sh:0 4px 20px rgba(0,0,0,.08); --sh-lg:0 12px 48px rgba(0,0,0,.1);
+  --sh-xl:0 24px 80px rgba(0,0,0,.12); --sh-card:0 4px 20px rgba(0,0,0,.08);
 }
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-html{scroll-behavior:smooth;font-size:16px;}
-body{
-  font-family:var(--font);background:var(--bg);color:var(--text);
-  line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;
-  transition:background var(--t-lg),color var(--t);
-}
-a{color:inherit;text-decoration:none;}
-button{cursor:pointer;font-family:inherit;}
-input,select,textarea{font-family:inherit;}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
-::-webkit-scrollbar{width:5px;height:5px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--ink-500);border-radius:3px;}
-
-/* NAVBAR */
+/* ═══════════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════════ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  transition:background var(--t-lg),color var(--t)}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+input,select,textarea{font-family:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--ink-500);border-radius:3px}
+/* ═══════════════════════════════════════════════
+   MEGA NAVBAR
+═══════════════════════════════════════════════ */
 .nav{
-  position:sticky;top:0;z-index:200;
+  position:sticky;top:0;z-index:500;
   background:var(--bg-glass);
   border-bottom:1px solid var(--border);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
   transition:background var(--t);
 }
 .nav-inner{
-  max-width:1280px;margin:auto;padding:0 28px;
-  height:64px;display:flex;align-items:center;justify-content:space-between;
+  max-width:1320px;margin:auto;padding:0 28px;
+  height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px;
 }
 .nav-logo{
-  display:flex;align-items:center;gap:10px;
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
   font-family:var(--font-h);font-size:20px;font-weight:800;letter-spacing:-0.5px;
 }
 .nav-logo-mark{
   width:34px;height:34px;border-radius:9px;flex-shrink:0;
   background:linear-gradient(135deg,var(--blue-600),var(--violet-500));
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 4px 12px rgba(37,99,235,0.4);
+  box-shadow:0 4px 14px rgba(37,99,235,0.45);
 }
-.nav-logo-mark svg{display:block;}
-.nav-logo .dot{color:var(--accent);}
-.nav-links{display:flex;align-items:center;gap:2px;}
-.nav-link{
+.nav-logo .dot{color:var(--accent)}
+/* Top-level nav links */
+.nav-links{display:flex;align-items:center;gap:2px;flex:1;justify-content:center}
+.nav-item{position:relative}
+.nav-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:7px 13px;border-radius:var(--r-sm);
   font-size:13.5px;font-weight:500;color:var(--text-2);
-  padding:6px 13px;border-radius:var(--r-sm);border:none;background:none;
-  transition:color var(--t),background var(--t);
+  border:none;background:none;white-space:nowrap;
+  transition:color var(--t),background var(--t);cursor:pointer;
 }
-.nav-link:hover{color:var(--text);background:var(--bg-3);}
-.nav-right{display:flex;align-items:center;gap:10px;}
+.nav-btn svg.chv{width:12px;height:12px;flex-shrink:0;transition:transform var(--t);color:var(--text-3)}
+.nav-item:hover>.nav-btn,
+.nav-item.open>.nav-btn{color:var(--text);background:rgba(255,255,255,0.05)}
+[data-theme="light"] .nav-item:hover>.nav-btn,
+[data-theme="light"] .nav-item.open>.nav-btn{background:var(--bg-3)}
+.nav-item:hover>.nav-btn .chv,
+.nav-item.open>.nav-btn .chv{transform:rotate(180deg);color:var(--accent)}
+/* MEGA DROPDOWN */
+.mega-drop{
+  position:absolute;top:calc(100% + 8px);
+  background:var(--bg-2);border:1px solid var(--border);
+  border-radius:var(--r-xl);padding:20px;
+  box-shadow:var(--sh-xl);
+  opacity:0;visibility:hidden;
+  transform:translateY(10px) scale(0.98);
+  transition:opacity .2s var(--ease),transform .2s var(--ease),visibility .2s;
+  z-index:600;min-width:240px;
+}
+.nav-item:hover>.mega-drop,
+.nav-item.open>.mega-drop{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
+/* Wide mega (4-col) */
+.mega-wide{left:50%;transform:translateX(-50%) translateY(10px) scale(.98);min-width:820px}
+.nav-item:hover>.mega-wide,
+.nav-item.open>.mega-wide{transform:translateX(-50%) translateY(0) scale(1)}
+/* Narrow mega (2-col) */
+.mega-mid{left:50%;transform:translateX(-50%) translateY(10px) scale(.98);min-width:480px}
+.nav-item:hover>.mega-mid,
+.nav-item.open>.mega-mid{transform:translateX(-50%) translateY(0) scale(1)}
+/* Mega layout helpers */
+.mega-cols{display:grid;gap:20px}
+.mega-cols.c4{grid-template-columns:repeat(4,1fr)}
+.mega-cols.c3{grid-template-columns:repeat(3,1fr)}
+.mega-cols.c2{grid-template-columns:repeat(2,1fr)}
+.mega-col-hd{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  padding-bottom:10px;margin-bottom:6px;
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:5px;
+}
+.mega-col-hd.blue{color:var(--blue-400)}
+.mega-col-hd.green{color:var(--emerald-400)}
+.mega-col-hd.amber{color:var(--amber-400)}
+.mega-col-hd.violet{color:var(--violet-400)}
+.mega-col-hd.rose{color:var(--rose-400)}
+.mega-col-hd.cyan{color:var(--cyan-400)}
+.mm-link{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 10px;border-radius:var(--r-sm);
+  font-size:13px;font-weight:500;color:var(--text-2);
+  transition:color var(--t),background var(--t),transform var(--t);
+  cursor:pointer;position:relative;
+}
+.mm-link:hover{color:var(--text);background:var(--bg-3);transform:translateX(3px)}
+.mm-link .mli{font-size:14px;width:20px;text-align:center;flex-shrink:0;color:var(--text-3);transition:color var(--t)}
+.mm-link:hover .mli{color:var(--accent)}
+.mm-link .mla{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%) translateX(-4px);
+  opacity:0;transition:all var(--t);color:var(--accent);font-size:10px;
+}
+.mm-link:hover .mla{opacity:1;transform:translateY(-50%) translateX(0)}
+.mm-badge{
+  font-size:9px;font-weight:700;padding:2px 6px;border-radius:50px;
+  margin-left:auto;flex-shrink:0;
+}
+.mb-pop{background:rgba(244,63,94,.15);color:var(--rose-400)}
+.mb-new{background:rgba(16,185,129,.15);color:var(--emerald-400)}
+.mb-soon{background:rgba(255,255,255,.06);color:var(--text-3)}
+/* ALL TOOLS LINK */
+.nav-btn.all-tools{color:var(--accent);font-weight:600}
+/* Nav right */
+.nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .theme-btn{
   width:36px;height:36px;border-radius:var(--r-sm);
   border:1px solid var(--border);background:var(--bg-3);
   color:var(--text-2);font-size:15px;
-  display:flex;align-items:center;justify-content:center;
-  transition:all var(--t);
+  display:flex;align-items:center;justify-content:center;transition:all var(--t);
 }
-.theme-btn:hover{background:var(--bg-3);color:var(--text);border-color:var(--accent);}
+.theme-btn:hover{color:var(--text);border-color:var(--accent)}
 .nav-cta{
   font-size:13.5px;font-weight:600;color:#fff;
   padding:8px 18px;border-radius:var(--r-sm);
   background:linear-gradient(135deg,var(--blue-600),var(--violet-600));
-  border:none;box-shadow:0 4px 16px rgba(37,99,235,0.35);
-  transition:transform var(--t),box-shadow var(--t),opacity var(--t);
+  border:none;box-shadow:0 4px 16px rgba(37,99,235,.35);
+  transition:transform var(--t),box-shadow var(--t);
 }
-.nav-cta:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(37,99,235,0.45);opacity:.95;}
-
-/* HERO */
+.nav-cta:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(37,99,235,.45)}
+/* Hamburger */
+.mob-btn{
+  display:none;width:36px;height:36px;
+  border-radius:var(--r-sm);border:1px solid var(--border);
+  background:var(--bg-3);color:var(--text-2);font-size:18px;
+  align-items:center;justify-content:center;transition:all var(--t);
+}
+/* Mobile drawer */
+.mob-nav{
+  display:none;position:fixed;inset:0;z-index:490;
+  background:var(--bg);padding:76px 20px 20px;
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .35s var(--ease);
+}
+.mob-nav.open{transform:translateX(0)}
+.mob-section{border-bottom:1px solid var(--border)}
+.mob-section-btn{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;padding:14px 0;font-size:15px;font-weight:600;
+  color:var(--text);background:none;border:none;text-align:left;cursor:pointer;
+}
+.mob-section-btn svg{width:16px;height:16px;transition:transform var(--t);color:var(--text-3)}
+.mob-section-btn.active svg{transform:rotate(180deg)}
+.mob-sub{max-height:0;overflow:hidden;transition:max-height .35s var(--ease)}
+.mob-sub.open{max-height:2000px}
+.mob-sub-inner{padding-bottom:12px}
+.mob-cat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);padding:8px 0 4px}
+.mob-link{
+  display:block;padding:8px 12px;font-size:13.5px;color:var(--text-2);
+  border-radius:var(--r-sm);transition:color var(--t),background var(--t);cursor:pointer;
+}
+.mob-link:hover{color:var(--text);background:var(--bg-3)}
+@media(max-width:1080px){
+  .nav-links{display:none}
+  .mob-btn{display:flex}
+  .mob-nav{display:block}
+}
+/* ═══════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════ */
 .hero{
   position:relative;overflow:hidden;
-  padding:96px 28px 100px;text-align:center;
-  background:var(--bg);
+  padding:96px 28px 104px;text-align:center;background:var(--bg);
 }
 .hero-mesh{
   position:absolute;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(ellipse 800px 600px at 20% 0%, rgba(37,99,235,0.13) 0%, transparent 60%),
-    radial-gradient(ellipse 600px 500px at 80% 10%, rgba(124,58,237,0.1) 0%, transparent 55%),
-    radial-gradient(ellipse 500px 400px at 50% 100%, rgba(6,182,212,0.07) 0%, transparent 50%);
+    radial-gradient(ellipse 900px 700px at 15% 0%,rgba(37,99,235,.14) 0%,transparent 60%),
+    radial-gradient(ellipse 700px 600px at 85% 5%,rgba(124,58,237,.1) 0%,transparent 55%),
+    radial-gradient(ellipse 600px 400px at 50% 100%,rgba(6,182,212,.07) 0%,transparent 50%);
   animation:mesh-drift 14s ease-in-out infinite alternate;
 }
 @keyframes mesh-drift{
-  0%{background-position:0 0,100% 0,50% 100%;}
-  100%{background-position:2% 3%,97% 2%,48% 97%;}
+  0%{opacity:.8} 100%{opacity:1;background-position:2% 3%,97% 2%,48% 97%}
 }
 .hero-grid{
-  position:absolute;inset:0;z-index:0;pointer-events:none;
-  opacity:0.03;
-  background-image:linear-gradient(var(--ink-200) 1px,transparent 1px),linear-gradient(90deg,var(--ink-200) 1px,transparent 1px);
+  position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.025;
+  background-image:linear-gradient(var(--ink-200) 1px,transparent 1px),
+    linear-gradient(90deg,var(--ink-200) 1px,transparent 1px);
   background-size:60px 60px;
 }
-[data-theme="light"] .hero-grid{opacity:0.04;}
-.hero-floats{
-  position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;
-}
+[data-theme="light"] .hero-grid{opacity:.04}
+/* Floating cards */
+.hero-floats{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .float-card{
-  position:absolute;
-  background:var(--bg-glass);
-  border:1px solid var(--border);
-  border-radius:var(--r-lg);
-  backdrop-filter:blur(10px);
-  padding:10px 14px;
-  display:flex;align-items:center;gap:8px;
-  box-shadow:var(--sh);
-  font-size:12px;font-weight:500;color:var(--text-2);
-  white-space:nowrap;
+  position:absolute;background:var(--bg-glass);border:1px solid var(--border);
+  border-radius:var(--r-lg);backdrop-filter:blur(12px);padding:10px 14px;
+  display:flex;align-items:center;gap:8px;box-shadow:var(--sh);
+  font-size:12px;font-weight:500;color:var(--text-2);white-space:nowrap;
 }
-.float-card .fc-icon{font-size:16px;flex-shrink:0;}
-.float-card .fc-bar{width:60px;height:4px;border-radius:2px;background:var(--border);}
-.float-card .fc-bar span{display:block;height:100%;border-radius:2px;}
-.fc1{top:12%;left:6%;animation:float-1 8s ease-in-out infinite;}
-.fc2{top:20%;right:5%;animation:float-2 10s ease-in-out infinite 1s;}
-.fc3{bottom:20%;left:4%;animation:float-1 9s ease-in-out infinite 2s;}
-.fc4{bottom:14%;right:6%;animation:float-2 11s ease-in-out infinite 0.5s;}
-.fc5{top:50%;left:2%;animation:float-1 7s ease-in-out infinite 3s;}
-@keyframes float-1{0%,100%{transform:translateY(0) rotate(-1deg);}50%{transform:translateY(-14px) rotate(1deg);}}
-@keyframes float-2{0%,100%{transform:translateY(0) rotate(1.5deg);}50%{transform:translateY(-18px) rotate(-1deg);}}
-@media(max-width:768px){.hero-floats{display:none;}}
-.hero-content{position:relative;z-index:1;}
+.float-card .fc-icon{font-size:16px;flex-shrink:0}
+.float-card .fc-bar{width:60px;height:4px;border-radius:2px;background:var(--border)}
+.float-card .fc-bar span{display:block;height:100%;border-radius:2px}
+.fc1{top:12%;left:6%;animation:f1 8s ease-in-out infinite}
+.fc2{top:20%;right:5%;animation:f2 10s ease-in-out infinite 1s}
+.fc3{bottom:22%;left:4%;animation:f1 9s ease-in-out infinite 2s}
+.fc4{bottom:16%;right:6%;animation:f2 11s ease-in-out infinite .5s}
+.fc5{top:52%;left:2%;animation:f1 7s ease-in-out infinite 3s}
+@keyframes f1{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-14px) rotate(1deg)}}
+@keyframes f2{0%,100%{transform:translateY(0) rotate(1.5deg)}50%{transform:translateY(-18px) rotate(-1deg)}}
+@media(max-width:768px){.hero-floats{display:none}}
+.hero-content{position:relative;z-index:1;max-width:740px;margin:0 auto}
 .hero-badge{
   display:inline-flex;align-items:center;gap:8px;
-  background:rgba(59,130,246,0.1);
-  border:1px solid rgba(59,130,246,0.25);
+  background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);
   border-radius:50px;padding:6px 14px 6px 8px;
-  font-size:12.5px;font-weight:600;color:var(--blue-400);
-  margin-bottom:28px;letter-spacing:0.01em;
+  font-size:12.5px;font-weight:600;color:var(--blue-400);margin-bottom:28px;
 }
-.badge-dot{width:7px;height:7px;border-radius:50%;background:var(--emerald-400);animation:pulse-dot 2s infinite;}
-@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,0.5);}50%{box-shadow:0 0 0 5px rgba(52,211,153,0);}}
+.badge-dot{width:7px;height:7px;border-radius:50%;background:var(--emerald-400);animation:pdot 2s infinite}
+@keyframes pdot{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.5)}50%{box-shadow:0 0 0 5px rgba(52,211,153,0)}}
 .hero h1{
-  font-family:var(--font-h);
-  font-size:clamp(38px,6vw,72px);
-  font-weight:800;line-height:1.05;
-  letter-spacing:-2px;
-  color:var(--text);
-  margin-bottom:22px;
-  max-width:820px;margin-left:auto;margin-right:auto;
+  font-family:var(--font-h);font-size:clamp(38px,6vw,74px);
+  font-weight:800;line-height:1.04;letter-spacing:-2.5px;
+  color:var(--text);margin-bottom:22px;
 }
 .hero h1 .grad{
   background:linear-gradient(135deg,var(--blue-400) 0%,var(--violet-400) 50%,var(--cyan-400) 100%);
@@ -221,65 +282,80 @@ input,select,textarea{font-family:inherit;}
   background:linear-gradient(135deg,var(--blue-600) 0%,var(--violet-600) 60%,var(--cyan-500) 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
-.hero-sub{
-  font-size:18px;color:var(--text-2);font-weight:400;
-  max-width:520px;margin:0 auto 40px;line-height:1.7;
-}
-.trust-badges{
-  display:flex;justify-content:center;align-items:center;
-  flex-wrap:wrap;gap:10px;margin-bottom:44px;
-}
-.trust-badge{
+.hero-sub{font-size:18px;color:var(--text-2);max-width:520px;margin:0 auto 36px;line-height:1.7}
+.trust-row{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-bottom:40px}
+.trust-pill{
   display:flex;align-items:center;gap:6px;
   background:var(--bg-3);border:1px solid var(--border);
-  border-radius:50px;padding:6px 14px;
+  border-radius:50px;padding:5px 13px;
   font-size:12.5px;font-weight:500;color:var(--text-2);
 }
-.trust-badge svg{flex-shrink:0;color:var(--emerald-400);}
-.hero-ctas{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:64px;}
-.btn-hero-primary{
+.trust-pill svg{flex-shrink:0;color:var(--emerald-400)}
+.hero-ctas{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:60px}
+.btn-hero-p{
   padding:13px 28px;border-radius:var(--r);
   background:linear-gradient(135deg,var(--blue-600),var(--violet-600));
   color:#fff;border:none;font-size:15px;font-weight:600;
-  box-shadow:0 4px 24px rgba(37,99,235,0.4);
+  box-shadow:0 4px 24px rgba(37,99,235,.4);
   transition:transform var(--t),box-shadow var(--t);
   display:flex;align-items:center;gap:8px;
 }
-.btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 8px 36px rgba(37,99,235,0.5);}
-.btn-hero-secondary{
-  padding:13px 28px;border-radius:var(--r);
-  background:var(--bg-3);border:1px solid var(--border);
-  color:var(--text);font-size:15px;font-weight:600;
+.btn-hero-p:hover{transform:translateY(-2px);box-shadow:0 8px 36px rgba(37,99,235,.5)}
+.btn-hero-s{
+  padding:13px 28px;border-radius:var(--r);background:var(--bg-3);
+  border:1px solid var(--border);color:var(--text);font-size:15px;font-weight:600;
   transition:background var(--t),border-color var(--t),transform var(--t);
   display:flex;align-items:center;gap:8px;
 }
-.btn-hero-secondary:hover{background:var(--bg-3);border-color:var(--accent);transform:translateY(-1px);}
-.search-wrap{max-width:480px;margin:0 auto;position:relative;}
+.btn-hero-s:hover{border-color:var(--accent);transform:translateY(-1px)}
+.search-wrap{max-width:480px;margin:0 auto;position:relative}
 .search-wrap input{
-  width:100%;padding:13px 48px 13px 18px;
-  border:1.5px solid var(--border);border-radius:var(--r);
-  background:var(--bg-glass);backdrop-filter:blur(12px);
-  color:var(--text);font-size:14.5px;outline:none;
-  transition:border-color var(--t),box-shadow var(--t);
+  width:100%;padding:13px 48px 13px 18px;border:1.5px solid var(--border);
+  border-radius:var(--r);background:rgba(255,255,255,.04);
+  backdrop-filter:blur(12px);color:var(--text);font-size:14.5px;outline:none;
+  transition:border-color var(--t),box-shadow var(--t),background var(--t);
 }
-.search-wrap input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,0.15);}
-.search-wrap input::placeholder{color:var(--text-3);}
-.search-icon{
-  position:absolute;right:14px;top:50%;transform:translateY(-50%);
-  color:var(--text-3);pointer-events:none;
+[data-theme="light"] .search-wrap input{background:var(--bg-2)}
+.search-wrap input:focus{
+  border-color:var(--accent);
+  background:rgba(59,130,246,.04);
+  box-shadow:0 0 0 3px rgba(59,130,246,.15);
 }
+.search-wrap input::placeholder{color:var(--text-3)}
+.search-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--text-3);pointer-events:none}
 .hero-stats{
-  display:flex;justify-content:center;gap:0;
-  margin-top:48px;padding-top:40px;
-  border-top:1px solid var(--border);
+  display:flex;justify-content:center;
+  margin-top:48px;padding-top:40px;border-top:1px solid var(--border);
 }
-.stat-item{flex:1;max-width:160px;text-align:center;padding:0 16px;}
-.stat-item+.stat-item{border-left:1px solid var(--border);}
-.stat-num{font-family:var(--font-h);font-size:26px;font-weight:800;color:var(--text);margin-bottom:4px;}
-.stat-num .stat-accent{color:var(--blue-400);}
-.stat-lbl{font-size:12px;color:var(--text-3);font-weight:500;letter-spacing:0.03em;text-transform:uppercase;}
-
-/* TABS */
+.stat-item{flex:1;max-width:160px;text-align:center;padding:0 16px}
+.stat-item+.stat-item{border-left:1px solid var(--border)}
+.stat-num{font-family:var(--font-h);font-size:26px;font-weight:800;margin-bottom:4px}
+.stat-accent{color:var(--blue-400)}
+.stat-lbl{font-size:11.5px;color:var(--text-3);font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+/* ═══════════════════════════════════════════════
+   QUICK ACTIONS
+═══════════════════════════════════════════════ */
+.quick-section{
+  background:var(--bg-2);border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);padding:44px 28px;
+}
+.qa-inner{max-width:1280px;margin:auto}
+.qa-header{text-align:center;margin-bottom:28px}
+.qa-title{font-family:var(--font-h);font-size:22px;font-weight:800;margin-bottom:6px}
+.qa-sub{font-size:14px;color:var(--text-2)}
+.qa-grid{display:flex;justify-content:center;flex-wrap:wrap;gap:10px}
+.qa-card{
+  display:flex;align-items:center;gap:9px;
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:11px 18px;
+  font-size:14px;font-weight:600;color:var(--text);cursor:pointer;
+  transition:all var(--t);
+}
+.qa-card:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:var(--sh)}
+.qa-icon{font-size:18px}
+/* ═══════════════════════════════════════════════
+   CATEGORY TABS
+═══════════════════════════════════════════════ */
 .tabs-bar{
   position:sticky;top:64px;z-index:100;
   background:var(--bg-glass);backdrop-filter:blur(20px);
@@ -287,401 +363,673 @@ input,select,textarea{font-family:inherit;}
 }
 .tabs-inner{
   max-width:1280px;margin:auto;padding:0 28px;
-  display:flex;gap:0;overflow-x:auto;scrollbar-width:none;
+  display:flex;overflow-x:auto;scrollbar-width:none;
 }
-.tabs-inner::-webkit-scrollbar{display:none;}
+.tabs-inner::-webkit-scrollbar{display:none}
 .tab-btn{
-  padding:14px 18px;font-size:13px;font-weight:500;
-  color:var(--text-3);border:none;background:none;
-  border-bottom:2px solid transparent;white-space:nowrap;
-  transition:color var(--t),border-color var(--t);
+  padding:14px 18px;font-size:13px;font-weight:500;color:var(--text-3);
+  border:none;background:none;border-bottom:2px solid transparent;
+  white-space:nowrap;transition:color var(--t),border-color var(--t);
 }
-.tab-btn:hover{color:var(--text-2);}
-.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
-
-/* TOOLS SECTION */
-.tools-section{max-width:1280px;margin:0 auto;padding:56px 28px 72px;}
-.section-header{margin-bottom:36px;}
+.tab-btn:hover{color:var(--text-2)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+/* ═══════════════════════════════════════════════
+   TOOLS SECTION — FIXED SPACING
+═══════════════════════════════════════════════ */
+.tools-section{max-width:1280px;margin:0 auto;padding:32px 28px 72px}
+/* KEY FIX: tight header, zero orphan gap before grid */
+.section-header{
+  margin-bottom:20px; /* was 36px — now tight */
+}
 .section-kicker{
-  font-size:11.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
-  color:var(--accent);margin-bottom:8px;
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:4px;
 }
-.section-title{font-family:var(--font-h);font-size:24px;font-weight:800;letter-spacing:-0.5px;margin-bottom:8px;}
-.section-sub{font-size:14px;color:var(--text-2);}
+.section-title{
+  font-family:var(--font-h);font-size:24px;font-weight:800;
+  letter-spacing:-.5px;margin-bottom:4px;line-height:1.15;
+}
+.section-sub{
+  font-size:14px;color:var(--text-2);
+  margin-bottom:0; /* no trailing gap before grid */
+}
+/* ═══════════════════════════════════════════════
+   TOOL CARDS
+═══════════════════════════════════════════════ */
 .tools-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
-  gap:16px;
+  grid-template-columns:repeat(auto-fill,minmax(198px,1fr));
+  gap:14px;
 }
 .tool-card{
   position:relative;overflow:hidden;
-  background:var(--bg-2);
-  border:1px solid var(--border);
-  border-radius:var(--r-xl);
-  padding:24px 20px 22px;
-  cursor:pointer;
-  transition:transform var(--t),box-shadow var(--t),border-color var(--t),background var(--t);
-  text-align:left;
+  background:var(--bg-2);border:1px solid var(--border);
+  border-radius:var(--r-xl);padding:22px 18px 20px;
+  cursor:pointer;text-align:left;
+  transition:transform var(--t),box-shadow var(--t),border-color var(--t);
 }
 .tool-card::before{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,var(--card-from,rgba(59,130,246,0)),var(--card-to,rgba(139,92,246,0)));
-  opacity:0;transition:opacity var(--t);border-radius:inherit;
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:linear-gradient(135deg,var(--cf,rgba(59,130,246,0)),var(--ct,rgba(139,92,246,0)));
+  opacity:0;transition:opacity var(--t);
 }
 .tool-card:hover{
   transform:translateY(-4px);
-  box-shadow:0 16px 48px rgba(0,0,0,0.4),0 0 0 1px var(--card-border,rgba(59,130,246,0.3));
+  box-shadow:0 16px 48px rgba(0,0,0,.4),0 0 0 1px var(--cb,rgba(59,130,246,.3));
   border-color:transparent;
 }
-.tool-card:hover::before{opacity:1;}
-[data-theme="light"] .tool-card:hover{box-shadow:0 12px 40px rgba(0,0,0,.12),0 0 0 1px var(--card-border,rgba(59,130,246,0.3));}
-.tool-card.c-blue{--card-from:rgba(37,99,235,0.08);--card-to:rgba(59,130,246,0.04);--card-border:rgba(59,130,246,0.35);--icon-bg:rgba(59,130,246,0.15);--icon-color:var(--blue-400);}
-.tool-card.c-violet{--card-from:rgba(124,58,237,0.08);--card-to:rgba(139,92,246,0.04);--card-border:rgba(139,92,246,0.35);--icon-bg:rgba(139,92,246,0.15);--icon-color:var(--violet-400);}
-.tool-card.c-cyan{--card-from:rgba(6,182,212,0.08);--card-to:rgba(34,211,238,0.04);--card-border:rgba(6,182,212,0.35);--icon-bg:rgba(6,182,212,0.15);--icon-color:var(--cyan-400);}
-.tool-card.c-emerald{--card-from:rgba(16,185,129,0.08);--card-to:rgba(52,211,153,0.04);--card-border:rgba(16,185,129,0.35);--icon-bg:rgba(16,185,129,0.15);--icon-color:var(--emerald-400);}
-.tool-card.c-amber{--card-from:rgba(245,158,11,0.08);--card-to:rgba(251,191,36,0.04);--card-border:rgba(245,158,11,0.35);--icon-bg:rgba(245,158,11,0.15);--icon-color:var(--amber-500);}
-.tool-card.c-rose{--card-from:rgba(244,63,94,0.08);--card-to:rgba(251,113,133,0.04);--card-border:rgba(244,63,94,0.35);--icon-bg:rgba(244,63,94,0.15);--icon-color:var(--rose-400);}
-[data-theme="light"] .tool-card.c-blue{--card-from:rgba(37,99,235,0.04);--card-to:rgba(59,130,246,0.02);}
-[data-theme="light"] .tool-card.c-violet{--card-from:rgba(124,58,237,0.04);--card-to:rgba(139,92,246,0.02);}
-[data-theme="light"] .tool-card.c-cyan{--card-from:rgba(6,182,212,0.04);--card-to:rgba(34,211,238,0.02);}
-[data-theme="light"] .tool-card.c-emerald{--card-from:rgba(16,185,129,0.04);--card-to:rgba(52,211,153,0.02);}
-[data-theme="light"] .tool-card.c-amber{--card-from:rgba(245,158,11,0.04);--card-to:rgba(251,191,36,0.02);}
+.tool-card:hover::before{opacity:1}
+[data-theme="light"] .tool-card:hover{box-shadow:0 10px 36px rgba(0,0,0,.1),0 0 0 1px var(--cb,rgba(59,130,246,.3))}
+/* Color variants */
+.tool-card.c-blue {--cf:rgba(37,99,235,.08); --ct:rgba(59,130,246,.04); --cb:rgba(59,130,246,.35); --ib:rgba(59,130,246,.15)}
+.tool-card.c-violet {--cf:rgba(124,58,237,.08); --ct:rgba(139,92,246,.04); --cb:rgba(139,92,246,.35); --ib:rgba(139,92,246,.15)}
+.tool-card.c-cyan {--cf:rgba(6,182,212,.08); --ct:rgba(34,211,238,.04); --cb:rgba(6,182,212,.35); --ib:rgba(6,182,212,.15)}
+.tool-card.c-emerald{--cf:rgba(16,185,129,.08); --ct:rgba(52,211,153,.04); --cb:rgba(16,185,129,.35); --ib:rgba(16,185,129,.15)}
+.tool-card.c-amber {--cf:rgba(245,158,11,.08); --ct:rgba(251,191,36,.04); --cb:rgba(245,158,11,.35); --ib:rgba(245,158,11,.15)}
+.tool-card.c-rose {--cf:rgba(244,63,94,.08); --ct:rgba(251,113,133,.04); --cb:rgba(244,63,94,.35); --ib:rgba(244,63,94,.15)}
+[data-theme="light"] .tool-card.c-blue {--cf:rgba(37,99,235,.04); --ct:rgba(59,130,246,.02)}
+[data-theme="light"] .tool-card.c-violet {--cf:rgba(124,58,237,.04); --ct:rgba(139,92,246,.02)}
+[data-theme="light"] .tool-card.c-cyan {--cf:rgba(6,182,212,.04); --ct:rgba(34,211,238,.02)}
+[data-theme="light"] .tool-card.c-emerald {--cf:rgba(16,185,129,.04); --ct:rgba(52,211,153,.02)}
+[data-theme="light"] .tool-card.c-amber {--cf:rgba(245,158,11,.04); --ct:rgba(251,191,36,.02)}
 .tool-icon-wrap{
-  width:48px;height:48px;border-radius:13px;
-  background:var(--icon-bg,rgba(59,130,246,0.15));
+  width:46px;height:46px;border-radius:12px;
+  background:var(--ib,rgba(59,130,246,.15));
   display:flex;align-items:center;justify-content:center;
-  font-size:22px;margin-bottom:14px;
-  position:relative;z-index:1;
+  font-size:21px;margin-bottom:13px;position:relative;z-index:1;
   transition:transform var(--t);
 }
-.tool-card:hover .tool-icon-wrap{transform:scale(1.1) rotate(-3deg);}
-.tool-name{font-size:14px;font-weight:700;margin-bottom:5px;position:relative;z-index:1;letter-spacing:-0.2px;}
-.tool-desc{font-size:12px;color:var(--text-3);line-height:1.55;position:relative;z-index:1;}
+.tool-card:hover .tool-icon-wrap{transform:scale(1.1) rotate(-3deg)}
+.tool-name{font-size:13.5px;font-weight:700;margin-bottom:5px;position:relative;z-index:1;letter-spacing:-.2px}
+.tool-desc{font-size:11.5px;color:var(--text-3);line-height:1.55;position:relative;z-index:1}
 .tool-badge{
-  position:absolute;top:14px;right:14px;
-  font-size:10px;font-weight:700;padding:3px 8px;
-  border-radius:50px;text-transform:uppercase;letter-spacing:0.5px;z-index:2;
+  position:absolute;top:12px;right:12px;
+  font-size:9.5px;font-weight:700;padding:2px 7px;
+  border-radius:50px;text-transform:uppercase;letter-spacing:.5px;z-index:2;
 }
-.badge-popular{background:rgba(244,63,94,0.15);color:var(--rose-400);border:1px solid rgba(244,63,94,0.25);}
-.badge-new{background:rgba(16,185,129,0.15);color:var(--emerald-400);border:1px solid rgba(16,185,129,0.25);}
-.badge-soon{background:rgba(255,255,255,0.06);color:var(--text-3);border:1px solid var(--border);}
-
-/* WHY SECTION */
+.badge-popular{background:rgba(244,63,94,.15);color:var(--rose-400);border:1px solid rgba(244,63,94,.25)}
+.badge-new{background:rgba(16,185,129,.15);color:var(--emerald-400);border:1px solid rgba(16,185,129,.25)}
+.badge-soon{background:rgba(255,255,255,.06);color:var(--text-3);border:1px solid var(--border)}
+/* ═══════════════════════════════════════════════
+   WHY SECTION
+═══════════════════════════════════════════════ */
 .why-section{
-  background:var(--bg-2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);
-  padding:72px 28px;
+  background:var(--bg-2);border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);padding:72px 28px;
 }
-.why-inner{max-width:1280px;margin:auto;}
-.why-header{text-align:center;margin-bottom:52px;}
-.why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px;}
+.why-inner{max-width:1280px;margin:auto}
+.why-header{text-align:center;margin-bottom:48px}
+.why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px}
 .why-card{
-  padding:32px 28px;background:var(--bg);border:1px solid var(--border);
-  border-radius:0;transition:background var(--t);
+  padding:30px 26px;background:var(--bg);border:1px solid var(--border);
+  transition:background var(--t);
 }
-.why-card:first-child{border-radius:var(--r-xl) 0 0 var(--r-xl);}
-.why-card:last-child{border-radius:0 var(--r-xl) var(--r-xl) 0;}
-@media(max-width:900px){.why-card{border-radius:var(--r-xl)!important;}.why-grid{gap:12px;}}
-.why-card:hover{background:var(--bg-3);}
-.why-icon{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px;}
-.why-card:nth-child(1) .why-icon{background:rgba(59,130,246,0.12);}
-.why-card:nth-child(2) .why-icon{background:rgba(245,158,11,0.12);}
-.why-card:nth-child(3) .why-icon{background:rgba(16,185,129,0.12);}
-.why-card:nth-child(4) .why-icon{background:rgba(139,92,246,0.12);}
-.why-name{font-size:15px;font-weight:700;margin-bottom:8px;letter-spacing:-0.2px;}
-.why-desc{font-size:13px;color:var(--text-2);line-height:1.65;}
-
-/* MODAL */
+.why-card:first-child{border-radius:var(--r-xl) 0 0 var(--r-xl)}
+.why-card:last-child{border-radius:0 var(--r-xl) var(--r-xl) 0}
+@media(max-width:900px){.why-card{border-radius:var(--r-xl)!important}.why-grid{gap:12px}}
+.why-card:hover{background:var(--bg-3)}
+.why-icon{
+  width:46px;height:46px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px;
+}
+.why-card:nth-child(1) .why-icon{background:rgba(59,130,246,.12)}
+.why-card:nth-child(2) .why-icon{background:rgba(245,158,11,.12)}
+.why-card:nth-child(3) .why-icon{background:rgba(16,185,129,.12)}
+.why-card:nth-child(4) .why-icon{background:rgba(139,92,246,.12)}
+.why-name{font-size:15px;font-weight:700;margin-bottom:7px;letter-spacing:-.2px}
+.why-desc{font-size:13px;color:var(--text-2);line-height:1.65}
+/* ═══════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════ */
 .modal-overlay{
   display:none;position:fixed;inset:0;z-index:1000;
-  background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);
+  background:rgba(0,0,0,.72);backdrop-filter:blur(8px);
   align-items:center;justify-content:center;padding:20px;
 }
-.modal-overlay.open{display:flex;animation:fade-in .15s ease;}
-@keyframes fade-in{from{opacity:0}to{opacity:1}}
+.modal-overlay.open{display:flex;animation:fi .15s ease}
+@keyframes fi{from{opacity:0}to{opacity:1}}
 .modal{
   background:var(--bg-2);border:1px solid var(--border);
-  border-radius:var(--r-2xl);padding:32px;
-  max-width:520px;width:100%;max-height:90vh;overflow-y:auto;
-  box-shadow:var(--sh-xl);animation:slide-up .22s var(--ease);
-  position:relative;
+  border-radius:var(--r-2xl);padding:32px;max-width:520px;width:100%;
+  max-height:90vh;overflow-y:auto;
+  box-shadow:var(--sh-xl);animation:su .22s var(--ease);position:relative;
 }
-@keyframes slide-up{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes su{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal::-webkit-scrollbar{width:4px}
+.modal::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .modal-close{
-  position:absolute;top:16px;right:16px;
-  width:32px;height:32px;border-radius:var(--r-sm);
-  border:1px solid var(--border);background:var(--bg-3);
-  color:var(--text-2);font-size:14px;
-  display:flex;align-items:center;justify-content:center;
-  transition:all var(--t);
+  position:absolute;top:16px;right:16px;width:32px;height:32px;
+  border-radius:var(--r-sm);border:1px solid var(--border);
+  background:var(--bg-3);color:var(--text-2);font-size:14px;
+  display:flex;align-items:center;justify-content:center;transition:all var(--t);
 }
-.modal-close:hover{background:var(--bg-3);color:var(--text);border-color:var(--rose-500);}
-.modal-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;}
+.modal-close:hover{color:var(--text);border-color:var(--rose-400)}
+.modal-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}
 .modal-icon{
-  width:44px;height:44px;border-radius:12px;
-  background:rgba(59,130,246,0.15);
-  display:flex;align-items:center;justify-content:center;
-  font-size:22px;flex-shrink:0;
+  width:44px;height:44px;border-radius:12px;background:rgba(59,130,246,.15);
+  display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;
 }
-.modal-title{font-family:var(--font-h);font-size:20px;font-weight:800;letter-spacing:-0.4px;margin-bottom:4px;}
-.modal-desc{font-size:13px;color:var(--text-2);line-height:1.6;}
+.modal-title{font-family:var(--font-h);font-size:20px;font-weight:800;letter-spacing:-.4px;margin-bottom:4px}
+.modal-desc{font-size:13px;color:var(--text-2);line-height:1.6}
+/* Drop zone */
 .drop-zone{
-  border:2px dashed var(--border);border-radius:var(--r-lg);
-  padding:32px 20px;text-align:center;cursor:pointer;
-  background:var(--bg);
+  border:2px dashed var(--border);border-radius:var(--r-lg);padding:32px 20px;
+  text-align:center;cursor:pointer;background:var(--bg);
   transition:border-color var(--t),background var(--t),box-shadow var(--t);
 }
 .drop-zone:hover,.drop-zone.dragover{
-  border-color:var(--accent);
-  background:rgba(59,130,246,0.05);
-  box-shadow:0 0 0 4px rgba(59,130,246,0.08);
+  border-color:var(--accent);background:rgba(59,130,246,.05);
+  box-shadow:0 0 0 4px rgba(59,130,246,.08);
 }
-.drop-zone input{display:none;}
-.dz-icon{font-size:32px;margin-bottom:10px;display:block;}
-.dz-text{font-size:14px;color:var(--text-2);line-height:1.6;}
-.dz-text strong{color:var(--accent);}
-.dz-hint{font-size:11.5px;color:var(--text-3);margin-top:4px;}
-.file-list{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+.drop-zone input{display:none}
+.dz-icon{font-size:32px;margin-bottom:10px;display:block}
+.dz-text{font-size:14px;color:var(--text-2);line-height:1.6}
+.dz-text strong{color:var(--accent)}
+.dz-hint{font-size:11.5px;color:var(--text-3);margin-top:4px}
+/* File list */
+.file-list{margin-top:10px;display:flex;flex-direction:column;gap:6px}
 .file-item{
-  display:flex;align-items:center;gap:10px;
-  background:var(--bg);border:1px solid var(--border);
-  border-radius:var(--r-sm);padding:9px 12px;font-size:13px;
-  animation:slide-in .15s ease;
+  display:flex;align-items:center;gap:10px;background:var(--bg);
+  border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:9px 12px;font-size:13px;animation:sli .15s ease;
 }
-@keyframes slide-in{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
-.file-icon{width:28px;height:28px;border-radius:6px;background:rgba(59,130,246,0.1);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
-.file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;}
-.file-size{color:var(--text-3);font-size:11.5px;flex-shrink:0;}
-.file-del{background:none;border:none;color:var(--text-3);font-size:14px;padding:2px 4px;transition:color var(--t);}
-.file-del:hover{color:var(--rose-400);}
-.form-group{margin-top:16px;}
-.form-label{display:block;font-size:11.5px;font-weight:600;color:var(--text-3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;}
+@keyframes sli{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+.file-icon{width:28px;height:28px;border-radius:6px;background:rgba(59,130,246,.1);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.file-size{color:var(--text-3);font-size:11.5px;flex-shrink:0}
+.file-del{background:none;border:none;color:var(--text-3);font-size:14px;padding:2px 4px;transition:color var(--t)}
+.file-del:hover{color:var(--rose-400)}
+/* Form elements */
+.form-group{margin-top:16px}
+.form-label{display:block;font-size:11.5px;font-weight:600;color:var(--text-3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
 .form-input,.form-select{
-  width:100%;padding:9px 13px;
-  border:1.5px solid var(--border);border-radius:var(--r-sm);
+  width:100%;padding:9px 13px;border:1.5px solid var(--border);border-radius:var(--r-sm);
   background:var(--bg);color:var(--text);font-size:14px;outline:none;
   transition:border-color var(--t),box-shadow var(--t);
 }
-.form-input:focus,.form-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,0.12);}
-.form-select option{background:var(--bg-2);}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.form-hint{font-size:11px;color:var(--text-3);margin-top:4px;}
-.radio-group{display:flex;gap:6px;flex-wrap:wrap;}
+.form-input:focus,.form-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+.form-select option{background:var(--bg-2)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-hint{font-size:11px;color:var(--text-3);margin-top:4px}
+.radio-group{display:flex;gap:6px;flex-wrap:wrap}
 .radio-chip{
   padding:6px 13px;border:1.5px solid var(--border);border-radius:50px;
   font-size:12.5px;font-weight:500;color:var(--text-2);background:var(--bg);
   transition:all var(--t);cursor:pointer;user-select:none;
 }
-.radio-chip:hover{border-color:var(--accent);color:var(--accent);}
-.radio-chip.active{border-color:var(--accent);color:var(--accent);background:rgba(59,130,246,0.1);font-weight:600;}
+.radio-chip:hover{border-color:var(--accent);color:var(--accent)}
+.radio-chip.active{border-color:var(--accent);color:var(--accent);background:rgba(59,130,246,.1);font-weight:600}
+/* Buttons */
 .btn-process{
   width:100%;margin-top:20px;padding:13px;
   background:linear-gradient(135deg,var(--blue-600),var(--violet-600));
-  color:#fff;border:none;border-radius:var(--r);
-  font-size:14.5px;font-weight:700;
+  color:#fff;border:none;border-radius:var(--r);font-size:14.5px;font-weight:700;
   display:flex;align-items:center;justify-content:center;gap:8px;
-  box-shadow:0 4px 20px rgba(37,99,235,0.35);
+  box-shadow:0 4px 20px rgba(37,99,235,.35);
   transition:transform var(--t),box-shadow var(--t),opacity var(--t);
   position:relative;overflow:hidden;
 }
-.btn-process:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 30px rgba(37,99,235,0.45);}
-.btn-process:disabled{opacity:0.5;cursor:not-allowed;transform:none;box-shadow:none;}
-.btn-process::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.1);opacity:0;transition:opacity .15s;}
-.btn-process:active::after{opacity:1;}
-
-/* ✅ FIXED DOWNLOAD BUTTON — always starts hidden, JS shows it */
+.btn-process:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 30px rgba(37,99,235,.45)}
+.btn-process:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
 .btn-download{
   width:100%;margin-top:8px;padding:13px;
-  background:rgba(16,185,129,0.15);border:1.5px solid rgba(16,185,129,0.3);
-  color:var(--emerald-400);border-radius:var(--r);
-  font-size:14.5px;font-weight:700;
-  align-items:center;justify-content:center;gap:8px;
+  background:rgba(16,185,129,.15);border:1.5px solid rgba(16,185,129,.3);
+  color:var(--emerald-400);border-radius:var(--r);font-size:14.5px;font-weight:700;
+  align-items:center;justify-content:center;gap:8px;display:none;
   transition:all var(--t);
-  display:none; /* hidden by default */
 }
-.btn-download:hover{background:rgba(16,185,129,0.25);border-color:rgba(16,185,129,0.6);transform:translateY(-1px);}
-
-.progress-block{margin-top:18px;display:none;}
-.progress-block.show{display:block;}
-.progress-track{height:4px;background:var(--bg-3);border-radius:50px;overflow:hidden;margin-bottom:10px;}
+.btn-download:hover{background:rgba(16,185,129,.25);border-color:rgba(16,185,129,.6);transform:translateY(-1px)}
+/* Progress */
+.progress-block{margin-top:18px;display:none}
+.progress-block.show{display:block}
+.progress-track{height:4px;background:var(--bg-3);border-radius:50px;overflow:hidden;margin-bottom:10px}
 .progress-fill{
   height:100%;width:0;border-radius:50px;
   background:linear-gradient(90deg,var(--blue-600),var(--violet-500));
-  transition:width .3s ease;
-  box-shadow:0 0 10px rgba(59,130,246,0.6);
+  transition:width .3s ease;box-shadow:0 0 10px rgba(59,130,246,.6);
 }
-.progress-status{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-2);}
-.dot-loader{display:flex;gap:3px;align-items:center;}
-.dot-loader span{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:dot-bounce .9s ease-in-out infinite;}
-.dot-loader span:nth-child(2){animation-delay:.15s;}
-.dot-loader span:nth-child(3){animation-delay:.3s;}
-@keyframes dot-bounce{0%,80%,100%{transform:scale(0.6);opacity:.4;}40%{transform:scale(1);opacity:1;}}
-.result-block{margin-top:14px;display:none;}
-.result-block.show{display:block;}
-.result-inner{padding:14px 16px;border-radius:var(--r);border:1px solid;}
-.result-inner.success{background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.25);color:var(--emerald-400);}
-.result-inner.error{background:rgba(244,63,94,0.08);border-color:rgba(244,63,94,0.25);color:var(--rose-400);}
-[data-theme="light"] .result-inner.success{background:#F0FDF4;border-color:#BBF7D0;color:#15803D;}
-[data-theme="light"] .result-inner.error{background:#FFF1F2;border-color:#FECDD3;color:#BE123C;}
-.result-title{font-weight:700;font-size:13.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.result-meta{display:flex;flex-wrap:wrap;gap:6px;}
-.result-pill{font-size:11.5px;padding:3px 10px;border-radius:50px;font-weight:500;background:rgba(255,255,255,0.07);color:inherit;}
-[data-theme="light"] .result-pill{background:rgba(0,0,0,0.05);}
-.setup-box{margin-top:14px;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);display:none;}
-.setup-box.show{display:block;}
-.setup-box h4{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.setup-box p{font-size:12.5px;color:var(--text-2);margin-bottom:10px;line-height:1.6;}
+.progress-status{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-2)}
+.dot-loader{display:flex;gap:3px;align-items:center}
+.dot-loader span{
+  width:5px;height:5px;border-radius:50%;background:var(--accent);
+  animation:db .9s ease-in-out infinite;
+}
+.dot-loader span:nth-child(2){animation-delay:.15s}
+.dot-loader span:nth-child(3){animation-delay:.3s}
+@keyframes db{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+/* Result */
+.result-block{margin-top:14px;display:none}
+.result-block.show{display:block}
+.result-inner{padding:14px 16px;border-radius:var(--r);border:1px solid}
+.result-inner.success{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);color:var(--emerald-400)}
+.result-inner.error{background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.25);color:var(--rose-400)}
+[data-theme="light"] .result-inner.success{background:#F0FDF4;border-color:#BBF7D0;color:#15803D}
+[data-theme="light"] .result-inner.error{background:#FFF1F2;border-color:#FECDD3;color:#BE123C}
+.result-title{font-weight:700;font-size:13.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.result-meta{display:flex;flex-wrap:wrap;gap:6px}
+.result-pill{font-size:11.5px;padding:3px 10px;border-radius:50px;font-weight:500;background:rgba(255,255,255,.07);color:inherit}
+[data-theme="light"] .result-pill{background:rgba(0,0,0,.05)}
+.setup-box{margin-top:14px;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);display:none}
+.setup-box.show{display:block}
+.setup-box h4{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.setup-box p{font-size:12.5px;color:var(--text-2);margin-bottom:10px;line-height:1.6}
 .code-block{
-  background:var(--ink-900);color:#93C5FD;
-  border-radius:var(--r-sm);padding:12px 14px;
-  font-family:'Fira Code','JetBrains Mono','Courier New',monospace;
-  font-size:11.5px;line-height:1.75;overflow-x:auto;white-space:pre;
-  border:1px solid var(--border);
+  background:var(--ink-900);color:#93C5FD;border-radius:var(--r-sm);
+  padding:12px 14px;font-family:'Fira Code','JetBrains Mono','Courier New',monospace;
+  font-size:11.5px;line-height:1.75;overflow-x:auto;white-space:pre;border:1px solid var(--border);
 }
-[data-theme="light"] .code-block{background:#0F172A;color:#93C5FD;}
-
-/* FOOTER */
-footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28px 32px;}
-.footer-inner{max-width:1280px;margin:auto;}
-.footer-grid{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px;}
-.footer-brand-name{font-family:var(--font-h);font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:12px;}
-.footer-brand-mark{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--blue-600),var(--violet-500));display:flex;align-items:center;justify-content:center;font-size:14px;}
-.footer-brand-desc{font-size:13px;color:var(--text-2);line-height:1.7;max-width:260px;}
-.footer-tagline{font-size:11.5px;color:var(--text-3);margin-top:12px;padding:8px 12px;background:var(--bg-3);border-radius:var(--r-sm);border-left:3px solid var(--accent);display:inline-block;font-style:italic;}
-.footer-col-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);margin-bottom:14px;}
-.footer-col a{display:block;font-size:13px;color:var(--text-2);margin-bottom:9px;transition:color var(--t);}
-.footer-col a:hover{color:var(--accent);}
-.footer-bottom{border-top:1px solid var(--border);padding-top:24px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-3);flex-wrap:wrap;gap:10px;}
-.footer-bottom a{color:var(--text-3);transition:color var(--t);}
-.footer-bottom a:hover{color:var(--text-2);}
-
-/* TOAST */
+[data-theme="light"] .code-block{background:#0F172A;color:#93C5FD}
+/* ═══════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════ */
+footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28px 32px}
+.footer-inner{max-width:1280px;margin:auto}
+.footer-grid{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px}
+.footer-brand-name{
+  font-family:var(--font-h);font-size:18px;font-weight:800;
+  display:flex;align-items:center;gap:8px;margin-bottom:12px;
+}
+.footer-brand-mark{
+  width:28px;height:28px;border-radius:7px;
+  background:linear-gradient(135deg,var(--blue-600),var(--violet-500));
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.footer-brand-desc{font-size:13px;color:var(--text-2);line-height:1.7;max-width:260px}
+.footer-tagline{
+  font-size:11.5px;color:var(--text-3);margin-top:12px;padding:8px 12px;
+  background:var(--bg-3);border-radius:var(--r-sm);border-left:3px solid var(--accent);
+  display:inline-block;font-style:italic;
+}
+.footer-col-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:14px}
+.footer-col a{display:block;font-size:13px;color:var(--text-2);margin-bottom:9px;transition:color var(--t)}
+.footer-col a:hover{color:var(--accent)}
+.footer-bottom{
+  border-top:1px solid var(--border);padding-top:24px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:12px;color:var(--text-3);flex-wrap:wrap;gap:10px;
+}
+.footer-bottom a{color:var(--text-3);transition:color var(--t)}
+.footer-bottom a:hover{color:var(--text-2)}
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
 .toast{
   position:fixed;bottom:24px;right:24px;z-index:9999;
-  padding:12px 16px 12px 14px;border-radius:var(--r);
-  font-size:13.5px;font-weight:500;max-width:320px;
-  box-shadow:var(--sh-lg);border:1px solid var(--border);
-  background:var(--bg-2);color:var(--text);
-  display:flex;align-items:flex-start;gap:10px;
+  padding:12px 16px 12px 14px;border-radius:var(--r);font-size:13.5px;font-weight:500;
+  max-width:320px;box-shadow:var(--sh-lg);border:1px solid var(--border);
+  background:var(--bg-2);color:var(--text);display:flex;align-items:flex-start;gap:10px;
   transform:translateY(16px);opacity:0;
   transition:transform .3s var(--ease),opacity .3s ease;pointer-events:none;
 }
-.toast.show{transform:translateY(0);opacity:1;}
-.toast-bar{width:3px;border-radius:2px;align-self:stretch;flex-shrink:0;}
-.toast.success .toast-bar{background:var(--emerald-400);}
-.toast.error .toast-bar{background:var(--rose-400);}
-
-/* RESPONSIVE */
-@media(max-width:1024px){.footer-grid{grid-template-columns:1fr 1fr;}}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-bar{width:3px;border-radius:2px;align-self:stretch;flex-shrink:0}
+.toast.success .toast-bar{background:var(--emerald-400)}
+.toast.error .toast-bar{background:var(--rose-400)}
+/* ═══════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════ */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════ */
+@media(max-width:1024px){.footer-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:768px){
-  .hero{padding:72px 20px 80px;}
-  .hero h1{letter-spacing:-1px;}
-  .hero-stats{gap:0;overflow-x:auto;}
-  .nav-links{display:none;}
-  .tools-grid{grid-template-columns:repeat(2,1fr);}
-  .form-row{grid-template-columns:1fr;}
-  .footer-grid{grid-template-columns:1fr 1fr;}
+  .hero{padding:72px 20px 80px}
+  .hero h1{letter-spacing:-1px}
+  .hero-stats{overflow-x:auto}
+  .tools-grid{grid-template-columns:repeat(2,1fr)}
+  .form-row{grid-template-columns:1fr}
+  .footer-grid{grid-template-columns:1fr 1fr}
+  .qa-grid{flex-direction:column;align-items:center}
+  .qa-card{width:100%;max-width:300px;justify-content:center}
 }
 @media(max-width:480px){
-  .tools-grid{grid-template-columns:1fr;}
-  .footer-grid{grid-template-columns:1fr;}
-  .hero-ctas{flex-direction:column;align-items:center;}
-  .btn-hero-primary,.btn-hero-secondary{width:100%;max-width:280px;justify-content:center;}
-  .modal{padding:22px 16px;border-radius:var(--r-xl);}
+  .tools-grid{grid-template-columns:1fr}
+  .footer-grid{grid-template-columns:1fr}
+  .hero-ctas{flex-direction:column;align-items:center}
+  .btn-hero-p,.btn-hero-s{width:100%;max-width:280px;justify-content:center}
+  .modal{padding:22px 16px;border-radius:var(--r-xl)}
 }
-.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
-.reveal.visible{opacity:1;transform:translateY(0);}
 </style>
 </head>
 <body>
-
+<!-- ═══════════════════════════════════════════
+     MEGA NAVBAR
+═══════════════════════════════════════════ -->
 <nav class="nav" role="banner">
   <div class="nav-inner">
+    <!-- Logo -->
     <a class="nav-logo" href="#" aria-label="PDFWala Home">
       <div class="nav-logo-mark">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       </div>
       PDF<span class="dot">Wala</span>
     </a>
-    <div class="nav-links">
-      <a href="#tools" class="nav-link">Tools</a>
-      <a href="#why" class="nav-link">Why PDFWala</a>
+    <!-- Desktop nav -->
+    <div class="nav-links" id="navLinks">
+      <!-- PDF to Anything -->
+      <div class="nav-item" data-mega>
+        <button class="nav-btn">
+          PDF to Anything
+          <svg class="chv" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 4.5L6 7.5L9 4.5"/></svg>
+        </button>
+        <div class="mega-drop mega-wide">
+          <div class="mega-cols c4">
+            <div>
+              <div class="mega-col-hd blue">📦 Organize</div>
+              <a class="mm-link" onclick="openTool('merge')"><span class="mli">🔗</span>Merge PDF<span class="mm-badge mb-pop">Popular</span><span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('split')"><span class="mli">✂️</span>Split PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('organize')"><span class="mli">📋</span>Organize PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('remove-pages')"><span class="mli">🗑️</span>Remove Pages<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('extract-pages')"><span class="mli">📤</span>Extract Pages<span class="mla">→</span></a>
+            </div>
+            <div>
+              <div class="mega-col-hd green">⚡ Optimize</div>
+              <a class="mm-link" onclick="openTool('compress')"><span class="mli">🗜️</span>Compress PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('repair-pdf')"><span class="mli">🔧</span>Repair PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('ocr-pdf')"><span class="mli">🔍</span>OCR PDF<span class="mla">→</span></a>
+              <div style="height:12px"></div>
+              <div class="mega-col-hd amber">📥 To PDF</div>
+              <a class="mm-link" onclick="openTool('image-to-pdf')"><span class="mli">📷</span>Image to PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('word-to-pdf')"><span class="mli">📝</span>Word to PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('excel-to-pdf')"><span class="mli">📊</span>Excel to PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('html-to-pdf')"><span class="mli">🌐</span>HTML to PDF<span class="mla">→</span></a>
+            </div>
+            <div>
+              <div class="mega-col-hd violet">📤 From PDF</div>
+              <a class="mm-link" onclick="openTool('pdf-to-image')"><span class="mli">🖼️</span>PDF to Image<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('pdf-to-word')"><span class="mli">📝</span>PDF to Word<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('pdf-to-excel')"><span class="mli">📊</span>PDF to Excel<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('pdf-to-ppt')"><span class="mli">📑</span>PDF to PPT<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('pdf-to-pdfa')"><span class="mli">📜</span>PDF to PDF/A<span class="mla">→</span></a>
+            </div>
+            <div>
+              <div class="mega-col-hd amber">✏️ Edit</div>
+              <a class="mm-link" onclick="openTool('rotate')"><span class="mli">🔄</span>Rotate PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('watermark')"><span class="mli">💧</span>Watermark<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('page-numbers')"><span class="mli">🔢</span>Page Numbers<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('crop')"><span class="mli">📐</span>Crop PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('info')"><span class="mli">ℹ️</span>PDF Info<span class="mla">→</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Image to Anything -->
+      <div class="nav-item" data-mega>
+        <button class="nav-btn">
+          Image Tools
+          <svg class="chv" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 4.5L6 7.5L9 4.5"/></svg>
+        </button>
+        <div class="mega-drop mega-mid">
+          <div class="mega-cols c2">
+            <div>
+              <div class="mega-col-hd cyan">🔄 Convert</div>
+              <a class="mm-link" onclick="openTool('image-to-pdf')"><span class="mli">📷</span>Image to PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('jpg-to-pdf')"><span class="mli">🟨</span>JPG to PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('webp-to-jpg')"><span class="mli">🔄</span>WebP to JPG<span class="mm-badge mb-new">New</span><span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('png-to-jpg')"><span class="mli">🔄</span>PNG to JPG<span class="mm-badge mb-new">New</span><span class="mla">→</span></a>
+            </div>
+            <div>
+              <div class="mega-col-hd violet">🛠️ Tools</div>
+              <a class="mm-link" onclick="openTool('compress-image')"><span class="mli">🗜️</span>Compress Image<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('resize-image')"><span class="mli">📏</span>Resize Image<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('image-to-word')"><span class="mli">📝</span>Image to Word<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('image-to-excel')"><span class="mli">📊</span>Image to Excel<span class="mla">→</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Word to Anything -->
+      <div class="nav-item" data-mega>
+        <button class="nav-btn">
+          Word to Anything
+          <svg class="chv" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 4.5L6 7.5L9 4.5"/></svg>
+        </button>
+        <div class="mega-drop mega-mid">
+          <div class="mega-cols c3">
+            <div>
+              <div class="mega-col-hd amber">📝 CONVERT</div>
+              <a class="mm-link" onclick="openTool('word-to-pdf')"><span class="mli">📄</span>Word to PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('word-to-jpg')"><span class="mli">🖼️</span>Word to JPG<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('word-to-png')"><span class="mli">🖼️</span>Word to PNG<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('word-to-txt')"><span class="mli">📝</span>Word to TXT<span class="mla">→</span></a>
+            </div>
+            <div>
+              <div class="mega-col-hd cyan">📤 FROM WORD</div>
+              <a class="mm-link" onclick="openTool('word-to-excel')"><span class="mli">📊</span>Word to Excel<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('word-to-ppt')"><span class="mli">📑</span>Word to PPT<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('word-to-html')"><span class="mli">🌐</span>Word to HTML<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('word-to-json')"><span class="mli">🔄</span>Word to JSON<span class="mla">→</span></a>
+            </div>
+            <div>
+              <div class="mega-col-hd violet">🔧 TOOLS</div>
+              <a class="mm-link" onclick="openTool('compress-word')"><span class="mli">🗜️</span>Compress Word<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('protect-word')"><span class="mli">🔒</span>Protect Word<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('unlock-word')"><span class="mli">🔓</span>Unlock Word<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('edit-word')"><span class="mli">✏️</span>Edit Word<span class="mla">→</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Excel to Anything -->
+      <div class="nav-item" data-mega>
+        <button class="nav-btn">
+          Excel to Anything
+          <svg class="chv" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 4.5L6 7.5L9 4.5"/></svg>
+        </button>
+        <div class="mega-drop mega-mid">
+          <div class="mega-cols c3">
+            <div>
+              <div class="mega-col-hd green">📊 CONVERT</div>
+              <a class="mm-link" onclick="openTool('excel-to-pdf')"><span class="mli">📄</span>Excel to PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('excel-to-csv')"><span class="mli">📋</span>Excel to CSV<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('excel-to-jpg')"><span class="mli">🖼️</span>Excel to JPG<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('excel-to-png')"><span class="mli">🖼️</span>Excel to PNG<span class="mla">→</span></a>
+            </div>
+            <div>
+              <div class="mega-col-hd cyan">📤 FROM EXCEL</div>
+              <a class="mm-link" onclick="openTool('excel-to-word')"><span class="mli">📝</span>Excel to Word<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('excel-to-ppt')"><span class="mli">📑</span>Excel to PPT<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('excel-to-html')"><span class="mli">🌐</span>Excel to HTML<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('excel-to-json')"><span class="mli">🔄</span>Excel to JSON<span class="mla">→</span></a>
+            </div>
+            <div>
+              <div class="mega-col-hd violet">🔧 TOOLS</div>
+              <a class="mm-link" onclick="openTool('compress-excel')"><span class="mli">🗜️</span>Compress Excel<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('protect-excel')"><span class="mli">🔒</span>Protect Excel<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('unlock-excel')"><span class="mli">🔓</span>Unlock Excel<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('repair-excel')"><span class="mli">🔧</span>Repair Excel<span class="mla">→</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Security -->
+      <div class="nav-item" data-mega>
+        <button class="nav-btn">
+          Security
+          <svg class="chv" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 4.5L6 7.5L9 4.5"/></svg>
+        </button>
+        <div class="mega-drop mega-mid">
+          <div class="mega-cols c2">
+            <div>
+              <div class="mega-col-hd green">🔒 Protect</div>
+              <a class="mm-link" onclick="openTool('protect')"><span class="mli">🔒</span>Protect PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('unlock')"><span class="mli">🔓</span>Unlock PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('protect-word')"><span class="mli">🔒</span>Protect Word<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('protect-excel')"><span class="mli">🔒</span>Protect Excel<span class="mla">→</span></a>
+            </div>
+            <div>
+              <div class="mega-col-hd rose">🔐 Advanced</div>
+              <a class="mm-link" onclick="openTool('sign-pdf')"><span class="mli">✍️</span>Sign PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('redact-pdf')"><span class="mli">🖊️</span>Redact PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('compare-pdf')"><span class="mli">⚖️</span>Compare PDF<span class="mla">→</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- All Tools direct link -->
+      <button class="nav-btn all-tools" onclick="document.getElementById('tools').scrollIntoView({behavior:'smooth'})">
+        All Tools
+      </button>
     </div>
+    <!-- Right side -->
     <div class="nav-right">
       <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle theme">🌙</button>
       <button class="nav-cta" onclick="document.getElementById('tools').scrollIntoView({behavior:'smooth'})">Start Processing</button>
+      <button class="mob-btn" onclick="toggleMob()" id="mobBtn" aria-label="Menu">☰</button>
     </div>
   </div>
 </nav>
-
+<!-- Mobile nav drawer -->
+<div class="mob-nav" id="mobNav">
+  <div class="mob-section">
+    <button class="mob-section-btn" onclick="toggleMobSec(this)">
+      📄 PDF Tools
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
+    <div class="mob-sub"><div class="mob-sub-inner">
+      <div class="mob-cat">Organize</div>
+      <a class="mob-link" onclick="openTool('merge');closeMob()">Merge PDF</a>
+      <a class="mob-link" onclick="openTool('split');closeMob()">Split PDF</a>
+      <a class="mob-link" onclick="openTool('organize');closeMob()">Organize PDF</a>
+      <a class="mob-link" onclick="openTool('remove-pages');closeMob()">Remove Pages</a>
+      <a class="mob-link" onclick="openTool('extract-pages');closeMob()">Extract Pages</a>
+      <div class="mob-cat">Optimize</div>
+      <a class="mob-link" onclick="openTool('compress');closeMob()">Compress PDF</a>
+      <a class="mob-link" onclick="openTool('repair-pdf');closeMob()">Repair PDF</a>
+      <div class="mob-cat">Edit</div>
+      <a class="mob-link" onclick="openTool('rotate');closeMob()">Rotate PDF</a>
+      <a class="mob-link" onclick="openTool('watermark');closeMob()">Watermark</a>
+      <a class="mob-link" onclick="openTool('page-numbers');closeMob()">Page Numbers</a>
+      <a class="mob-link" onclick="openTool('crop');closeMob()">Crop PDF</a>
+      <a class="mob-link" onclick="openTool('info');closeMob()">PDF Info</a>
+      <div class="mob-cat">Convert</div>
+      <a class="mob-link" onclick="openTool('image-to-pdf');closeMob()">Image to PDF</a>
+      <a class="mob-link" onclick="openTool('pdf-to-image');closeMob()">PDF to Image</a>
+    </div></div>
+  </div>
+  <div class="mob-section">
+    <button class="mob-section-btn" onclick="toggleMobSec(this)">
+      🔐 Security
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
+    <div class="mob-sub"><div class="mob-sub-inner">
+      <a class="mob-link" onclick="openTool('protect');closeMob()">Protect PDF</a>
+      <a class="mob-link" onclick="openTool('unlock');closeMob()">Unlock PDF</a>
+    </div></div>
+  </div>
+  <div class="mob-section">
+    <button class="mob-section-btn" onclick="toggleMobSec(this)">
+      📝 Word Tools
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
+    <div class="mob-sub"><div class="mob-sub-inner">
+      <a class="mob-link" onclick="openTool('word-to-pdf');closeMob()">Word to PDF</a>
+      <a class="mob-link" onclick="openTool('word-to-jpg');closeMob()">Word to JPG</a>
+      <a class="mob-link" onclick="openTool('word-to-png');closeMob()">Word to PNG</a>
+      <a class="mob-link" onclick="openTool('word-to-txt');closeMob()">Word to TXT</a>
+      <a class="mob-link" onclick="openTool('word-to-excel');closeMob()">Word to Excel</a>
+      <a class="mob-link" onclick="openTool('word-to-ppt');closeMob()">Word to PPT</a>
+      <a class="mob-link" onclick="openTool('word-to-html');closeMob()">Word to HTML</a>
+      <a class="mob-link" onclick="openTool('word-to-json');closeMob()">Word to JSON</a>
+      <a class="mob-link" onclick="openTool('compress-word');closeMob()">Compress Word</a>
+      <a class="mob-link" onclick="openTool('protect-word');closeMob()">Protect Word</a>
+      <a class="mob-link" onclick="openTool('unlock-word');closeMob()">Unlock Word</a>
+      <a class="mob-link" onclick="openTool('edit-word');closeMob()">Edit Word</a>
+    </div></div>
+  </div>
+  <div class="mob-section">
+    <button class="mob-section-btn" onclick="toggleMobSec(this)">
+      📊 Excel Tools
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
+    <div class="mob-sub"><div class="mob-sub-inner">
+      <a class="mob-link" onclick="openTool('excel-to-pdf');closeMob()">Excel to PDF</a>
+      <a class="mob-link" onclick="openTool('excel-to-csv');closeMob()">Excel to CSV</a>
+      <a class="mob-link" onclick="openTool('excel-to-jpg');closeMob()">Excel to JPG</a>
+      <a class="mob-link" onclick="openTool('excel-to-png');closeMob()">Excel to PNG</a>
+      <a class="mob-link" onclick="openTool('excel-to-word');closeMob()">Excel to Word</a>
+      <a class="mob-link" onclick="openTool('excel-to-ppt');closeMob()">Excel to PPT</a>
+      <a class="mob-link" onclick="openTool('excel-to-html');closeMob()">Excel to HTML</a>
+      <a class="mob-link" onclick="openTool('excel-to-json');closeMob()">Excel to JSON</a>
+      <a class="mob-link" onclick="openTool('compress-excel');closeMob()">Compress Excel</a>
+      <a class="mob-link" onclick="openTool('protect-excel');closeMob()">Protect Excel</a>
+      <a class="mob-link" onclick="openTool('unlock-excel');closeMob()">Unlock Excel</a>
+      <a class="mob-link" onclick="openTool('repair-excel');closeMob()">Repair Excel</a>
+    </div></div>
+  </div>
+  <div class="mob-section" style="border-bottom:none">
+    <a class="mob-link" style="font-size:15px;font-weight:600;padding:14px 0" onclick="document.getElementById('tools').scrollIntoView({behavior:'smooth'});closeMob()">🧰 All Tools</a>
+  </div>
+</div>
+<!-- ═══════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════ -->
 <section class="hero" role="main">
   <div class="hero-mesh" aria-hidden="true"></div>
   <div class="hero-grid" aria-hidden="true"></div>
   <div class="hero-floats" aria-hidden="true">
-    <div class="float-card fc1">
-      <span class="fc-icon">📄</span>
-      <div>
-        <div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:3px;">report_final.pdf</div>
-        <div class="fc-bar"><span style="width:75%;background:linear-gradient(90deg,var(--blue-500),var(--violet-500));"></span></div>
-      </div>
-    </div>
-    <div class="float-card fc2">
-      <span class="fc-icon">🗜️</span>
-      <div>
-        <div style="font-size:10px;font-weight:700;color:var(--emerald-400);margin-bottom:3px;">Compressed 68%</div>
-        <div class="fc-bar"><span style="width:32%;background:var(--emerald-500);"></span></div>
-      </div>
-    </div>
-    <div class="float-card fc3">
-      <span class="fc-icon">🔒</span>
-      <div style="font-size:10px;font-weight:600;color:var(--text-2);">Protected & Encrypted</div>
-    </div>
-    <div class="float-card fc4">
-      <span class="fc-icon">✅</span>
-      <div style="font-size:10px;font-weight:600;color:var(--emerald-400);">12 pages merged</div>
-    </div>
-    <div class="float-card fc5">
-      <span class="fc-icon">⚡</span>
-      <div style="font-size:10px;font-weight:600;color:var(--blue-400);">Processed in 0.4s</div>
-    </div>
+    <div class="float-card fc1"><span class="fc-icon">📄</span><div><div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:3px">report_final.pdf</div><div class="fc-bar"><span style="width:75%;background:linear-gradient(90deg,var(--blue-500),var(--violet-500))"></span></div></div></div>
+    <div class="float-card fc2"><span class="fc-icon">🗜️</span><div><div style="font-size:10px;font-weight:700;color:var(--emerald-400);margin-bottom:3px">Compressed 68%</div><div class="fc-bar"><span style="width:32%;background:var(--emerald-500)"></span></div></div></div>
+    <div class="float-card fc3"><span class="fc-icon">🔒</span><div style="font-size:10px;font-weight:600;color:var(--text-2)">Protected &amp; Encrypted</div></div>
+    <div class="float-card fc4"><span class="fc-icon">✅</span><div style="font-size:10px;font-weight:600;color:var(--emerald-400)">12 pages merged</div></div>
+    <div class="float-card fc5"><span class="fc-icon">⚡</span><div style="font-size:10px;font-weight:600;color:var(--blue-400)">Processed in 0.4s</div></div>
   </div>
   <div class="hero-content">
-    <div class="hero-badge">
-      <div class="badge-dot"></div>
-      Trusted by thousands daily
-    </div>
+    <div class="hero-badge"><div class="badge-dot"></div>Trusted by thousands daily</div>
     <h1>All-in-One<br/><span class="grad">PDF Tools</span></h1>
     <p class="hero-sub">Fast, secure, and free PDF processing — no limits, no sign-up. Your files stay yours.</p>
-    <div class="trust-badges">
-      <div class="trust-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Secure Processing</div>
-      <div class="trust-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Auto-Delete in 60 min</div>
-      <div class="trust-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>No Sign-up Required</div>
-      <div class="trust-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>100% Free Forever</div>
+    <div class="trust-row">
+      <div class="trust-pill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Secure Processing</div>
+      <div class="trust-pill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Auto-Delete 60 min</div>
+      <div class="trust-pill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>No Sign-up Required</div>
+      <div class="trust-pill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>100% Free Forever</div>
     </div>
     <div class="hero-ctas">
-      <button class="btn-hero-primary" onclick="document.getElementById('tools').scrollIntoView({behavior:'smooth'})">
+      <button class="btn-hero-p" onclick="document.getElementById('tools').scrollIntoView({behavior:'smooth'})">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         Start Using Tools
       </button>
-      <button class="btn-hero-secondary" onclick="document.getElementById('why').scrollIntoView({behavior:'smooth'})">
+      <button class="btn-hero-s" onclick="document.getElementById('why').scrollIntoView({behavior:'smooth'})">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
         Explore Features
       </button>
     </div>
     <div class="search-wrap">
       <input type="text" id="searchInput" placeholder="Search — merge, compress, watermark…" aria-label="Search PDF tools"/>
-      <div class="search-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      </div>
+      <div class="search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
     </div>
     <div class="hero-stats">
-      <div class="stat-item"><div class="stat-num"><span class="stat-accent">20</span>+</div><div class="stat-lbl">PDF Tools</div></div>
+      <div class="stat-item"><div class="stat-num"><span class="stat-accent">40</span>+</div><div class="stat-lbl">PDF Tools</div></div>
       <div class="stat-item"><div class="stat-num"><span class="stat-accent">100</span>%</div><div class="stat-lbl">Always Free</div></div>
       <div class="stat-item"><div class="stat-num"><span class="stat-accent">0</span></div><div class="stat-lbl">Accounts Needed</div></div>
       <div class="stat-item"><div class="stat-num"><span class="stat-accent">60</span>m</div><div class="stat-lbl">Auto File Delete</div></div>
     </div>
   </div>
 </section>
-
+<!-- ═══════════════════════════════════════════
+     QUICK ACTIONS
+═══════════════════════════════════════════ -->
+<section class="quick-section" id="quickActions">
+  <div class="qa-inner">
+    <div class="qa-header">
+      <h3 class="qa-title">Quick Actions</h3>
+      <p class="qa-sub">Most popular tools — one click away</p>
+    </div>
+    <div class="qa-grid">
+      <div class="qa-card" onclick="openTool('merge')"><span class="qa-icon">🔗</span>Merge PDF</div>
+      <div class="qa-card" onclick="openTool('compress')"><span class="qa-icon">🗜️</span>Compress PDF</div>
+      <div class="qa-card" onclick="openTool('pdf-to-word')"><span class="qa-icon">📝</span>PDF to Word</div>
+      <div class="qa-card" onclick="openTool('jpg-to-pdf')"><span class="qa-icon">📷</span>JPG to PDF</div>
+      <div class="qa-card" onclick="openTool('split')"><span class="qa-icon">✂️</span>Split PDF</div>
+      <div class="qa-card" onclick="openTool('protect')"><span class="qa-icon">🔒</span>Protect PDF</div>
+    </div>
+  </div>
+</section>
+<!-- ═══════════════════════════════════════════
+     CATEGORY TABS
+═══════════════════════════════════════════ -->
 <div class="tabs-bar" role="navigation" aria-label="Tool categories">
   <div class="tabs-inner">
     <button class="tab-btn active" onclick="filterCat('all',this)">All Tools</button>
@@ -691,9 +1039,13 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     <button class="tab-btn" onclick="filterCat('convert-from',this)">Convert from PDF</button>
     <button class="tab-btn" onclick="filterCat('edit',this)">Edit</button>
     <button class="tab-btn" onclick="filterCat('security',this)">Security</button>
+    <button class="tab-btn" onclick="filterCat('word',this)">Word Tools</button>
+    <button class="tab-btn" onclick="filterCat('excel',this)">Excel Tools</button>
   </div>
 </div>
-
+<!-- ═══════════════════════════════════════════
+     TOOLS GRID
+═══════════════════════════════════════════ -->
 <section class="tools-section" id="tools" aria-label="PDF Tools">
   <div class="section-header reveal">
     <div class="section-kicker">Toolkit</div>
@@ -701,736 +1053,227 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     <p class="section-sub">Click any tool to start — no account, no watermarks, no nonsense.</p>
   </div>
   <div class="tools-grid" id="toolsGrid" role="list">
-    <div class="tool-card c-blue" data-cat="organize" onclick="openTool('merge')" role="listitem">
-      <div class="tool-badge badge-popular">Popular</div>
-      <div class="tool-icon-wrap">🔗</div>
-      <div class="tool-name">Merge PDF</div>
-      <div class="tool-desc">Combine multiple PDFs into one document</div>
-    </div>
-    <div class="tool-card c-blue" data-cat="organize" onclick="openTool('split')" role="listitem">
-      <div class="tool-icon-wrap">✂️</div>
-      <div class="tool-name">Split PDF</div>
-      <div class="tool-desc">Extract pages into separate files</div>
-    </div>
-    <div class="tool-card c-cyan" data-cat="optimize" onclick="openTool('compress')" role="listitem">
-      <div class="tool-badge badge-new">Free</div>
-      <div class="tool-icon-wrap">🗜️</div>
-      <div class="tool-name">Compress PDF</div>
-      <div class="tool-desc">Reduce size while preserving quality</div>
-    </div>
-    <div class="tool-card c-emerald" data-cat="convert-from" onclick="openTool('pdf-to-image')" role="listitem">
-      <div class="tool-icon-wrap">🖼️</div>
-      <div class="tool-name">PDF to Image</div>
-      <div class="tool-desc">Export each page as JPG or PNG</div>
-    </div>
-    <div class="tool-card c-emerald" data-cat="convert-to" onclick="openTool('image-to-pdf')" role="listitem">
-      <div class="tool-icon-wrap">📷</div>
-      <div class="tool-name">Image to PDF</div>
-      <div class="tool-desc">Turn photos into a single PDF</div>
-    </div>
-    <div class="tool-card c-blue" data-cat="edit" onclick="openTool('rotate')" role="listitem">
-      <div class="tool-icon-wrap">🔄</div>
-      <div class="tool-name">Rotate PDF</div>
-      <div class="tool-desc">Fix page orientation instantly</div>
-    </div>
-    <div class="tool-card c-amber" data-cat="edit" onclick="openTool('watermark')" role="listitem">
-      <div class="tool-icon-wrap">💧</div>
-      <div class="tool-name">Watermark PDF</div>
-      <div class="tool-desc">Stamp text watermarks on every page</div>
-    </div>
-    <div class="tool-card c-violet" data-cat="security" onclick="openTool('protect')" role="listitem">
-      <div class="tool-icon-wrap">🔒</div>
-      <div class="tool-name">Protect PDF</div>
-      <div class="tool-desc">Encrypt with a strong password</div>
-    </div>
-    <div class="tool-card c-violet" data-cat="security" onclick="openTool('unlock')" role="listitem">
-      <div class="tool-icon-wrap">🔓</div>
-      <div class="tool-name">Unlock PDF</div>
-      <div class="tool-desc">Remove password protection</div>
-    </div>
-    <div class="tool-card c-cyan" data-cat="edit" onclick="openTool('page-numbers')" role="listitem">
-      <div class="tool-icon-wrap">🔢</div>
-      <div class="tool-name">Page Numbers</div>
-      <div class="tool-desc">Add page numbers anywhere on pages</div>
-    </div>
-    <div class="tool-card c-blue" data-cat="organize" onclick="openTool('organize')" role="listitem">
-      <div class="tool-icon-wrap">📋</div>
-      <div class="tool-name">Organize PDF</div>
-      <div class="tool-desc">Reorder, extract, or delete pages</div>
-    </div>
-    <div class="tool-card c-cyan" data-cat="edit" onclick="openTool('crop')" role="listitem">
-      <div class="tool-icon-wrap">📐</div>
-      <div class="tool-name">Crop PDF</div>
-      <div class="tool-desc">Remove unwanted page margins</div>
-    </div>
-    <div class="tool-card c-emerald" data-cat="optimize" onclick="openTool('info')" role="listitem">
-      <div class="tool-icon-wrap">ℹ️</div>
-      <div class="tool-name">PDF Info</div>
-      <div class="tool-desc">View metadata, dimensions and more</div>
-    </div>
-    <div class="tool-card c-amber" data-cat="convert-to" onclick="comingSoon('Word to PDF')" role="listitem">
-      <div class="tool-badge badge-soon">Soon</div>
-      <div class="tool-icon-wrap">📝</div>
-      <div class="tool-name">Word to PDF</div>
-      <div class="tool-desc">Convert DOCX documents to PDF</div>
-    </div>
-    <div class="tool-card c-amber" data-cat="convert-from" onclick="comingSoon('PDF to Word')" role="listitem">
-      <div class="tool-badge badge-soon">Soon</div>
-      <div class="tool-icon-wrap">📄</div>
-      <div class="tool-name">PDF to Word</div>
-      <div class="tool-desc">Convert PDF to editable DOCX</div>
-    </div>
-    <div class="tool-card c-emerald" data-cat="convert-to" onclick="comingSoon('Excel to PDF')" role="listitem">
-      <div class="tool-badge badge-soon">Soon</div>
-      <div class="tool-icon-wrap">📊</div>
-      <div class="tool-name">Excel to PDF</div>
-      <div class="tool-desc">Turn spreadsheets into clean PDFs</div>
-    </div>
-    <div class="tool-card c-violet" data-cat="security" onclick="comingSoon('Sign PDF')" role="listitem">
-      <div class="tool-badge badge-soon">Soon</div>
-      <div class="tool-icon-wrap">✍️</div>
-      <div class="tool-name">Sign PDF</div>
-      <div class="tool-desc">Add digital signatures to documents</div>
-    </div>
-    <div class="tool-card c-rose" data-cat="optimize" onclick="comingSoon('OCR PDF')" role="listitem">
-      <div class="tool-badge badge-soon">Soon</div>
-      <div class="tool-icon-wrap">🔍</div>
-      <div class="tool-name">OCR PDF</div>
-      <div class="tool-desc">Make scanned PDFs searchable</div>
-    </div>
+    <!-- ── ORGANIZE ── -->
+    <div class="tool-card c-blue" data-cat="organize" onclick="openTool('merge')" role="listitem"><div class="tool-badge badge-popular">Popular</div><div class="tool-icon-wrap">🔗</div><div class="tool-name">Merge PDF</div><div class="tool-desc">Combine multiple PDFs into one document</div></div>
+    <div class="tool-card c-blue" data-cat="organize" onclick="openTool('split')" role="listitem"><div class="tool-icon-wrap">✂️</div><div class="tool-name">Split PDF</div><div class="tool-desc">Extract pages into separate files</div></div>
+    <div class="tool-card c-blue" data-cat="organize" onclick="openTool('organize')" role="listitem"><div class="tool-icon-wrap">📋</div><div class="tool-name">Organize PDF</div><div class="tool-desc">Reorder, extract, or delete pages</div></div>
+    <div class="tool-card c-blue" data-cat="organize" onclick="openTool('remove-pages')" role="listitem"><div class="tool-icon-wrap">🗑️</div><div class="tool-name">Remove Pages</div><div class="tool-desc">Delete specific pages from PDF</div></div>
+    <div class="tool-card c-blue" data-cat="organize" onclick="openTool('extract-pages')" role="listitem"><div class="tool-icon-wrap">📤</div><div class="tool-name">Extract Pages</div><div class="tool-desc">Extract selected pages to new PDF</div></div>
+    <!-- ── OPTIMIZE ── -->
+    <div class="tool-card c-cyan" data-cat="optimize" onclick="openTool('compress')" role="listitem"><div class="tool-badge badge-new">Free</div><div class="tool-icon-wrap">🗜️</div><div class="tool-name">Compress PDF</div><div class="tool-desc">Reduce size while preserving quality</div></div>
+    <div class="tool-card c-cyan" data-cat="optimize" onclick="openTool('repair-pdf')" role="listitem"><div class="tool-icon-wrap">🔧</div><div class="tool-name">Repair PDF</div><div class="tool-desc">Fix corrupted or damaged PDFs</div></div>
+    <div class="tool-card c-rose" data-cat="optimize" onclick="openTool('ocr-pdf')" role="listitem"><div class="tool-icon-wrap">🔍</div><div class="tool-name">OCR PDF</div><div class="tool-desc">Make scanned PDFs text-searchable</div></div>
+    <!-- ── CONVERT FROM PDF ── -->
+    <div class="tool-card c-emerald" data-cat="convert-from" onclick="openTool('pdf-to-image')" role="listitem"><div class="tool-icon-wrap">🖼️</div><div class="tool-name">PDF to Image</div><div class="tool-desc">Export each page as JPG or PNG</div></div>
+    <div class="tool-card c-emerald" data-cat="convert-from" onclick="openTool('pdf-to-word')" role="listitem"><div class="tool-icon-wrap">📝</div><div class="tool-name">PDF to Word</div><div class="tool-desc">Convert PDF to editable DOCX</div></div>
+    <div class="tool-card c-emerald" data-cat="convert-from" onclick="openTool('pdf-to-excel')" role="listitem"><div class="tool-icon-wrap">📊</div><div class="tool-name">PDF to Excel</div><div class="tool-desc">Extract tables to spreadsheet</div></div>
+    <div class="tool-card c-emerald" data-cat="convert-from" onclick="openTool('pdf-to-ppt')" role="listitem"><div class="tool-icon-wrap">📑</div><div class="tool-name">PDF to PPT</div><div class="tool-desc">Convert PDF to PowerPoint</div></div>
+    <!-- ── CONVERT TO PDF ── -->
+    <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('image-to-pdf')" role="listitem"><div class="tool-icon-wrap">📷</div><div class="tool-name">Image to PDF</div><div class="tool-desc">Turn photos into a single PDF</div></div>
+    <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('jpg-to-pdf')" role="listitem"><div class="tool-icon-wrap">🟨</div><div class="tool-name">JPG to PDF</div><div class="tool-desc">Convert JPG images to PDF</div></div>
+    <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('word-to-pdf')" role="listitem"><div class="tool-icon-wrap">📄</div><div class="tool-name">Word to PDF</div><div class="tool-desc">Convert DOCX documents to PDF</div></div>
+    <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('excel-to-pdf')" role="listitem"><div class="tool-icon-wrap">📊</div><div class="tool-name">Excel to PDF</div><div class="tool-desc">Turn spreadsheets into clean PDFs</div></div>
+    <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('html-to-pdf')" role="listitem"><div class="tool-icon-wrap">🌐</div><div class="tool-name">HTML to PDF</div><div class="tool-desc">Convert web pages to PDF</div></div>
+    <!-- ── EDIT ── -->
+    <div class="tool-card c-blue" data-cat="edit" onclick="openTool('rotate')" role="listitem"><div class="tool-icon-wrap">🔄</div><div class="tool-name">Rotate PDF</div><div class="tool-desc">Fix page orientation instantly</div></div>
+    <div class="tool-card c-amber" data-cat="edit" onclick="openTool('watermark')" role="listitem"><div class="tool-icon-wrap">💧</div><div class="tool-name">Watermark PDF</div><div class="tool-desc">Stamp text watermarks on every page</div></div>
+    <div class="tool-card c-cyan" data-cat="edit" onclick="openTool('page-numbers')" role="listitem"><div class="tool-icon-wrap">🔢</div><div class="tool-name">Page Numbers</div><div class="tool-desc">Add page numbers anywhere on pages</div></div>
+    <div class="tool-card c-cyan" data-cat="edit" onclick="openTool('crop')" role="listitem"><div class="tool-icon-wrap">📐</div><div class="tool-name">Crop PDF</div><div class="tool-desc">Remove unwanted page margins</div></div>
+    <div class="tool-card c-emerald" data-cat="edit" onclick="openTool('info')" role="listitem"><div class="tool-icon-wrap">ℹ️</div><div class="tool-name">PDF Info</div><div class="tool-desc">View metadata and dimensions</div></div>
+    <!-- ── SECURITY ── -->
+    <div class="tool-card c-violet" data-cat="security" onclick="openTool('protect')" role="listitem"><div class="tool-icon-wrap">🔒</div><div class="tool-name">Protect PDF</div><div class="tool-desc">Encrypt with a strong password</div></div>
+    <div class="tool-card c-violet" data-cat="security" onclick="openTool('unlock')" role="listitem"><div class="tool-icon-wrap">🔓</div><div class="tool-name">Unlock PDF</div><div class="tool-desc">Remove password protection safely</div></div>
+    <div class="tool-card c-violet" data-cat="security" onclick="openTool('sign-pdf')" role="listitem"><div class="tool-icon-wrap">✍️</div><div class="tool-name">Sign PDF</div><div class="tool-desc">Add digital signatures to documents</div></div>
+    <div class="tool-card c-rose" data-cat="security" onclick="openTool('redact-pdf')" role="listitem"><div class="tool-icon-wrap">🖊️</div><div class="tool-name">Redact PDF</div><div class="tool-desc">Permanently remove sensitive info</div></div>
+    <div class="tool-card c-rose" data-cat="security" onclick="openTool('compare-pdf')" role="listitem"><div class="tool-icon-wrap">⚖️</div><div class="tool-name">Compare PDF</div><div class="tool-desc">Find differences between two PDFs</div></div>
+    <!-- Word Tools -->
+    <div class="tool-card c-blue" data-cat="word" onclick="openTool('word-to-jpg')" role="listitem"><div class="tool-icon-wrap">🖼️</div><div class="tool-name">Word to JPG</div><div class="tool-desc">Convert Word documents to JPG images</div></div>
+    <div class="tool-card c-blue" data-cat="word" onclick="openTool('word-to-png')" role="listitem"><div class="tool-icon-wrap">🖼️</div><div class="tool-name">Word to PNG</div><div class="tool-desc">Convert Word documents to PNG images</div></div>
+    <div class="tool-card c-blue" data-cat="word" onclick="openTool('word-to-txt')" role="listitem"><div class="tool-icon-wrap">📝</div><div class="tool-name">Word to TXT</div><div class="tool-desc">Convert Word documents to plain text</div></div>
+    <div class="tool-card c-blue" data-cat="word" onclick="openTool('word-to-excel')" role="listitem"><div class="tool-icon-wrap">📊</div><div class="tool-name">Word to Excel</div><div class="tool-desc">Convert Word documents to Excel spreadsheets</div></div>
+    <div class="tool-card c-blue" data-cat="word" onclick="openTool('word-to-ppt')" role="listitem"><div class="tool-icon-wrap">📑</div><div class="tool-name">Word to PPT</div><div class="tool-desc">Convert Word documents to PowerPoint</div></div>
+    <div class="tool-card c-blue" data-cat="word" onclick="openTool('word-to-html')" role="listitem"><div class="tool-icon-wrap">🌐</div><div class="tool-name">Word to HTML</div><div class="tool-desc">Convert Word documents to HTML</div></div>
+    <div class="tool-card c-blue" data-cat="word" onclick="openTool('word-to-json')" role="listitem"><div class="tool-icon-wrap">🔄</div><div class="tool-name">Word to JSON</div><div class="tool-desc">Convert Word documents to JSON data</div></div>
+    <div class="tool-card c-blue" data-cat="word" onclick="openTool('compress-word')" role="listitem"><div class="tool-icon-wrap">🗜️</div><div class="tool-name">Compress Word</div><div class="tool-desc">Reduce Word document file size</div></div>
+    <div class="tool-card c-blue" data-cat="word" onclick="openTool('unlock-word')" role="listitem"><div class="tool-icon-wrap">🔓</div><div class="tool-name">Unlock Word</div><div class="tool-desc">Remove password from Word files</div></div>
+    <div class="tool-card c-blue" data-cat="word" onclick="openTool('edit-word')" role="listitem"><div class="tool-icon-wrap">✏️</div><div class="tool-name">Edit Word</div><div class="tool-desc">Find and replace text in Word documents</div></div>
+    <!-- Excel Tools -->
+    <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('excel-to-csv')" role="listitem"><div class="tool-icon-wrap">📋</div><div class="tool-name">Excel to CSV</div><div class="tool-desc">Convert Excel to comma-separated values</div></div>
+    <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('excel-to-jpg')" role="listitem"><div class="tool-icon-wrap">🖼️</div><div class="tool-name">Excel to JPG</div><div class="tool-desc">Convert Excel sheets to JPG images</div></div>
+    <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('excel-to-png')" role="listitem"><div class="tool-icon-wrap">🖼️</div><div class="tool-name">Excel to PNG</div><div class="tool-desc">Convert Excel sheets to PNG images</div></div>
+    <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('excel-to-word')" role="listitem"><div class="tool-icon-wrap">📝</div><div class="tool-name">Excel to Word</div><div class="tool-desc">Convert Excel to editable Word document</div></div>
+    <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('excel-to-ppt')" role="listitem"><div class="tool-icon-wrap">📑</div><div class="tool-name">Excel to PPT</div><div class="tool-desc">Convert Excel to PowerPoint presentation</div></div>
+    <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('excel-to-html')" role="listitem"><div class="tool-icon-wrap">🌐</div><div class="tool-name">Excel to HTML</div><div class="tool-desc">Convert Excel to HTML tables</div></div>
+    <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('excel-to-json')" role="listitem"><div class="tool-icon-wrap">🔄</div><div class="tool-name">Excel to JSON</div><div class="tool-desc">Convert Excel data to JSON format</div></div>
+    <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('compress-excel')" role="listitem"><div class="tool-icon-wrap">🗜️</div><div class="tool-name">Compress Excel</div><div class="tool-desc">Reduce Excel workbook file size</div></div>
+    <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('unlock-excel')" role="listitem"><div class="tool-icon-wrap">🔓</div><div class="tool-name">Unlock Excel</div><div class="tool-desc">Remove password from Excel files</div></div>
+    <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('repair-excel')" role="listitem"><div class="tool-icon-wrap">🔧</div><div class="tool-name">Repair Excel</div><div class="tool-desc">Fix corrupted Excel workbooks</div></div>
   </div>
 </section>
-
+<!-- ═══════════════════════════════════════════
+     WHY SECTION
+═══════════════════════════════════════════ -->
 <section class="why-section" id="why" aria-label="Why PDFWala">
   <div class="why-inner">
     <div class="why-header reveal">
-      <div class="section-kicker" style="text-align:center;">Why choose us</div>
-      <h2 class="section-title" style="text-align:center;font-size:28px;">Built for speed, privacy & simplicity</h2>
+      <div class="section-kicker" style="text-align:center">Why choose us</div>
+      <h2 class="section-title" style="text-align:center;font-size:28px">Built for speed, privacy &amp; simplicity</h2>
     </div>
     <div class="why-grid reveal">
-      <div class="why-card">
-        <div class="why-icon">🔒</div>
-        <div class="why-name">Secure & Private</div>
-        <div class="why-desc">Every file is processed in an isolated session and permanently deleted after 60 minutes. We never read, store, or sell your data.</div>
-      </div>
-      <div class="why-card">
-        <div class="why-icon">⚡</div>
-        <div class="why-name">Lightning Fast</div>
-        <div class="why-desc">Optimized PDF engine handles most files in under a second. Built for performance — even on large documents with hundreds of pages.</div>
-      </div>
-      <div class="why-card">
-        <div class="why-icon">🆓</div>
-        <div class="why-name">Genuinely Free</div>
-        <div class="why-desc">No hidden limits, no watermarks, no file-size tricks. Every tool is completely free with no account required — period.</div>
-      </div>
-      <div class="why-card">
-        <div class="why-icon">📱</div>
-        <div class="why-name">Works Everywhere</div>
-        <div class="why-desc">Fully responsive — works seamlessly on mobile, tablet, and desktop. No apps to install, no plugins needed.</div>
-      </div>
+      <div class="why-card"><div class="why-icon">🔒</div><div class="why-name">Secure &amp; Private</div><div class="why-desc">Every file is processed in an isolated session and permanently deleted after 60 minutes. We never read, store, or sell your data.</div></div>
+      <div class="why-card"><div class="why-icon">⚡</div><div class="why-name">Lightning Fast</div><div class="why-desc">Optimized PDF engine handles most files in under a second. Built for performance — even on large documents with hundreds of pages.</div></div>
+      <div class="why-card"><div class="why-icon">🆓</div><div class="why-name">Genuinely Free</div><div class="why-desc">No hidden limits, no watermarks, no file-size tricks. Every tool is completely free with no account required — period.</div></div>
+      <div class="why-card"><div class="why-icon">📱</div><div class="why-name">Works Everywhere</div><div class="why-desc">Fully responsive — works seamlessly on mobile, tablet, and desktop. No apps to install, no plugins needed.</div></div>
     </div>
   </div>
 </section>
-
+<!-- ═══════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════ -->
 <footer>
   <div class="footer-inner">
     <div class="footer-grid">
-      <div>
-        <div class="footer-brand-name">
-          <div class="footer-brand-mark">📄</div>
-          PDF<span style="color:var(--accent)">Wala</span>
-        </div>
-        <p class="footer-brand-desc">Your all-in-one PDF toolkit — built for speed, privacy, and simplicity. No sign-up, no limits.</p>
-        <div class="footer-tagline">"Built for simplicity, speed, and privacy."</div>
-      </div>
-      <div class="footer-col">
-        <div class="footer-col-title">Organize</div>
-        <a href="#" onclick="openTool('merge');return false">Merge PDF</a>
-        <a href="#" onclick="openTool('split');return false">Split PDF</a>
-        <a href="#" onclick="openTool('organize');return false">Organize Pages</a>
-        <a href="#" onclick="openTool('rotate');return false">Rotate PDF</a>
-      </div>
-      <div class="footer-col">
-        <div class="footer-col-title">Convert</div>
-        <a href="#" onclick="openTool('pdf-to-image');return false">PDF to Image</a>
-        <a href="#" onclick="openTool('image-to-pdf');return false">Image to PDF</a>
-        <a href="#">Word to PDF</a>
-        <a href="#">Excel to PDF</a>
-      </div>
-      <div class="footer-col">
-        <div class="footer-col-title">Company</div>
-        <a href="#">About</a>
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms of Service</a>
-        <a href="#">Contact</a>
-      </div>
+      <div><div class="footer-brand-name"><div class="footer-brand-mark">📄</div>PDF<span style="color:var(--accent)">Wala</span></div><p class="footer-brand-desc">Your all-in-one PDF toolkit — built for speed, privacy, and simplicity. No sign-up, no limits.</p><div class="footer-tagline">"Built for simplicity, speed, and privacy."</div></div>
+      <div class="footer-col"><div class="footer-col-title">Organize</div><a href="#" onclick="openTool('merge');return false">Merge PDF</a><a href="#" onclick="openTool('split');return false">Split PDF</a><a href="#" onclick="openTool('organize');return false">Organize Pages</a><a href="#" onclick="openTool('rotate');return false">Rotate PDF</a></div>
+      <div class="footer-col"><div class="footer-col-title">Convert</div><a href="#" onclick="openTool('pdf-to-image');return false">PDF to Image</a><a href="#" onclick="openTool('image-to-pdf');return false">Image to PDF</a><a href="#" onclick="openTool('word-to-pdf');return false">Word to PDF</a><a href="#" onclick="openTool('excel-to-pdf');return false">Excel to PDF</a></div>
+      <div class="footer-col"><div class="footer-col-title">Company</div><a href="#">About</a><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Contact</a></div>
     </div>
-    <div class="footer-bottom">
-      <span>© 2024 PDFWala · All rights reserved</span>
-      <div style="display:flex;gap:16px;">
-        <a href="#">Privacy</a>
-        <a href="#">Terms</a>
-        <a href="#">Contact</a>
-      </div>
-    </div>
+    <div class="footer-bottom"><span>© 2024 PDFWala · Made with ❤️ for the world</span><div style="display:flex;gap:16px"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Contact</a></div></div>
   </div>
 </footer>
-
-<div class="modal-overlay" id="modalOverlay" onclick="overlayClick(event)" role="dialog" aria-modal="true">
-  <div class="modal" id="modalBox">
-    <button class="modal-close" onclick="closeModal()" aria-label="Close">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-    <div id="modalContent"></div>
-  </div>
-</div>
-
-<div class="toast" id="toast" role="status" aria-live="polite">
-  <div class="toast-bar"></div>
-  <span id="toastMsg"></span>
-</div>
-
+<!-- ═══════════════════════════════════════════
+     MODAL & JAVASCRIPT
+═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalOverlay" onclick="overlayClick(event)" role="dialog" aria-modal="true" aria-label="PDF Tool"><div class="modal" id="modalBox"><button class="modal-close" onclick="closeModal()" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><div id="modalContent"></div></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"><div class="toast-bar"></div><span id="toastMsg"></span></div>
 <script>
-// ─── CONFIG ───────────────────────────────────────────────────────────────────
 const API = '';
-
-// ─── STATE ────────────────────────────────────────────────────────────────────
-let currentTool    = null;
-let selectedFiles  = [];
-let lastFilename   = null;
-let lastDownloadUrl = null;
-
-// ─── BACKEND HEALTH CHECK ─────────────────────────────────────────────────────
-async function checkBackend() {
-  try {
-    const res = await fetch(API + '/api/health');
-    if (!res.ok) throw new Error('not ok');
-    console.log('✅ Backend connected');
-    document.querySelectorAll('.setup-box').forEach(el => el.classList.remove('show'));
-    return true;
-  } catch {
-    console.warn('⚠️ Backend not reachable');
-    return false;
-  }
-}
-window.addEventListener('load', checkBackend);
-
-// ─── TOOL DEFINITIONS ─────────────────────────────────────────────────────────
+let currentTool = null, selectedFiles = [], lastFilename = null, lastDownloadUrl = null;
+async function checkBackend(){try{const r=await fetch(API+'/api/health');if(!r.ok)throw 0;console.log('✅ Backend connected');return true}catch{console.warn('⚠️ Backend not reachable');return false}}window.addEventListener('load',checkBackend);
 const TOOLS = {
-  merge: {
-    title:'Merge PDF', icon:'🔗',
-    desc:'Combine multiple PDF files into a single document in your chosen order.',
-    multi:true, accept:'.pdf', endpoint:'/api/merge', field:'files',
-    form:()=>''
-  },
-  split: {
-    title:'Split PDF', icon:'✂️',
-    desc:'Extract individual pages or page ranges from your PDF into separate files.',
-    multi:false, accept:'.pdf', endpoint:'/api/split', field:'file',
-    form:()=>`
-      <div class="form-group">
-        <div class="form-label">Split Mode</div>
-        <div class="radio-group">
-          <div class="radio-chip active" onclick="radioSelect(this,'mode','all')">All Pages</div>
-          <div class="radio-chip" onclick="radioSelect(this,'mode','range')">Page Range</div>
-        </div>
-        <input type="hidden" id="mode" value="all"/>
-      </div>
-      <div class="form-group" id="rangeGroup" style="display:none">
-        <label class="form-label">Page Range</label>
-        <input class="form-input" type="text" id="ranges" placeholder="e.g. 1-3, 5, 7-9"/>
-        <div class="form-hint">Comma-separated. Example: 1-3, 5, 8-10</div>
-      </div>`
-  },
-  compress: {
-    title:'Compress PDF', icon:'🗜️',
-    desc:'Reduce file size while maintaining visual quality.',
-    multi:false, accept:'.pdf', endpoint:'/api/compress', field:'file',
-    form:()=>`
-      <div class="form-group">
-        <div class="form-label">Compression Level</div>
-        <div class="radio-group">
-          <div class="radio-chip" onclick="radioSelect(this,'quality','low')">Maximum</div>
-          <div class="radio-chip active" onclick="radioSelect(this,'quality','medium')">Balanced</div>
-          <div class="radio-chip" onclick="radioSelect(this,'quality','high')">High Quality</div>
-        </div>
-        <input type="hidden" id="quality" value="medium"/>
-      </div>`
-  },
-  'pdf-to-image': {
-    title:'PDF to Image', icon:'🖼️',
-    desc:'Convert each PDF page into a high-resolution image file.',
-    multi:false, accept:'.pdf', endpoint:'/api/pdf-to-image', field:'file',
-    form:()=>`
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Format</label>
-          <select class="form-select" id="format">
-            <option value="jpg">JPG</option>
-            <option value="png">PNG</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Resolution</label>
-          <select class="form-select" id="dpi">
-            <option value="96">96 dpi — Web</option>
-            <option value="150" selected>150 dpi — Standard</option>
-            <option value="300">300 dpi — Print</option>
-          </select>
-        </div>
-      </div>`
-  },
-  'image-to-pdf': {
-    title:'Image to PDF', icon:'📷',
-    desc:'Combine JPG and PNG images into a single PDF document.',
-    multi:true, accept:'.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp', endpoint:'/api/image-to-pdf', field:'files',
-    form:()=>''
-  },
-  rotate: {
-    title:'Rotate PDF', icon:'🔄',
-    desc:'Rotate all pages in your PDF to fix orientation issues.',
-    multi:false, accept:'.pdf', endpoint:'/api/rotate', field:'file',
-    form:()=>`
-      <div class="form-group">
-        <div class="form-label">Rotation</div>
-        <div class="radio-group">
-          <div class="radio-chip active" onclick="radioSelect(this,'angle','90')">90° Clockwise</div>
-          <div class="radio-chip" onclick="radioSelect(this,'angle','180')">180°</div>
-          <div class="radio-chip" onclick="radioSelect(this,'angle','270')">90° Counter</div>
-        </div>
-        <input type="hidden" id="angle" value="90"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Pages</label>
-        <input class="form-input" type="text" id="pages" value="all" placeholder="all — or 1-3,5"/>
-        <div class="form-hint">Enter 'all' or specific page numbers, e.g. 1,3,5-8</div>
-      </div>`
-  },
-  watermark: {
-    title:'Watermark PDF', icon:'💧',
-    desc:'Stamp a diagonal text watermark across every page of your PDF.',
-    multi:false, accept:'.pdf', endpoint:'/api/watermark', field:'file',
-    form:()=>`
-      <div class="form-group">
-        <label class="form-label">Watermark Text</label>
-        <input class="form-input" type="text" id="text" value="CONFIDENTIAL" placeholder="Enter watermark text…"/>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Color</label>
-          <select class="form-select" id="color">
-            <option value="808080">Gray</option>
-            <option value="FF0000">Red</option>
-            <option value="0000FF">Blue</option>
-            <option value="000000">Black</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Opacity (%)</label>
-          <input class="form-input" type="number" id="opacity" value="30" min="5" max="90"/>
-        </div>
-      </div>`
-  },
-  protect: {
-    title:'Protect PDF', icon:'🔒',
-    desc:'Encrypt your PDF with a password to restrict unauthorized access.',
-    multi:false, accept:'.pdf', endpoint:'/api/protect', field:'file',
-    form:()=>`
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input class="form-input" type="password" id="password" placeholder="Minimum 4 characters"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Confirm Password</label>
-        <input class="form-input" type="password" id="password2" placeholder="Repeat your password"/>
-      </div>`
-  },
-  unlock: {
-    title:'Unlock PDF', icon:'🔓',
-    desc:'Remove password protection from a PDF file you own.',
-    multi:false, accept:'.pdf', endpoint:'/api/unlock', field:'file',
-    form:()=>`
-      <div class="form-group">
-        <label class="form-label">Current Password</label>
-        <input class="form-input" type="password" id="password" placeholder="Enter the PDF password"/>
-      </div>`
-  },
-  'page-numbers': {
-    title:'Page Numbers', icon:'🔢',
-    desc:'Add automatic page numbers to your PDF at your preferred position.',
-    multi:false, accept:'.pdf', endpoint:'/api/page-numbers', field:'file',
-    form:()=>`
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Position</label>
-          <select class="form-select" id="position">
-            <option value="bottom">Bottom Center</option>
-            <option value="top">Top Center</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Start From</label>
-          <input class="form-input" type="number" id="start" value="1" min="1" max="9999"/>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Prefix (optional)</label>
-        <input class="form-input" type="text" id="prefix" placeholder='e.g. "Page " → Page 1, Page 2…'/>
-      </div>`
-  },
-  organize: {
-    title:'Organize PDF', icon:'📋',
-    desc:'Reorder, extract, or delete specific pages from your PDF document.',
-    multi:false, accept:'.pdf', endpoint:'/api/organize', field:'file',
-    form:()=>`
-      <div class="form-group">
-        <div class="form-label">Action</div>
-        <div class="radio-group">
-          <div class="radio-chip active" onclick="radioSelect(this,'action','reorder')">Reorder</div>
-          <div class="radio-chip" onclick="radioSelect(this,'action','extract')">Extract</div>
-          <div class="radio-chip" onclick="radioSelect(this,'action','delete')">Delete</div>
-        </div>
-        <input type="hidden" id="action" value="reorder"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Page Order / Selection</label>
-        <input class="form-input" type="text" id="order" placeholder="e.g. 3,1,2,4 to reorder"/>
-        <div class="form-hint">Reorder: new page order (3,1,2). Delete/Extract: target pages (1,3,5).</div>
-      </div>`
-  },
-  crop: {
-    title:'Crop PDF', icon:'📐',
-    desc:'Trim margins from PDF pages. Values are percentages of the page dimension.',
-    multi:false, accept:'.pdf', endpoint:'/api/crop', field:'file',
-    form:()=>`
-      <div class="form-group"><div class="form-label">Margins to Remove (%)</div></div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Left</label><input class="form-input" type="number" id="left" value="0" min="0" max="45"/></div>
-        <div class="form-group"><label class="form-label">Right</label><input class="form-input" type="number" id="right" value="0" min="0" max="45"/></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Top</label><input class="form-input" type="number" id="top" value="0" min="0" max="45"/></div>
-        <div class="form-group"><label class="form-label">Bottom</label><input class="form-input" type="number" id="bottom" value="0" min="0" max="45"/></div>
-      </div>
-      <div class="form-hint">Values are % of page size. Max 45% per side.</div>`
-  },
-  info: {
-    title:'PDF Info', icon:'ℹ️',
-    desc:'View detailed metadata: page count, file size, dimensions, author, and more.',
-    multi:false, accept:'.pdf', endpoint:'/api/info', field:'file',
-    form:()=>''
-  }
+  merge:{title:'Merge PDF',icon:'🔗',desc:'Combine multiple PDF files into one document.',multi:true,accept:'.pdf',endpoint:'/api/merge',field:'files',form:()=>''},
+  split:{title:'Split PDF',icon:'✂️',desc:'Extract individual pages or page ranges.',multi:false,accept:'.pdf',endpoint:'/api/split',field:'file',form:()=>`<div class="form-group"><div class="form-label">Split Mode</div><div class="radio-group"><div class="radio-chip active" onclick="radioSelect(this,'mode','all')">All Pages</div><div class="radio-chip" onclick="radioSelect(this,'mode','range')">Page Range</div></div><input type="hidden" id="mode" value="all"/></div><div class="form-group" id="rangeGroup" style="display:none"><label class="form-label">Page Range</label><input class="form-input" type="text" id="ranges" placeholder="e.g. 1-3, 5, 7-9"/><div class="form-hint">Comma-separated. Example: 1-3, 5, 8-10</div></div>`},
+  organize:{title:'Organize PDF',icon:'📋',desc:'Reorder, extract, or delete specific pages.',multi:false,accept:'.pdf',endpoint:'/api/organize',field:'file',form:()=>`<div class="form-group"><div class="form-label">Action</div><div class="radio-group"><div class="radio-chip active" onclick="radioSelect(this,'action','reorder')">Reorder</div><div class="radio-chip" onclick="radioSelect(this,'action','extract')">Extract</div><div class="radio-chip" onclick="radioSelect(this,'action','delete')">Delete</div></div><input type="hidden" id="action" value="reorder"/></div><div class="form-group"><label class="form-label">Page Order / Selection</label><input class="form-input" type="text" id="order" placeholder="e.g. 3,1,2,4 to reorder"/><div class="form-hint">Reorder: new order (3,1,2). Delete/Extract: page numbers (1,3,5).</div></div>`},
+  'remove-pages':{title:'Remove Pages',icon:'🗑️',desc:'Delete specific pages from your PDF.',multi:false,accept:'.pdf',endpoint:'/api/organize',field:'file',form:()=>`<div class="form-group"><label class="form-label">Pages to Remove</label><input class="form-input" type="text" id="order" placeholder="e.g. 1,3,5-8"/><div class="form-hint">Enter page numbers to remove</div></div><input type="hidden" id="action" value="delete"/>`},
+  'extract-pages':{title:'Extract Pages',icon:'📤',desc:'Extract selected pages to a new PDF.',multi:false,accept:'.pdf',endpoint:'/api/organize',field:'file',form:()=>`<div class="form-group"><label class="form-label">Pages to Extract</label><input class="form-input" type="text" id="order" placeholder="e.g. 1,3,5-8"/><div class="form-hint">Enter page numbers to extract</div></div><input type="hidden" id="action" value="extract"/>`},
+  compress:{title:'Compress PDF',icon:'🗜️',desc:'Reduce file size while maintaining quality.',multi:false,accept:'.pdf',endpoint:'/api/compress',field:'file',form:()=>`<div class="form-group"><div class="form-label">Compression Level</div><div class="radio-group"><div class="radio-chip" onclick="radioSelect(this,'quality','low')">Maximum</div><div class="radio-chip active" onclick="radioSelect(this,'quality','medium')">Balanced</div><div class="radio-chip" onclick="radioSelect(this,'quality','high')">High Quality</div></div><input type="hidden" id="quality" value="medium"/></div>`},
+  'repair-pdf':{title:'Repair PDF',icon:'🔧',desc:'Attempt to fix corrupted or damaged PDF files.',multi:false,accept:'.pdf',endpoint:'/api/repair-pdf',field:'file',form:()=>''},
+  'pdf-to-image':{title:'PDF to Image',icon:'🖼️',desc:'Convert each PDF page into a high-resolution image.',multi:false,accept:'.pdf',endpoint:'/api/pdf-to-image',field:'file',form:()=>`<div class="form-row"><div class="form-group"><label class="form-label">Format</label><select class="form-select" id="format"><option value="jpg">JPG</option><option value="png">PNG</option></select></div><div class="form-group"><label class="form-label">Resolution</label><select class="form-select" id="dpi"><option value="96">96 dpi — Web</option><option value="150" selected>150 dpi — Standard</option><option value="300">300 dpi — Print</option></select></div></div>`},
+  'image-to-pdf':{title:'Image to PDF',icon:'📷',desc:'Combine JPG, PNG and other images into a single PDF.',multi:true,accept:'.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp',endpoint:'/api/image-to-pdf',field:'files',form:()=>`<div class="form-group"><div class="form-label">Page Size</div><select class="form-select" id="page_size"><option value="auto">Auto (fit image)</option><option value="a4">A4</option><option value="letter">Letter</option></select></div>`},
+  rotate:{title:'Rotate PDF',icon:'🔄',desc:'Fix page orientation by rotating pages.',multi:false,accept:'.pdf',endpoint:'/api/rotate',field:'file',form:()=>`<div class="form-group"><div class="form-label">Rotation</div><div class="radio-group"><div class="radio-chip active" onclick="radioSelect(this,'angle','90')">90° Clockwise</div><div class="radio-chip" onclick="radioSelect(this,'angle','180')">180°</div><div class="radio-chip" onclick="radioSelect(this,'angle','270')">90° Counter</div></div><input type="hidden" id="angle" value="90"/></div><div class="form-group"><label class="form-label">Pages</label><input class="form-input" type="text" id="pages" value="all" placeholder="all — or 1-3,5"/><div class="form-hint">Enter 'all' or specific pages, e.g. 1,3,5-8</div></div>`},
+  watermark:{title:'Watermark PDF',icon:'💧',desc:'Stamp a diagonal text watermark across every page.',multi:false,accept:'.pdf',endpoint:'/api/watermark',field:'file',form:()=>`<div class="form-group"><label class="form-label">Watermark Text</label><input class="form-input" type="text" id="text" value="CONFIDENTIAL" placeholder="Enter watermark text…"/></div><div class="form-row"><div class="form-group"><label class="form-label">Color</label><select class="form-select" id="color"><option value="808080">Gray</option><option value="FF0000">Red</option><option value="0000FF">Blue</option><option value="000000">Black</option></select></div><div class="form-group"><label class="form-label">Opacity (%)</label><input class="form-input" type="number" id="opacity" value="30" min="5" max="90"/></div></div>`},
+  'page-numbers':{title:'Page Numbers',icon:'🔢',desc:'Add automatic page numbers at your preferred position.',multi:false,accept:'.pdf',endpoint:'/api/page-numbers',field:'file',form:()=>`<div class="form-row"><div class="form-group"><label class="form-label">Position</label><select class="form-select" id="position"><option value="bottom">Bottom Center</option><option value="top">Top Center</option></select></div><div class="form-group"><label class="form-label">Start From</label><input class="form-input" type="number" id="start" value="1" min="1" max="9999"/></div></div><div class="form-group"><label class="form-label">Prefix (optional)</label><input class="form-input" type="text" id="prefix" placeholder='e.g. "Page " → Page 1, Page 2…'/></div>`},
+  crop:{title:'Crop PDF',icon:'📐',desc:'Trim margins from PDF pages (values in points).',multi:false,accept:'.pdf',endpoint:'/api/crop',field:'file',form:()=>`<div class="form-group"><div class="form-label">Margins to Remove (PDF Points)</div></div><div class="form-row"><div class="form-group"><label class="form-label">Left</label><input class="form-input" type="number" id="left" value="0" min="0"/></div><div class="form-group"><label class="form-label">Right</label><input class="form-input" type="number" id="right" value="0" min="0"/></div></div><div class="form-row"><div class="form-group"><label class="form-label">Top</label><input class="form-input" type="number" id="top" value="0" min="0"/></div><div class="form-group"><label class="form-label">Bottom</label><input class="form-input" type="number" id="bottom" value="0" min="0"/></div></div><div class="form-hint">72pt = 1 inch ≈ 2.54 cm</div>`},
+  info:{title:'PDF Info',icon:'ℹ️',desc:'View detailed metadata, page count, file size, and dimensions.',multi:false,accept:'.pdf',endpoint:'/api/info',field:'file',form:()=>''},
+  protect:{title:'Protect PDF',icon:'🔒',desc:'Encrypt your PDF with a strong AES-256 password.',multi:false,accept:'.pdf',endpoint:'/api/protect',field:'file',form:()=>`<div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="password" placeholder="Minimum 4 characters"/></div><div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" type="password" id="password2" placeholder="Repeat your password"/></div>`},
+  unlock:{title:'Unlock PDF',icon:'🔓',desc:'Remove password protection from a PDF you own.',multi:false,accept:'.pdf',endpoint:'/api/unlock',field:'file',form:()=>`<div class="form-group"><label class="form-label">Current Password</label><input class="form-input" type="password" id="password" placeholder="Enter the PDF password"/></div>`},
+  'jpg-to-pdf':{title:'JPG to PDF',icon:'🟨',desc:'Convert JPG images to a single PDF.',multi:true,accept:'.jpg,.jpeg',endpoint:'/api/jpg-to-pdf',field:'files',form:()=>`<div class="form-group"><div class="form-label">Page Size</div><select class="form-select" id="page_size"><option value="auto">Auto</option><option value="a4">A4</option></select></div>`},
+  'word-to-pdf':{title:'Word to PDF',icon:'📝',desc:'Convert DOCX documents to PDF format.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-pdf',field:'file',form:()=>''},
+  'excel-to-pdf':{title:'Excel to PDF',icon:'📊',desc:'Turn spreadsheets into clean PDFs.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-pdf',field:'file',form:()=>''},
+  'html-to-pdf':{title:'HTML to PDF',icon:'🌐',desc:'Convert HTML pages to PDF documents.',multi:false,accept:'.html,.htm',endpoint:'/api/html-to-pdf',field:'file',form:()=>''},
+  'pdf-to-word':{title:'PDF to Word',icon:'📝',desc:'Convert PDF to editable DOCX file.',multi:false,accept:'.pdf',endpoint:'/api/pdf-to-word',field:'file',form:()=>''},
+  'pdf-to-excel':{title:'PDF to Excel',icon:'📊',desc:'Extract tables from PDF to XLSX.',multi:false,accept:'.pdf',endpoint:'/api/pdf-to-excel',field:'file',form:()=>''},
+  'pdf-to-ppt':{title:'PDF to PPT',icon:'📑',desc:'Convert PDF to PowerPoint presentation.',multi:false,accept:'.pdf',endpoint:'/api/pdf-to-ppt',field:'file',form:()=>''},
+  'pdf-to-pdfa':{title:'PDF to PDF/A',icon:'📜',desc:'Convert PDF to archivable PDF/A format.',multi:false,accept:'.pdf',endpoint:'/api/pdf-to-pdfa',field:'file',form:()=>`<div class="form-group"><div class="form-label">PDF/A Version</div><div class="radio-group"><div class="radio-chip active" onclick="radioSelect(this,'version','1b')">PDF/A-1b</div><div class="radio-chip" onclick="radioSelect(this,'version','3b')">PDF/A-3b</div></div><input type="hidden" id="version" value="1b"/></div>`},
+  'ocr-pdf':{title:'OCR PDF',icon:'🔍',desc:'Make scanned PDFs text-searchable.',multi:false,accept:'.pdf',endpoint:'/api/ocr-pdf',field:'file',form:()=>`<div class="form-group"><div class="form-label">Language</div><select class="form-select" id="lang"><option value="eng">English</option><option value="spa">Spanish</option><option value="fra">French</option></select></div>`},
+  'compress-image':{title:'Compress Image',icon:'🗜️',desc:'Reduce image size with quality control.',multi:false,accept:'.jpg,.jpeg,.png,.webp',endpoint:'/api/compress-image',field:'file',form:()=>`<div class="form-group"><div class="form-label">Quality</div><div class="radio-group"><div class="radio-chip" onclick="radioSelect(this,'quality','80')">High (80%)</div><div class="radio-chip active" onclick="radioSelect(this,'quality','60')">Medium (60%)</div><div class="radio-chip" onclick="radioSelect(this,'quality','40')">Low (40%)</div></div><input type="hidden" id="quality" value="60"/></div>`},
+  'resize-image':{title:'Resize Image',icon:'📏',desc:'Change image dimensions exactly.',multi:false,accept:'.jpg,.jpeg,.png,.webp',endpoint:'/api/resize-image',field:'file',form:()=>`<div class="form-row"><div class="form-group"><label class="form-label">Width (px)</label><input class="form-input" type="number" id="width" value="800" min="1"/></div><div class="form-group"><label class="form-label">Height (px)</label><input class="form-input" type="number" id="height" value="600" min="1"/></div></div><div class="form-group"><label class="form-label">Maintain aspect ratio</label><input type="checkbox" id="keep_ratio" checked style="margin-top:6px"/></div>`},
+  'image-to-word':{title:'Image to Word',icon:'📝',desc:'Convert image text to editable Word document.',multi:false,accept:'.jpg,.jpeg,.png',endpoint:'/api/image-to-word',field:'file',form:()=>''},
+  'image-to-excel':{title:'Image to Excel',icon:'📊',desc:'Extract tables from images to Excel.',multi:false,accept:'.jpg,.jpeg,.png',endpoint:'/api/image-to-excel',field:'file',form:()=>''},
+  'webp-to-jpg':{title:'WebP to JPG',icon:'🔄',desc:'Convert WebP images to JPG format.',multi:true,accept:'.webp',endpoint:'/api/webp-to-jpg',field:'files',form:()=>`<div class="form-group"><div class="form-label">Quality</div><select class="form-select" id="quality"><option value="85">High (85%)</option><option value="75" selected>Good (75%)</option><option value="60">Medium (60%)</option></select></div>`},
+  'png-to-jpg':{title:'PNG to JPG',icon:'🔄',desc:'Convert PNG images to JPG format.',multi:true,accept:'.png',endpoint:'/api/png-to-jpg',field:'files',form:()=>`<div class="form-group"><div class="form-label">Quality</div><select class="form-select" id="quality"><option value="85">High (85%)</option><option value="75" selected>Good (75%)</option><option value="60">Medium (60%)</option></select></div>`},
+  'protect-word':{title:'Protect Word',icon:'🔒',desc:'Password-protect your Word documents.',multi:false,accept:'.doc,.docx',endpoint:'/api/protect-word',field:'file',form:()=>`<div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="password" placeholder="Minimum 4 characters"/></div><div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" type="password" id="password2" placeholder="Repeat password"/></div>`},
+  'protect-excel':{title:'Protect Excel',icon:'🔒',desc:'Encrypt Excel workbooks with a password.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/protect-excel',field:'file',form:()=>`<div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="password" placeholder="Minimum 4 characters"/></div><div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" type="password" id="password2" placeholder="Repeat password"/></div>`},
+  'sign-pdf':{title:'Sign PDF',icon:'✍️',desc:'Add digital signature to PDF documents.',multi:false,accept:'.pdf',endpoint:'/api/sign-pdf',field:'file',form:()=>`<div class="form-group"><label class="form-label">Signer Name</label><input class="form-input" type="text" id="name" placeholder="Full name"/></div><div class="form-group"><label class="form-label">Reason (optional)</label><input class="form-input" type="text" id="reason" placeholder="e.g., Approved"/></div>`},
+  'redact-pdf':{title:'Redact PDF',icon:'🖊️',desc:'Permanently remove sensitive information.',multi:false,accept:'.pdf',endpoint:'/api/redact-pdf',field:'file',form:()=>`<div class="form-group"><label class="form-label">Text to Redact</label><input class="form-input" type="text" id="search_text" placeholder="e.g., Social Security, 123-45-6789"/><div class="form-hint">Case-insensitive search and redact</div></div>`},
+  'compare-pdf':{title:'Compare PDF',icon:'⚖️',desc:'Find visual differences between two PDFs.',multi:true,accept:'.pdf',endpoint:'/api/compare-pdf',field:'files',form:()=>`<div class="form-hint" style="margin-top:8px">Upload exactly 2 PDF files for comparison.</div>`},
+  'word-to-jpg':{title:'Word to JPG',icon:'🖼️',desc:'Convert Word document to JPG images.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-jpg',field:'file',form:()=>''},
+  'word-to-png':{title:'Word to PNG',icon:'🖼️',desc:'Convert Word document to PNG images.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-png',field:'file',form:()=>''},
+  'word-to-txt':{title:'Word to TXT',icon:'📝',desc:'Convert Word document to plain text file.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-txt',field:'file',form:()=>''},
+  'word-to-excel':{title:'Word to Excel',icon:'📊',desc:'Convert Word document to Excel spreadsheet.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-excel',field:'file',form:()=>''},
+  'word-to-ppt':{title:'Word to PPT',icon:'📑',desc:'Convert Word document to PowerPoint presentation.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-ppt',field:'file',form:()=>''},
+  'word-to-html':{title:'Word to HTML',icon:'🌐',desc:'Convert Word document to HTML file.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-html',field:'file',form:()=>''},
+  'word-to-json':{title:'Word to JSON',icon:'🔄',desc:'Convert Word document content to JSON.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-json',field:'file',form:()=>''},
+  'compress-word':{title:'Compress Word',icon:'🗜️',desc:'Reduce Word document file size.',multi:false,accept:'.doc,.docx',endpoint:'/api/compress-word',field:'file',form:()=>`<div class="form-group"><div class="form-label">Compression Level</div><div class="radio-group"><div class="radio-chip" onclick="radioSelect(this,'quality','low')">Maximum</div><div class="radio-chip active" onclick="radioSelect(this,'quality','medium')">Balanced</div><div class="radio-chip" onclick="radioSelect(this,'quality','high')">High Quality</div></div><input type="hidden" id="quality" value="medium"/></div>`},
+  'unlock-word':{title:'Unlock Word',icon:'🔓',desc:'Remove password protection from Word file.',multi:false,accept:'.doc,.docx',endpoint:'/api/unlock-word',field:'file',form:()=>`<div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="password" placeholder="Enter document password"/></div>`},
+  'edit-word':{title:'Edit Word',icon:'✏️',desc:'Find and replace text in Word document.',multi:false,accept:'.doc,.docx',endpoint:'/api/edit-word',field:'file',form:()=>`<div class="form-row"><div class="form-group"><label class="form-label">Find Text</label><input class="form-input" type="text" id="find_text" placeholder="Text to find"/></div><div class="form-group"><label class="form-label">Replace With</label><input class="form-input" type="text" id="replace_text" placeholder="Replacement text"/></div></div>`},
+  'excel-to-csv':{title:'Excel to CSV',icon:'📋',desc:'Convert Excel to CSV format.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-csv',field:'file',form:()=>''},
+  'excel-to-jpg':{title:'Excel to JPG',icon:'🖼️',desc:'Convert Excel sheets to JPG images.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-jpg',field:'file',form:()=>''},
+  'excel-to-png':{title:'Excel to PNG',icon:'🖼️',desc:'Convert Excel sheets to PNG images.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-png',field:'file',form:()=>''},
+  'excel-to-word':{title:'Excel to Word',icon:'📝',desc:'Convert Excel to Word document.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-word',field:'file',form:()=>''},
+  'excel-to-ppt':{title:'Excel to PPT',icon:'📑',desc:'Convert Excel to PowerPoint.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-ppt',field:'file',form:()=>''},
+  'excel-to-html':{title:'Excel to HTML',icon:'🌐',desc:'Convert Excel to HTML tables.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-html',field:'file',form:()=>''},
+  'excel-to-json':{title:'Excel to JSON',icon:'🔄',desc:'Convert Excel data to JSON.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-json',field:'file',form:()=>''},
+  'compress-excel':{title:'Compress Excel',icon:'🗜️',desc:'Reduce Excel workbook file size.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/compress-excel',field:'file',form:()=>`<div class="form-group"><div class="form-label">Compression Level</div><div class="radio-group"><div class="radio-chip" onclick="radioSelect(this,'quality','low')">Maximum</div><div class="radio-chip active" onclick="radioSelect(this,'quality','medium')">Balanced</div><div class="radio-chip" onclick="radioSelect(this,'quality','high')">High Quality</div></div><input type="hidden" id="quality" value="medium"/></div>`},
+  'unlock-excel':{title:'Unlock Excel',icon:'🔓',desc:'Remove password from Excel file.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/unlock-excel',field:'file',form:()=>`<div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="password" placeholder="Enter workbook password"/></div>`},
+  'repair-excel':{title:'Repair Excel',icon:'🔧',desc:'Repair corrupted Excel files.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/repair-excel',field:'file',form:()=>''}
 };
-
-// ─── THEME ────────────────────────────────────────────────────────────────────
-function toggleTheme() {
-  const html = document.documentElement;
-  const dark = html.getAttribute('data-theme') === 'dark';
-  html.setAttribute('data-theme', dark ? 'light' : 'dark');
-  document.getElementById('themeBtn').textContent = dark ? '🌙' : '☀️';
-  localStorage.setItem('pdfwala-theme', dark ? 'light' : 'dark');
-}
-(function initTheme() {
-  const s = localStorage.getItem('pdfwala-theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', s);
-  document.getElementById('themeBtn').textContent = s === 'dark' ? '☀️' : '🌙';
-})();
-
-// ─── SCROLL REVEAL ────────────────────────────────────────────────────────────
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }});
-}, { threshold: 0.1 });
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-// ─── SEARCH ───────────────────────────────────────────────────────────────────
+(function initMega(){const items=document.querySelectorAll('.nav-item[data-mega]');let closeTimer=null;items.forEach(item=>{item.addEventListener('mouseenter',()=>{clearTimeout(closeTimer);items.forEach(i=>i.classList.remove('open'));item.classList.add('open')});item.addEventListener('mouseleave',()=>{closeTimer=setTimeout(()=>item.classList.remove('open'),160)});const drop=item.querySelector('.mega-drop');if(drop){drop.addEventListener('mouseenter',()=>clearTimeout(closeTimer));drop.addEventListener('mouseleave',()=>{closeTimer=setTimeout(()=>item.classList.remove('open'),160)})}});document.addEventListener('click',e=>{if(!e.target.closest('.nav-item[data-mega]'))items.forEach(i=>i.classList.remove('open'))});document.addEventListener('keydown',e=>{if(e.key==='Escape'){items.forEach(i=>i.classList.remove('open'));closeMob()}})})();
+function toggleMob(){const n=document.getElementById('mobNav');n.classList.toggle('open');document.body.style.overflow=n.classList.contains('open')?'hidden':'';document.getElementById('mobBtn').textContent=n.classList.contains('open')?'✕':'☰'}function closeMob(){document.getElementById('mobNav').classList.remove('open');document.body.style.overflow='';document.getElementById('mobBtn').textContent='☰'}function toggleMobSec(btn){const sub=btn.nextElementSibling;const open=sub.classList.contains('open');document.querySelectorAll('.mob-sub.open').forEach(s=>s.classList.remove('open'));document.querySelectorAll('.mob-section-btn.active').forEach(b=>b.classList.remove('active'));if(!open){sub.classList.add('open');btn.classList.add('active')}}
+function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');document.getElementById('themeBtn').textContent=d?'🌙':'☀️';localStorage.setItem('pw-theme',d?'light':'dark')}(function(){const s=localStorage.getItem('pw-theme')||'dark';document.documentElement.setAttribute('data-theme',s);document.getElementById('themeBtn').textContent=s==='dark'?'☀️':'🌙'})();
+const revObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');revObs.unobserve(e.target)}})},{threshold:0.1});document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));
+// FIXED SEARCH BAR — with no-results message and proper clear
 document.getElementById('searchInput').addEventListener('input', function() {
-  const q = this.value.toLowerCase().trim();
-  document.querySelectorAll('.tool-card').forEach(card => {
-    card.style.display = (!q || card.textContent.toLowerCase().includes(q)) ? '' : 'none';
-  });
-});
-
-// ─── CATEGORY FILTER ──────────────────────────────────────────────────────────
-function filterCat(cat, el) {
-  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.querySelectorAll('.tool-card').forEach(card => {
-    card.style.display = (cat === 'all' || card.dataset.cat === cat) ? '' : 'none';
-  });
-  document.getElementById('searchInput').value = '';
-}
-
-// ─── OPEN TOOL MODAL ──────────────────────────────────────────────────────────
-function openTool(toolId) {
-  const tool = TOOLS[toolId];
-  if (!tool) return;
-  currentTool = toolId;
-  selectedFiles = [];
-  lastFilename = null;
-  lastDownloadUrl = null;
-
-  const multi = tool.multi ? 'multiple' : '';
-  document.getElementById('modalContent').innerHTML = `
-    <div class="modal-header">
-      <div class="modal-icon">${tool.icon}</div>
-      <div>
-        <div class="modal-title">${tool.title}</div>
-        <div class="modal-desc">${tool.desc}</div>
-      </div>
-    </div>
-
-    <div class="drop-zone" id="dropZone"
-         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)"
-         onclick="document.getElementById('fileInput').click()"
-         role="button" tabindex="0" aria-label="Upload file area">
-      <span class="dz-icon">📂</span>
-      <div class="dz-text"><strong>Click to browse</strong> or drag & drop</div>
-      <div class="dz-hint">Supported: ${tool.accept.replace(/,/g, ' ')}</div>
-      <input type="file" id="fileInput" accept="${tool.accept}" ${multi} onchange="onFileSelect(event)" aria-hidden="true"/>
-    </div>
-    <div class="file-list" id="fileList"></div>
-
-    ${tool.form()}
-
-    <div class="progress-block" id="progressBlock">
-      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-      <div class="progress-status">
-        <div class="dot-loader"><span></span><span></span><span></span></div>
-        <span id="progressText">Preparing…</span>
-      </div>
-    </div>
-
-    <div class="result-block" id="resultBlock">
-      <div class="result-inner" id="resultInner">
-        <div class="result-title" id="resultTitle"></div>
-        <div class="result-meta" id="resultMeta"></div>
-      </div>
-    </div>
-
-    <div class="setup-box" id="setupBox">
-      <h4>⚙️ Backend Setup Required</h4>
-      <p>To process real files, start the Flask server:</p>
-      <div class="code-block">pip install -r requirements.txt
-python app.py</div>
-    </div>
-
-    <button class="btn-process" id="actionBtn" onclick="processFile()" disabled>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-      Process File
-    </button>
-
-    <button class="btn-download" id="downloadBtn" onclick="downloadResult()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Download Processed File
-    </button>
-  `;
-
-  if (toolId === 'split') {
-    const modeEl = document.getElementById('mode');
-    if(modeEl) {
-      // Need a listener because hidden inputs don't trigger change on manual value update
-      const observer = new MutationObserver(() => {
-        document.getElementById('rangeGroup').style.display = modeEl.value === 'range' ? 'block' : 'none';
-      });
-      observer.observe(modeEl, { attributes: true });
-    }
-  }
-
-  document.getElementById('modalOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function overlayClick(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
-function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('open');
-  document.body.style.overflow = '';
-  currentTool = null;
-  selectedFiles = [];
-}
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
-
-function onDragOver(e) { e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
-function onDragLeave() { document.getElementById('dropZone').classList.remove('dragover'); }
-function onDrop(e) {
-  e.preventDefault();
-  document.getElementById('dropZone').classList.remove('dragover');
-  handleFiles(Array.from(e.dataTransfer.files));
-}
-function onFileSelect(e) { handleFiles(Array.from(e.target.files)); }
-
-function handleFiles(files) {
-  const tool = TOOLS[currentTool];
-  selectedFiles = tool.multi ? [...selectedFiles, ...files] : [files[0]];
-  renderFileList();
-  document.getElementById('actionBtn').disabled = selectedFiles.length === 0;
-  document.getElementById('resultBlock').classList.remove('show');
-  document.getElementById('downloadBtn').style.display = 'none';
-  lastFilename = null;
-  lastDownloadUrl = null;
-}
-
-function renderFileList() {
-  document.getElementById('fileList').innerHTML = selectedFiles.map((f, i) => `
-    <div class="file-item">
-      <div class="file-icon">📄</div>
-      <span class="file-name">${f.name}</span>
-      <span class="file-size">${fmtSize(f.size)}</span>
-      <button class="file-del" onclick="removeFile(${i})" aria-label="Remove">✕</button>
-    </div>
-  `).join('');
-}
-function removeFile(i) {
-  selectedFiles.splice(i, 1);
-  renderFileList();
-  document.getElementById('actionBtn').disabled = selectedFiles.length === 0;
-}
-function fmtSize(b) {
-  if (b < 1024) return b + ' B';
-  if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
-  return (b / 1048576).toFixed(1) + ' MB';
-}
-
-async function processFile() {
-  if (!currentTool || !selectedFiles.length) return;
-  const tool = TOOLS[currentTool];
-  const actionBtn = document.getElementById('actionBtn');
-  const pb = document.getElementById('progressBlock');
-  const pf = document.getElementById('progressFill');
-  const pt = document.getElementById('progressText');
-  const rb = document.getElementById('resultBlock');
-  const db = document.getElementById('downloadBtn');
-  const sb = document.getElementById('setupBox');
-
-  actionBtn.disabled = true;
-  actionBtn.innerHTML = `<div class="dot-loader"><span style="background:#fff"></span><span style="background:#fff"></span><span style="background:#fff"></span></div>&nbsp;Processing…`;
-  pb.classList.add('show');
-  rb.classList.remove('show');
-  db.style.display = 'none';
-  sb.classList.remove('show');
-  pf.style.width = '0';
-
-  let pct = 0;
-  const ticker = setInterval(() => {
-    pct = Math.min(pct + Math.random() * 12, 88);
-    pf.style.width = pct + '%';
-    pt.textContent = pct < 30 ? 'Uploading file…' : pct < 60 ? 'Processing PDF…' : 'Finalizing…';
-  }, 350);
-
-  try {
-    const fd = new FormData();
-    if (tool.multi) selectedFiles.forEach(f => fd.append(tool.field, f));
-    else fd.append(tool.field, selectedFiles[0]);
-
-    ['mode','ranges','quality','format','dpi','angle','pages',
-     'text','color','opacity','password','password2',
-     'position','start','prefix','action','order',
-     'left','right','top','bottom'].forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      let val = el.value;
-      if (id === 'opacity') val = (parseFloat(val) / 100).toFixed(2);
-      fd.append(id, val);
+    const query = this.value.toLowerCase().trim();
+    const cards = document.querySelectorAll('.tool-card');
+    let visibleCount = 0;
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        const matches = query === '' || text.includes(query);
+        card.style.display = matches ? '' : 'none';
+        if (matches) visibleCount++;
     });
-
-    const res = await fetch(API + tool.endpoint, { method: 'POST', body: fd });
-    const data = await res.json();
-    clearInterval(ticker);
-    pf.style.width = '100%';
-    pt.textContent = 'Done!';
-    showResult(data.success ? 'success' : 'error', data);
-  } catch (err) {
-    clearInterval(ticker);
-    pf.style.width = '0';
-    if (/fetch|NetworkError/i.test(err.message)) sb.classList.add('show');
-    else showResult('error', { message: 'Unexpected error.', error: err.message });
-  }
-  actionBtn.disabled = selectedFiles.length === 0;
-  actionBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Process File`;
-}
-
-function showResult(type, data) {
-  const rb = document.getElementById('resultBlock');
-  const ri = document.getElementById('resultInner');
-  const rt = document.getElementById('resultTitle');
-  const rm = document.getElementById('resultMeta');
-  const db = document.getElementById('downloadBtn');
-
-  rb.classList.add('show');
-  ri.className = 'result-inner ' + type;
-  const icon = type === 'success' ? '✓' : '✕';
-
-  if (type === 'success' && data.page_count !== undefined) {
-      rt.textContent = icon + ' File Analysis Complete';
-      rm.innerHTML = `
-          <div style="margin-top: 12px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; color: var(--text-2); font-size: 13px;">
-              <table style="width: 100%; border-collapse: collapse;">
-                  <tr style="border-bottom: 1px solid var(--border);"><td style="padding: 6px 0;">📄 <strong>Pages:</strong></td><td style="text-align: right; color: var(--text);">${data.page_count}</td></tr>
-                  <tr style="border-bottom: 1px solid var(--border);"><td style="padding: 6px 0;">⚖️ <strong>Size:</strong></td><td style="text-align: right; color: var(--text);">${data.size_human}</td></tr>
-                  <tr style="border-bottom: 1px solid var(--border);"><td style="padding: 6px 0;">👤 <strong>Author:</strong></td><td style="text-align: right; color: var(--text);">${data.author || 'Unknown'}</td></tr>
-                  <tr style="border-bottom: 1px solid var(--border);"><td style="padding: 6px 0;">🔒 <strong>Locked:</strong></td><td style="text-align: right; color: var(--text);">${data.encrypted ? 'Yes' : 'No'}</td></tr>
-                  <tr><td style="padding: 6px 0;">📐 <strong>Dimensions:</strong></td><td style="text-align: right; color: var(--text);">${data.page_sizes[0].width_pt} x ${data.page_sizes[0].height_pt} pt</td></tr>
-              </table>
-          </div>`;
-      db.style.display = 'none';
-      toast('Analysis Complete', 'success');
-      return;
-  }
-
-  rt.textContent = icon + ' ' + (data.message || data.error || 'Processing failed');
-  const pills = [];
-  if (data.pages) pills.push(data.pages + ' pages');
-  if (data.size_human) pills.push(data.size_human);
-  if (data.reduction_pct) pills.push(data.reduction_pct + '% smaller');
-  if (type === 'success' && data.encrypted !== undefined) pills.push('Encrypted: ' + (data.encrypted ? 'Yes' : 'No'));
-  rm.innerHTML = pills.map(p => `<span class="result-pill">${p}</span>`).join('');
-
-  if (type === 'success') {
-    const resolvedUrl = data.download_url || (data.filename ? API + '/download/' + data.filename : null);
-    if (resolvedUrl) {
-      lastFilename = data.filename || 'processed_file';
-      lastDownloadUrl = resolvedUrl;
-      db.style.display = 'flex';
-      toast('File ready!', 'success');
+    const existingMsg = document.getElementById('noSearchResults');
+    if (existingMsg) existingMsg.remove();
+    if (query !== '' && visibleCount === 0) {
+        const grid = document.getElementById('toolsGrid');
+        const noMsg = document.createElement('div');
+        noMsg.id = 'noSearchResults';
+        noMsg.style.cssText = 'grid-column:1/-1;text-align:center;padding:40px;color:var(--text-3);';
+        noMsg.innerHTML = `🔍 No tools found for "${query}"<br><small>Try "merge", "compress", or "pdf to image"</small>`;
+        grid.parentNode.insertBefore(noMsg, grid.nextSibling);
+        grid.style.display = 'none';
     } else {
-      db.style.display = 'none';
-      toast(data.message || 'Done!', 'success');
+        document.getElementById('toolsGrid').style.display = '';
     }
-  } else {
-    db.style.display = 'none';
-    toast(data.error || 'Error.', 'error');
-  }
+    if (query !== '') {
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+        document.querySelector('.tab-btn').classList.add('active');
+    } else {
+        const activeTab = document.querySelector('.tab-btn.active');
+        if (activeTab && activeTab.textContent !== 'All Tools') {
+            const cat = activeTab.textContent.toLowerCase().replace(' ', '-');
+            filterCat(cat === 'word-tools' ? 'word' : cat === 'excel-tools' ? 'excel' : cat, activeTab);
+        }
+    }
+});
+function filterCat(cat, el) {
+    const noMsg = document.getElementById('noSearchResults');
+    if (noMsg) noMsg.remove();
+    document.getElementById('toolsGrid').style.display = '';
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.tool-card').forEach(card => {
+        card.style.display = (cat === 'all' || card.dataset.cat === cat) ? '' : 'none';
+    });
+    document.getElementById('searchInput').value = '';
 }
-
-function downloadResult() {
-  if (!lastDownloadUrl) return;
-  const a = document.createElement('a');
-  a.href = lastDownloadUrl;
-  a.download = lastFilename || 'processed.pdf';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-function radioSelect(el, fieldId, value) {
-  el.closest('.radio-group').querySelectorAll('.radio-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  const hidden = document.getElementById(fieldId);
-  if (hidden) {
-      hidden.value = value;
-      // Trigger update for split mode specifically
-      if(fieldId === 'mode') {
-         document.getElementById('rangeGroup').style.display = value === 'range' ? 'block' : 'none';
-      }
-  }
-}
-
-function comingSoon(name) { toast(name + ' is coming soon!', 'success'); }
+function openTool(toolId){const tool=TOOLS[toolId];if(!tool)return;currentTool=toolId;selectedFiles=[];lastFilename=null;lastDownloadUrl=null;closeMob();const multi=tool.multi?'multiple':'';document.getElementById('modalContent').innerHTML=`<div class="modal-header"><div class="modal-icon">${tool.icon}</div><div><div class="modal-title">${tool.title}</div><div class="modal-desc">${tool.desc}</div></div></div><div class="drop-zone" id="dropZone" ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)" onclick="document.getElementById('fileInput').click()" role="button" tabindex="0"><span class="dz-icon">📂</span><div class="dz-text"><strong>Click to browse</strong> or drag & drop</div><div class="dz-hint">Supported: ${tool.accept.replace(/,/g,' ')}</div><input type="file" id="fileInput" accept="${tool.accept}" ${multi} onchange="onFileSelect(event)" aria-hidden="true"/></div><div class="file-list" id="fileList"></div>${tool.form()}<div class="progress-block" id="progressBlock"><div class="progress-track"><div class="progress-fill" id="progressFill"></div></div><div class="progress-status"><div class="dot-loader"><span></span><span></span><span></span></div><span id="progressText">Preparing…</span></div></div><div class="result-block" id="resultBlock"><div class="result-inner" id="resultInner"><div class="result-title" id="resultTitle"></div><div class="result-meta" id="resultMeta"></div></div></div><div class="setup-box" id="setupBox"><h4>⚙️ Backend Setup Required</h4><p>This is a live UI preview. To process real files, start the Flask server on your machine:</p><div class="code-block">pip install -r requirements.txt\npython app.py\n# Then in this file, set: const API = 'http://localhost:5000';</div></div><button class="btn-process" id="actionBtn" onclick="processFile()" disabled><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>Process File</button><button class="btn-download" id="downloadBtn" onclick="downloadResult()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Processed File</button>`;if(toolId==='split'){const modeEl=document.getElementById('mode');if(modeEl)modeEl.addEventListener('change',()=>{document.getElementById('rangeGroup').style.display=modeEl.value==='range'?'block':'none'})}if(toolId==='compare-pdf'){const dropZone=document.getElementById('dropZone');if(dropZone)dropZone.querySelector('.dz-hint').innerHTML='Upload exactly 2 PDF files for comparison.';}document.getElementById('modalOverlay').classList.add('open');document.body.style.overflow='hidden'}
+function overlayClick(e){if(e.target===document.getElementById('modalOverlay'))closeModal()}function closeModal(){document.getElementById('modalOverlay').classList.remove('open');document.body.style.overflow='';currentTool=null;selectedFiles=[]}
+function onDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('dragover')}function onDragLeave(){document.getElementById('dropZone').classList.remove('dragover')}function onDrop(e){e.preventDefault();document.getElementById('dropZone').classList.remove('dragover');handleFiles(Array.from(e.dataTransfer.files))}function onFileSelect(e){handleFiles(Array.from(e.target.files))}function handleFiles(files){const tool=TOOLS[currentTool];if(currentTool==='compare-pdf'){if(files.length!==2){toast('Please upload exactly 2 PDF files for comparison','error');return}}selectedFiles=tool.multi?[...selectedFiles,...files]:[files[0]];renderFileList();document.getElementById('actionBtn').disabled=!selectedFiles.length;document.getElementById('resultBlock').classList.remove('show');document.getElementById('downloadBtn').style.display='none';lastFilename=null;lastDownloadUrl=null}
+function renderFileList(){document.getElementById('fileList').innerHTML=selectedFiles.map((f,i)=>`<div class="file-item"><div class="file-icon">📄</div><span class="file-name">${f.name}</span><span class="file-size">${fmtSz(f.size)}</span><button class="file-del" onclick="removeFile(${i})" aria-label="Remove">✕</button></div>`).join('')}function removeFile(i){selectedFiles.splice(i,1);renderFileList();document.getElementById('actionBtn').disabled=!selectedFiles.length}function fmtSz(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB'}
+async function processFile(){if(!currentTool||!selectedFiles.length)return;const tool=TOOLS[currentTool];if(!API){document.getElementById('setupBox').classList.add('show');document.getElementById('resultBlock').classList.remove('show');return}const aBtn=document.getElementById('actionBtn');const pBlock=document.getElementById('progressBlock');const pFill=document.getElementById('progressFill');const pText=document.getElementById('progressText');const rBlock=document.getElementById('resultBlock');const dBtn=document.getElementById('downloadBtn');const sBox=document.getElementById('setupBox');aBtn.disabled=true;aBtn.innerHTML=`<div class="dot-loader"><span style="background:#fff"></span><span style="background:#fff"></span><span style="background:#fff"></span></div>&nbsp;Processing…`;pBlock.classList.add('show');rBlock.classList.remove('show');dBtn.style.display='none';sBox.classList.remove('show');pFill.style.width='0';let pct=0;const tick=setInterval(()=>{pct=Math.min(pct+Math.random()*12,88);pFill.style.width=pct+'%';pText.textContent=pct<30?'Uploading file…':pct<60?'Processing PDF…':'Finalizing…'},350);try{const fd=new FormData();if(tool.multi)selectedFiles.forEach(f=>fd.append(tool.field,f));else fd.append(tool.field,selectedFiles[0]);['mode','ranges','quality','format','dpi','angle','pages','text','color','opacity','password','password2','position','start','prefix','action','order','left','right','top','bottom','page_size','version','lang','width','height','keep_ratio','name','reason','search_text','find_text','replace_text'].forEach(id=>{const el=document.getElementById(id);if(!el)return;let val=el.value;if(id==='opacity')val=(parseFloat(val)/100).toFixed(2);fd.append(id,val)});const res=await fetch(API+tool.endpoint,{method:'POST',body:fd});const data=await res.json();clearInterval(tick);pFill.style.width='100%';pText.textContent='Done!';showResult(data.success?'success':'error',data)}catch(err){clearInterval(tick);pFill.style.width='0';if(/fetch|NetworkError|postMessage|FormData/i.test(err.message)){sBox.classList.add('show')}else{showResult('error',{message:'Unexpected error: '+err.message})}}aBtn.disabled=!selectedFiles.length;aBtn.innerHTML=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Process File`}
+function showResult(type,data){const rb=document.getElementById('resultBlock');const ri=document.getElementById('resultInner');const rt=document.getElementById('resultTitle');const rm=document.getElementById('resultMeta');const db=document.getElementById('downloadBtn');rb.classList.add('show');ri.className='result-inner '+type;const icon=type==='success'?'✓':'✕';if(type==='success'&&data.page_count!==undefined){rt.textContent=icon+' File Analysis Complete';rm.innerHTML=`<div style="width:100%;margin-top:10px;background:rgba(0,0,0,.18);padding:12px;border-radius:8px;color:var(--text-2);font-size:13px"><table style="width:100%;border-collapse:collapse">${[['📄 Pages',data.page_count],['💾 Size',data.size_human],['👤 Author',data.author||'—'],['🔒 Locked',data.encrypted?'Yes':'No'],['📐 Dimensions',data.page_sizes?.[0]?data.page_sizes[0].width_pt+'×'+data.page_sizes[0].height_pt+' pt':'—']].map(([k,v])=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0">${k}</td><td style="text-align:right;color:var(--text)">${v}</td></tr>`).join('')}</table></div>`;db.style.display='none';toast('Analysis complete!','success');return}rt.textContent=icon+' '+(data.message||data.error||'Processing failed');const pills=[];if(data.pages)pills.push(data.pages+' pages');if(data.size_human)pills.push(data.size_human);if(data.reduction_pct)pills.push(data.reduction_pct+'% smaller');if(data.extracted)pills.push('Extracted '+data.extracted);rm.innerHTML=pills.map(p=>`<span class="result-pill">${p}</span>`).join('');if(type==='success'){const url=data.download_url||(data.filename?API+'/download/'+data.filename:null);if(url){lastFilename=data.filename||'pdfwala_output.pdf';lastDownloadUrl=url;db.style.display='flex';toast('File ready — download below!','success')}else{db.style.display='none';toast(data.message||'Done!','success')}}else{db.style.display='none';toast(data.error||data.message||'Processing failed.','error')}}
+function downloadResult(){if(!lastDownloadUrl)return;const a=document.createElement('a');a.href=lastDownloadUrl;a.download=lastFilename||'pdfwala_output.pdf';document.body.appendChild(a);a.click();document.body.removeChild(a)}function radioSelect(el,fieldId,value){el.closest('.radio-group').querySelectorAll('.radio-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');const h=document.getElementById(fieldId);if(h){h.value=value;h.dispatchEvent(new Event('change'))}}
+// FIXED TOAST with auto-dismiss
 function toast(msg, type = 'success') {
-  const t = document.getElementById('toast');
-  document.getElementById('toastMsg').textContent = msg;
-  t.className = 'toast ' + type + ' show';
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.remove('show'), 4200);
+    const t = document.getElementById('toast');
+    const msgSpan = document.getElementById('toastMsg');
+    if (!t || !msgSpan) return;
+    msgSpan.textContent = msg;
+    t.className = 'toast ' + type + ' show';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 3500);
 }
 </script>
 </body>
