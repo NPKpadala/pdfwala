@@ -1,34 +1,40 @@
 FROM ubuntu:22.04
 
+# Set non-interactive mode to avoid timezone prompt
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV BASE_DIR=/home/opc/pdfwala
 
-# System dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     python3.11 python3.11-dev python3-pip \
     libreoffice \
-    tesseract-ocr tesseract-ocr-eng tesseract-ocr-spa tesseract-ocr-fra \
-    ghostscript \
-    poppler-utils \
-    default-jre-headless \
+    tesseract-ocr tesseract-ocr-eng \
+    ghostscript poppler-utils \
     wkhtmltopdf \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    fonts-liberation \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
+# Copy requirements first (better caching)
 COPY requirements.txt .
+
+# Install Python packages
 RUN pip3 install --no-cache-dir -r requirements.txt
 
+# Copy all application files
 COPY app.py .
+COPY gunicorn.conf.py .
 COPY static/ ./static/
 
-RUN mkdir -p /home/opc/pdfwala/uploads /home/opc/pdfwala/outputs /home/opc/pdfwala/static
+# Create necessary directories
+RUN mkdir -p /home/opc/pdfwala/uploads /home/opc/pdfwala/outputs
 
+# Expose port
 EXPOSE 5000
 
-CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD curl -f http://localhost:5000/api/health || exit 1
+
+# Run with gunicorn
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "app:app"]

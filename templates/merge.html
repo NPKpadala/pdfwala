@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Merge PDF Online Free | NPKPadala</title>
+  <meta name="description" content="Merge PDF files online for free. Fast, secure, no signup required.">
+</head>
+
+<body style="font-family: Arial; text-align:center; padding:40px;">
+
+<h1>Merge PDF Online Free</h1>
+
+<p>Combine multiple PDF files into one document instantly.</p>
+
+<form id="mergeForm">
+  <input type="file" id="files" multiple required><br><br>
+  <button type="submit">Merge PDF</button>
+</form>
+
+<p id="status"></p>
+
+<script>
+document.getElementById("mergeForm").addEventListener("submit", async function(e){
+  e.preventDefault();
+
+  let files = document.getElementById("files").files;
+  let formData = new FormData();
+
+  for(let i=0;i<files.length;i++){
+    formData.append("files", files[i]);
+  }
+
+  document.getElementById("status").innerText = "Processing...";
+
+  let res = await fetch("/api/merge", {
+    method: "POST",
+    body: formData
+  });
+
+  let data = await res.json();
+
+  if(data.success){
+    document.getElementById("status").innerHTML =
+      `<a href="${data.download_url}">Download Merged PDF</a>`;
+  } else {
+    document.getElementById("status").innerText = data.error;
+  }
+});
+</script>
+
+</body>
+</html>
