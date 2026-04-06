@@ -1,51 +1,202 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Merge PDF Online Free | NPKPadala</title>
-  <meta name="description" content="Merge PDF files online for free. Fast, secure, no signup required.">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merge PDF Online Free | PDFWala</title>
+    <meta name="description" content="Merge multiple PDF files into one document online for free. Fast, secure, no signup required.">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Bricolage+Grotesque:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Copy exactly from your homepage */
+        :root {
+            --ink-900:#0A0E1A; --ink-800:#111827; --ink-700:#1A2235; --ink-600:#222D42;
+            --ink-500:#2E3D58; --ink-400:#4A5878; --ink-300:#6B7A9A; --ink-200:#9AA5BE;
+            --ink-100:#C8D0E0; --ink-50:#EDF0F7;
+            --blue-700:#1D4ED8; --blue-600:#2563EB; --blue-500:#3B82F6;
+            --blue-400:#60A5FA; --blue-300:#93C5FD;
+            --violet-700:#6D28D9; --violet-600:#7C3AED; --violet-500:#8B5CF6; --violet-400:#A78BFA;
+            --cyan-500:#06B6D4; --cyan-400:#22D3EE;
+            --emerald-500:#10B981; --emerald-400:#34D399;
+            --amber-500:#F59E0B; --amber-400:#FBBF24;
+            --rose-500:#F43F5E; --rose-400:#FB7185;
+            --bg:var(--ink-900); --bg-2:var(--ink-800); --bg-3:var(--ink-700);
+            --bg-glass:rgba(10,14,26,0.85);
+            --border:rgba(255,255,255,0.08); --border-hover:rgba(255,255,255,0.14);
+            --text:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-300);
+            --accent:var(--blue-500); --accent-2:var(--violet-500);
+            --r-sm:8px; --r:12px; --r-lg:16px; --r-xl:20px; --r-2xl:28px;
+            --sh:0 4px 20px rgba(0,0,0,.4); --sh-lg:0 12px 48px rgba(0,0,0,.5);
+            --sh-xl:0 24px 80px rgba(0,0,0,.6); --sh-card:0 8px 32px rgba(0,0,0,.35);
+            --ease:cubic-bezier(0.4,0,0.2,1); --t:0.2s var(--ease); --t-lg:0.35s var(--ease);
+            --font:'DM Sans',system-ui,sans-serif; --font-h:'Bricolage Grotesque',system-ui,sans-serif;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            font-family:var(--font);
+            background:var(--bg);
+            color:var(--text);
+            line-height:1.6;
+            min-height:100vh;
+            padding:40px 20px;
+        }
+        .container{
+            max-width:800px;
+            margin:0 auto;
+            background:var(--bg-2);
+            border-radius:var(--r-2xl);
+            padding:40px;
+            border:1px solid var(--border);
+            box-shadow:var(--sh-xl);
+        }
+        h1{
+            font-family:var(--font-h);
+            font-size:2.5rem;
+            background:linear-gradient(135deg,var(--blue-400),var(--violet-400));
+            -webkit-background-clip:text;
+            background-clip:text;
+            color:transparent;
+            margin-bottom:16px;
+        }
+        .description{
+            color:var(--text-2);
+            margin-bottom:32px;
+            font-size:1.1rem;
+        }
+        .upload-area{
+            background:var(--bg-3);
+            border:2px dashed var(--border);
+            border-radius:var(--r-lg);
+            padding:40px;
+            text-align:center;
+            margin-bottom:24px;
+            transition:var(--t);
+        }
+        .upload-area:hover{
+            border-color:var(--accent);
+            background:var(--bg-glass);
+        }
+        input[type="file"]{
+            width:100%;
+            padding:20px;
+            background:var(--bg);
+            border:1px solid var(--border);
+            border-radius:var(--r);
+            color:var(--text);
+            cursor:pointer;
+        }
+        button{
+            background:linear-gradient(135deg,var(--blue-600),var(--violet-600));
+            color:white;
+            border:none;
+            padding:14px 32px;
+            font-size:1rem;
+            font-weight:600;
+            border-radius:var(--r-lg);
+            cursor:pointer;
+            transition:var(--t);
+            width:100%;
+        }
+        button:hover{
+            transform:translateY(-2px);
+            box-shadow:var(--sh-lg);
+        }
+        #status{
+            margin-top:24px;
+            padding:16px;
+            background:var(--bg-3);
+            border-radius:var(--r);
+            text-align:center;
+        }
+        a{
+            color:var(--blue-400);
+            text-decoration:none;
+        }
+        a:hover{text-decoration:underline;}
+        .back-link{
+            display:inline-block;
+            margin-top:24px;
+            color:var(--text-2);
+        }
+        hr{
+            border-color:var(--border);
+            margin:24px 0;
+        }
+        h3{
+            color:var(--text-2);
+            margin-bottom:16px;
+        }
+        ul{
+            list-style:none;
+            padding-left:0;
+        }
+        li{
+            margin-bottom:8px;
+            color:var(--text-2);
+        }
+        li::before{
+            content:"✅ ";
+        }
+    </style>
 </head>
+<body>
+    <div class="container">
+        <h1>📄 Merge PDF Online Free</h1>
+        <div class="description">
+            Combine multiple PDF files into one document instantly. No signup, no watermark, completely free.
+        </div>
 
-<body style="font-family: Arial; text-align:center; padding:40px;">
+        <div class="upload-area">
+            <form id="mergeForm">
+                <input type="file" id="files" multiple accept=".pdf" required>
+                <br><br>
+                <button type="submit">🔄 Merge PDF Files</button>
+            </form>
+        </div>
 
-<h1>Merge PDF Online Free</h1>
+        <div id="status"></div>
 
-<p>Combine multiple PDF files into one document instantly.</p>
+        <hr>
 
-<form id="mergeForm">
-  <input type="file" id="files" multiple required><br><br>
-  <button type="submit">Merge PDF</button>
-</form>
+        <h3>✨ Why Choose PDFWala?</h3>
+        <ul>
+            <li>100% Free — No hidden charges</li>
+            <li>No Signup Required</li>
+            <li>Files Auto-Delete After 1 Hour</li>
+            <li>Secure & Private</li>
+            <li>Works on Mobile & Desktop</li>
+        </ul>
 
-<p id="status"></p>
+        <hr>
 
-<script>
-document.getElementById("mergeForm").addEventListener("submit", async function(e){
-  e.preventDefault();
+        <a href="/" class="back-link">← Back to PDFWala Home</a>
+    </div>
 
-  let files = document.getElementById("files").files;
-  let formData = new FormData();
-
-  for(let i=0;i<files.length;i++){
-    formData.append("files", files[i]);
-  }
-
-  document.getElementById("status").innerText = "Processing...";
-
-  let res = await fetch("/api/merge", {
-    method: "POST",
-    body: formData
-  });
-
-  let data = await res.json();
-
-  if(data.success){
-    document.getElementById("status").innerHTML =
-      `<a href="${data.download_url}">Download Merged PDF</a>`;
-  } else {
-    document.getElementById("status").innerText = data.error;
-  }
-});
-</script>
-
+    <script>
+        document.getElementById("mergeForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            let files = document.getElementById("files").files;
+            if (files.length < 2) {
+                document.getElementById("status").innerHTML = "<span style='color:#F43F5E;'>❌ Please select at least 2 PDF files</span>";
+                return;
+            }
+            let formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append("files", files[i]);
+            }
+            document.getElementById("status").innerHTML = "<span style='color:#60A5FA;'>⏳ Processing... Please wait</span>";
+            
+            try {
+                let res = await fetch("/api/merge", { method: "POST", body: formData });
+                let data = await res.json();
+                if (data.success) {
+                    document.getElementById("status").innerHTML = `<span style='color:#34D399;'>✅ Success! <a href="${data.download_url}">Click here to download your merged PDF</a></span>`;
+                } else {
+                    document.getElementById("status").innerHTML = `<span style='color:#F43F5E;'>❌ Error: ${data.error}</span>`;
+                }
+            } catch(err) {
+                document.getElementById("status").innerHTML = "<span style='color:#F43F5E;'>❌ Network error. Please try again.</span>";
+            }
+        });
+    </script>
 </body>
 </html>
