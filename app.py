@@ -2218,8 +2218,120 @@ def repair_excel():
     except Exception:
         log.exception("repair_excel")
         return err("Excel repair failed", 500)
+# ─────────────────────────────────────────────────────────────────
+# SEO LANDING PAGES
+# ─────────────────────────────────────────────────────────────────
+
+SEO_PAGES = {
+    "merge-pdf":     {"tool": "merge",       "title": "Merge PDF Free Online — Combine PDF Files | NPKPadala", "desc": "Merge multiple PDF files into one. Free, fast, no sign-up. Combine PDFs instantly online."},
+    "compress-pdf":  {"tool": "compress",     "title": "Compress PDF Free Online — Reduce PDF Size | NPKPadala", "desc": "Compress PDF files and reduce size without losing quality. Free online PDF compressor."},
+    "pdf-to-word":   {"tool": "pdf-to-word",  "title": "PDF to Word Free Online — Convert PDF to DOCX | NPKPadala", "desc": "Convert PDF to editable Word document online for free. Fast and accurate PDF to DOCX converter."},
+    "jpg-to-pdf":    {"tool": "jpg-to-pdf",   "title": "JPG to PDF Free Online — Convert Images to PDF | NPKPadala", "desc": "Convert JPG images to PDF online for free. Combine multiple JPGs into one PDF instantly."},
+    "split-pdf":     {"tool": "split",        "title": "Split PDF Free Online — Extract PDF Pages | NPKPadala", "desc": "Split PDF into multiple files or extract specific pages. Free online PDF splitter."},
+    "pdf-to-jpg":    {"tool": "pdf-to-image", "title": "PDF to JPG Free Online — Convert PDF to Image | NPKPadala", "desc": "Convert PDF pages to JPG images online for free. High quality PDF to image converter."},
+    "protect-pdf":   {"tool": "protect",      "title": "Protect PDF Free Online — Password Protect PDF | NPKPadala", "desc": "Add password protection to your PDF files online for free. Secure your documents instantly."},
+    "word-to-pdf":   {"tool": "word-to-pdf",  "title": "Word to PDF Free Online — Convert DOCX to PDF | NPKPadala", "desc": "Convert Word documents to PDF online for free. Fast and reliable DOCX to PDF converter."},
+    "rotate-pdf":    {"tool": "rotate",       "title": "Rotate PDF Free Online — Fix PDF Orientation | NPKPadala", "desc": "Rotate PDF pages online for free. Fix portrait or landscape orientation instantly."},
+    "watermark-pdf": {"tool": "watermark",    "title": "Watermark PDF Free Online — Add Text Watermark | NPKPadala", "desc": "Add custom text watermark to PDF online for free. Protect your documents with watermarks."},
+}
+
+@app.route("/<page_slug>")
+def seo_landing(page_slug):
+    page = SEO_PAGES.get(page_slug)
+    if not page:
+        return "Page not found", 404
+    tool_id  = page["tool"]
+    title    = page["title"]
+    desc     = page["desc"]
+    canonical = f"https://npkpadala.com/{page_slug}"
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>{title}</title>
+<meta name="description" content="{desc}"/>
+<link rel="canonical" href="{canonical}"/>
+<meta property="og:title" content="{title}"/>
+<meta property="og:description" content="{desc}"/>
+<meta property="og:url" content="{canonical}"/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="NPKPadala PDF Tools"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="{title}"/>
+<meta name="twitter:description" content="{desc}"/>
+<script type="application/ld+json">
+{{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "{title}",
+  "url": "{canonical}",
+  "description": "{desc}",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "All",
+  "offers": {{
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }}
+}}
+</script>
+<style>
+  body {{ font-family: sans-serif; background: #0A0E1A; color: #fff;
+         display: flex; align-items: center; justify-content: center;
+         height: 100vh; margin: 0; text-align: center; }}
+  .loader {{ font-size: 18px; color: #60A5FA; }}
+  .spinner {{ width: 40px; height: 40px; border: 4px solid #1A2235;
+              border-top: 4px solid #3B82F6; border-radius: 50%;
+              animation: spin 0.8s linear infinite; margin: 0 auto 16px; }}
+  @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
+</style>
+</head>
+<body>
+<div class="loader">
+  <div class="spinner"></div>
+  Loading tool…
+</div>
+<script>
+  sessionStorage.setItem('autoOpenTool', '{tool_id}');
+  window.location.href = 'https://npkpadala.com/#tools';
+</script>
+</body>
+</html>"""
+    return html, 200, {"Content-Type": "text/html"}
 
 
+@app.route("/sitemap.xml")
+def sitemap():
+    from datetime import date
+    today = date.today().isoformat()
+    urls = ["https://npkpadala.com/"] + [f"https://npkpadala.com/{slug}" for slug in SEO_PAGES]
+    url_blocks = "\n".join([
+        f"""  <url>
+    <loc>{u}</loc>
+    <lastmod>{today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>{"1.0" if u == "https://npkpadala.com/" else "0.8"}</priority>
+  </url>""" for u in urls
+    ])
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{url_blocks}
+</urlset>"""
+    return xml, 200, {"Content-Type": "application/xml"}
+
+
+@app.route("/robots.txt")
+def robots():
+    content = """User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /download/
+
+Sitemap: https://npkpadala.com/sitemap.xml"""
+    return content, 200, {"Content-Type": "text/plain"}
+
+    
 # ─────────────────────────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────────────────────────
