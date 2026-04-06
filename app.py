@@ -489,6 +489,10 @@ def _parse_pages(spec: str, total: int) -> list:
 def home():
     return send_from_directory(Config.STATIC_FOLDER, "index.html")
 
+@app.route("/pdfwala/merge-pdf")
+def merge_pdf_page():
+    return send_from_directory("templates", "merge.html")
+
 
 @app.route("/api/health")
 def health():
