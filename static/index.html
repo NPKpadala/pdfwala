@@ -6,6 +6,31 @@
 <meta name="description" content="PDFWala — Fast, secure, and free PDF tools. Merge, split, compress, convert and more. No sign-up required."/>
 <meta name="theme-color" content="#0A0E1A"/>
 <title>PDFWala — All-in-One PDF Tools</title>
+<link rel="canonical" href="https://npkpadala.com/"/>
+<meta property="og:title" content="PDFWala — Free PDF Tools Online"/>
+<meta property="og:description" content="50+ free PDF tools. Merge, split, compress, convert PDF. No sign-up required. Fast and secure."/>
+<meta property="og:url" content="https://npkpadala.com/"/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="NPKPadala PDF Tools"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="PDFWala — Free PDF Tools Online"/>
+<meta name="twitter:description" content="50+ free PDF tools. No sign-up. Instant processing."/>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "NPKPadala PDF Tools",
+  "url": "https://npkpadala.com",
+  "description": "50+ free PDF tools including merge, split, compress, convert. No sign-up required.",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "All",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet"/>
@@ -1165,6 +1190,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 <div class="modal-overlay" id="modalOverlay" onclick="overlayClick(event)" role="dialog" aria-modal="true" aria-label="PDF Tool"><div class="modal" id="modalBox"><button class="modal-close" onclick="closeModal()" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><div id="modalContent"></div></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"><div class="toast-bar"></div><span id="toastMsg"></span></div>
 <script>
+   
 const API = 'https://npkpadala.com';
 let currentTool = null, selectedFiles = [], lastFilename = null, lastDownloadUrl = null;
 async function checkBackend(){try{const r=await fetch(API+'/api/health');if(!r.ok)throw 0;console.log('✅ Backend connected');return true}catch{console.warn('⚠️ Backend not reachable');return false}}window.addEventListener('load',checkBackend);
@@ -1283,6 +1309,13 @@ function renderFileList(){document.getElementById('fileList').innerHTML=selected
 async function processFile(){if(!currentTool||!selectedFiles.length)return;const tool=TOOLS[currentTool];if(!API){document.getElementById('setupBox').classList.add('show');document.getElementById('resultBlock').classList.remove('show');return}const aBtn=document.getElementById('actionBtn');const pBlock=document.getElementById('progressBlock');const pFill=document.getElementById('progressFill');const pText=document.getElementById('progressText');const rBlock=document.getElementById('resultBlock');const dBtn=document.getElementById('downloadBtn');const sBox=document.getElementById('setupBox');aBtn.disabled=true;aBtn.innerHTML=`<div class="dot-loader"><span style="background:#fff"></span><span style="background:#fff"></span><span style="background:#fff"></span></div>&nbsp;Processing…`;pBlock.classList.add('show');rBlock.classList.remove('show');dBtn.style.display='none';sBox.classList.remove('show');pFill.style.width='0';let pct=0;const tick=setInterval(()=>{pct=Math.min(pct+Math.random()*12,88);pFill.style.width=pct+'%';pText.textContent=pct<30?'Uploading file…':pct<60?'Processing PDF…':'Finalizing…'},350);try{const fd=new FormData();if(tool.multi)selectedFiles.forEach(f=>fd.append(tool.field,f));else fd.append(tool.field,selectedFiles[0]);['mode','ranges','quality','format','dpi','angle','pages','text','color','opacity','password','password2','position','start','prefix','action','order','left','right','top','bottom','page_size','version','lang','width','height','keep_ratio','name','reason','search_text','find_text','replace_text'].forEach(id=>{const el=document.getElementById(id);if(!el)return;let val=el.value;if(id==='opacity')val=(parseFloat(val)/100).toFixed(2);fd.append(id,val)});const res=await fetch(API+tool.endpoint,{method:'POST',body:fd});const data=await res.json();clearInterval(tick);pFill.style.width='100%';pText.textContent='Done!';showResult(data.success?'success':'error',data)}catch(err){clearInterval(tick);pFill.style.width='0';if(/fetch|NetworkError|postMessage|FormData/i.test(err.message)){sBox.classList.add('show')}else{showResult('error',{message:'Unexpected error: '+err.message})}}aBtn.disabled=!selectedFiles.length;aBtn.innerHTML=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Process File`}
 function showResult(type,data){const rb=document.getElementById('resultBlock');const ri=document.getElementById('resultInner');const rt=document.getElementById('resultTitle');const rm=document.getElementById('resultMeta');const db=document.getElementById('downloadBtn');rb.classList.add('show');ri.className='result-inner '+type;const icon=type==='success'?'✓':'✕';if(type==='success'&&data.page_count!==undefined){rt.textContent=icon+' File Analysis Complete';rm.innerHTML=`<div style="width:100%;margin-top:10px;background:rgba(0,0,0,.18);padding:12px;border-radius:8px;color:var(--text-2);font-size:13px"><table style="width:100%;border-collapse:collapse">${[['📄 Pages',data.page_count],['💾 Size',data.size_human],['👤 Author',data.author||'—'],['🔒 Locked',data.encrypted?'Yes':'No'],['📐 Dimensions',data.page_sizes?.[0]?data.page_sizes[0].width_pt+'×'+data.page_sizes[0].height_pt+' pt':'—']].map(([k,v])=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0">${k}</td><td style="text-align:right;color:var(--text)">${v}</td></tr>`).join('')}</table></div>`;db.style.display='none';toast('Analysis complete!','success');return}rt.textContent=icon+' '+(data.message||data.error||'Processing failed');const pills=[];if(data.pages)pills.push(data.pages+' pages');if(data.size_human)pills.push(data.size_human);if(data.reduction_pct)pills.push(data.reduction_pct+'% smaller');if(data.extracted)pills.push('Extracted '+data.extracted);rm.innerHTML=pills.map(p=>`<span class="result-pill">${p}</span>`).join('');if(type==='success'){const url=data.download_url||(data.filename?API+'/download/'+data.filename:null);if(url){lastFilename=data.filename||'pdfwala_output.pdf';lastDownloadUrl=url;db.style.display='flex';toast('File ready — download below!','success')}else{db.style.display='none';toast(data.message||'Done!','success')}}else{db.style.display='none';toast(data.error||data.message||'Processing failed.','error')}}
 function downloadResult(){if(!lastDownloadUrl)return;const a=document.createElement('a');a.href=lastDownloadUrl;a.download=lastFilename||'pdfwala_output.pdf';document.body.appendChild(a);a.click();document.body.removeChild(a)}function radioSelect(el,fieldId,value){el.closest('.radio-group').querySelectorAll('.radio-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');const h=document.getElementById(fieldId);if(h){h.value=value;h.dispatchEvent(new Event('change'))}}
+window.addEventListener('load', () => {
+    const tool = sessionStorage.getItem('autoOpenTool');
+    if (tool) {
+        sessionStorage.removeItem('autoOpenTool');
+        setTimeout(() => openTool(tool), 500);
+    }
+});
 // FIXED TOAST with auto-dismiss
 function toast(msg, type = 'success') {
     const t = document.getElementById('toast');
