@@ -6,6 +6,7 @@ All bugs fixed. Production ready.
 import os, io, uuid, zipfile, logging, time, threading, subprocess
 import tempfile, shutil, re, csv, json
 from contextlib import contextmanager
+from flask import send_from_directory
 from functools import wraps
 from datetime import datetime
 from typing import Optional
@@ -491,19 +492,19 @@ def home():
 
 @app.route("/pdfwala/merge-pdf")
 def merge_pdf_page():
-    return render_template("merge.html")
+    return send_from_directory(Config.STATIC_FOLDER, "index.html")
 
 @app.route("/pdfwala/compress-pdf")
 def compress_pdf_page():
-    return render_template("compress.html")
+    return send_from_directory(Config.STATIC_FOLDER, "index.html")
 
 @app.route("/pdfwala/jpg-to-pdf")
 def jpg_to_pdf_page():
-    return render_template("jpg_to_pdf.html")
+    return send_from_directory(Config.STATIC_FOLDER, "index.html")
 
 @app.route("/pdfwala/pdf-to-word")
 def pdf_to_word_page():
-    return render_template("pdf_to_word.html")
+    return send_from_directory(Config.STATIC_FOLDER, "index.html")
     
 @app.route("/api/health")
 def health():
