@@ -493,6 +493,18 @@ def home():
 def merge_pdf_page():
     return send_from_directory("templates", "merge.html")
 
+@app.route("/pdfwala/compress-pdf")
+def compress_pdf_page():
+    return seo_landing("compress-pdf")
+
+@app.route("/pdfwala/pdf-to-word")
+def pdf_to_word_page():
+    return seo_landing("pdf-to-word")
+
+@app.route("/pdfwala/jpg-to-pdf")
+def jpg_to_pdf_page():
+    return seo_landing("jpg-to-pdf")
+
 
 @app.route("/api/health")
 def health():
