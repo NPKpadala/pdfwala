@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="description" content="Convert JPG images to PDF online for free. Combine multiple JPGs into one PDF instantly."/>
+  <title>JPG to PDF Converter Online — PDFWala</title>
+  <link rel="canonical" href="https://npkpadala.com/pdfwala/jpg-to-pdf"/>
+</head>
+<body>
+  <h1>JPG to PDF Converter</h1>
+  <p>Convert one or multiple JPG images into a single PDF file. Free, instant, no registration required.</p>
+
+  <form id="j2pForm" enctype="multipart/form-data">
+    <input type="file" id="files" name="files" accept=".jpg,.jpeg" multiple required/>
+    <select name="page_size" id="page_size">
+      <option value="auto">Auto (fit image)</option>
+      <option value="a4">A4</option>
+      <option value="letter">Letter</option>
+    </select>
+    <button type="submit">Convert to PDF</button>
+  </form>
+
+  <div id="status"></div>
+  <a id="downloadLink" style="display:none" href="#">⬇ Download PDF</a>
+
+  <hr/>
+  <p>Other tools: 
+    <a href="/pdfwala/merge-pdf">Merge PDF</a> | 
+    <a href="/pdfwala/compress-pdf">Compress PDF</a> | 
+    <a href="/pdfwala/pdf-to-word">PDF to Word</a> |
+    <a href="/pdfwala/">All Tools</a>
+  </p>
+
+  <script>
+    document.getElementById('j2pForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const status = document.getElementById('status');
+      const link = document.getElementById('downloadLink');
+      status.textContent = 'Converting...';
+      link.style.display = 'none';
+
+      const fd = new FormData();
+      const files = document.getElementById('files').files;
+      for (const f of files) fd.append('files', f);
+      fd.append('page_size', document.getElementById('page_size').value);
+
+      try {
+        const res = await fetch('/api/jpg-to-pdf', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success) {
+          status.textContent = '✅ ' + data.message;
+          const url = data.download_url || '/download/' + data.filename;
+          link.href = url;
+          link.download = data.filename || 'output.pdf';
+          link.style.display = 'inline';
+        } else {
+          status.textContent = '❌ ' + (data.error || 'Failed');
+        }
+      } catch(err) {
+        status.textContent = '❌ Error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="description" content="Compress PDF files online and reduce file size without losing quality. Free and instant."/>
+  <title>Compress PDF Online — PDFWala</title>
+  <link rel="canonical" href="https://npkpadala.com/pdfwala/compress-pdf"/>
+</head>
+<body>
+  <h1>Compress PDF Online</h1>
+  <p>Reduce your PDF file size while maintaining quality. Ideal for email attachments and uploads.</p>
+
+  <form id="compressForm" enctype="multipart/form-data">
+    <input type="file" id="file" name="file" accept=".pdf" required/>
+    <select name="quality" id="quality">
+      <option value="low">Maximum Compression</option>
+      <option value="medium" selected>Balanced</option>
+      <option value="high">High Quality</option>
+    </select>
+    <button type="submit">Compress PDF</button>
+  </form>
+
+  <div id="status"></div>
+  <a id="downloadLink" style="display:none" href="#">⬇ Download Compressed PDF</a>
+
+  <hr/>
+  <p>Other tools: 
+    <a href="/pdfwala/merge-pdf">Merge PDF</a> | 
+    <a href="/pdfwala/pdf-to-word">PDF to Word</a> | 
+    <a href="/pdfwala/jpg-to-pdf">JPG to PDF</a> |
+    <a href="/pdfwala/">All Tools</a>
+  </p>
+
+  <script>
+    document.getElementById('compressForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const status = document.getElementById('status');
+      const link = document.getElementById('downloadLink');
+      status.textContent = 'Compressing...';
+      link.style.display = 'none';
+
+      const fd = new FormData();
+      fd.append('file', document.getElementById('file').files[0]);
+      fd.append('quality', document.getElementById('quality').value);
+
+      try {
+        const res = await fetch('/api/compress', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success) {
+          status.textContent = '✅ ' + data.message;
+          const url = data.download_url || '/download/' + data.filename;
+          link.href = url;
+          link.download = data.filename || 'compressed.pdf';
+          link.style.display = 'inline';
+        } else {
+          status.textContent = '❌ ' + (data.error || 'Failed');
+        }
+      } catch(err) {
+        status.textContent = '❌ Error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

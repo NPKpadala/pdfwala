@@ -3,50 +3,49 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <meta name="description" content="Merge multiple PDF files into one document online. Free, fast, no sign-up required."/>
-  <title>Merge PDF Online — PDFWala</title>
-  <link rel="canonical" href="https://npkpadala.com/pdfwala/merge-pdf"/>
+  <meta name="description" content="Convert PDF to editable Word document (DOCX) online for free. No sign-up needed."/>
+  <title>PDF to Word Converter Online — PDFWala</title>
+  <link rel="canonical" href="https://npkpadala.com/pdfwala/pdf-to-word"/>
 </head>
 <body>
-  <h1>Merge PDF Files Online</h1>
-  <p>Combine multiple PDF documents into a single file instantly. No sign-up required. 100% free and secure.</p>
+  <h1>PDF to Word Converter</h1>
+  <p>Convert your PDF files to editable Microsoft Word DOCX format instantly. Free online tool, no account needed.</p>
 
-  <form id="mergeForm" enctype="multipart/form-data">
-    <input type="file" id="files" name="files" accept=".pdf" multiple required/>
-    <button type="submit">Merge PDFs</button>
+  <form id="p2wForm" enctype="multipart/form-data">
+    <input type="file" id="file" name="file" accept=".pdf" required/>
+    <button type="submit">Convert to Word</button>
   </form>
 
   <div id="status"></div>
-  <a id="downloadLink" style="display:none" href="#">⬇ Download Merged PDF</a>
+  <a id="downloadLink" style="display:none" href="#">⬇ Download Word File</a>
 
   <hr/>
   <p>Other tools: 
+    <a href="/pdfwala/merge-pdf">Merge PDF</a> | 
     <a href="/pdfwala/compress-pdf">Compress PDF</a> | 
-    <a href="/pdfwala/pdf-to-word">PDF to Word</a> | 
     <a href="/pdfwala/jpg-to-pdf">JPG to PDF</a> |
     <a href="/pdfwala/">All Tools</a>
   </p>
 
   <script>
-    document.getElementById('mergeForm').addEventListener('submit', async function(e) {
+    document.getElementById('p2wForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const status = document.getElementById('status');
       const link = document.getElementById('downloadLink');
-      status.textContent = 'Merging...';
+      status.textContent = 'Converting...';
       link.style.display = 'none';
 
       const fd = new FormData();
-      const files = document.getElementById('files').files;
-      for (const f of files) fd.append('files', f);
+      fd.append('file', document.getElementById('file').files[0]);
 
       try {
-        const res = await fetch('/api/merge', { method: 'POST', body: fd });
+        const res = await fetch('/api/pdf-to-word', { method: 'POST', body: fd });
         const data = await res.json();
         if (data.success) {
           status.textContent = '✅ ' + data.message;
           const url = data.download_url || '/download/' + data.filename;
           link.href = url;
-          link.download = data.filename || 'merged.pdf';
+          link.download = data.filename || 'converted.docx';
           link.style.display = 'inline';
         } else {
           status.textContent = '❌ ' + (data.error || 'Failed');
