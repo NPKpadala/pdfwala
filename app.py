@@ -495,11 +495,11 @@ def merge_pdf_page():
 
 @app.route("/pdfwala/compress-pdf")
 def compress_pdf_page():
-    return build_seo_page("compress-pdf")
+    return build_seo_landing("compress-pdf")
 
 @app.route("/pdfwala/jpg-to-pdf")
 def jpg_to_pdf_page():
-    return build_seo_page("jpg-to-pdf")
+    return seo_landing("jpg-to-pdf")
 
 @app.route("/pdfwala/pdf-to-word")
 def pdf_to_word_page():
