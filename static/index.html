@@ -743,7 +743,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           <div class="mega-cols c4">
             <div>
               <div class="mega-col-hd blue">📦 Organize</div>
-              <a class="mm-link" onclick="openTool('merge')"><span class="mli">🔗</span>Merge PDF<span class="mm-badge mb-pop">Popular</span><span class="mla">→</span></a>
+              <a class="mm-link" onclick="window.location.href='/pdfwala/merge-pdf'"><span class="mli">🔗</span>Merge PDF<span class="mm-badge mb-pop">Popular</span><span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('split')"><span class="mli">✂️</span>Split PDF<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('organize')"><span class="mli">📋</span>Organize PDF<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('remove-pages')"><span class="mli">🗑️</span>Remove Pages<span class="mla">→</span></a>
@@ -751,7 +751,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
             </div>
             <div>
               <div class="mega-col-hd green">⚡ Optimize</div>
-              <a class="mm-link" onclick="openTool('compress')"><span class="mli">🗜️</span>Compress PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="window.location.href='/pdfwala/compress-pdf'"><span class="mli">🗜️</span>Compress PDF<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('repair-pdf')"><span class="mli">🔧</span>Repair PDF<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('ocr-pdf')"><span class="mli">🔍</span>OCR PDF<span class="mla">→</span></a>
               <div style="height:12px"></div>
@@ -764,7 +764,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
             <div>
               <div class="mega-col-hd violet">📤 From PDF</div>
               <a class="mm-link" onclick="openTool('pdf-to-image')"><span class="mli">🖼️</span>PDF to Image<span class="mla">→</span></a>
-              <a class="mm-link" onclick="openTool('pdf-to-word')"><span class="mli">📝</span>PDF to Word<span class="mla">→</span></a>
+              <a class="mm-link" onclick="window.location.href='/pdfwala/pdf-to-word'"><span class="mli">📝</span>PDF to Word<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('pdf-to-excel')"><span class="mli">📊</span>PDF to Excel<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('pdf-to-ppt')"><span class="mli">📑</span>PDF to PPT<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('pdf-to-pdfa')"><span class="mli">📜</span>PDF to PDF/A<span class="mla">→</span></a>
@@ -791,7 +791,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
             <div>
               <div class="mega-col-hd cyan">🔄 Convert</div>
               <a class="mm-link" onclick="openTool('image-to-pdf')"><span class="mli">📷</span>Image to PDF<span class="mla">→</span></a>
-              <a class="mm-link" onclick="openTool('jpg-to-pdf')"><span class="mli">🟨</span>JPG to PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="window.location.href='/pdfwala/jpg-to-pdf'"><span class="mli">🟨</span>JPG to PDF<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('webp-to-jpg')"><span class="mli">🔄</span>WebP to JPG<span class="mm-badge mb-new">New</span><span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('png-to-jpg')"><span class="mli">🔄</span>PNG to JPG<span class="mm-badge mb-new">New</span><span class="mla">→</span></a>
             </div>
@@ -915,13 +915,13 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     </button>
     <div class="mob-sub"><div class="mob-sub-inner">
       <div class="mob-cat">Organize</div>
-      <a class="mob-link" onclick="openTool('merge');closeMob()">Merge PDF</a>
+      <a class="mob-link" onclick="window.location.href='/pdfwala/merge-pdf';closeMob()">Merge PDF</a>
       <a class="mob-link" onclick="openTool('split');closeMob()">Split PDF</a>
       <a class="mob-link" onclick="openTool('organize');closeMob()">Organize PDF</a>
       <a class="mob-link" onclick="openTool('remove-pages');closeMob()">Remove Pages</a>
       <a class="mob-link" onclick="openTool('extract-pages');closeMob()">Extract Pages</a>
       <div class="mob-cat">Optimize</div>
-      <a class="mob-link" onclick="openTool('compress');closeMob()">Compress PDF</a>
+      <a class="mob-link" onclick="window.location.href='/pdfwala/compress-pdf';closeMob()">Compress PDF</a>
       <a class="mob-link" onclick="openTool('repair-pdf');closeMob()">Repair PDF</a>
       <div class="mob-cat">Edit</div>
       <a class="mob-link" onclick="openTool('rotate');closeMob()">Rotate PDF</a>
@@ -942,7 +942,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     <div class="mob-sub"><div class="mob-sub-inner">
       <div class="mob-cat">Convert</div>
       <a class="mob-link" onclick="openTool('image-to-pdf');closeMob()">Image to PDF</a>
-      <a class="mob-link" onclick="openTool('jpg-to-pdf');closeMob()">JPG to PDF</a>
+      <a class="mob-link" onclick="window.location.href='/pdfwala/jpg-to-pdf';closeMob()">JPG to PDF</a>
       <a class="mob-link" onclick="openTool('webp-to-jpg');closeMob()">WebP to JPG</a>
       <a class="mob-link" onclick="openTool('png-to-jpg');closeMob()">PNG to JPG</a>
       <div class="mob-cat">Tools</div>
@@ -1061,10 +1061,10 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       <p class="qa-sub">Most popular tools — one click away</p>
     </div>
     <div class="qa-grid">
-      <div class="qa-card" onclick="openTool('merge')"><span class="qa-icon">🔗</span>Merge PDF</div>
-      <div class="qa-card" onclick="openTool('compress')"><span class="qa-icon">🗜️</span>Compress PDF</div>
-      <div class="qa-card" onclick="openTool('pdf-to-word')"><span class="qa-icon">📝</span>PDF to Word</div>
-      <div class="qa-card" onclick="openTool('jpg-to-pdf')"><span class="qa-icon">📷</span>JPG to PDF</div>
+      <div class="qa-card" onclick="window.location.href='/pdfwala/merge-pdf'"><span class="qa-icon">🔗</span>Merge PDF</div>
+      <div class="qa-card" onclick="window.location.href='/pdfwala/compress-pdf'"><span class="qa-icon">🗜️</span>Compress PDF</div>
+      <div class="qa-card" onclick="window.location.href='/pdfwala/pdf-to-word'"><span class="qa-icon">📝</span>PDF to Word</div>
+      <div class="qa-card" onclick="window.location.href='/pdfwala/jpg-to-pdf'"><span class="qa-icon">📷</span>JPG to PDF</div>
       <div class="qa-card" onclick="openTool('split')"><span class="qa-icon">✂️</span>Split PDF</div>
       <div class="qa-card" onclick="openTool('protect')"><span class="qa-icon">🔒</span>Protect PDF</div>
     </div>
@@ -1097,23 +1097,23 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </div>
   <div class="tools-grid" id="toolsGrid" role="list">
     <!-- ── ORGANIZE ── -->
-    <div class="tool-card c-blue" data-cat="organize" onclick="openTool('merge')" role="listitem"><div class="tool-badge badge-popular">Popular</div><div class="tool-icon-wrap">🔗</div><div class="tool-name">Merge PDF</div><div class="tool-desc">Combine multiple PDFs into one document</div></div>
+    <div class="tool-card c-blue" data-cat="organize" onclick="window.location.href='/pdfwala/merge-pdf'" role="listitem"><div class="tool-badge badge-popular">Popular</div><div class="tool-icon-wrap">🔗</div><div class="tool-name">Merge PDF</div><div class="tool-desc">Combine multiple PDFs into one document</div></div>
     <div class="tool-card c-blue" data-cat="organize" onclick="openTool('split')" role="listitem"><div class="tool-icon-wrap">✂️</div><div class="tool-name">Split PDF</div><div class="tool-desc">Extract pages into separate files</div></div>
     <div class="tool-card c-blue" data-cat="organize" onclick="openTool('organize')" role="listitem"><div class="tool-icon-wrap">📋</div><div class="tool-name">Organize PDF</div><div class="tool-desc">Reorder, extract, or delete pages</div></div>
     <div class="tool-card c-blue" data-cat="organize" onclick="openTool('remove-pages')" role="listitem"><div class="tool-icon-wrap">🗑️</div><div class="tool-name">Remove Pages</div><div class="tool-desc">Delete specific pages from PDF</div></div>
     <div class="tool-card c-blue" data-cat="organize" onclick="openTool('extract-pages')" role="listitem"><div class="tool-icon-wrap">📤</div><div class="tool-name">Extract Pages</div><div class="tool-desc">Extract selected pages to new PDF</div></div>
     <!-- ── OPTIMIZE ── -->
-    <div class="tool-card c-cyan" data-cat="optimize" onclick="openTool('compress')" role="listitem"><div class="tool-badge badge-new">Free</div><div class="tool-icon-wrap">🗜️</div><div class="tool-name">Compress PDF</div><div class="tool-desc">Reduce size while preserving quality</div></div>
+    <div class="tool-card c-cyan" data-cat="optimize" onclick="window.location.href='/pdfwala/compress-pdf'" role="listitem"><div class="tool-badge badge-new">Free</div><div class="tool-icon-wrap">🗜️</div><div class="tool-name">Compress PDF</div><div class="tool-desc">Reduce size while preserving quality</div></div>
     <div class="tool-card c-cyan" data-cat="optimize" onclick="openTool('repair-pdf')" role="listitem"><div class="tool-icon-wrap">🔧</div><div class="tool-name">Repair PDF</div><div class="tool-desc">Fix corrupted or damaged PDFs</div></div>
     <div class="tool-card c-rose" data-cat="optimize" onclick="openTool('ocr-pdf')" role="listitem"><div class="tool-icon-wrap">🔍</div><div class="tool-name">OCR PDF</div><div class="tool-desc">Make scanned PDFs text-searchable</div></div>
     <!-- ── CONVERT FROM PDF ── -->
     <div class="tool-card c-emerald" data-cat="convert-from" onclick="openTool('pdf-to-image')" role="listitem"><div class="tool-icon-wrap">🖼️</div><div class="tool-name">PDF to Image</div><div class="tool-desc">Export each page as JPG or PNG</div></div>
-    <div class="tool-card c-emerald" data-cat="convert-from" onclick="openTool('pdf-to-word')" role="listitem"><div class="tool-icon-wrap">📝</div><div class="tool-name">PDF to Word</div><div class="tool-desc">Convert PDF to editable DOCX</div></div>
+    <div class="tool-card c-emerald" data-cat="convert-from" onclick="window.location.href='/pdfwala/pdf-to-word'" role="listitem"><div class="tool-icon-wrap">📝</div><div class="tool-name">PDF to Word</div><div class="tool-desc">Convert PDF to editable DOCX</div></div>
     <div class="tool-card c-emerald" data-cat="convert-from" onclick="openTool('pdf-to-excel')" role="listitem"><div class="tool-icon-wrap">📊</div><div class="tool-name">PDF to Excel</div><div class="tool-desc">Extract tables to spreadsheet</div></div>
     <div class="tool-card c-emerald" data-cat="convert-from" onclick="openTool('pdf-to-ppt')" role="listitem"><div class="tool-icon-wrap">📑</div><div class="tool-name">PDF to PPT</div><div class="tool-desc">Convert PDF to PowerPoint</div></div>
     <!-- ── CONVERT TO PDF ── -->
     <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('image-to-pdf')" role="listitem"><div class="tool-icon-wrap">📷</div><div class="tool-name">Image to PDF</div><div class="tool-desc">Turn photos into a single PDF</div></div>
-    <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('jpg-to-pdf')" role="listitem"><div class="tool-icon-wrap">🟨</div><div class="tool-name">JPG to PDF</div><div class="tool-desc">Convert JPG images to PDF</div></div>
+    <div class="tool-card c-amber" data-cat="convert-to" onclick="window.location.href='/pdfwala/jpg-to-pdf'" role="listitem"><div class="tool-icon-wrap">🟨</div><div class="tool-name">JPG to PDF</div><div class="tool-desc">Convert JPG images to PDF</div></div>
     <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('word-to-pdf')" role="listitem"><div class="tool-icon-wrap">📄</div><div class="tool-name">Word to PDF</div><div class="tool-desc">Convert DOCX documents to PDF</div></div>
     <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('excel-to-pdf')" role="listitem"><div class="tool-icon-wrap">📊</div><div class="tool-name">Excel to PDF</div><div class="tool-desc">Turn spreadsheets into clean PDFs</div></div>
     <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('html-to-pdf')" role="listitem"><div class="tool-icon-wrap">🌐</div><div class="tool-name">HTML to PDF</div><div class="tool-desc">Convert web pages to PDF</div></div>
@@ -1177,7 +1177,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   <div class="footer-inner">
     <div class="footer-grid">
       <div><div class="footer-brand-name"><div class="footer-brand-mark">📄</div>PDF<span style="color:var(--accent)">Wala</span></div><p class="footer-brand-desc">Your all-in-one PDF toolkit — built for speed, privacy, and simplicity. No sign-up, no limits.</p><div class="footer-tagline">"Built for simplicity, speed, and privacy."</div></div>
-      <div class="footer-col"><div class="footer-col-title">Organize</div><a href="#" onclick="openTool('merge');return false">Merge PDF</a><a href="#" onclick="openTool('split');return false">Split PDF</a><a href="#" onclick="openTool('organize');return false">Organize Pages</a><a href="#" onclick="openTool('rotate');return false">Rotate PDF</a></div>
+      <div class="footer-col"><div class="footer-col-title">Organize</div><a href="/pdfwala/merge-pdf">Merge PDF</a><a href="#" onclick="openTool('split');return false">Split PDF</a><a href="#" onclick="openTool('organize');return false">Organize Pages</a><a href="#" onclick="openTool('rotate');return false">Rotate PDF</a></div>
       <div class="footer-col"><div class="footer-col-title">Convert</div><a href="#" onclick="openTool('pdf-to-image');return false">PDF to Image</a><a href="#" onclick="openTool('image-to-pdf');return false">Image to PDF</a><a href="#" onclick="openTool('word-to-pdf');return false">Word to PDF</a><a href="#" onclick="openTool('excel-to-pdf');return false">Excel to PDF</a></div>
       <div class="footer-col"><div class="footer-col-title">Company</div><a href="#">About</a><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Contact</a></div>
     </div>
