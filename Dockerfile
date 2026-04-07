@@ -25,6 +25,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 COPY app.py .
 COPY gunicorn.conf.py .
 COPY static/ ./static/
+COPY templates/ ./templates/     # <--- ADD THIS LINE!
 
 # Create necessary directories
 RUN mkdir -p /home/opc/pdfwala/uploads /home/opc/pdfwala/outputs
