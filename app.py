@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Optional
 from pathlib import Path
 
-from flask import Flask, request, jsonify, send_file, send_from_directory, g
+from flask import Flask, request, jsonify, send_file, send_from_directory, render_template, abort, g
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
@@ -490,8 +490,20 @@ def home():
     return send_from_directory(Config.STATIC_FOLDER, "index.html")
 
 @app.route("/pdfwala/merge-pdf")
-def merge_pdf_page():
-    return send_from_directory("templates", "merge.html")
+def merge_pdf_seo_page():
+    return render_template("merge.html")
+
+@app.route("/pdfwala/compress-pdf")
+def compress_pdf_seo_page():
+    return build_seo_page("compress-pdf")
+
+@app.route("/pdfwala/pdf-to-word")
+def pdf_to_word_seo_page():
+    return build_seo_page("pdf-to-word")
+
+@app.route("/pdfwala/jpg-to-pdf")
+def jpg_to_pdf_seo_page():
+    return build_seo_page("jpg-to-pdf")
 
 
 @app.route("/api/health")
@@ -2239,15 +2251,14 @@ SEO_PAGES = {
     "watermark-pdf": {"tool": "watermark",    "title": "Watermark PDF Free Online — Add Text Watermark | NPKPadala", "desc": "Add custom text watermark to PDF online for free. Protect your documents with watermarks."},
 }
 
-@app.route("/<page_slug>")
-def seo_landing(page_slug):
+def build_seo_page(page_slug):
     page = SEO_PAGES.get(page_slug)
     if not page:
-        return "Page not found", 404
+        abort(404)
     tool_id  = page["tool"]
     title    = page["title"]
     desc     = page["desc"]
-    canonical = f"https://npkpadala.com/{page_slug}"
+    canonical = f"https://npkpadala.com/pdfwala/{page_slug}"
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2304,12 +2315,18 @@ def seo_landing(page_slug):
 </html>"""
     return html, 200, {"Content-Type": "text/html"}
 
+@app.route("/pdfwala/<slug>")
+def seo_page(slug):
+    if slug not in SEO_PAGES:
+        abort(404)
+    return build_seo_page(slug)
+
 
 @app.route("/sitemap.xml")
 def sitemap():
     from datetime import date
     today = date.today().isoformat()
-    urls = ["https://npkpadala.com/"] + [f"https://npkpadala.com/{slug}" for slug in SEO_PAGES]
+    urls = ["https://npkpadala.com/"] + [f"https://npkpadala.com/pdfwala/{slug}" for slug in SEO_PAGES]
     url_blocks = "\n".join([
         f"""  <url>
     <loc>{u}</loc>
