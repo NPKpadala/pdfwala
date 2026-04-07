@@ -495,15 +495,15 @@ def merge_pdf_page():
 
 @app.route("/pdfwala/compress-pdf")
 def compress_pdf_page():
-    return build_seo_landing("compress-pdf")
+return render_template("compress.html")
 
 @app.route("/pdfwala/jpg-to-pdf")
 def jpg_to_pdf_page():
-    return seo_landing("jpg-to-pdf")
-
+return render_template("jpg_to_pdf.html")
+    
 @app.route("/pdfwala/pdf-to-word")
 def pdf_to_word_page():
-    return seo_landing("pdf-to-word")
+return render_template("pdf_to_word.html")
 
 @app.route("/api/health")
 def health():
