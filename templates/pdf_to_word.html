@@ -4,56 +4,197 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <meta name="description" content="Convert PDF to editable Word document (DOCX) online for free. No sign-up needed."/>
-  <title>PDF to Word Converter Online — PDFWala</title>
-  <link rel="canonical" href="https://npkpadala.com/pdfwala/pdf-to-word"/>
+  <title>PDF to Word Converter — PDFWala</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container { max-width: 600px; margin: 0 auto; }
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    h1 { font-size: 32px; margin-bottom: 12px; color: #1a1a2e; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .sub { color: #666; margin-bottom: 32px; line-height: 1.6; }
+    input[type="file"] {
+      width: 100%;
+      padding: 40px 20px;
+      border: 2px dashed #ddd;
+      border-radius: 16px;
+      background: #fafafa;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: all 0.3s;
+    }
+    input[type="file"]:hover { border-color: #667eea; background: #f8f9ff; }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 40px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.3s;
+    }
+    button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102,126,234,0.4); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .status {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 12px;
+      display: none;
+      animation: slideIn 0.3s ease;
+    }
+    .status.success { background: #d4edda; color: #155724; display: block; border-left: 4px solid #28a745; }
+    .status.error { background: #f8d7da; color: #721c24; display: block; border-left: 4px solid #dc3545; }
+    .status.loading { background: #e7f3ff; color: #004085; display: block; border-left: 4px solid #007bff; }
+    .download-btn {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 12px 24px;
+      background: #28a745;
+      color: white;
+      text-decoration: none;
+      border-radius: 40px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    .download-btn:hover { transform: translateY(-2px); background: #218838; }
+    .file-info {
+      margin-top: 16px;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 12px;
+      display: none;
+    }
+    .file-info.show { display: block; }
+    .file-name { font-size: 14px; color: #333; word-break: break-all; }
+    .footer {
+      margin-top: 24px;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .footer a {
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px;
+      transition: all 0.3s;
+    }
+    .footer a:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 600px) {
+      .card { padding: 24px; }
+      h1 { font-size: 24px; }
+    }
+  </style>
 </head>
 <body>
-  <h1>PDF to Word Converter</h1>
-  <p>Convert your PDF files to editable Microsoft Word DOCX format instantly. Free online tool, no account needed.</p>
+<div class="container">
+  <div class="card">
+    <h1>
+      <span>📝</span>
+      PDF to Word Converter
+    </h1>
+    <p class="sub">Convert your PDF files to editable Microsoft Word DOCX format instantly.<br>Free online tool, no account needed.</p>
 
-  <form id="p2wForm" enctype="multipart/form-data">
-    <input type="file" id="file" name="file" accept=".pdf" required/>
-    <button type="submit">Convert to Word</button>
-  </form>
+    <form id="p2wForm" enctype="multipart/form-data">
+      <input type="file" id="file" name="file" accept=".pdf" required/>
+      <button type="submit" id="submitBtn">📄 Convert to Word</button>
+    </form>
 
-  <div id="status"></div>
-  <a id="downloadLink" style="display:none" href="#">⬇ Download Word File</a>
+    <div class="file-info" id="fileInfo">
+      <div class="file-name" id="fileName"></div>
+    </div>
 
-  <hr/>
-  <p>Other tools: 
-    <a href="/pdfwala/merge-pdf">Merge PDF</a> | 
-    <a href="/pdfwala/compress-pdf">Compress PDF</a> | 
-    <a href="/pdfwala/jpg-to-pdf">JPG to PDF</a> |
-    <a href="/pdfwala/">All Tools</a>
-  </p>
+    <div id="status" class="status"></div>
+    <a id="downloadLink" class="download-btn" style="display:none" href="#">⬇ Download Word File (.docx)</a>
+  </div>
 
-  <script>
-    document.getElementById('p2wForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const status = document.getElementById('status');
-      const link = document.getElementById('downloadLink');
-      status.textContent = 'Converting...';
-      link.style.display = 'none';
+  <div class="footer">
+    <a href="/pdfwala/merge-pdf">🔗 Merge PDF</a>
+    <a href="/pdfwala/compress-pdf">🗜️ Compress PDF</a>
+    <a href="/pdfwala/jpg-to-pdf">🖼️ JPG to PDF</a>
+    <a href="/pdfwala/">🏠 All Tools</a>
+  </div>
+</div>
 
-      const fd = new FormData();
-      fd.append('file', document.getElementById('file').files[0]);
+<script>
+  const fileInput = document.getElementById('file');
+  const fileInfo = document.getElementById('fileInfo');
+  const fileName = document.getElementById('fileName');
+  
+  fileInput.addEventListener('change', function() {
+    if (this.files.length > 0) {
+      const file = this.files[0];
+      fileName.textContent = `📄 Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      fileInfo.classList.add('show');
+    } else {
+      fileInfo.classList.remove('show');
+    }
+  });
+  
+  document.getElementById('p2wForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const status = document.getElementById('status');
+    const link = document.getElementById('downloadLink');
+    const submitBtn = document.getElementById('submitBtn');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+      status.className = 'status error';
+      status.textContent = '❌ Please select a PDF file';
+      return;
+    }
+    
+    status.className = 'status loading';
+    status.textContent = '🔄 Converting PDF to Word... This may take a few seconds';
+    link.style.display = 'none';
+    submitBtn.disabled = true;
+    submitBtn.textContent = '⏳ Converting...';
 
-      try {
-        const res = await fetch('/api/pdf-to-word', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (data.success) {
-          status.textContent = '✅ ' + data.message;
-          const url = data.download_url || '/download/' + data.filename;
-          link.href = url;
-          link.download = data.filename || 'converted.docx';
-          link.style.display = 'inline';
-        } else {
-          status.textContent = '❌ ' + (data.error || 'Failed');
-        }
-      } catch(err) {
-        status.textContent = '❌ Error: ' + err.message;
+    const fd = new FormData();
+    fd.append('file', file);
+
+    try {
+      const res = await fetch('/api/pdf-to-word', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.success) {
+        status.className = 'status success';
+        status.textContent = '✅ ' + (data.message || 'Conversion complete!');
+        const url = data.download_url || '/download/' + data.filename;
+        link.href = url;
+        link.download = data.filename || 'converted.docx';
+        link.style.display = 'inline-block';
+      } else {
+        status.className = 'status error';
+        status.textContent = '❌ ' + (data.error || 'Conversion failed');
       }
-    });
-  </script>
+    } catch(err) {
+      status.className = 'status error';
+      status.textContent = '❌ Error: ' + err.message;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '📄 Convert to Word';
+    }
+  });
+</script>
 </body>
 </html>
