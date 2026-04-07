@@ -505,10 +505,6 @@ def pdf_to_word_page():
 def jpg_to_pdf_page():
     return build_seo_page("jpg-to-pdf")
 
-@app.route("/pdfwala/compress-pdf")
-def compress_pdf_page():
-    return seo_landing("compress-pdf")
-
 @app.route("/pdfwala/pdf-to-word")
 def pdf_to_word_page():
     return seo_landing("pdf-to-word")
