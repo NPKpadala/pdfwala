@@ -1,31 +1,41 @@
+#!/usr/bin/env python3
 """
-PDFWala - Complete Production Backend V5.1
-All bugs fixed. Production ready.
+PDFWala - Complete Production Backend V5.2
+All SEO routes removed. Clean API only.
 """
 
-import os, io, uuid, zipfile, logging, time, threading, subprocess
-import tempfile, shutil, re, csv, json
+import os
+import io
+import uuid
+import zipfile
+import logging
+import time
+import threading
+import subprocess
+import tempfile
+import shutil
+import re
+import csv
+import json
 from contextlib import contextmanager
-from flask import send_from_directory
 from functools import wraps
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Set
 from pathlib import Path
 
-from flask import Flask, request, jsonify, send_file, send_from_directory, render_template, abort, g
-from flask_cors import CORS
+from flask import Flask, request, jsonify, send_file, send_from_directory, g
 from werkzeug.utils import secure_filename
 
 import fitz  # PyMuPDF
 from PIL import Image, ImageChops
 from PyPDF2 import PdfReader, PdfWriter, PdfMerger
 from reportlab.pdfgen import canvas as rl_canvas
-from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import letter, A4
 
+# Optional imports with fallbacks
 try:
     from docx import Document as DocxDocument
-    from docx.shared import Inches, Pt
+    from docx.shared import Inches
     DOCX_AVAILABLE = True
 except ImportError:
     DOCX_AVAILABLE = False
@@ -63,57 +73,54 @@ except ImportError:
 
 try:
     from pptx import Presentation
-    from pptx.util import Inches as PptxInches, Pt as PptxPt
+    from pptx.util import Inches as PptxInches
     PPTX_AVAILABLE = True
 except ImportError:
     PPTX_AVAILABLE = False
 
 
 # ─────────────────────────────────────────────────────────────────
-# CONFIG
+# CONFIGURATION
 # ─────────────────────────────────────────────────────────────────
 class Config:
-    BASE_DIR        = os.environ.get("BASE_DIR", "/home/opc/pdfwala")
-    UPLOAD_FOLDER   = os.environ.get("UPLOAD_FOLDER", os.path.join(BASE_DIR, "uploads"))
-    OUTPUT_FOLDER   = os.environ.get("OUTPUT_FOLDER", os.path.join(BASE_DIR, "outputs"))
-    STATIC_FOLDER   = os.environ.get("STATIC_FOLDER", os.path.join(BASE_DIR, "static"))
-    MAX_FILE_SIZE   = int(os.environ.get("MAX_FILE_SIZE", 200 * 1024 * 1024))
+    BASE_DIR = os.environ.get("BASE_DIR", "/home/opc/pdfwala")
+    UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", os.path.join(BASE_DIR, "uploads"))
+    OUTPUT_FOLDER = os.environ.get("OUTPUT_FOLDER", os.path.join(BASE_DIR, "outputs"))
+    STATIC_FOLDER = os.environ.get("STATIC_FOLDER", os.path.join(BASE_DIR, "static"))
+    MAX_FILE_SIZE = int(os.environ.get("MAX_FILE_SIZE", 200 * 1024 * 1024))
     MAX_FILES_MERGE = int(os.environ.get("MAX_FILES_MERGE", 30))
-    FILE_TTL_SEC    = int(os.environ.get("FILE_TTL_SEC", 3600))
-    RATE_LIMIT      = int(os.environ.get("RATE_LIMIT", 30))
-    SECRET_KEY      = os.environ.get("SECRET_KEY", uuid.uuid4().hex)
-    LIBREOFFICE     = os.environ.get("LIBREOFFICE_PATH", "soffice")
-    GHOSTSCRIPT     = os.environ.get("GHOSTSCRIPT_PATH", "gs")
+    FILE_TTL_SEC = int(os.environ.get("FILE_TTL_SEC", 3600))
+    RATE_LIMIT = int(os.environ.get("RATE_LIMIT", 30))
+    SECRET_KEY = os.environ.get("SECRET_KEY", uuid.uuid4().hex)
+    LIBREOFFICE = os.environ.get("LIBREOFFICE_PATH", "soffice")
+    GHOSTSCRIPT = os.environ.get("GHOSTSCRIPT_PATH", "gs")
 
-    ALLOWED_PDF   = {"pdf"}
+    ALLOWED_PDF = {"pdf"}
     ALLOWED_IMAGE = {"jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff"}
-    ALLOWED_DOC   = {"doc", "docx"}
-    ALLOWED_XLS   = {"xls", "xlsx"}
-    ALLOWED_PPT   = {"ppt", "pptx"}
-    ALLOWED_HTML  = {"html", "htm"}
-    ALLOWED_WEBP  = {"webp"}
-    ALLOWED_PNG   = {"png"}
-    ALLOWED_JPG   = {"jpg", "jpeg"}
+    ALLOWED_DOC = {"doc", "docx"}
+    ALLOWED_XLS = {"xls", "xlsx"}
+    ALLOWED_HTML = {"html", "htm"}
+    ALLOWED_WEBP = {"webp"}
+    ALLOWED_PNG = {"png"}
+    ALLOWED_JPG = {"jpg", "jpeg"}
 
     OLE_MAGIC = b"\xd0\xcf\x11\xe0"
 
-for _d in [Config.UPLOAD_FOLDER, Config.OUTPUT_FOLDER]:
-    os.makedirs(_d, exist_ok=True)
+
+for _dir in [Config.UPLOAD_FOLDER, Config.OUTPUT_FOLDER]:
+    os.makedirs(_dir, exist_ok=True)
 
 _APP_START = time.time()
 
+
 # ─────────────────────────────────────────────────────────────────
-# APP INIT
+# APP INITIALIZATION
 # ─────────────────────────────────────────────────────────────────
 app = Flask(__name__, static_folder=Config.STATIC_FOLDER, static_url_path="")
 app.config["MAX_CONTENT_LENGTH"] = Config.MAX_FILE_SIZE
 app.secret_key = Config.SECRET_KEY
-CORS(app, resources={r"/api/*": {"origins": os.environ.get("ALLOWED_ORIGINS", "*")}})
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s | %(levelname)s | %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
 log = logging.getLogger("pdfwala")
 
 
@@ -160,7 +167,7 @@ def rate_limited():
 
 
 # ─────────────────────────────────────────────────────────────────
-# FILE VALIDATION — FIXED
+# FILE VALIDATION
 # ─────────────────────────────────────────────────────────────────
 def _detect_mime(file_obj) -> Optional[str]:
     header = file_obj.read(512)
@@ -170,23 +177,33 @@ def _detect_mime(file_obj) -> Optional[str]:
     if header[:4] == b"PK\x03\x04":
         chunk = file_obj.read(2048)
         file_obj.seek(0)
-        if b"word/" in chunk:  return "application/msword"
-        if b"xl/"   in chunk:  return "application/vnd.ms-excel"
-        if b"ppt/"  in chunk:  return "application/vnd.ms-powerpoint"
+        if b"word/" in chunk:
+            return "application/msword"
+        if b"xl/" in chunk:
+            return "application/vnd.ms-excel"
+        if b"ppt/" in chunk:
+            return "application/vnd.ms-powerpoint"
         return "application/zip"
-    if header[:4] == b"%PDF":               return "application/pdf"
-    if header[:3] == b"\xff\xd8\xff":       return "image/jpeg"
-    if header[:8] == b"\x89PNG\r\n\x1a\n":  return "image/png"
-    if header[:4] == b"RIFF" and header[8:12] == b"WEBP": return "image/webp"
-    if header[:6] in (b"GIF87a", b"GIF89a"): return "image/gif"
-    if header[:2] == b"BM":                 return "image/bmp"
-    if header[:4] in (b"II*\x00", b"MM\x00*"): return "image/tiff"
-    if b"<!DOCTYPE" in header or b"<html" in header.lower(): return "text/html"
+    if header[:4] == b"%PDF":
+        return "application/pdf"
+    if header[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if header[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png"
+    if header[:4] == b"RIFF" and header[8:12] == b"WEBP":
+        return "image/webp"
+    if header[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if header[:2] == b"BM":
+        return "image/bmp"
+    if header[:4] in (b"II*\x00", b"MM\x00*"):
+        return "image/tiff"
+    if b"<!DOCTYPE" in header or b"<html" in header.lower():
+        return "text/html"
     return None
 
 
-def validate_file(file, allowed_ext: set) -> Optional[str]:
-    """Returns error string or None if valid."""
+def validate_file(file, allowed_ext: Set[str]) -> Optional[str]:
     if not file or not file.filename:
         return "No file provided"
 
@@ -195,7 +212,6 @@ def validate_file(file, allowed_ext: set) -> Optional[str]:
     if ext not in allowed_ext:
         return f"Invalid file type. Allowed: {', '.join(sorted(allowed_ext))}"
 
-    # Size check
     file.seek(0, 2)
     size = file.tell()
     file.seek(0)
@@ -206,13 +222,10 @@ def validate_file(file, allowed_ext: set) -> Optional[str]:
     if size > Config.MAX_FILE_SIZE:
         return f"File too large (max {Config.MAX_FILE_SIZE // 1048576} MB)"
 
-    # HTML files — skip magic byte check (plain text)
     if ext in {"html", "htm"}:
         return None
 
     mime = _detect_mime(file)
-
-    # Allow OLE (old .doc/.xls) and ZIP-based (docx/xlsx/pptx)
     if mime in ("application/msoffice", "application/msword",
                 "application/vnd.ms-excel", "application/vnd.ms-powerpoint",
                 "application/zip"):
@@ -220,13 +233,13 @@ def validate_file(file, allowed_ext: set) -> Optional[str]:
 
     mime_ext_map = {
         "application/pdf": {"pdf"},
-        "image/jpeg":      {"jpg", "jpeg"},
-        "image/png":       {"png"},
-        "image/webp":      {"webp"},
-        "image/gif":       {"gif"},
-        "image/bmp":       {"bmp"},
-        "image/tiff":      {"tiff"},
-        "text/html":       {"html", "htm"},
+        "image/jpeg": {"jpg", "jpeg"},
+        "image/png": {"png"},
+        "image/webp": {"webp"},
+        "image/gif": {"gif"},
+        "image/bmp": {"bmp"},
+        "image/tiff": {"tiff"},
+        "text/html": {"html", "htm"},
     }
 
     if mime and ext not in mime_ext_map.get(mime, {ext}):
@@ -236,7 +249,7 @@ def validate_file(file, allowed_ext: set) -> Optional[str]:
 
 
 # ─────────────────────────────────────────────────────────────────
-# INTELLIGENT FILENAME GENERATOR
+# UTILITY FUNCTIONS
 # ─────────────────────────────────────────────────────────────────
 def generate_output_filename(original_filename: str, operation: str,
                               is_multi: bool = False, filenames: list = None) -> str:
@@ -267,9 +280,6 @@ def generate_output_filename(original_filename: str, operation: str,
     return final_name
 
 
-# ─────────────────────────────────────────────────────────────────
-# CONTEXT MANAGERS
-# ─────────────────────────────────────────────────────────────────
 @contextmanager
 def temp_upload(file):
     ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else "bin"
@@ -311,12 +321,12 @@ def ok(msg: str, path: str = None, **extras):
     payload = {"success": True, "message": msg, **extras}
     if path and os.path.exists(path):
         fname = os.path.basename(path)
-        size  = os.path.getsize(path)
+        size = os.path.getsize(path)
         payload.update({
             "download_url": f"/download/{fname}",
-            "filename":     fname,
-            "size_human":   f"{size/1048576:.2f} MB" if size > 1048576 else f"{size/1024:.1f} KB",
-            "expires_in":   f"{Config.FILE_TTL_SEC // 60} minutes"
+            "filename": fname,
+            "size_human": f"{size/1048576:.2f} MB" if size > 1048576 else f"{size/1024:.1f} KB",
+            "expires_in": f"{Config.FILE_TTL_SEC // 60} minutes"
         })
     return jsonify(payload)
 
@@ -326,15 +336,9 @@ def sanitize(text: str, maxlen: int = 500) -> str:
 
 
 # ─────────────────────────────────────────────────────────────────
-# LIBREOFFICE HELPER — FIXED temp file leak
+# LIBREOFFICE HELPER
 # ─────────────────────────────────────────────────────────────────
 def libre(input_path: str, fmt: str, output_filename: str = None, temp: bool = False) -> Optional[str]:
-    """
-    Run LibreOffice headless conversion.
-    temp=True  → saves to system temp dir (caller must clean up)
-    output_filename → saves to OUTPUT_FOLDER with given name
-    default    → UUID file in OUTPUT_FOLDER
-    """
     out_dir = tempfile.mkdtemp()
     try:
         result = subprocess.run(
@@ -349,7 +353,6 @@ def libre(input_path: str, fmt: str, output_filename: str = None, temp: bool = F
         base = os.path.splitext(os.path.basename(input_path))[0]
         converted = os.path.join(out_dir, f"{base}.{fmt}")
         if not os.path.exists(converted):
-            # Try finding any output file with the right extension
             matches = list(Path(out_dir).glob(f"*.{fmt}"))
             if not matches:
                 return None
@@ -376,11 +379,10 @@ def libre(input_path: str, fmt: str, output_filename: str = None, temp: bool = F
 
 
 # ─────────────────────────────────────────────────────────────────
-# WATERMARK HELPER — ADDED (was missing)
+# WATERMARK HELPER
 # ─────────────────────────────────────────────────────────────────
 def _make_watermark(text: str, opacity: float, color_hex: str,
                     page_width: float, page_height: float) -> bytes:
-    """Generate a watermark PDF page using ReportLab."""
     buf = io.BytesIO()
     c = rl_canvas.Canvas(buf, pagesize=(page_width, page_height))
 
@@ -398,7 +400,6 @@ def _make_watermark(text: str, opacity: float, color_hex: str,
     c.translate(page_width / 2, page_height / 2)
     c.rotate(45)
     c.drawCentredString(0, 0, text)
-    # Second line slightly offset for density
     c.drawCentredString(0, min(page_width, page_height) * 0.12, text)
     c.drawCentredString(0, -min(page_width, page_height) * 0.12, text)
     c.restoreState()
@@ -409,21 +410,16 @@ def _make_watermark(text: str, opacity: float, color_hex: str,
 
 
 # ─────────────────────────────────────────────────────────────────
-# PAGE NUMBER HELPER — ADDED (was missing)
+# PAGE NUMBER HELPER
 # ─────────────────────────────────────────────────────────────────
 def _make_page_num(label: str, position: str,
                    page_width: float, page_height: float) -> bytes:
-    """Generate a page number overlay PDF using ReportLab."""
     buf = io.BytesIO()
     c = rl_canvas.Canvas(buf, pagesize=(page_width, page_height))
     c.setFont("Helvetica", 10)
     c.setFillColorRGB(0.2, 0.2, 0.2)
 
-    if position == "top":
-        y = page_height - 20
-    else:
-        y = 15
-
+    y = page_height - 20 if position == "top" else 15
     c.drawCentredString(page_width / 2, y, label)
     c.save()
     buf.seek(0)
@@ -434,7 +430,6 @@ def _make_page_num(label: str, position: str,
 # BACKGROUND CLEANUP WORKER
 # ─────────────────────────────────────────────────────────────────
 def _cleanup_worker():
-    """Delete output files older than FILE_TTL_SEC. Runs every 10 minutes."""
     while True:
         try:
             now = time.time()
@@ -450,7 +445,7 @@ def _cleanup_worker():
                     log.warning(f"Cleanup error for {fname}: {e}")
         except Exception as e:
             log.error(f"Cleanup worker error: {e}")
-        time.sleep(600)  # every 10 minutes
+        time.sleep(600)
 
 
 _cleanup_thread = threading.Thread(target=_cleanup_worker, daemon=True)
@@ -460,8 +455,7 @@ _cleanup_thread.start()
 # ─────────────────────────────────────────────────────────────────
 # PAGE RANGE PARSER
 # ─────────────────────────────────────────────────────────────────
-def _parse_pages(spec: str, total: int) -> list:
-    """Parse '1,3,5-8' → [0, 2, 4, 5, 6, 7] (0-indexed)."""
+def _parse_pages(spec: str, total: int) -> List[int]:
     indices = set()
     for part in spec.split(","):
         part = part.strip()
@@ -484,29 +478,13 @@ def _parse_pages(spec: str, total: int) -> list:
 
 
 # ─────────────────────────────────────────────────────────────────
-# STATIC + HEALTH + DOWNLOAD
+# ROUTES: STATIC + HEALTH + DOWNLOAD
 # ─────────────────────────────────────────────────────────────────
 @app.route("/")
 def home():
     return send_from_directory(Config.STATIC_FOLDER, "index.html")
-    
-@app.route("/pdfwala/merge-pdf")
-def merge_pdf_page():
-    return send_from_directory(Config.STATIC_FOLDER, "index.html")
 
-@app.route("/pdfwala/compress-pdf")
-def compress_pdf_page():
-    return send_from_directory(Config.STATIC_FOLDER, "index.html")
 
-@app.route("/pdfwala/jpg-to-pdf")
-def jpg_to_pdf_page():
-    return send_from_directory(Config.STATIC_FOLDER, "index.html")
-
-@app.route("/pdfwala/pdf-to-word")
-def pdf_to_word_page():
-    return send_from_directory(Config.STATIC_FOLDER, "index.html")
-
-    
 @app.route("/api/health")
 def health():
     lo = False
@@ -522,7 +500,9 @@ def health():
     except Exception:
         pass
     return jsonify({
-        "success": True, "status": "ok", "version": "5.1.0",
+        "success": True,
+        "status": "ok",
+        "version": "5.2.0",
         "uptime_seconds": round(time.time() - _APP_START, 1),
         "tools_available": {
             "libreoffice": lo,
@@ -541,7 +521,6 @@ def health():
 @app.route("/download/<filename>")
 def download(filename):
     safe = secure_filename(filename)
-
     if not safe or safe != filename or "/" in filename or ".." in filename:
         return err("Invalid filename", 400)
 
@@ -563,7 +542,6 @@ def download(filename):
 # ═════════════════════════════════════════════════════════════════
 # PDF ORGANIZE
 # ═════════════════════════════════════════════════════════════════
-
 @app.route("/api/merge", methods=["POST"])
 @rate_limited()
 def merge_pdf():
@@ -601,12 +579,12 @@ def split_pdf():
     e = validate_file(f, Config.ALLOWED_PDF)
     if e:
         return err(e)
-    mode   = request.form.get("mode", "all")
+    mode = request.form.get("mode", "all")
     ranges = request.form.get("ranges", "")
     try:
         with temp_upload(f) as path:
-            reader  = PdfReader(path)
-            total   = len(reader.pages)
+            reader = PdfReader(path)
+            total = len(reader.pages)
             indices = list(range(total)) if mode == "all" else _parse_pages(ranges, total)
             if not indices:
                 return err("No valid pages in range")
@@ -637,13 +615,13 @@ def organize_pdf():
     if e:
         return err(e)
     action = request.form.get("action", "reorder").lower()
-    order  = request.form.get("order", "").strip()
+    order = request.form.get("order", "").strip()
     if not order:
         return err("Order/pages parameter required")
     try:
         with temp_upload(f) as path:
-            reader    = PdfReader(path)
-            total     = len(reader.pages)
+            reader = PdfReader(path)
+            total = len(reader.pages)
             specified = _parse_pages(order, total)
             if not specified:
                 return err("No valid pages specified")
@@ -680,7 +658,7 @@ def remove_pages():
     try:
         with temp_upload(f) as path:
             reader = PdfReader(path)
-            total  = len(reader.pages)
+            total = len(reader.pages)
             remove = set(_parse_pages(order, total))
             w = PdfWriter()
             for i, page in enumerate(reader.pages):
@@ -708,8 +686,8 @@ def extract_pages():
         return err("Pages to extract required")
     try:
         with temp_upload(f) as path:
-            reader  = PdfReader(path)
-            total   = len(reader.pages)
+            reader = PdfReader(path)
+            total = len(reader.pages)
             indices = _parse_pages(order, total)
             w = PdfWriter()
             for idx in indices:
@@ -727,7 +705,6 @@ def extract_pages():
 # ═════════════════════════════════════════════════════════════════
 # PDF OPTIMIZE
 # ═════════════════════════════════════════════════════════════════
-
 @app.route("/api/compress", methods=["POST"])
 @rate_limited()
 def compress_pdf():
@@ -740,14 +717,14 @@ def compress_pdf():
     try:
         with temp_upload(f) as path:
             orig = os.path.getsize(path)
-            doc  = fitz.open(path)
+            doc = fitz.open(path)
             for page in doc:
                 for img in page.get_images(full=True):
                     xref = img[0]
                     try:
                         base = doc.extract_image(xref)
-                        pil  = Image.open(io.BytesIO(base["image"])).convert("RGB")
-                        buf  = io.BytesIO()
+                        pil = Image.open(io.BytesIO(base["image"])).convert("RGB")
+                        buf = io.BytesIO()
                         pil.save(buf, format="JPEG", quality=q_val, optimize=True)
                         doc.update_stream(xref, buf.getvalue())
                     except Exception:
@@ -796,10 +773,10 @@ def ocr_pdf():
     lang = sanitize(request.form.get("lang", "eng"), 10)
     try:
         with temp_upload(f) as path:
-            doc     = fitz.open(path)
+            doc = fitz.open(path)
             new_doc = fitz.open()
             for page in doc:
-                pix     = page.get_pixmap(dpi=300)
+                pix = page.get_pixmap(dpi=300)
                 tmp_img = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
                 tmp_img.write(pix.tobytes("png"))
                 tmp_img.close()
@@ -826,7 +803,6 @@ def ocr_pdf():
 # ═════════════════════════════════════════════════════════════════
 # PDF EDIT
 # ═════════════════════════════════════════════════════════════════
-
 @app.route("/api/rotate", methods=["POST"])
 @rate_limited()
 def rotate_pdf():
@@ -844,9 +820,9 @@ def rotate_pdf():
     try:
         with temp_upload(f) as path:
             reader = PdfReader(path)
-            total  = len(reader.pages)
-            w      = PdfWriter()
-            idxs   = list(range(total)) if pages.lower() == "all" else _parse_pages(pages, total)
+            total = len(reader.pages)
+            w = PdfWriter()
+            idxs = list(range(total)) if pages.lower() == "all" else _parse_pages(pages, total)
             for i, page in enumerate(reader.pages):
                 if i in idxs:
                     page.rotate(angle)
@@ -868,16 +844,16 @@ def watermark_pdf():
     e = validate_file(f, Config.ALLOWED_PDF)
     if e:
         return err(e)
-    text    = sanitize(request.form.get("text", "CONFIDENTIAL"))
-    color   = sanitize(request.form.get("color", "808080"), 10)
+    text = sanitize(request.form.get("text", "CONFIDENTIAL"))
+    color = sanitize(request.form.get("color", "808080"), 10)
     opacity = float(request.form.get("opacity", "0.3"))
     try:
         with temp_upload(f) as path:
             doc = fitz.open(path)
             for page in doc:
-                r       = page.rect
+                r = page.rect
                 wm_bytes = _make_watermark(text, opacity, color, r.width, r.height)
-                wmpdf   = fitz.open("pdf", wm_bytes)
+                wmpdf = fitz.open("pdf", wm_bytes)
                 page.show_pdf_page(fitz.Rect(0, 0, r.width, r.height), wmpdf, 0, overlay=True)
                 wmpdf.close()
             filename = generate_output_filename(f.filename, "watermarked")
@@ -898,15 +874,15 @@ def page_numbers():
     if e:
         return err(e)
     position = request.form.get("position", "bottom")
-    start    = int(request.form.get("start", "1"))
-    prefix   = sanitize(request.form.get("prefix", ""), 50)
+    start = int(request.form.get("start", "1"))
+    prefix = sanitize(request.form.get("prefix", ""), 50)
     try:
         with temp_upload(f) as path:
             doc = fitz.open(path)
             for i, page in enumerate(doc):
-                r     = page.rect
+                r = page.rect
                 label = f"{prefix}{start + i}"
-                pn    = _make_page_num(label, position, r.width, r.height)
+                pn = _make_page_num(label, position, r.width, r.height)
                 pnpdf = fitz.open("pdf", pn)
                 page.show_pdf_page(fitz.Rect(0, 0, r.width, r.height), pnpdf, 0, overlay=True)
                 pnpdf.close()
@@ -927,9 +903,9 @@ def crop_pdf():
     e = validate_file(f, Config.ALLOWED_PDF)
     if e:
         return err(e)
-    left   = float(request.form.get("left",   "0"))
-    right  = float(request.form.get("right",  "0"))
-    top    = float(request.form.get("top",    "0"))
+    left = float(request.form.get("left", "0"))
+    right = float(request.form.get("right", "0"))
+    top = float(request.form.get("top", "0"))
     bottom = float(request.form.get("bottom", "0"))
     try:
         with temp_upload(f) as path:
@@ -956,18 +932,19 @@ def pdf_info():
         return err(e)
     try:
         with temp_upload(f) as path:
-            doc  = fitz.open(path)
+            doc = fitz.open(path)
             meta = doc.metadata
             pages_info = []
             for i, pg in enumerate(doc):
-                pages_info.append({"page": i + 1, "width_pt": round(pg.rect.width, 1),
-                                    "height_pt": round(pg.rect.height, 1)})
+                pages_info.append({"page": i + 1,
+                                   "width_pt": round(pg.rect.width, 1),
+                                   "height_pt": round(pg.rect.height, 1)})
             out_data = {
                 "page_count": len(doc),
-                "title":     meta.get("title", ""),
-                "author":    meta.get("author", ""),
-                "subject":   meta.get("subject", ""),
-                "creator":   meta.get("creator", ""),
+                "title": meta.get("title", ""),
+                "author": meta.get("author", ""),
+                "subject": meta.get("subject", ""),
+                "creator": meta.get("creator", ""),
                 "encrypted": doc.is_encrypted,
                 "size_human": (f"{os.path.getsize(path)/1048576:.2f} MB"
                                if os.path.getsize(path) > 1048576
@@ -984,7 +961,6 @@ def pdf_info():
 # ═════════════════════════════════════════════════════════════════
 # PDF SECURITY
 # ═════════════════════════════════════════════════════════════════
-
 @app.route("/api/protect", methods=["POST"])
 @rate_limited()
 def protect_pdf():
@@ -992,7 +968,7 @@ def protect_pdf():
     e = validate_file(f, Config.ALLOWED_PDF)
     if e:
         return err(e)
-    pw  = sanitize(request.form.get("password", ""))
+    pw = sanitize(request.form.get("password", ""))
     pw2 = sanitize(request.form.get("password2", ""))
     if not pw:
         return err("Password required")
@@ -1048,13 +1024,13 @@ def sign_pdf():
     e = validate_file(f, Config.ALLOWED_PDF)
     if e:
         return err(e)
-    name   = sanitize(request.form.get("name", "Signed"))
+    name = sanitize(request.form.get("name", "Signed"))
     reason = sanitize(request.form.get("reason", "Approved"))
     try:
         with temp_upload(f) as path:
             doc = fitz.open(path)
             for page in doc:
-                r    = page.rect
+                r = page.rect
                 text = f"✍ {name}  |  {reason}  |  {datetime.now().strftime('%Y-%m-%d')}"
                 page.draw_rect(
                     fitz.Rect(r.x0 + 20, r.y1 - 40, r.x1 - 20, r.y1 - 10),
@@ -1083,7 +1059,7 @@ def redact_pdf():
         return err("Search text required")
     try:
         with temp_upload(f) as path:
-            doc   = fitz.open(path)
+            doc = fitz.open(path)
             count = 0
             for page in doc:
                 hits = page.search_for(search_text)
@@ -1148,7 +1124,6 @@ def compare_pdf():
 # ═════════════════════════════════════════════════════════════════
 # PDF CONVERT FROM
 # ═════════════════════════════════════════════════════════════════
-
 @app.route("/api/pdf-to-image", methods=["POST"])
 @rate_limited()
 def pdf_to_image():
@@ -1162,9 +1137,9 @@ def pdf_to_image():
         fmt = "jpg"
     try:
         with temp_upload(f) as path:
-            doc   = fitz.open(path)
+            doc = fitz.open(path)
             count = len(doc)
-            buf   = io.BytesIO()
+            buf = io.BytesIO()
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                 for i, page in enumerate(doc):
                     mat = fitz.Matrix(dpi / 72, dpi / 72)
@@ -1195,7 +1170,7 @@ def pdf_to_word():
             filename = generate_output_filename(f.filename, "to_word")
             filename = re.sub(r'\.pdf$', '.docx', filename, flags=re.IGNORECASE)
             out = os.path.join(Config.OUTPUT_FOLDER, filename)
-            cv  = Pdf2DocxConverter(path)
+            cv = Pdf2DocxConverter(path)
             cv.convert(out)
             cv.close()
         return ok("PDF converted to Word", out)
@@ -1218,7 +1193,7 @@ def pdf_to_excel():
     try:
         with temp_upload(f) as path:
             dfs = tabula.read_pdf(path, pages='all', multiple_tables=True)
-            wb  = Workbook()
+            wb = Workbook()
             wb.remove(wb.active)
             for i, df in enumerate(dfs):
                 ws = wb.create_sheet(title=f"Table_{i+1}")
@@ -1248,11 +1223,11 @@ def pdf_to_ppt():
         with temp_upload(f) as path:
             doc = fitz.open(path)
             prs = Presentation()
-            prs.slide_width  = PptxInches(10)
+            prs.slide_width = PptxInches(10)
             prs.slide_height = PptxInches(7.5)
             blank = prs.slide_layouts[6]
             for page in doc:
-                pix     = page.get_pixmap(dpi=150)
+                pix = page.get_pixmap(dpi=150)
                 tmp_img = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
                 tmp_img.write(pix.tobytes("png"))
                 tmp_img.close()
@@ -1277,7 +1252,7 @@ def pdf_to_pdfa():
     e = validate_file(f, Config.ALLOWED_PDF)
     if e:
         return err(e)
-    version  = request.form.get("version", "1b")
+    version = request.form.get("version", "1b")
     pdfa_val = "2" if "3" in version else "1"
     try:
         with temp_upload(f) as path:
@@ -1302,12 +1277,11 @@ def pdf_to_pdfa():
 # ═════════════════════════════════════════════════════════════════
 # PDF CONVERT TO
 # ═════════════════════════════════════════════════════════════════
-
 def _images_to_pdf(paths: list, page_size_str: str, output_filename: str) -> str:
     size_map = {"a4": A4, "letter": letter}
-    size     = size_map.get(page_size_str.lower(), None)
-    out      = os.path.join(Config.OUTPUT_FOLDER, output_filename)
-    c        = rl_canvas.Canvas(out, pagesize=size or letter)
+    size = size_map.get(page_size_str.lower(), None)
+    out = os.path.join(Config.OUTPUT_FOLDER, output_filename)
+    c = rl_canvas.Canvas(out, pagesize=size or letter)
     for path in paths:
         try:
             img = Image.open(path)
@@ -1458,7 +1432,6 @@ def html_to_pdf():
 # ═════════════════════════════════════════════════════════════════
 # IMAGE TOOLS
 # ═════════════════════════════════════════════════════════════════
-
 @app.route("/api/compress-image", methods=["POST"])
 @rate_limited()
 def compress_image():
@@ -1488,8 +1461,8 @@ def resize_image():
     e = validate_file(f, Config.ALLOWED_IMAGE)
     if e:
         return err(e)
-    width      = int(request.form.get("width", "800"))
-    height     = int(request.form.get("height", "600"))
+    width = int(request.form.get("width", "800"))
+    height = int(request.form.get("height", "600"))
     keep_ratio = request.form.get("keep_ratio", "true").lower() in ("true", "on", "1", "yes")
     try:
         with temp_upload(f) as path:
@@ -1528,7 +1501,7 @@ def webp_to_jpg():
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                 for i, path in enumerate(paths):
                     img = Image.open(path).convert("RGB")
-                    ib  = io.BytesIO()
+                    ib = io.BytesIO()
                     img.save(ib, format="JPEG", quality=quality)
                     zf.writestr(f"image_{i+1:04d}.jpg", ib.getvalue())
             filename = generate_output_filename(
@@ -1561,7 +1534,7 @@ def png_to_jpg():
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                 for i, path in enumerate(paths):
                     img = Image.open(path).convert("RGB")
-                    ib  = io.BytesIO()
+                    ib = io.BytesIO()
                     img.save(ib, format="JPEG", quality=quality)
                     zf.writestr(f"image_{i+1:04d}.jpg", ib.getvalue())
             filename = generate_output_filename(
@@ -1617,8 +1590,8 @@ def image_to_excel():
             tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
             img.save(tmp.name, format="PNG")
             tmp.close()
-            wb     = Workbook()
-            ws     = wb.active
+            wb = Workbook()
+            ws = wb.active
             ws.title = "Image"
             xl_img = XlImage(tmp.name)
             xl_img.anchor = "B2"
@@ -1638,7 +1611,6 @@ def image_to_excel():
 # ═════════════════════════════════════════════════════════════════
 # WORD TOOLS
 # ═════════════════════════════════════════════════════════════════
-
 @app.route("/api/word-to-jpg", methods=["POST"])
 @rate_limited()
 def word_to_jpg():
@@ -1717,7 +1689,7 @@ def word_to_txt():
     try:
         with temp_upload(f) as path:
             if DOCX_AVAILABLE and path.endswith(".docx"):
-                doc  = DocxDocument(path)
+                doc = DocxDocument(path)
                 text = "\n".join(p.text for p in doc.paragraphs)
                 filename = generate_output_filename(f.filename, "to_txt")
                 filename = re.sub(r'\.(doc|docx)$', '.txt', filename, flags=re.IGNORECASE)
@@ -1807,7 +1779,7 @@ def word_to_json():
         return err(e)
     try:
         with temp_upload(f) as path:
-            doc  = DocxDocument(path)
+            doc = DocxDocument(path)
             data = {"paragraphs": [], "tables": []}
             for p in doc.paragraphs:
                 data["paragraphs"].append({"style": p.style.name, "text": p.text})
@@ -1838,9 +1810,9 @@ def compress_word():
         return err(e)
     try:
         with temp_upload(f) as path:
-            orig     = os.path.getsize(path)
+            orig = os.path.getsize(path)
             filename = generate_output_filename(f.filename, "compressed")
-            out      = os.path.join(Config.OUTPUT_FOLDER, filename)
+            out = os.path.join(Config.OUTPUT_FOLDER, filename)
             if path.endswith(".docx"):
                 doc = DocxDocument(path)
                 doc.save(out)
@@ -1848,7 +1820,7 @@ def compress_word():
                 out = libre(path, "docx", output_filename=filename)
                 if not out:
                     return err("Compression failed", 500)
-            new_size  = os.path.getsize(out)
+            new_size = os.path.getsize(out)
             reduction = round((1 - new_size / orig) * 100, 1) if orig else 0
         return ok(f"Word compressed ({reduction}% smaller)", out)
     except Exception:
@@ -1892,7 +1864,7 @@ def protect_word():
     e = validate_file(f, Config.ALLOWED_DOC)
     if e:
         return err(e)
-    pw  = sanitize(request.form.get("password", ""))
+    pw = sanitize(request.form.get("password", ""))
     pw2 = sanitize(request.form.get("password2", ""))
     if not pw:
         return err("Password required")
@@ -1920,13 +1892,13 @@ def edit_word():
     e = validate_file(f, Config.ALLOWED_DOC)
     if e:
         return err(e)
-    find_text    = sanitize(request.form.get("find_text", ""))
+    find_text = sanitize(request.form.get("find_text", ""))
     replace_text = sanitize(request.form.get("replace_text", ""))
     if not find_text:
         return err("Find text required")
     try:
         with temp_upload(f) as path:
-            doc   = DocxDocument(path)
+            doc = DocxDocument(path)
             count = 0
             for para in doc.paragraphs:
                 for run in para.runs:
@@ -1953,7 +1925,6 @@ def edit_word():
 # ═════════════════════════════════════════════════════════════════
 # EXCEL TOOLS
 # ═════════════════════════════════════════════════════════════════
-
 @app.route("/api/excel-to-csv", methods=["POST"])
 @rate_limited()
 def excel_to_csv():
@@ -1965,8 +1936,8 @@ def excel_to_csv():
         return err(e)
     try:
         with temp_upload(f) as path:
-            wb  = load_workbook(path, data_only=True)
-            ws  = wb.active
+            wb = load_workbook(path, data_only=True)
+            ws = wb.active
             filename = generate_output_filename(f.filename, "to_csv")
             filename = re.sub(r'\.(xls|xlsx)$', '.csv', filename, flags=re.IGNORECASE)
             out = os.path.join(Config.OUTPUT_FOLDER, filename)
@@ -2119,7 +2090,7 @@ def excel_to_json():
         return err(e)
     try:
         with temp_upload(f) as path:
-            wb   = load_workbook(path, data_only=True)
+            wb = load_workbook(path, data_only=True)
             data = {}
             for sheet_name in wb.sheetnames:
                 ws = wb[sheet_name]
@@ -2150,9 +2121,9 @@ def compress_excel():
     try:
         with temp_upload(f) as path:
             orig = os.path.getsize(path)
-            wb   = load_workbook(path, data_only=True)
+            wb = load_workbook(path, data_only=True)
             filename = generate_output_filename(f.filename, "compressed")
-            out  = os.path.join(Config.OUTPUT_FOLDER, filename)
+            out = os.path.join(Config.OUTPUT_FOLDER, filename)
             wb.save(out)
             reduction = round((1 - os.path.getsize(out) / orig) * 100, 1) if orig else 0
         return ok(f"Excel compressed ({reduction}% smaller)", out)
@@ -2197,7 +2168,7 @@ def protect_excel():
     e = validate_file(f, Config.ALLOWED_XLS)
     if e:
         return err(e)
-    pw  = sanitize(request.form.get("password", ""))
+    pw = sanitize(request.form.get("password", ""))
     pw2 = sanitize(request.form.get("password2", ""))
     if not pw:
         return err("Password required")
@@ -2227,7 +2198,7 @@ def repair_excel():
         return err(e)
     try:
         with temp_upload(f) as path:
-            wb  = load_workbook(path, data_only=True, read_only=False)
+            wb = load_workbook(path, data_only=True, read_only=False)
             filename = generate_output_filename(f.filename, "repaired")
             out = os.path.join(Config.OUTPUT_FOLDER, filename)
             wb.save(out)
@@ -2235,127 +2206,10 @@ def repair_excel():
     except Exception:
         log.exception("repair_excel")
         return err("Excel repair failed", 500)
+
+
 # ─────────────────────────────────────────────────────────────────
-# SEO LANDING PAGES
-# ─────────────────────────────────────────────────────────────────
-
-SEO_PAGES = {
-    "merge-pdf":     {"tool": "merge",       "title": "Merge PDF Free Online — Combine PDF Files | NPKPadala", "desc": "Merge multiple PDF files into one. Free, fast, no sign-up. Combine PDFs instantly online."},
-    "compress-pdf":  {"tool": "compress",     "title": "Compress PDF Free Online — Reduce PDF Size | NPKPadala", "desc": "Compress PDF files and reduce size without losing quality. Free online PDF compressor."},
-    "pdf-to-word":   {"tool": "pdf-to-word",  "title": "PDF to Word Free Online — Convert PDF to DOCX | NPKPadala", "desc": "Convert PDF to editable Word document online for free. Fast and accurate PDF to DOCX converter."},
-    "jpg-to-pdf":    {"tool": "jpg-to-pdf",   "title": "JPG to PDF Free Online — Convert Images to PDF | NPKPadala", "desc": "Convert JPG images to PDF online for free. Combine multiple JPGs into one PDF instantly."},
-    "split-pdf":     {"tool": "split",        "title": "Split PDF Free Online — Extract PDF Pages | NPKPadala", "desc": "Split PDF into multiple files or extract specific pages. Free online PDF splitter."},
-    "pdf-to-jpg":    {"tool": "pdf-to-image", "title": "PDF to JPG Free Online — Convert PDF to Image | NPKPadala", "desc": "Convert PDF pages to JPG images online for free. High quality PDF to image converter."},
-    "protect-pdf":   {"tool": "protect",      "title": "Protect PDF Free Online — Password Protect PDF | NPKPadala", "desc": "Add password protection to your PDF files online for free. Secure your documents instantly."},
-    "word-to-pdf":   {"tool": "word-to-pdf",  "title": "Word to PDF Free Online — Convert DOCX to PDF | NPKPadala", "desc": "Convert Word documents to PDF online for free. Fast and reliable DOCX to PDF converter."},
-    "rotate-pdf":    {"tool": "rotate",       "title": "Rotate PDF Free Online — Fix PDF Orientation | NPKPadala", "desc": "Rotate PDF pages online for free. Fix portrait or landscape orientation instantly."},
-    "watermark-pdf": {"tool": "watermark",    "title": "Watermark PDF Free Online — Add Text Watermark | NPKPadala", "desc": "Add custom text watermark to PDF online for free. Protect your documents with watermarks."},
-}
-
-def build_seo_page(page_slug):
-    page = SEO_PAGES.get(page_slug)
-    if not page:
-        abort(404)
-    tool_id  = page["tool"]
-    title    = page["title"]
-    desc     = page["desc"]
-    canonical = f"https://npkpadala.com/pdfwala/{page_slug}"
-    html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>{title}</title>
-<meta name="description" content="{desc}"/>
-<link rel="canonical" href="{canonical}"/>
-<meta property="og:title" content="{title}"/>
-<meta property="og:description" content="{desc}"/>
-<meta property="og:url" content="{canonical}"/>
-<meta property="og:type" content="website"/>
-<meta property="og:site_name" content="NPKPadala PDF Tools"/>
-<meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="{title}"/>
-<meta name="twitter:description" content="{desc}"/>
-<script type="application/ld+json">
-{{
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  "name": "{title}",
-  "url": "{canonical}",
-  "description": "{desc}",
-  "applicationCategory": "UtilitiesApplication",
-  "operatingSystem": "All",
-  "offers": {{
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD"
-  }}
-}}
-</script>
-<style>
-  body {{ font-family: sans-serif; background: #0A0E1A; color: #fff;
-         display: flex; align-items: center; justify-content: center;
-         height: 100vh; margin: 0; text-align: center; }}
-  .loader {{ font-size: 18px; color: #60A5FA; }}
-  .spinner {{ width: 40px; height: 40px; border: 4px solid #1A2235;
-              border-top: 4px solid #3B82F6; border-radius: 50%;
-              animation: spin 0.8s linear infinite; margin: 0 auto 16px; }}
-  @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
-</style>
-</head>
-<body>
-<div class="loader">
-  <div class="spinner"></div>
-  Loading tool…
-</div>
-<script>
-  sessionStorage.setItem('autoOpenTool', '{tool_id}');
-  window.location.href = 'https://npkpadala.com/#tools';
-</script>
-</body>
-</html>"""
-    return html, 200, {"Content-Type": "text/html"}
-
-@app.route("/pdfwala/<slug>")
-def seo_page(slug):
-    if slug not in SEO_PAGES:
-        abort(404)
-    return build_seo_page(slug)
-
-
-@app.route("/sitemap.xml")
-def sitemap():
-    from datetime import date
-    today = date.today().isoformat()
-    urls = ["https://npkpadala.com/"] + [f"https://npkpadala.com/pdfwala/{slug}" for slug in SEO_PAGES]
-    url_blocks = "\n".join([
-        f"""  <url>
-    <loc>{u}</loc>
-    <lastmod>{today}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>{"1.0" if u == "https://npkpadala.com/" else "0.8"}</priority>
-  </url>""" for u in urls
-    ])
-    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-{url_blocks}
-</urlset>"""
-    return xml, 200, {"Content-Type": "application/xml"}
-
-
-@app.route("/robots.txt")
-def robots():
-    content = """User-agent: *
-Allow: /
-Disallow: /api/
-Disallow: /download/
-
-Sitemap: https://npkpadala.com/sitemap.xml"""
-    return content, 200, {"Content-Type": "text/plain"}
-
-    
-# ─────────────────────────────────────────────────────────────────
-# MAIN
+# MAIN ENTRY POINT
 # ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
