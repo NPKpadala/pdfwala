@@ -743,7 +743,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           <div class="mega-cols c4">
             <div>
               <div class="mega-col-hd blue">📦 Organize</div>
-              <a class="mm-link" onclick="window.location.href='/pdfwala/merge-pdf'"><span class="mli">🔗</span>Merge PDF<span class="mm-badge mb-pop">Popular</span><span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('merge')"><span class="mli">🔗</span>Merge PDF<span class="mm-badge mb-pop">Popular</span><span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('split')"><span class="mli">✂️</span>Split PDF<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('organize')"><span class="mli">📋</span>Organize PDF<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('remove-pages')"><span class="mli">🗑️</span>Remove Pages<span class="mla">→</span></a>
@@ -751,7 +751,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
             </div>
             <div>
               <div class="mega-col-hd green">⚡ Optimize</div>
-              <a class="mm-link" onclick="window.location.href='/pdfwala/compress-pdf'"><span class="mli">🗜️</span>Compress PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('compress')"><span class="mli">🗜️</span>Compress PDF<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('repair-pdf')"><span class="mli">🔧</span>Repair PDF<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('ocr-pdf')"><span class="mli">🔍</span>OCR PDF<span class="mla">→</span></a>
               <div style="height:12px"></div>
@@ -764,7 +764,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
             <div>
               <div class="mega-col-hd violet">📤 From PDF</div>
               <a class="mm-link" onclick="openTool('pdf-to-image')"><span class="mli">🖼️</span>PDF to Image<span class="mla">→</span></a>
-              <a class="mm-link" onclick="window.location.href='/pdfwala/pdf-to-word'"><span class="mli">📝</span>PDF to Word<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('pdf-to-word')"><span class="mli">📝</span>PDF to Word<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('pdf-to-excel')"><span class="mli">📊</span>PDF to Excel<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('pdf-to-ppt')"><span class="mli">📑</span>PDF to PPT<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('pdf-to-pdfa')"><span class="mli">📜</span>PDF to PDF/A<span class="mla">→</span></a>
@@ -791,7 +791,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
             <div>
               <div class="mega-col-hd cyan">🔄 Convert</div>
               <a class="mm-link" onclick="openTool('image-to-pdf')"><span class="mli">📷</span>Image to PDF<span class="mla">→</span></a>
-              <a class="mm-link" onclick="window.location.href='/pdfwala/jpg-to-pdf'"><span class="mli">🟨</span>JPG to PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('jpg-to-pdf')"><span class="mli">🟨</span>JPG to PDF<span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('webp-to-jpg')"><span class="mli">🔄</span>WebP to JPG<span class="mm-badge mb-new">New</span><span class="mla">→</span></a>
               <a class="mm-link" onclick="openTool('png-to-jpg')"><span class="mli">🔄</span>PNG to JPG<span class="mm-badge mb-new">New</span><span class="mla">→</span></a>
             </div>
@@ -915,13 +915,13 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     </button>
     <div class="mob-sub"><div class="mob-sub-inner">
       <div class="mob-cat">Organize</div>
-      <a class="mob-link" onclick="window.location.href='/pdfwala/merge-pdf';closeMob()">Merge PDF</a>
+      <a class="mob-link" onclick="openTool('merge');closeMob()">Merge PDF</a>
       <a class="mob-link" onclick="openTool('split');closeMob()">Split PDF</a>
       <a class="mob-link" onclick="openTool('organize');closeMob()">Organize PDF</a>
       <a class="mob-link" onclick="openTool('remove-pages');closeMob()">Remove Pages</a>
       <a class="mob-link" onclick="openTool('extract-pages');closeMob()">Extract Pages</a>
       <div class="mob-cat">Optimize</div>
-      <a class="mob-link" onclick="window.location.href='/pdfwala/compress-pdf';closeMob()">Compress PDF</a>
+      <a class="mob-link" onclick="openTool('compress');closeMob()">Compress PDF</a>
       <a class="mob-link" onclick="openTool('repair-pdf');closeMob()">Repair PDF</a>
       <div class="mob-cat">Edit</div>
       <a class="mob-link" onclick="openTool('rotate');closeMob()">Rotate PDF</a>
@@ -942,7 +942,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     <div class="mob-sub"><div class="mob-sub-inner">
       <div class="mob-cat">Convert</div>
       <a class="mob-link" onclick="openTool('image-to-pdf');closeMob()">Image to PDF</a>
-      <a class="mob-link" onclick="window.location.href='/pdfwala/jpg-to-pdf';closeMob()">JPG to PDF</a>
+      <a class="mob-link" onclick="openTool('jpg-to-pdf');closeMob()">JPG to PDF</a>
       <a class="mob-link" onclick="openTool('webp-to-jpg');closeMob()">WebP to JPG</a>
       <a class="mob-link" onclick="openTool('png-to-jpg');closeMob()">PNG to JPG</a>
       <div class="mob-cat">Tools</div>
@@ -2373,6 +2373,26 @@ const TOOLS = {
   'unlock-excel':{title:'Unlock Excel',icon:'🔓',desc:'Remove password from Excel file.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/unlock-excel',field:'file',form:()=>`<div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="password" placeholder="Enter workbook password"/></div>`},
   'repair-excel':{title:'Repair Excel',icon:'🔧',desc:'Repair corrupted Excel files.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/repair-excel',field:'file',form:()=>''}
 };
+
+  };
+
+// ✅ AUTO OPEN TOOL FROM URL (ADD HERE)
+(function() {
+  const path = window.location.pathname;
+
+  const match = path.match(/^\/pdfwala\/(.+)$/);
+
+  if (match) {
+    const toolId = match[1];
+
+    window.addEventListener('DOMContentLoaded', function() {
+      if (typeof TOOLS !== "undefined" && TOOLS[toolId]) {
+        openTool(toolId);
+      }
+    });
+  }
+})();
+
 (function initMega(){const items=document.querySelectorAll('.nav-item[data-mega]');let closeTimer=null;items.forEach(item=>{item.addEventListener('mouseenter',()=>{clearTimeout(closeTimer);items.forEach(i=>i.classList.remove('open'));item.classList.add('open')});item.addEventListener('mouseleave',()=>{closeTimer=setTimeout(()=>item.classList.remove('open'),160)});const drop=item.querySelector('.mega-drop');if(drop){drop.addEventListener('mouseenter',()=>clearTimeout(closeTimer));drop.addEventListener('mouseleave',()=>{closeTimer=setTimeout(()=>item.classList.remove('open'),160)})}});document.addEventListener('click',e=>{if(!e.target.closest('.nav-item[data-mega]'))items.forEach(i=>i.classList.remove('open'))});document.addEventListener('keydown',e=>{if(e.key==='Escape'){items.forEach(i=>i.classList.remove('open'));closeMob()}})})();
 function toggleMob(){const n=document.getElementById('mobNav');n.classList.toggle('open');document.body.style.overflow=n.classList.contains('open')?'hidden':'';document.getElementById('mobBtn').textContent=n.classList.contains('open')?'✕':'☰'}function closeMob(){document.getElementById('mobNav').classList.remove('open');document.body.style.overflow='';document.getElementById('mobBtn').textContent='☰'}function toggleMobSec(btn){const sub=btn.nextElementSibling;const open=sub.classList.contains('open');document.querySelectorAll('.mob-sub.open').forEach(s=>s.classList.remove('open'));document.querySelectorAll('.mob-section-btn.active').forEach(b=>b.classList.remove('active'));if(!open){sub.classList.add('open');btn.classList.add('active')}}
 function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');document.getElementById('themeBtn').textContent=d?'🌙':'☀️';localStorage.setItem('pw-theme',d?'light':'dark')}(function(){const s=localStorage.getItem('pw-theme')||'dark';document.documentElement.setAttribute('data-theme',s);document.getElementById('themeBtn').textContent=s==='dark'?'☀️':'🌙'})();
