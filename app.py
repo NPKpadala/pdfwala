@@ -482,11 +482,15 @@ def _parse_pages(spec: str, total: int) -> List[int]:
 # ─────────────────────────────────────────────────────────────────
 @app.route("/")
 def home():
-    @app.route("/pdfwala/<path:tool_path>")
-def tool_page(tool_path):
-    """Serve the SPA for all /pdfwala/* tool URLs (SEO-friendly routes)."""
     return send_from_directory(Config.STATIC_FOLDER, "index.html")
- 
+
+
+@app.route("/pdfwala/<path:tool_path>")
+def tool_page(tool_path):
+    """Serve the SPA for all /pdfwala/* SEO-friendly tool URLs."""
+    return send_from_directory(Config.STATIC_FOLDER, "index.html")
+
+
 @app.route("/api/health")
 def health():
     lo = False
