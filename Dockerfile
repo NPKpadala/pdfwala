@@ -27,7 +27,7 @@ COPY gunicorn.conf.py .
 COPY static/ ./static/
 
 # Create necessary directories
-RUN mkdir -p /home/opc/pdfwala/uploads /home/opc/pdfwala/outputs
+RUN mkdir -p /app/uploads /app/outputs
 
 # Expose port
 EXPOSE 5000
