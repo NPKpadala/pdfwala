@@ -724,16 +724,13 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 ═══════════════════════════════════════════ -->
 <nav class="nav" role="banner">
   <div class="nav-inner">
-    <!-- Logo -->
     <a class="nav-logo" href="#" aria-label="PDFWala Home">
       <div class="nav-logo-mark">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       </div>
       PDF<span class="dot">Wala</span>
     </a>
-    <!-- Desktop nav -->
     <div class="nav-links" id="navLinks">
-      <!-- PDF to Anything -->
       <div class="nav-item" data-mega>
         <button class="nav-btn">
           PDF to Anything
@@ -780,7 +777,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           </div>
         </div>
       </div>
-      <!-- Image to Anything -->
       <div class="nav-item" data-mega>
         <button class="nav-btn">
           Image Tools
@@ -805,7 +801,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           </div>
         </div>
       </div>
-      <!-- Word to Anything -->
       <div class="nav-item" data-mega>
         <button class="nav-btn">
           Word to Anything
@@ -837,7 +832,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           </div>
         </div>
       </div>
-      <!-- Excel to Anything -->
       <div class="nav-item" data-mega>
         <button class="nav-btn">
           Excel to Anything
@@ -869,7 +863,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           </div>
         </div>
       </div>
-      <!-- Security -->
       <div class="nav-item" data-mega>
         <button class="nav-btn">
           Security
@@ -893,12 +886,10 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           </div>
         </div>
       </div>
-      <!-- All Tools direct link -->
       <button class="nav-btn all-tools" onclick="document.getElementById('tools').scrollIntoView({behavior:'smooth'})">
         All Tools
       </button>
     </div>
-    <!-- Right side -->
     <div class="nav-right">
       <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle theme">🌙</button>
       <button class="nav-cta" onclick="document.getElementById('tools').scrollIntoView({behavior:'smooth'})">Start Processing</button>
@@ -906,7 +897,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     </div>
   </div>
 </nav>
-<!-- Mobile nav drawer -->
 <div class="mob-nav" id="mobNav">
   <div class="mob-section">
     <button class="mob-section-btn" onclick="toggleMobSec(this)">
@@ -1006,9 +996,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     <a class="mob-link" style="font-size:15px;font-weight:600;padding:14px 0" onclick="document.getElementById('tools').scrollIntoView({behavior:'smooth'});closeMob()">🧰 All Tools</a>
   </div>
 </div>
-<!-- ═══════════════════════════════════════════
-     HERO
-═══════════════════════════════════════════ -->
 <section class="hero" role="main">
   <div class="hero-mesh" aria-hidden="true"></div>
   <div class="hero-grid" aria-hidden="true"></div>
@@ -1051,9 +1038,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     </div>
   </div>
 </section>
-<!-- ═══════════════════════════════════════════
-     QUICK ACTIONS
-═══════════════════════════════════════════ -->
 <section class="quick-section" id="quickActions">
   <div class="qa-inner">
     <div class="qa-header">
@@ -1061,18 +1045,15 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       <p class="qa-sub">Most popular tools — one click away</p>
     </div>
     <div class="qa-grid">
-      <div class="qa-card" onclick="window.location.href='/pdfwala/merge-pdf'"><span class="qa-icon">🔗</span>Merge PDF</div>
-      <div class="qa-card" onclick="window.location.href='/pdfwala/compress-pdf'"><span class="qa-icon">🗜️</span>Compress PDF</div>
-      <div class="qa-card" onclick="window.location.href='/pdfwala/pdf-to-word'"><span class="qa-icon">📝</span>PDF to Word</div>
-      <div class="qa-card" onclick="window.location.href='/pdfwala/jpg-to-pdf'"><span class="qa-icon">📷</span>JPG to PDF</div>
+      <div class="qa-card" onclick="openTool('merge')"><span class="qa-icon">🔗</span>Merge PDF</div>
+      <div class="qa-card" onclick="openTool('compress')"><span class="qa-icon">🗜️</span>Compress PDF</div>
+      <div class="qa-card" onclick="openTool('pdf-to-word')"><span class="qa-icon">📝</span>PDF to Word</div>
+      <div class="qa-card" onclick="openTool('jpg-to-pdf')"><span class="qa-icon">📷</span>JPG to PDF</div>
       <div class="qa-card" onclick="openTool('split')"><span class="qa-icon">✂️</span>Split PDF</div>
       <div class="qa-card" onclick="openTool('protect')"><span class="qa-icon">🔒</span>Protect PDF</div>
     </div>
   </div>
 </section>
-<!-- ═══════════════════════════════════════════
-     CATEGORY TABS
-═══════════════════════════════════════════ -->
 <div class="tabs-bar" role="navigation" aria-label="Tool categories">
   <div class="tabs-inner">
     <button class="tab-btn active" onclick="filterCat('all',this)">All Tools</button>
@@ -1086,9 +1067,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     <button class="tab-btn" onclick="filterCat('excel',this)">Excel Tools</button>
   </div>
 </div>
-<!-- ═══════════════════════════════════════════
-     TOOLS GRID
-═══════════════════════════════════════════ -->
 <section class="tools-section" id="tools" aria-label="PDF Tools">
   <div class="section-header reveal">
     <div class="section-kicker">Toolkit</div>
@@ -1096,40 +1074,33 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     <p class="section-sub">Click any tool to start — no account, no watermarks, no nonsense.</p>
   </div>
   <div class="tools-grid" id="toolsGrid" role="list">
-    <!-- ── ORGANIZE ── -->
-    <div class="tool-card c-blue" data-cat="organize" onclick="window.location.href='/pdfwala/merge-pdf'" role="listitem"><div class="tool-badge badge-popular">Popular</div><div class="tool-icon-wrap">🔗</div><div class="tool-name">Merge PDF</div><div class="tool-desc">Combine multiple PDFs into one document</div></div>
+    <div class="tool-card c-blue" data-cat="organize" onclick="openTool('merge')" role="listitem"><div class="tool-badge badge-popular">Popular</div><div class="tool-icon-wrap">🔗</div><div class="tool-name">Merge PDF</div><div class="tool-desc">Combine multiple PDFs into one document</div></div>
     <div class="tool-card c-blue" data-cat="organize" onclick="openTool('split')" role="listitem"><div class="tool-icon-wrap">✂️</div><div class="tool-name">Split PDF</div><div class="tool-desc">Extract pages into separate files</div></div>
     <div class="tool-card c-blue" data-cat="organize" onclick="openTool('organize')" role="listitem"><div class="tool-icon-wrap">📋</div><div class="tool-name">Organize PDF</div><div class="tool-desc">Reorder, extract, or delete pages</div></div>
     <div class="tool-card c-blue" data-cat="organize" onclick="openTool('remove-pages')" role="listitem"><div class="tool-icon-wrap">🗑️</div><div class="tool-name">Remove Pages</div><div class="tool-desc">Delete specific pages from PDF</div></div>
     <div class="tool-card c-blue" data-cat="organize" onclick="openTool('extract-pages')" role="listitem"><div class="tool-icon-wrap">📤</div><div class="tool-name">Extract Pages</div><div class="tool-desc">Extract selected pages to new PDF</div></div>
-    <!-- ── OPTIMIZE ── -->
-    <div class="tool-card c-cyan" data-cat="optimize" onclick="window.location.href='/pdfwala/compress-pdf'" role="listitem"><div class="tool-badge badge-new">Free</div><div class="tool-icon-wrap">🗜️</div><div class="tool-name">Compress PDF</div><div class="tool-desc">Reduce size while preserving quality</div></div>
+    <div class="tool-card c-cyan" data-cat="optimize" onclick="openTool('compress')" role="listitem"><div class="tool-badge badge-new">Free</div><div class="tool-icon-wrap">🗜️</div><div class="tool-name">Compress PDF</div><div class="tool-desc">Reduce size while preserving quality</div></div>
     <div class="tool-card c-cyan" data-cat="optimize" onclick="openTool('repair-pdf')" role="listitem"><div class="tool-icon-wrap">🔧</div><div class="tool-name">Repair PDF</div><div class="tool-desc">Fix corrupted or damaged PDFs</div></div>
     <div class="tool-card c-rose" data-cat="optimize" onclick="openTool('ocr-pdf')" role="listitem"><div class="tool-icon-wrap">🔍</div><div class="tool-name">OCR PDF</div><div class="tool-desc">Make scanned PDFs text-searchable</div></div>
-    <!-- ── CONVERT FROM PDF ── -->
     <div class="tool-card c-emerald" data-cat="convert-from" onclick="openTool('pdf-to-image')" role="listitem"><div class="tool-icon-wrap">🖼️</div><div class="tool-name">PDF to Image</div><div class="tool-desc">Export each page as JPG or PNG</div></div>
-    <div class="tool-card c-emerald" data-cat="convert-from" onclick="window.location.href='/pdfwala/pdf-to-word'" role="listitem"><div class="tool-icon-wrap">📝</div><div class="tool-name">PDF to Word</div><div class="tool-desc">Convert PDF to editable DOCX</div></div>
+    <div class="tool-card c-emerald" data-cat="convert-from" onclick="openTool('pdf-to-word')" role="listitem"><div class="tool-icon-wrap">📝</div><div class="tool-name">PDF to Word</div><div class="tool-desc">Convert PDF to editable DOCX</div></div>
     <div class="tool-card c-emerald" data-cat="convert-from" onclick="openTool('pdf-to-excel')" role="listitem"><div class="tool-icon-wrap">📊</div><div class="tool-name">PDF to Excel</div><div class="tool-desc">Extract tables to spreadsheet</div></div>
     <div class="tool-card c-emerald" data-cat="convert-from" onclick="openTool('pdf-to-ppt')" role="listitem"><div class="tool-icon-wrap">📑</div><div class="tool-name">PDF to PPT</div><div class="tool-desc">Convert PDF to PowerPoint</div></div>
-    <!-- ── CONVERT TO PDF ── -->
     <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('image-to-pdf')" role="listitem"><div class="tool-icon-wrap">📷</div><div class="tool-name">Image to PDF</div><div class="tool-desc">Turn photos into a single PDF</div></div>
-    <div class="tool-card c-amber" data-cat="convert-to" onclick="window.location.href='/pdfwala/jpg-to-pdf'" role="listitem"><div class="tool-icon-wrap">🟨</div><div class="tool-name">JPG to PDF</div><div class="tool-desc">Convert JPG images to PDF</div></div>
+    <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('jpg-to-pdf')" role="listitem"><div class="tool-icon-wrap">🟨</div><div class="tool-name">JPG to PDF</div><div class="tool-desc">Convert JPG images to PDF</div></div>
     <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('word-to-pdf')" role="listitem"><div class="tool-icon-wrap">📄</div><div class="tool-name">Word to PDF</div><div class="tool-desc">Convert DOCX documents to PDF</div></div>
     <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('excel-to-pdf')" role="listitem"><div class="tool-icon-wrap">📊</div><div class="tool-name">Excel to PDF</div><div class="tool-desc">Turn spreadsheets into clean PDFs</div></div>
     <div class="tool-card c-amber" data-cat="convert-to" onclick="openTool('html-to-pdf')" role="listitem"><div class="tool-icon-wrap">🌐</div><div class="tool-name">HTML to PDF</div><div class="tool-desc">Convert web pages to PDF</div></div>
-    <!-- ── EDIT ── -->
     <div class="tool-card c-blue" data-cat="edit" onclick="openTool('rotate')" role="listitem"><div class="tool-icon-wrap">🔄</div><div class="tool-name">Rotate PDF</div><div class="tool-desc">Fix page orientation instantly</div></div>
     <div class="tool-card c-amber" data-cat="edit" onclick="openTool('watermark')" role="listitem"><div class="tool-icon-wrap">💧</div><div class="tool-name">Watermark PDF</div><div class="tool-desc">Stamp text watermarks on every page</div></div>
     <div class="tool-card c-cyan" data-cat="edit" onclick="openTool('page-numbers')" role="listitem"><div class="tool-icon-wrap">🔢</div><div class="tool-name">Page Numbers</div><div class="tool-desc">Add page numbers anywhere on pages</div></div>
     <div class="tool-card c-cyan" data-cat="edit" onclick="openTool('crop')" role="listitem"><div class="tool-icon-wrap">📐</div><div class="tool-name">Crop PDF</div><div class="tool-desc">Remove unwanted page margins</div></div>
     <div class="tool-card c-emerald" data-cat="edit" onclick="openTool('info')" role="listitem"><div class="tool-icon-wrap">ℹ️</div><div class="tool-name">PDF Info</div><div class="tool-desc">View metadata and dimensions</div></div>
-    <!-- ── SECURITY ── -->
     <div class="tool-card c-violet" data-cat="security" onclick="openTool('protect')" role="listitem"><div class="tool-icon-wrap">🔒</div><div class="tool-name">Protect PDF</div><div class="tool-desc">Encrypt with a strong password</div></div>
     <div class="tool-card c-violet" data-cat="security" onclick="openTool('unlock')" role="listitem"><div class="tool-icon-wrap">🔓</div><div class="tool-name">Unlock PDF</div><div class="tool-desc">Remove password protection safely</div></div>
     <div class="tool-card c-violet" data-cat="security" onclick="openTool('sign-pdf')" role="listitem"><div class="tool-icon-wrap">✍️</div><div class="tool-name">Sign PDF</div><div class="tool-desc">Add digital signatures to documents</div></div>
     <div class="tool-card c-rose" data-cat="security" onclick="openTool('redact-pdf')" role="listitem"><div class="tool-icon-wrap">🖊️</div><div class="tool-name">Redact PDF</div><div class="tool-desc">Permanently remove sensitive info</div></div>
     <div class="tool-card c-rose" data-cat="security" onclick="openTool('compare-pdf')" role="listitem"><div class="tool-icon-wrap">⚖️</div><div class="tool-name">Compare PDF</div><div class="tool-desc">Find differences between two PDFs</div></div>
-    <!-- Word Tools -->
     <div class="tool-card c-blue" data-cat="word" onclick="openTool('word-to-jpg')" role="listitem"><div class="tool-icon-wrap">🖼️</div><div class="tool-name">Word to JPG</div><div class="tool-desc">Convert Word documents to JPG images</div></div>
     <div class="tool-card c-blue" data-cat="word" onclick="openTool('word-to-png')" role="listitem"><div class="tool-icon-wrap">🖼️</div><div class="tool-name">Word to PNG</div><div class="tool-desc">Convert Word documents to PNG images</div></div>
     <div class="tool-card c-blue" data-cat="word" onclick="openTool('word-to-txt')" role="listitem"><div class="tool-icon-wrap">📝</div><div class="tool-name">Word to TXT</div><div class="tool-desc">Convert Word documents to plain text</div></div>
@@ -1140,7 +1111,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     <div class="tool-card c-blue" data-cat="word" onclick="openTool('compress-word')" role="listitem"><div class="tool-icon-wrap">🗜️</div><div class="tool-name">Compress Word</div><div class="tool-desc">Reduce Word document file size</div></div>
     <div class="tool-card c-blue" data-cat="word" onclick="openTool('unlock-word')" role="listitem"><div class="tool-icon-wrap">🔓</div><div class="tool-name">Unlock Word</div><div class="tool-desc">Remove password from Word files</div></div>
     <div class="tool-card c-blue" data-cat="word" onclick="openTool('edit-word')" role="listitem"><div class="tool-icon-wrap">✏️</div><div class="tool-name">Edit Word</div><div class="tool-desc">Find and replace text in Word documents</div></div>
-    <!-- Excel Tools -->
     <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('excel-to-csv')" role="listitem"><div class="tool-icon-wrap">📋</div><div class="tool-name">Excel to CSV</div><div class="tool-desc">Convert Excel to comma-separated values</div></div>
     <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('excel-to-jpg')" role="listitem"><div class="tool-icon-wrap">🖼️</div><div class="tool-name">Excel to JPG</div><div class="tool-desc">Convert Excel sheets to JPG images</div></div>
     <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('excel-to-png')" role="listitem"><div class="tool-icon-wrap">🖼️</div><div class="tool-name">Excel to PNG</div><div class="tool-desc">Convert Excel sheets to PNG images</div></div>
@@ -1149,39 +1119,47 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('excel-to-html')" role="listitem"><div class="tool-icon-wrap">🌐</div><div class="tool-name">Excel to HTML</div><div class="tool-desc">Convert Excel to HTML tables</div></div>
     <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('excel-to-json')" role="listitem"><div class="tool-icon-wrap">🔄</div><div class="tool-name">Excel to JSON</div><div class="tool-desc">Convert Excel data to JSON format</div></div>
     <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('compress-excel')" role="listitem"><div class="tool-icon-wrap">🗜️</div><div class="tool-name">Compress Excel</div><div class="tool-desc">Reduce Excel workbook file size</div></div>
-   <!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<meta name="description" content="PDFWala — Fast, secure, and free PDF tools. Merge, split, compress, convert and more. No sign-up required."/>
-<meta name="theme-color" content="#0A0E1A"/>
-<title>PDFWala — All-in-One PDF Tools</title>
-<link rel="canonical" href="https://npkpadala.com/"/>
-<meta property="og:title" content="PDFWala — Free PDF Tools Online"/>
-<meta property="og:description" content="50+ free PDF tools. Merge, split, compress, convert PDF. No sign-up required. Fast and secure."/>
-<meta property="og:url" content="https://npkpadala.com/"/>
-<meta property="og:type" content="website"/>
-<meta property="og:site_name" content="NPKPadala PDF Tools"/>
-<meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="PDFWala — Free PDF Tools Online"/>
-<meta name="twitter:description" content="50+ free PDF tools. No sign-up. Instant processing."/>
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  "name": "NPKPadala PDF Tools",
-  "url": "https://npkpadala.com",
-  "description": "50+ free PDF tools including merge, split, compress, convert. No sign-up required.",
-  "applicationCategory": "UtilitiesApplication",
-  "operatingSystem": "All",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD"
-  }
-}
-</script>
+     <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('unlock-excel')" role="listitem"><div class="tool-icon-wrap">🔓</div><div class="tool-name">Unlock Excel</div><div class="tool-desc">Remove password from Excel files</div></div>
+    <div class="tool-card c-emerald" data-cat="excel" onclick="openTool('repair-excel')" role="listitem"><div class="tool-icon-wrap">🔧</div><div class="tool-name">Repair Excel</div><div class="tool-desc">Fix corrupted Excel workbooks</div></div>
+  </div>
+</section>
+<!-- ═══════════════════════════════════════════
+     WHY SECTION
+═══════════════════════════════════════════ -->
+<section class="why-section" id="why" aria-label="Why PDFWala">
+  <div class="why-inner">
+    <div class="why-header reveal">
+      <div class="section-kicker" style="text-align:center">Why choose us</div>
+      <h2 class="section-title" style="text-align:center;font-size:28px">Built for speed, privacy &amp; simplicity</h2>
+    </div>
+    <div class="why-grid reveal">
+      <div class="why-card"><div class="why-icon">🔒</div><div class="why-name">Secure &amp; Private</div><div class="why-desc">Every file is processed in an isolated session and permanently deleted after 60 minutes. We never read, store, or sell your data.</div></div>
+      <div class="why-card"><div class="why-icon">⚡</div><div class="why-name">Lightning Fast</div><div class="why-desc">Optimized PDF engine handles most files in under a second. Built for performance — even on large documents with hundreds of pages.</div></div>
+      <div class="why-card"><div class="why-icon">🆓</div><div class="why-name">Genuinely Free</div><div class="why-desc">No hidden limits, no watermarks, no file-size tricks. Every tool is completely free with no account required — period.</div></div>
+      <div class="why-card"><div class="why-icon">📱</div><div class="why-name">Works Everywhere</div><div class="why-desc">Fully responsive — works seamlessly on mobile, tablet, and desktop. No apps to install, no plugins needed.</div></div>
+    </div>
+  </div>
+</section>
+<!-- ═══════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div><div class="footer-brand-name"><div class="footer-brand-mark">📄</div>PDF<span style="color:var(--accent)">Wala</span></div><p class="footer-brand-desc">Your all-in-one PDF toolkit — built for speed, privacy, and simplicity. No sign-up, no limits.</p><div class="footer-tagline">"Built for simplicity, speed, and privacy."</div></div>
+      <div class="footer-col"><div class="footer-col-title">Organize</div><a href="#" onclick="openTool('merge');return false">Merge PDF</a><a href="#" onclick="openTool('split');return false">Split PDF</a><a href="#" onclick="openTool('organize');return false">Organize Pages</a><a href="#" onclick="openTool('rotate');return false">Rotate PDF</a></div>
+      <div class="footer-col"><div class="footer-col-title">Convert</div><a href="#" onclick="openTool('pdf-to-image');return false">PDF to Image</a><a href="#" onclick="openTool('image-to-pdf');return false">Image to PDF</a><a href="#" onclick="openTool('word-to-pdf');return false">Word to PDF</a><a href="#" onclick="openTool('excel-to-pdf');return false">Excel to PDF</a></div>
+      <div class="footer-col"><div class="footer-col-title">Company</div><a href="#">About</a><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Contact</a></div>
+    </div>
+    <div class="footer-bottom"><span>© 2024 PDFWala · Made with ❤️ for the world</span><div style="display:flex;gap:16px"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Contact</a></div></div>
+  </div>
+</footer>
+<!-- ═══════════════════════════════════════════
+     MODAL & JAVASCRIPT
+═══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalOverlay" onclick="overlayClick(event)" role="dialog" aria-modal="true" aria-label="PDF Tool"><div class="modal" id="modalBox"><button class="modal-close" onclick="closeModal()" aria-label="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button><div id="modalContent"></div></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"><div class="toast-bar"></div><span id="toastMsg"></span></div>
+
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet"/>
@@ -2298,7 +2276,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   <div class="footer-inner">
     <div class="footer-grid">
       <div><div class="footer-brand-name"><div class="footer-brand-mark">📄</div>PDF<span style="color:var(--accent)">Wala</span></div><p class="footer-brand-desc">Your all-in-one PDF toolkit — built for speed, privacy, and simplicity. No sign-up, no limits.</p><div class="footer-tagline">"Built for simplicity, speed, and privacy."</div></div>
-      <div class="footer-col"><div class="footer-col-title">Organize</div><a href="/pdfwala/merge-pdf">Merge PDF</a><a href="#" onclick="openTool('split');return false">Split PDF</a><a href="#" onclick="openTool('organize');return false">Organize Pages</a><a href="#" onclick="openTool('rotate');return false">Rotate PDF</a></div>
+      <div class="footer-col"><div class="footer-col-title">Organize</div><a href="#" onclick="openTool('merge');return false">Merge PDF</a><a href="#" onclick="openTool('split');return false">Split PDF</a><a href="#" onclick="openTool('organize');return false">Organize Pages</a><a href="#" onclick="openTool('rotate');return false">Rotate PDF</a></div>
       <div class="footer-col"><div class="footer-col-title">Convert</div><a href="#" onclick="openTool('pdf-to-image');return false">PDF to Image</a><a href="#" onclick="openTool('image-to-pdf');return false">Image to PDF</a><a href="#" onclick="openTool('word-to-pdf');return false">Word to PDF</a><a href="#" onclick="openTool('excel-to-pdf');return false">Excel to PDF</a></div>
       <div class="footer-col"><div class="footer-col-title">Company</div><a href="#">About</a><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Contact</a></div>
     </div>
@@ -2312,10 +2290,12 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 <div class="toast" id="toast" role="status" aria-live="polite"><div class="toast-bar"></div><span id="toastMsg"></span></div>
 <script>
    
-const API = 'https://npkpadala.com';
+const API = 'http://140.245.255.221';
 let currentTool = null, selectedFiles = [], lastFilename = null, lastDownloadUrl = null;
-async function checkBackend(){try{const r=await fetch(API+'/api/health');if(!r.ok)throw 0;console.log('✅ Backend connected');return true}catch{console.warn('⚠️ Backend not reachable');return false}}window.addEventListener('load',checkBackend);
+async function checkBackend(){try{const r=await fetch(API+'/api/health');if(!r.ok)throw 0;console.log('✅ Backend connected');return true}catch{console.warn('⚠️ Backend not reachable');return false}}
+window.addEventListener('load',checkBackend);
 const TOOLS = {
+  
   merge:{title:'Merge PDF',icon:'🔗',desc:'Combine multiple PDF files into one document.',multi:true,accept:'.pdf',endpoint:'/api/merge',field:'files',form:()=>''},
   split:{title:'Split PDF',icon:'✂️',desc:'Extract individual pages or page ranges.',multi:false,accept:'.pdf',endpoint:'/api/split',field:'file',form:()=>`<div class="form-group"><div class="form-label">Split Mode</div><div class="radio-group"><div class="radio-chip active" onclick="radioSelect(this,'mode','all')">All Pages</div><div class="radio-chip" onclick="radioSelect(this,'mode','range')">Page Range</div></div><input type="hidden" id="mode" value="all"/></div><div class="form-group" id="rangeGroup" style="display:none"><label class="form-label">Page Range</label><input class="form-input" type="text" id="ranges" placeholder="e.g. 1-3, 5, 7-9"/><div class="form-hint">Comma-separated. Example: 1-3, 5, 8-10</div></div>`},
   organize:{title:'Organize PDF',icon:'📋',desc:'Reorder, extract, or delete specific pages.',multi:false,accept:'.pdf',endpoint:'/api/organize',field:'file',form:()=>`<div class="form-group"><div class="form-label">Action</div><div class="radio-group"><div class="radio-chip active" onclick="radioSelect(this,'action','reorder')">Reorder</div><div class="radio-chip" onclick="radioSelect(this,'action','extract')">Extract</div><div class="radio-chip" onclick="radioSelect(this,'action','delete')">Delete</div></div><input type="hidden" id="action" value="reorder"/></div><div class="form-group"><label class="form-label">Page Order / Selection</label><input class="form-input" type="text" id="order" placeholder="e.g. 3,1,2,4 to reorder"/><div class="form-hint">Reorder: new order (3,1,2). Delete/Extract: page numbers (1,3,5).</div></div>`},
@@ -2374,30 +2354,16 @@ const TOOLS = {
   'repair-excel':{title:'Repair Excel',icon:'🔧',desc:'Repair corrupted Excel files.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/repair-excel',field:'file',form:()=>''}
 };
 
-  };
-
-// ✅ AUTO OPEN TOOL FROM URL (ADD HERE)
-(function() {
-  const path = window.location.pathname;
-
-  const match = path.match(/^\/pdfwala\/(.+)$/);
-
-  if (match) {
-    const toolId = match[1];
-
-    window.addEventListener('DOMContentLoaded', function() {
-      if (typeof TOOLS !== "undefined" && TOOLS[toolId]) {
-        openTool(toolId);
-      }
-    });
-  }
-})();
-
 (function initMega(){const items=document.querySelectorAll('.nav-item[data-mega]');let closeTimer=null;items.forEach(item=>{item.addEventListener('mouseenter',()=>{clearTimeout(closeTimer);items.forEach(i=>i.classList.remove('open'));item.classList.add('open')});item.addEventListener('mouseleave',()=>{closeTimer=setTimeout(()=>item.classList.remove('open'),160)});const drop=item.querySelector('.mega-drop');if(drop){drop.addEventListener('mouseenter',()=>clearTimeout(closeTimer));drop.addEventListener('mouseleave',()=>{closeTimer=setTimeout(()=>item.classList.remove('open'),160)})}});document.addEventListener('click',e=>{if(!e.target.closest('.nav-item[data-mega]'))items.forEach(i=>i.classList.remove('open'))});document.addEventListener('keydown',e=>{if(e.key==='Escape'){items.forEach(i=>i.classList.remove('open'));closeMob()}})})();
-function toggleMob(){const n=document.getElementById('mobNav');n.classList.toggle('open');document.body.style.overflow=n.classList.contains('open')?'hidden':'';document.getElementById('mobBtn').textContent=n.classList.contains('open')?'✕':'☰'}function closeMob(){document.getElementById('mobNav').classList.remove('open');document.body.style.overflow='';document.getElementById('mobBtn').textContent='☰'}function toggleMobSec(btn){const sub=btn.nextElementSibling;const open=sub.classList.contains('open');document.querySelectorAll('.mob-sub.open').forEach(s=>s.classList.remove('open'));document.querySelectorAll('.mob-section-btn.active').forEach(b=>b.classList.remove('active'));if(!open){sub.classList.add('open');btn.classList.add('active')}}
-function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');document.getElementById('themeBtn').textContent=d?'🌙':'☀️';localStorage.setItem('pw-theme',d?'light':'dark')}(function(){const s=localStorage.getItem('pw-theme')||'dark';document.documentElement.setAttribute('data-theme',s);document.getElementById('themeBtn').textContent=s==='dark'?'☀️':'🌙'})();
+function toggleMob(){const n=document.getElementById('mobNav');n.classList.toggle('open');document.body.style.overflow=n.classList.contains('open')?'hidden':'';document.getElementById('mobBtn').textContent=n.classList.contains('open')?'✕':'☰'}
+function closeMob(){document.getElementById('mobNav').classList.remove('open');document.body.style.overflow='';document.getElementById('mobBtn').textContent='☰'}
+function toggleMobSec(btn){const sub=btn.nextElementSibling;const open=sub.classList.contains('open');document.querySelectorAll('.mob-sub.open').forEach(s=>s.classList.remove('open'));document.querySelectorAll('.mob-section-btn.active').forEach(b=>b.classList.remove('active'));if(!open){sub.classList.add('open');btn.classList.add('active')}}
+function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');document.getElementById('themeBtn').textContent=d?'🌙':'☀️';localStorage.setItem('pw-theme',d?'light':'dark')}
+(function(){const s=localStorage.getItem('pw-theme')||'dark';document.documentElement.setAttribute('data-theme',s);document.getElementById('themeBtn').textContent=s==='dark'?'☀️':'🌙'})();
+
 const revObs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');revObs.unobserve(e.target)}})},{threshold:0.1});document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));
 // FIXED SEARCH BAR — with no-results message and proper clear
+
 document.getElementById('searchInput').addEventListener('input', function() {
     const query = this.value.toLowerCase().trim();
     const cards = document.querySelectorAll('.tool-card');
@@ -2432,6 +2398,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
         }
     }
 });
+
 function filterCat(cat, el) {
     const noMsg = document.getElementById('noSearchResults');
     if (noMsg) noMsg.remove();
@@ -2443,13 +2410,27 @@ function filterCat(cat, el) {
     });
     document.getElementById('searchInput').value = '';
 }
-function openTool(toolId){const tool=TOOLS[toolId];if(!tool)return;currentTool=toolId;selectedFiles=[];lastFilename=null;lastDownloadUrl=null;closeMob();const multi=tool.multi?'multiple':'';document.getElementById('modalContent').innerHTML=`<div class="modal-header"><div class="modal-icon">${tool.icon}</div><div><div class="modal-title">${tool.title}</div><div class="modal-desc">${tool.desc}</div></div></div><div class="drop-zone" id="dropZone" ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)" onclick="document.getElementById('fileInput').click()" role="button" tabindex="0"><span class="dz-icon">📂</span><div class="dz-text"><strong>Click to browse</strong> or drag & drop</div><div class="dz-hint">Supported: ${tool.accept.replace(/,/g,' ')}</div><input type="file" id="fileInput" accept="${tool.accept}" ${multi} onchange="onFileSelect(event)" aria-hidden="true"/></div><div class="file-list" id="fileList"></div>${tool.form()}<div class="progress-block" id="progressBlock"><div class="progress-track"><div class="progress-fill" id="progressFill"></div></div><div class="progress-status"><div class="dot-loader"><span></span><span></span><span></span></div><span id="progressText">Preparing…</span></div></div><div class="result-block" id="resultBlock"><div class="result-inner" id="resultInner"><div class="result-title" id="resultTitle"></div><div class="result-meta" id="resultMeta"></div></div></div><div class="setup-box" id="setupBox"><h4>⚙️ Backend Setup Required</h4><p>This is a live UI preview. To process real files, start the Flask server on your machine:</p><div class="code-block">pip install -r requirements.txt\npython app.py\n# Then in this file, set: const API = 'https://npkpadala.com';</div></div><button class="btn-process" id="actionBtn" onclick="processFile()" disabled><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>Process File</button><button class="btn-download" id="downloadBtn" onclick="downloadResult()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Processed File</button>`;if(toolId==='split'){const modeEl=document.getElementById('mode');if(modeEl)modeEl.addEventListener('change',()=>{document.getElementById('rangeGroup').style.display=modeEl.value==='range'?'block':'none'})}if(toolId==='compare-pdf'){const dropZone=document.getElementById('dropZone');if(dropZone)dropZone.querySelector('.dz-hint').innerHTML='Upload exactly 2 PDF files for comparison.';}document.getElementById('modalOverlay').classList.add('open');document.body.style.overflow='hidden'}
-function overlayClick(e){if(e.target===document.getElementById('modalOverlay'))closeModal()}function closeModal(){document.getElementById('modalOverlay').classList.remove('open');document.body.style.overflow='';currentTool=null;selectedFiles=[]}
-function onDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('dragover')}function onDragLeave(){document.getElementById('dropZone').classList.remove('dragover')}function onDrop(e){e.preventDefault();document.getElementById('dropZone').classList.remove('dragover');handleFiles(Array.from(e.dataTransfer.files))}function onFileSelect(e){handleFiles(Array.from(e.target.files))}function handleFiles(files){const tool=TOOLS[currentTool];if(currentTool==='compare-pdf'){if(files.length!==2){toast('Please upload exactly 2 PDF files for comparison','error');return}}selectedFiles=tool.multi?[...selectedFiles,...files]:[files[0]];renderFileList();document.getElementById('actionBtn').disabled=!selectedFiles.length;document.getElementById('resultBlock').classList.remove('show');document.getElementById('downloadBtn').style.display='none';lastFilename=null;lastDownloadUrl=null}
-function renderFileList(){document.getElementById('fileList').innerHTML=selectedFiles.map((f,i)=>`<div class="file-item"><div class="file-icon">📄</div><span class="file-name">${f.name}</span><span class="file-size">${fmtSz(f.size)}</span><button class="file-del" onclick="removeFile(${i})" aria-label="Remove">✕</button></div>`).join('')}function removeFile(i){selectedFiles.splice(i,1);renderFileList();document.getElementById('actionBtn').disabled=!selectedFiles.length}function fmtSz(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB'}
+
+function openTool(toolId){const tool=TOOLS[toolId];if(!tool)return;currentTool=toolId;selectedFiles=[];lastFilename=null;lastDownloadUrl=null;closeMob();const multi=tool.multi?'multiple':'';document.getElementById('modalContent').innerHTML=`<div class="modal-header"><div class="modal-icon">${tool.icon}</div><div><div class="modal-title">${tool.title}</div><div class="modal-desc">${tool.desc}</div></div></div><div class="drop-zone" id="dropZone" ondragover="onDragOver(event)" ondragleave="onDragLeave()" ondrop="onDrop(event)" onclick="document.getElementById('fileInput').click()" role="button" tabindex="0"><span class="dz-icon">📂</span><div class="dz-text"><strong>Click to browse</strong> or drag & drop</div><div class="dz-hint">Supported: ${tool.accept.replace(/,/g,' ')}</div><input type="file" id="fileInput" accept="${tool.accept}" ${multi} onchange="onFileSelect(event)" aria-hidden="true"/></div><div class="file-list" id="fileList"></div>${tool.form()}<div class="progress-block" id="progressBlock"><div class="progress-track"><div class="progress-fill" id="progressFill"></div></div><div class="progress-status"><div class="dot-loader"><span></span><span></span><span></span></div><span id="progressText">Preparing…</span></div></div><div class="result-block" id="resultBlock"><div class="result-inner" id="resultInner"><div class="result-title" id="resultTitle"></div><div class="result-meta" id="resultMeta"></div></div></div><div class="setup-box" id="setupBox"><h4>⚙️ Backend Setup Required</h4><p>This is a live UI preview. To process real files, start the Flask server on your machine:</p><div class="code-block">pip install -r requirements.txt\npython app.py\n# Then in this file, set: const API = 'http://140.245.255.221';</div></div><button class="btn-process" id="actionBtn" onclick="processFile()" disabled><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>Process File</button><button class="btn-download" id="downloadBtn" onclick="downloadResult()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Processed File</button>`;if(toolId==='split'){const modeEl=document.getElementById('mode');if(modeEl)modeEl.addEventListener('change',()=>{document.getElementById('rangeGroup').style.display=modeEl.value==='range'?'block':'none'})}if(toolId==='compare-pdf'){const dropZone=document.getElementById('dropZone');if(dropZone)dropZone.querySelector('.dz-hint').innerHTML='Upload exactly 2 PDF files for comparison.';}document.getElementById('modalOverlay').classList.add('open');document.body.style.overflow='hidden'}
+
+function overlayClick(e){if(e.target===document.getElementById('modalOverlay'))closeModal()}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');document.body.style.overflow='';currentTool=null;selectedFiles=[]}
+function onDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('dragover')}
+function onDragLeave(){document.getElementById('dropZone').classList.remove('dragover')}
+function onDrop(e){e.preventDefault();document.getElementById('dropZone').classList.remove('dragover');handleFiles(Array.from(e.dataTransfer.files))}
+function onFileSelect(e){handleFiles(Array.from(e.target.files))}
+function handleFiles(files){const tool=TOOLS[currentTool];if(currentTool==='compare-pdf'){if(files.length!==2){toast('Please upload exactly 2 PDF files for comparison','error');return}}selectedFiles=tool.multi?[...selectedFiles,...files]:[files[0]];renderFileList();document.getElementById('actionBtn').disabled=!selectedFiles.length;document.getElementById('resultBlock').classList.remove('show');document.getElementById('downloadBtn').style.display='none';lastFilename=null;lastDownloadUrl=null}
+function renderFileList(){document.getElementById('fileList').innerHTML=selectedFiles.map((f,i)=>`<div class="file-item"><div class="file-icon">📄</div><span class="file-name">${f.name}</span><span class="file-size">${fmtSz(f.size)}</span><button class="file-del" onclick="removeFile(${i})" aria-label="Remove">✕</button></div>`).join('')}
+function removeFile(i){selectedFiles.splice(i,1);renderFileList();document.getElementById('actionBtn').disabled=!selectedFiles.length}
+function fmtSz(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB'}
+
 async function processFile(){if(!currentTool||!selectedFiles.length)return;const tool=TOOLS[currentTool];if(!API){document.getElementById('setupBox').classList.add('show');document.getElementById('resultBlock').classList.remove('show');return}const aBtn=document.getElementById('actionBtn');const pBlock=document.getElementById('progressBlock');const pFill=document.getElementById('progressFill');const pText=document.getElementById('progressText');const rBlock=document.getElementById('resultBlock');const dBtn=document.getElementById('downloadBtn');const sBox=document.getElementById('setupBox');aBtn.disabled=true;aBtn.innerHTML=`<div class="dot-loader"><span style="background:#fff"></span><span style="background:#fff"></span><span style="background:#fff"></span></div>&nbsp;Processing…`;pBlock.classList.add('show');rBlock.classList.remove('show');dBtn.style.display='none';sBox.classList.remove('show');pFill.style.width='0';let pct=0;const tick=setInterval(()=>{pct=Math.min(pct+Math.random()*12,88);pFill.style.width=pct+'%';pText.textContent=pct<30?'Uploading file…':pct<60?'Processing PDF…':'Finalizing…'},350);try{const fd=new FormData();if(tool.multi)selectedFiles.forEach(f=>fd.append(tool.field,f));else fd.append(tool.field,selectedFiles[0]);['mode','ranges','quality','format','dpi','angle','pages','text','color','opacity','password','password2','position','start','prefix','action','order','left','right','top','bottom','page_size','version','lang','width','height','keep_ratio','name','reason','search_text','find_text','replace_text'].forEach(id=>{const el=document.getElementById(id);if(!el)return;let val=el.value;if(id==='opacity')val=(parseFloat(val)/100).toFixed(2);fd.append(id,val)});const res=await fetch(API+tool.endpoint,{method:'POST',body:fd});const data=await res.json();clearInterval(tick);pFill.style.width='100%';pText.textContent='Done!';showResult(data.success?'success':'error',data)}catch(err){clearInterval(tick);pFill.style.width='0';if(/fetch|NetworkError|postMessage|FormData/i.test(err.message)){sBox.classList.add('show')}else{showResult('error',{message:'Unexpected error: '+err.message})}}aBtn.disabled=!selectedFiles.length;aBtn.innerHTML=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Process File`}
+
 function showResult(type,data){const rb=document.getElementById('resultBlock');const ri=document.getElementById('resultInner');const rt=document.getElementById('resultTitle');const rm=document.getElementById('resultMeta');const db=document.getElementById('downloadBtn');rb.classList.add('show');ri.className='result-inner '+type;const icon=type==='success'?'✓':'✕';if(type==='success'&&data.page_count!==undefined){rt.textContent=icon+' File Analysis Complete';rm.innerHTML=`<div style="width:100%;margin-top:10px;background:rgba(0,0,0,.18);padding:12px;border-radius:8px;color:var(--text-2);font-size:13px"><table style="width:100%;border-collapse:collapse">${[['📄 Pages',data.page_count],['💾 Size',data.size_human],['👤 Author',data.author||'—'],['🔒 Locked',data.encrypted?'Yes':'No'],['📐 Dimensions',data.page_sizes?.[0]?data.page_sizes[0].width_pt+'×'+data.page_sizes[0].height_pt+' pt':'—']].map(([k,v])=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0">${k}</td><td style="text-align:right;color:var(--text)">${v}</td></tr>`).join('')}</table></div>`;db.style.display='none';toast('Analysis complete!','success');return}rt.textContent=icon+' '+(data.message||data.error||'Processing failed');const pills=[];if(data.pages)pills.push(data.pages+' pages');if(data.size_human)pills.push(data.size_human);if(data.reduction_pct)pills.push(data.reduction_pct+'% smaller');if(data.extracted)pills.push('Extracted '+data.extracted);rm.innerHTML=pills.map(p=>`<span class="result-pill">${p}</span>`).join('');if(type==='success'){const url=data.download_url||(data.filename?API+'/download/'+data.filename:null);if(url){lastFilename=data.filename||'pdfwala_output.pdf';lastDownloadUrl=url;db.style.display='flex';toast('File ready — download below!','success')}else{db.style.display='none';toast(data.message||'Done!','success')}}else{db.style.display='none';toast(data.error||data.message||'Processing failed.','error')}}
-function downloadResult(){if(!lastDownloadUrl)return;const a=document.createElement('a');a.href=lastDownloadUrl;a.download=lastFilename||'pdfwala_output.pdf';document.body.appendChild(a);a.click();document.body.removeChild(a)}function radioSelect(el,fieldId,value){el.closest('.radio-group').querySelectsorAll('.radio-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');const h=document.getElementById(fieldId);if(h){h.value=value;h.dispatchEvent(new Event('change'))}}
+
+function downloadResult(){if(!lastDownloadUrl)return;const a=document.createElement('a');a.href=lastDownloadUrl;a.download=lastFilename||'pdfwala_output.pdf';document.body.appendChild(a);a.click();document.body.removeChild(a)}
+function radioSelect(el,fieldId,value){el.closest('.radio-group').querySelectsorAll('.radio-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');const h=document.getElementById(fieldId);if(h){h.value=value;h.dispatchEvent(new Event('change'))}}
+
 window.addEventListener('load', () => {
     const tool = sessionStorage.getItem('autoOpenTool');
     if (tool) {
@@ -2457,7 +2438,9 @@ window.addEventListener('load', () => {
         setTimeout(() => openTool(tool), 500);
     }
 });
+
 // FIXED TOAST with auto-dismiss
+
 function toast(msg, type = 'success') {
     const t = document.getElementById('toast');
     const msgSpan = document.getElementById('toastMsg');
