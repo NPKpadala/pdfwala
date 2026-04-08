@@ -83,7 +83,7 @@ except ImportError:
 # CONFIGURATION
 # ─────────────────────────────────────────────────────────────────
 class Config:
-    BASE_DIR = os.environ.get("BASE_DIR", "/home/opc/pdfwala")
+    BASE_DIR = os.environ.get("BASE_DIR", "/app")
     UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", os.path.join(BASE_DIR, "uploads"))
     OUTPUT_FOLDER = os.environ.get("OUTPUT_FOLDER", os.path.join(BASE_DIR, "outputs"))
     STATIC_FOLDER = os.environ.get("STATIC_FOLDER", os.path.join(BASE_DIR, "static"))
