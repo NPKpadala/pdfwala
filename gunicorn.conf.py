@@ -7,8 +7,8 @@ workers = 2
 worker_class = "gthread"
 threads = 4
 
-timeout = 120
-graceful_timeout = 30
+timeout = 600
+graceful_timeout = 120
 keepalive = 5
 
 limit_request_line = 8190
