@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-
   pdfwala:
     build:
       context: .
@@ -12,16 +11,12 @@ services:
       - BASE_DIR=/app
       - UPLOAD_FOLDER=/app/uploads
       - OUTPUT_FOLDER=/app/outputs
-      - STATIC_FOLDER=/app/static
       - FILE_TTL_SEC=3600
       - RATE_LIMIT=30
       - MAX_FILE_SIZE=209715200
-      - LIBREOFFICE_PATH=soffice
-      - GHOSTSCRIPT_PATH=gs
     volumes:
       - ./uploads:/app/uploads
       - ./outputs:/app/outputs
-      - ./static:/app/static
     expose:
       - "5000"
     healthcheck:
@@ -31,8 +26,7 @@ services:
       retries: 3
       start_period: 20s
     mem_limit: 2g
-    memswap_limit: 2g
-    shm_size: 128mb
+    shm_size: 256m
     networks:
       - pdfwala_net
 
@@ -43,6 +37,7 @@ services:
     ports:
       - "80:80"
     volumes:
+      - ./static:/usr/share/nginx/html:ro
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       pdfwala:
