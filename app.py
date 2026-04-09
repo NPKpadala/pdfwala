@@ -116,7 +116,7 @@ _APP_START = time.time()
 # ─────────────────────────────────────────────────────────────────
 # APP INITIALIZATION
 # ─────────────────────────────────────────────────────────────────
-app = Flask(__name__, static_folder=Config.STATIC_FOLDER, static_url_path="")
+app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = Config.MAX_FILE_SIZE
 app.secret_key = Config.SECRET_KEY
 
