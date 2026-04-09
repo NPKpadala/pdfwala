@@ -480,15 +480,15 @@ def _parse_pages(spec: str, total: int) -> List[int]:
 # ─────────────────────────────────────────────────────────────────
 # ROUTES: STATIC + HEALTH + DOWNLOAD
 # ─────────────────────────────────────────────────────────────────
-@app.route("/")
-def home():
-    return send_from_directory(Config.STATIC_FOLDER, "index.html")
+#@app.route("/")
+#ef home():
+   # return send_from_directory(Config.STATIC_FOLDER, "index.html")
 
 
-@app.route("/pdfwala/<path:tool_path>")
-def tool_page(tool_path):
-    """Serve the SPA for all /pdfwala/* SEO-friendly tool URLs."""
-    return send_from_directory(Config.STATIC_FOLDER, "index.html")
+#@app.route("/pdfwala/<path:tool_path>")
+#def tool_page(tool_path):
+    #"""Serve the SPA for all /pdfwala/* SEO-friendly tool URLs."""
+    #return send_from_directory(Config.STATIC_FOLDER, "index.html")
 
 
 @app.route("/api/health")
