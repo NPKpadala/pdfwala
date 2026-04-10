@@ -1,6 +1,14 @@
 version: "3.9"
 
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: pdfwala_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - pdfwala_net
+
   pdfwala:
     build:
       context: .
@@ -14,14 +22,16 @@ services:
       - FILE_TTL_SEC=3600
       - RATE_LIMIT=30
       - MAX_FILE_SIZE=209715200
+      - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./uploads:/app/uploads
       - ./outputs:/app/outputs
+      - ./cache:/app/cache
     expose:
       - "5000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
-      interval: 30s
+      interval:30s
       timeout: 10s
       retries: 3
       start_period: 20s
@@ -29,6 +39,31 @@ services:
     shm_size: 512m
     networks:
       - pdfwala_net
+    depends_on:
+      - redis
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pdfwala_worker
+    restart: unless-stopped
+    command: celery -A app.celery worker --loglevel=info --concurrency=4
+    environment:
+      - BASE_DIR=/app
+      - UPLOAD_FOLDER=/app/uploads
+      - OUTPUT_FOLDER=/app/outputs
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+      - ./cache:/app/cache
+    mem_limit: 6g
+    shm_size: 1g
+    networks:
+      - pdfwala_net
+    depends_on:
+      - redis
 
   nginx:
     image: nginx:1.25-alpine
