@@ -344,7 +344,7 @@ def libre(input_path: str, fmt: str, output_filename: str = None, temp: bool = F
         result = subprocess.run(
             [Config.LIBREOFFICE, "--headless", "--convert-to", fmt, "--outdir", out_dir, input_path],
             capture_output=True,
-            timeout=120
+            timeout=6000
         )
         if result.returncode != 0:
             log.error(f"LibreOffice failed: {result.stderr.decode()[:300]}")
@@ -1269,7 +1269,7 @@ def pdf_to_pdfa():
                 "-sDEVICE=pdfwrite", f"-dPDFA={pdfa_val}", "-dPDFACompatibilityPolicy=1",
                 f"-sOutputFile={out}", path
             ]
-            result = subprocess.run(cmd, capture_output=True, timeout=120)
+            result = subprocess.run(cmd, capture_output=True, timeout=6000)
             if result.returncode != 0:
                 return err("Ghostscript PDF/A conversion failed. Is Ghostscript installed?", 500)
         return ok(f"Converted to PDF/A-{version}", out)
@@ -1426,7 +1426,7 @@ def html_to_pdf():
             except ImportError:
                 pass
             result = subprocess.run(["wkhtmltopdf", path, out_path],
-                                    capture_output=True, timeout=60)
+                                    capture_output=True, timeout=600)
             if result.returncode == 0:
                 return ok("HTML converted to PDF", out_path)
             return err("HTML to PDF requires weasyprint or wkhtmltopdf.", 501)

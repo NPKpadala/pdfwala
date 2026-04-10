@@ -15,7 +15,7 @@ limit_request_line = 8190
 limit_request_fields = 200
 
 # Restart workers to prevent memory bloat
-max_requests = 200
+max_requests = 1000
 max_requests_jitter = 30
 
 accesslog = "-"
