@@ -120,6 +120,25 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = Config.MAX_FILE_SIZE
 app.secret_key = Config.SECRET_KEY
 
+# Celery Setup for Async Tasks
+from celery import Celery
+
+def make_celery(app):
+    celery = Celery(
+        app.import_name,
+        broker=os.environ.get('REDIS_URL', 'redis://redis:6379/0'),
+        backend=os.environ.get('REDIS_URL', 'redis://redis:6379/0')
+    )
+    celery.conf.update(
+        task_track_started=True,
+        task_time_limit=600,
+        task_soft_time_limit=540,
+        worker_max_tasks_per_child=50,
+    )
+    return celery
+
+celery = make_celery(app)
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
 log = logging.getLogger("pdfwala")
 
