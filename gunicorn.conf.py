@@ -3,9 +3,9 @@ import multiprocessing
 bind = "0.0.0.0:5000"
 
 # 2 workers is enough for this server
-workers = 2
+workers = 4
 worker_class = "gthread"
-threads = 4
+threads = 8
 
 timeout = 600
 graceful_timeout = 120
