@@ -909,10 +909,19 @@ def crop_pdf():
     e = validate_file(f, Config.ALLOWED_PDF)
     if e:
         return err(e)
-    left = float(request.form.get("left", "0"))
-    right = float(request.form.get("right", "0"))
-    top = float(request.form.get("top", "0"))
-    bottom = float(request.form.get("bottom", "0"))
+    
+    # Safe float conversion with fallback
+    def safe_float(val, default=0.0):
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            return default
+    
+    left = safe_float(request.form.get("left", "0"))
+    right = safe_float(request.form.get("right", "0"))
+    top = safe_float(request.form.get("top", "0"))
+    bottom = safe_float(request.form.get("bottom", "0"))
+    
     try:
         with temp_upload(f) as path:
             doc = fitz.open(path)
@@ -1765,12 +1774,11 @@ def word_to_excel():
             filename = re.sub(r'\.(doc|docx)$', '.xlsx', filename, flags=re.IGNORECASE)
             out = libre(path, "xlsx", output_filename=filename)
             if not out:
-                return err("LibreOffice conversion failed", 500)
+                return err("Word to Excel failed. Try a simpler document or convert to PDF first.", 500)
         return ok("Word converted to Excel", out)
     except Exception:
         log.exception("word_to_excel")
-        return err("Word to Excel failed", 500)
-
+        return err("Word to Excel failed - document may be too complex", 500)
 
 @app.route("/api/word-to-ppt", methods=["POST"])
 @rate_limited()
@@ -1785,11 +1793,11 @@ def word_to_ppt():
             filename = re.sub(r'\.(doc|docx)$', '.pptx', filename, flags=re.IGNORECASE)
             out = libre(path, "pptx", output_filename=filename)
             if not out:
-                return err("LibreOffice conversion failed", 500)
+                return err("Word to PowerPoint failed. Try a simpler document or convert to PDF first.", 500)
         return ok("Word converted to PowerPoint", out)
     except Exception:
         log.exception("word_to_ppt")
-        return err("Word to PPT failed", 500)
+        return err("Word to PPT failed - document may be too complex", 500)
 
 
 @app.route("/api/word-to-html", methods=["POST"])
@@ -2076,11 +2084,11 @@ def excel_to_word():
             filename = re.sub(r'\.(xls|xlsx)$', '.docx', filename, flags=re.IGNORECASE)
             out = libre(path, "docx", output_filename=filename)
             if not out:
-                return err("LibreOffice conversion failed", 500)
+                return err("Excel to Word failed. Try a simpler spreadsheet or convert to PDF first.", 500)
         return ok("Excel converted to Word", out)
     except Exception:
         log.exception("excel_to_word")
-        return err("Excel to Word failed", 500)
+        return err("Excel to Word failed - spreadsheet may be too complex", 500)
 
 
 @app.route("/api/excel-to-ppt", methods=["POST"])
@@ -2096,11 +2104,11 @@ def excel_to_ppt():
             filename = re.sub(r'\.(xls|xlsx)$', '.pptx', filename, flags=re.IGNORECASE)
             out = libre(path, "pptx", output_filename=filename)
             if not out:
-                return err("LibreOffice conversion failed", 500)
+                return err("Excel to PowerPoint failed. Try a simpler spreadsheet or convert to PDF first.", 500)
         return ok("Excel converted to PowerPoint", out)
     except Exception:
         log.exception("excel_to_ppt")
-        return err("Excel to PPT failed", 500)
+        return err("Excel to PPT failed - spreadsheet may be too complex", 500)
 
 
 @app.route("/api/excel-to-html", methods=["POST"])
