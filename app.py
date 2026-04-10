@@ -1165,6 +1165,7 @@ def pdf_to_image():
 @app.route("/api/pdf-to-word", methods=["POST"])
 @rate_limited()
 def pdf_to_word():
+    """Convert PDF to Word - starts conversion in background, returns download URL immediately."""
     if not PDF2DOCX_AVAILABLE:
         return err("PDF to Word requires pdf2docx. Install: pip install pdf2docx", 501)
     f = request.files.get("file")
@@ -1172,14 +1173,38 @@ def pdf_to_word():
     if e:
         return err(e)
     try:
-        with temp_upload(f) as path:
-            filename = generate_output_filename(f.filename, "to_word")
-            filename = re.sub(r'\.pdf$', '.docx', filename, flags=re.IGNORECASE)
-            out = os.path.join(Config.OUTPUT_FOLDER, filename)
-            cv = Pdf2DocxConverter(path)
-            cv.convert(out)
-            cv.close()
-        return ok("PDF converted to Word", out)
+        # Save uploaded file to a persistent location (not temp, since background thread needs it)
+        ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else "pdf"
+        upload_path = os.path.join(Config.UPLOAD_FOLDER, f"{uuid.uuid4()}.{ext}")
+        f.save(upload_path)
+        
+        filename = generate_output_filename(f.filename, "to_word")
+        filename = re.sub(r'\.pdf$', '.docx', filename, flags=re.IGNORECASE)
+        out = os.path.join(Config.OUTPUT_FOLDER, filename)
+        
+        # Start conversion in background thread
+        import threading
+        def convert_bg():
+            try:
+                cv = Pdf2DocxConverter(upload_path)
+                cv.convert(out)
+                cv.close()
+                log.info(f"✅ Background PDF to Word completed: {filename}")
+            except Exception as e:
+                log.error(f"❌ Background PDF to Word failed: {e}")
+            finally:
+                # Clean up upload file after conversion
+                try:
+                    os.remove(upload_path)
+                except:
+                    pass
+        
+        thread = threading.Thread(target=convert_bg, daemon=True)
+        thread.start()
+        
+        # Return immediately with download URL
+        return ok("PDF to Word conversion started. File will be ready shortly.", out)
+        
     except Exception as e:
         log.exception("pdf_to_word")
         return err(f"PDF to Word failed: {str(e)}", 500)
@@ -1419,17 +1444,30 @@ def html_to_pdf():
             filename = generate_output_filename(f.filename, "to_pdf")
             filename = re.sub(r'\.(html|htm)$', '.pdf', filename, flags=re.IGNORECASE)
             out_path = os.path.join(Config.OUTPUT_FOLDER, filename)
+            
+            # PRIMARY: wkhtmltopdf (reliable)
+            result = subprocess.run(
+                ["wkhtmltopdf", "--quiet", path, out_path],
+                capture_output=True,
+                timeout=60
+            )
+            if result.returncode == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+                return ok("HTML converted to PDF", out_path)
+            
+            # FALLBACK: weasyprint
             try:
                 from weasyprint import HTML
                 HTML(filename=path).write_pdf(out_path)
                 return ok("HTML converted to PDF", out_path)
             except ImportError:
                 pass
-            result = subprocess.run(["wkhtmltopdf", path, out_path],
-                                    capture_output=True, timeout=600)
-            if result.returncode == 0:
-                return ok("HTML converted to PDF", out_path)
-            return err("HTML to PDF requires weasyprint or wkhtmltopdf.", 501)
+            except Exception as weasy_error:
+                log.warning(f"WeasyPrint failed: {weasy_error}")
+                
+            return err("HTML to PDF conversion failed", 500)
+            
+    except subprocess.TimeoutExpired:
+        return err("HTML to PDF timed out", 500)
     except Exception:
         log.exception("html_to_pdf")
         return err("HTML to PDF failed", 500)
