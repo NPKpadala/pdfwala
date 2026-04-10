@@ -1165,76 +1165,21 @@ def pdf_to_image():
 @app.route("/api/pdf-to-word", methods=["POST"])
 @rate_limited()
 def pdf_to_word():
-    """Convert PDF to Word using LibreOffice (most reliable) with pdf2docx fallback."""
+    if not PDF2DOCX_AVAILABLE:
+        return err("PDF to Word requires pdf2docx. Install: pip install pdf2docx", 501)
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_PDF)
     if e:
         return err(e)
-    
     try:
         with temp_upload(f) as path:
             filename = generate_output_filename(f.filename, "to_word")
             filename = re.sub(r'\.pdf$', '.docx', filename, flags=re.IGNORECASE)
             out = os.path.join(Config.OUTPUT_FOLDER, filename)
-            
-            # PRIMARY METHOD: LibreOffice (handles complex PDFs without hanging)
-            log.info(f"Attempting LibreOffice conversion for {filename}")
-            libre_out = libre(path, "docx", output_filename=filename)
-            
-            if libre_out and os.path.exists(libre_out) and os.path.getsize(libre_out) > 0:
-                log.info(f"LibreOffice conversion successful: {filename}")
-                return ok("PDF converted to Word", libre_out)
-            
-            # FALLBACK: pdf2docx (for simple PDFs, wrapped with timeout protection)
-            if PDF2DOCX_AVAILABLE:
-                log.info(f"LibreOffice failed, falling back to pdf2docx for {filename}")
-                
-                # Create a worker script to run pdf2docx in isolation
-                worker_script = f'''
-import sys
-import traceback
-try:
-    from pdf2docx import Converter
-    cv = Converter(r"{path}")
-    cv.convert(r"{out}")
-    cv.close()
-    print("SUCCESS")
-except Exception as e:
-    print(f"ERROR: {{e}}")
-    traceback.print_exc()
-    sys.exit(1)
-'''
-                script_path = os.path.join(tempfile.gettempdir(), f"pdf2word_{uuid.uuid4().hex}.py")
-                with open(script_path, "w") as sf:
-                    sf.write(worker_script)
-                
-                try:
-                    result = subprocess.run(
-                        ["python3", script_path],
-                        capture_output=True,
-                        timeout=300,  # 5 minute timeout
-                        text=True
-                    )
-                    
-                    if result.returncode == 0 and os.path.exists(out) and os.path.getsize(out) > 0:
-                        log.info(f"pdf2docx conversion successful: {filename}")
-                        return ok("PDF converted to Word", out)
-                    else:
-                        log.error(f"pdf2docx failed: {result.stderr}")
-                        
-                except subprocess.TimeoutExpired:
-                    log.error("pdf2docx timed out after 300 seconds")
-                finally:
-                    try:
-                        os.remove(script_path)
-                    except:
-                        pass
-            else:
-                log.warning("pdf2docx not available for fallback")
-            
-            # If we got here, both methods failed
-            return err("PDF to Word conversion failed - file may be too complex or corrupted", 500)
-            
+            cv = Pdf2DocxConverter(path)
+            cv.convert(out)
+            cv.close()
+        return ok("PDF converted to Word", out)
     except Exception as e:
         log.exception("pdf_to_word")
         return err(f"PDF to Word failed: {str(e)}", 500)
