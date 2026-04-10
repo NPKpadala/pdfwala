@@ -875,7 +875,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </div>
 </nav>
 
-<!-- MOBILE DRAWER -->
+<!-- MOBILE DRAWER - COMPLETE VERSION -->
 <div class="mob-nav" id="mobNav">
   <div class="mob-section">
     <button class="mob-section-btn" onclick="toggleMobSec(this)">
@@ -889,20 +889,49 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       <a class="mob-link" onclick="openTool('organize');closeMob()">Organize PDF</a>
       <a class="mob-link" onclick="openTool('remove-pages');closeMob()">Remove Pages</a>
       <a class="mob-link" onclick="openTool('extract-pages');closeMob()">Extract Pages</a>
+      
       <div class="mob-cat">Optimize</div>
       <a class="mob-link" onclick="openTool('compress');closeMob()">Compress PDF</a>
       <a class="mob-link" onclick="openTool('repair-pdf');closeMob()">Repair PDF</a>
+      <a class="mob-link" onclick="openTool('ocr-pdf');closeMob()">OCR PDF</a>
+      
       <div class="mob-cat">Edit</div>
       <a class="mob-link" onclick="openTool('rotate');closeMob()">Rotate PDF</a>
       <a class="mob-link" onclick="openTool('watermark');closeMob()">Watermark</a>
       <a class="mob-link" onclick="openTool('page-numbers');closeMob()">Page Numbers</a>
       <a class="mob-link" onclick="openTool('crop');closeMob()">Crop PDF</a>
       <a class="mob-link" onclick="openTool('info');closeMob()">PDF Info</a>
-      <div class="mob-cat">Convert</div>
-      <a class="mob-link" onclick="openTool('image-to-pdf');closeMob()">Image to PDF</a>
+      
+      <div class="mob-cat">Convert from PDF</div>
       <a class="mob-link" onclick="openTool('pdf-to-image');closeMob()">PDF to Image</a>
+      <a class="mob-link" onclick="openTool('pdf-to-word');closeMob()">PDF to Word</a>
+      <a class="mob-link" onclick="openTool('pdf-to-excel');closeMob()">PDF to Excel</a>
+      <a class="mob-link" onclick="openTool('pdf-to-ppt');closeMob()">PDF to PPT</a>
+      <a class="mob-link" onclick="openTool('pdf-to-pdfa');closeMob()">PDF to PDF/A</a>
+      
+      <div class="mob-cat">Convert to PDF</div>
+      <a class="mob-link" onclick="openTool('image-to-pdf');closeMob()">Image to PDF</a>
+      <a class="mob-link" onclick="openTool('jpg-to-pdf');closeMob()">JPG to PDF</a>
+      <a class="mob-link" onclick="openTool('word-to-pdf');closeMob()">Word to PDF</a>
+      <a class="mob-link" onclick="openTool('excel-to-pdf');closeMob()">Excel to PDF</a>
+      <a class="mob-link" onclick="openTool('html-to-pdf');closeMob()">HTML to PDF</a>
     </div></div>
   </div>
+  
+  <div class="mob-section">
+    <button class="mob-section-btn" onclick="toggleMobSec(this)">
+      🔐 Security
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
+    <div class="mob-sub"><div class="mob-sub-inner">
+      <a class="mob-link" onclick="openTool('protect');closeMob()">Protect PDF</a>
+      <a class="mob-link" onclick="openTool('unlock');closeMob()">Unlock PDF</a>
+      <a class="mob-link" onclick="openTool('sign-pdf');closeMob()">Sign PDF</a>
+      <a class="mob-link" onclick="openTool('redact-pdf');closeMob()">Redact PDF</a>
+      <a class="mob-link" onclick="openTool('compare-pdf');closeMob()">Compare PDF</a>
+    </div></div>
+  </div>
+  
   <div class="mob-section">
     <button class="mob-section-btn" onclick="toggleMobSec(this)">
       🖼️ Image Tools
@@ -921,16 +950,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       <a class="mob-link" onclick="openTool('image-to-excel');closeMob()">Image to Excel</a>
     </div></div>
   </div>
-  <div class="mob-section">
-    <button class="mob-section-btn" onclick="toggleMobSec(this)">
-      🔐 Security
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
-    </button>
-    <div class="mob-sub"><div class="mob-sub-inner">
-      <a class="mob-link" onclick="openTool('protect');closeMob()">Protect PDF</a>
-      <a class="mob-link" onclick="openTool('unlock');closeMob()">Unlock PDF</a>
-    </div></div>
-  </div>
+  
   <div class="mob-section">
     <button class="mob-section-btn" onclick="toggleMobSec(this)">
       📝 Word Tools
@@ -945,12 +965,14 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       <a class="mob-link" onclick="openTool('word-to-ppt');closeMob()">Word to PPT</a>
       <a class="mob-link" onclick="openTool('word-to-html');closeMob()">Word to HTML</a>
       <a class="mob-link" onclick="openTool('word-to-json');closeMob()">Word to JSON</a>
+      <div class="mob-cat">Word Tools</div>
       <a class="mob-link" onclick="openTool('compress-word');closeMob()">Compress Word</a>
       <a class="mob-link" onclick="openTool('protect-word');closeMob()">Protect Word</a>
       <a class="mob-link" onclick="openTool('unlock-word');closeMob()">Unlock Word</a>
       <a class="mob-link" onclick="openTool('edit-word');closeMob()">Edit Word</a>
     </div></div>
   </div>
+  
   <div class="mob-section">
     <button class="mob-section-btn" onclick="toggleMobSec(this)">
       📊 Excel Tools
@@ -965,14 +987,16 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       <a class="mob-link" onclick="openTool('excel-to-ppt');closeMob()">Excel to PPT</a>
       <a class="mob-link" onclick="openTool('excel-to-html');closeMob()">Excel to HTML</a>
       <a class="mob-link" onclick="openTool('excel-to-json');closeMob()">Excel to JSON</a>
+      <div class="mob-cat">Excel Tools</div>
       <a class="mob-link" onclick="openTool('compress-excel');closeMob()">Compress Excel</a>
       <a class="mob-link" onclick="openTool('protect-excel');closeMob()">Protect Excel</a>
       <a class="mob-link" onclick="openTool('unlock-excel');closeMob()">Unlock Excel</a>
       <a class="mob-link" onclick="openTool('repair-excel');closeMob()">Repair Excel</a>
     </div></div>
   </div>
+  
   <div class="mob-section" style="border-bottom:none">
-    <a class="mob-link" style="font-size:15px;font-weight:600;padding:14px 0" onclick="document.getElementById('tools').scrollIntoView({behavior:'smooth'});closeMob()">🧰 All Tools</a>
+    <a class="mob-link" style="font-size:15px;font-weight:600;padding:14px 0" onclick="document.getElementById('tools').scrollIntoView({behavior:'smooth'});closeMob()">🧰 All Tools (50+)</a>
   </div>
 </div>
 
