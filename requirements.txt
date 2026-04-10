@@ -30,3 +30,6 @@ pytesseract==0.3.13
 
 # HTML to PDF (Optional)
 weasyprint==62.3
+
+celery==5.3.4
+redis==5.0.1
