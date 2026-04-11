@@ -33,3 +33,8 @@ weasyprint==62.3
 
 celery==5.3.4
 redis==5.0.1
+
+pdfplumber>=0.11.0
+pngquant>=0.1.0  # Optional but recommended for PNG compression
+celery>=5.3.4
+redis>=5.0.1
