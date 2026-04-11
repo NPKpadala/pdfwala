@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y \
     tesseract-ocr tesseract-ocr-eng \
     ghostscript poppler-utils \
     wkhtmltopdf \
+    pngquant \
+    default-jre-headless \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -27,7 +29,7 @@ COPY gunicorn.conf.py .
 COPY static/ ./static/
 
 # Create necessary directories
-RUN mkdir -p /app/uploads /app/outputs
+RUN mkdir -p /app/uploads /app/outputs /app/cache
 
 # Expose port
 EXPOSE 5000
