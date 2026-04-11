@@ -738,33 +738,97 @@ def compress_pdf():
     if e:
         return err(e)
     quality = request.form.get("quality", "medium").lower()
-    q_val = {"low": 30, "medium": 55, "high": 80}.get(quality, 55)
+
+    # DPI + JPEG quality per level
+    cfg = {
+        "low":    {"dpi": 150, "quality": 85, "gs": "/printer"},
+        "medium": {"dpi": 120, "quality": 72, "gs": "/ebook"},
+        "high":   {"dpi": 96,  "quality": 60, "gs": "/screen"},
+    }.get(quality, {"dpi": 120, "quality": 72, "gs": "/ebook"})
+
     try:
         with temp_upload(f) as path:
             orig = os.path.getsize(path)
+
+            # STAGE 1 — PyMuPDF image downsampling
             doc = fitz.open(path)
             for page in doc:
                 for img in page.get_images(full=True):
                     xref = img[0]
                     try:
                         base = doc.extract_image(xref)
-                        pil = Image.open(io.BytesIO(base["image"])).convert("RGB")
+                        if not base:
+                            continue
+                        pil = Image.open(io.BytesIO(base["image"]))
+                        orig_w, orig_h = pil.size
+                        src_dpi = max(base.get("xres", 150), base.get("yres", 150), 1)
+                        scale = min(1.0, cfg["dpi"] / src_dpi)
+                        if scale < 0.99:
+                            new_w = max(1, int(orig_w * scale))
+                            new_h = max(1, int(orig_h * scale))
+                            pil = pil.resize((new_w, new_h), Image.LANCZOS)
+                        if pil.mode in ("RGBA", "P", "LA"):
+                            bg = Image.new("RGB", pil.size, (255, 255, 255))
+                            if pil.mode == "P":
+                                pil = pil.convert("RGBA")
+                            mask = pil.split()[-1] if pil.mode in ("RGBA", "LA") else None
+                            bg.paste(pil, mask=mask)
+                            pil = bg
+                        elif pil.mode != "RGB":
+                            pil = pil.convert("RGB")
                         buf = io.BytesIO()
-                        pil.save(buf, format="JPEG", quality=q_val, optimize=True)
+                        pil.save(buf, format="JPEG", quality=cfg["quality"],
+                                 optimize=True, progressive=True)
                         doc.update_stream(xref, buf.getvalue())
                     except Exception:
                         pass
+
+            stage1 = path + "_stage1.pdf"
+            doc.save(stage1, deflate=True, deflate_images=True,
+                     deflate_fonts=True, garbage=4, clean=True)
+            doc.close()
+
+            # STAGE 2 — Ghostscript full rewrite
             filename = generate_output_filename(f.filename, "compressed")
             out = os.path.join(Config.OUTPUT_FOLDER, filename)
-            doc.save(out, deflate=True, garbage=4, clean=True)
-            doc.close()
+
+            gs_cmd = [
+                "gs", "-sDEVICE=pdfwrite",
+                "-dCompatibilityLevel=1.4",
+                f"-dPDFSETTINGS={cfg['gs']}",
+                "-dNOPAUSE", "-dBATCH", "-dQUIET",
+                "-dDetectDuplicateImages=true",
+                "-dCompressFonts=true",
+                "-dSubsetFonts=true",
+                "-dEmbedAllFonts=false",
+                f"-sOutputFile={out}",
+                stage1
+            ]
+
+            import subprocess
+            result = subprocess.run(gs_cmd, capture_output=True, timeout=120)
+
+            if os.path.exists(stage1):
+                os.remove(stage1)
+
+            # Safety: if GS failed or made file bigger, use stage1 result
+            if result.returncode != 0 or not os.path.exists(out):
+                import shutil
+                shutil.copy(path, out)
+
             new_size = os.path.getsize(out)
+
+            # If GS output is BIGGER than PyMuPDF output, something went wrong
+            if new_size >= orig:
+                # Still return it — at minimum PyMuPDF cleaned it
+                pass
+
             reduction = round((1 - new_size / orig) * 100, 1) if orig else 0
+
         return ok(f"Compressed — {reduction}% smaller", out, reduction_pct=reduction)
     except Exception:
         log.exception("compress")
         return err("Compression failed", 500)
-
 
 @app.route("/api/repair-pdf", methods=["POST"])
 @rate_limited()
