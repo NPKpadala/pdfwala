@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /pdfwala/
+Allow: /api/
+Allow: /download/
+Disallow: /api/*/status/
+Disallow: /download/*.tmp
+
+Sitemap: https://npkpadala.com/sitemap.xml
+
+Crawl-delay: 2
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
