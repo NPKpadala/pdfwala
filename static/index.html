@@ -2066,7 +2066,7 @@ function handleDirectURL() {
         updateMetaTags(toolId);
         injectVisibleContent(toolId);
         sessionStorage.setItem('autoOpenTool', toolId);
-        setTimeout(() => { if (typeof openTool === 'function') openTool(toolId); }, 50);
+        setTimeout(() => { if (originalOpenTool) originalOpenTool(toolId); }, 50);
     } else {
         updateMetaTags(null);
     }
