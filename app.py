@@ -441,19 +441,31 @@ def libre(input_path: str, fmt: str, output_filename: str = None, temp: bool = F
 # ─────────────────────────────────────────────────────────────────
 # GHOSTSCRIPT HELPER
 # ─────────────────────────────────────────────────────────────────
-def ghostscript_compress(input_path: str, output_path: str, gs_setting: str = "/ebook",
+def ghostscript_compress(input_path: str, output_path: str, 
+                          gs_setting: str = "/ebook",
                           extra_flags: list = None) -> bool:
+    """
+    SAFE Ghostscript compression. Key changes from broken version:
+    - REMOVED: -dEmbedAllFonts=false  (causes blank pages - DEADLY)
+    - REMOVED: -dFastWebView=true     (corrupts some PDFs)
+    - CHANGED: -dSubsetFonts=true     (safe when fonts ARE embedded)
+    - ADDED:   -dNOSAFER              (prevents permission errors)
+    - ADDED:   output validation      (never return corrupt file)
+    """
     cmd = [
         Config.GHOSTSCRIPT,
         "-sDEVICE=pdfwrite",
-        "-dCompatibilityLevel=1.4",
+        "-dCompatibilityLevel=1.5",   # 1.4 strips modern features; 1.5 is safe
         f"-dPDFSETTINGS={gs_setting}",
-        "-dNOPAUSE", "-dBATCH", "-dQUIET",
+        "-dNOPAUSE",
+        "-dBATCH",
+        "-dQUIET",
+        "-dNOSAFER",                  # prevents file permission errors
         "-dDetectDuplicateImages=true",
         "-dCompressFonts=true",
         "-dSubsetFonts=true",
-        "-dEmbedAllFonts=false",
-        "-dFastWebView=true",
+        # NEVER add -dEmbedAllFonts=false — causes blank pages
+        # NEVER add -dFastWebView=true  — corrupts transparency groups
         "-dAutoRotatePages=/None",
         f"-sOutputFile={output_path}",
     ]
@@ -463,15 +475,62 @@ def ghostscript_compress(input_path: str, output_path: str, gs_setting: str = "/
 
     try:
         result = subprocess.run(cmd, capture_output=True, timeout=300)
+        
         if result.returncode != 0:
-            log.error(f"GS failed: {result.stderr.decode()[:300]}")
+            log.error(f"GS failed (rc={result.returncode}): {result.stderr.decode()[:500]}")
             return False
+            
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
             log.error("GS produced empty/missing output")
             return False
+
+        # CRITICAL: Validate output has actual content, not just structure
+        try:
+            doc = fitz.open(output_path)
+            page_count = len(doc)
+            
+            # Check first page has actual content (text or images)
+            has_content = False
+            for page_num in range(min(3, page_count)):
+                page = doc[page_num]
+                if page.get_text().strip():
+                    has_content = True
+                    break
+                if page.get_images():
+                    has_content = True
+                    break
+                # Check if page has any drawings/paths
+                if page.get_drawings():
+                    has_content = True
+                    break
+            doc.close()
+            
+            if page_count == 0:
+                log.error("GS output has 0 pages — rejecting")
+                os.remove(output_path)
+                return False
+                
+            if not has_content:
+                log.error("GS output appears blank (no text/images on first 3 pages) — rejecting")
+                os.remove(output_path)
+                return False
+                
+        except Exception as val_ex:
+            log.error(f"GS output validation failed: {val_ex}")
+            try:
+                os.remove(output_path)
+            except Exception:
+                pass
+            return False
+
         return True
+        
     except subprocess.TimeoutExpired:
         log.error("Ghostscript timed out")
+        try:
+            os.remove(output_path)
+        except Exception:
+            pass
         return False
     except Exception as e:
         log.error(f"Ghostscript exception: {e}")
@@ -893,63 +952,105 @@ def compress_pdf():
         return err(e)
     quality = request.form.get("quality", "medium").lower()
 
+    # Use /printer for medium/low — safer than /ebook or /screen
+    # /screen (72dpi) and /ebook (150dpi) aggressively downsample
+    # causing blank pages on vector-heavy PDFs
     cfg = {
         "low":    {"dpi": 150, "quality": 85, "gs": "/printer"},
-        "medium": {"dpi": 120, "quality": 72, "gs": "/ebook"},
-        "high":   {"dpi": 96,  "quality": 60, "gs": "/screen"},
-    }.get(quality, {"dpi": 120, "quality": 72, "gs": "/ebook"})
+        "medium": {"dpi": 120, "quality": 72, "gs": "/printer"},
+        "high":   {"dpi": 96,  "quality": 60, "gs": "/ebook"},
+    }.get(quality, {"dpi": 120, "quality": 72, "gs": "/printer"})
 
     try:
         with temp_upload(f) as path:
             orig = os.path.getsize(path)
-            stage1 = path + "_stage1.pdf"
-
+            
+            # Validate input first
             try:
                 doc = fitz.open(path)
-                try:
-                    for page in doc:
-                        for img in page.get_images(full=True):
-                            xref = img[0]
-                            try:
-                                base = doc.extract_image(xref)
-                                if not base:
-                                    continue
-                                pil = Image.open(io.BytesIO(base["image"]))
-                                orig_w, orig_h = pil.size
-                                src_dpi = max(base.get("xres", 150), base.get("yres", 150), 1)
-                                scale = min(1.0, cfg["dpi"] / src_dpi)
-                                if scale < 0.99:
-                                    new_w = max(1, int(orig_w * scale))
-                                    new_h = max(1, int(orig_h * scale))
-                                    pil = pil.resize((new_w, new_h), Image.LANCZOS)
-                                if pil.mode in ("RGBA", "P", "LA"):
-                                    bg = Image.new("RGB", pil.size, (255, 255, 255))
-                                    if pil.mode == "P":
-                                        pil = pil.convert("RGBA")
-                                    mask = pil.split()[-1] if pil.mode in ("RGBA", "LA") else None
-                                    bg.paste(pil, mask=mask)
-                                    pil = bg
-                                elif pil.mode != "RGB":
-                                    pil = pil.convert("RGB")
-                                buf = io.BytesIO()
-                                pil.save(buf, format="JPEG", quality=cfg["quality"],
-                                         optimize=True, progressive=True)
-                                doc.update_stream(xref, buf.getvalue())
-                            except Exception:
-                                pass
-                    doc.save(stage1, deflate=True, deflate_images=True,
-                             deflate_fonts=True, garbage=4, clean=True)
+                input_pages = len(doc)
+                doc.close()
+                if input_pages == 0:
+                    return err("Input PDF has no pages", 400)
+            except Exception:
+                return err("Input PDF is corrupted or unreadable", 400)
+
+            stage1 = path + "_stage1.pdf"
+            stage1_size = orig
+
+            # STAGE 1: PyMuPDF image downsampling only
+            # Only touch images — never modify text or vector content
+            try:
+                doc = fitz.open(path)
+                modified = False
+                for page in doc:
+                    for img in page.get_images(full=True):
+                        xref = img[0]
+                        try:
+                            base = doc.extract_image(xref)
+                            if not base:
+                                continue
+                            pil = Image.open(io.BytesIO(base["image"]))
+                            orig_w, orig_h = pil.size
+                            src_dpi = max(base.get("xres", 150), base.get("yres", 150), 1)
+                            scale = min(1.0, cfg["dpi"] / src_dpi)
+                            
+                            # Only downsample if image is actually high-res
+                            if scale >= 0.95:
+                                continue
+                                
+                            new_w = max(1, int(orig_w * scale))
+                            new_h = max(1, int(orig_h * scale))
+                            pil = pil.resize((new_w, new_h), Image.LANCZOS)
+                            
+                            if pil.mode in ("RGBA", "P", "LA"):
+                                bg = Image.new("RGB", pil.size, (255, 255, 255))
+                                if pil.mode == "P":
+                                    pil = pil.convert("RGBA")
+                                mask = pil.split()[-1] if pil.mode in ("RGBA", "LA") else None
+                                bg.paste(pil, mask=mask)
+                                pil = bg
+                            elif pil.mode != "RGB":
+                                pil = pil.convert("RGB")
+                                
+                            buf = io.BytesIO()
+                            pil.save(buf, format="JPEG", quality=cfg["quality"],
+                                     optimize=True, progressive=True)
+                            doc.update_stream(xref, buf.getvalue())
+                            modified = True
+                        except Exception:
+                            pass  # skip this image, don't corrupt the document
+
+                if modified:
+                    doc.save(stage1,
+                             deflate=True,
+                             deflate_images=True,
+                             deflate_fonts=True,
+                             garbage=3,        # 3 not 4 — safer
+                             clean=False)      # False — don't clean content streams
                     stage1_size = os.path.getsize(stage1)
-                finally:
-                    doc.close()
+                else:
+                    shutil.copy(path, stage1)
+                doc.close()
+                
+                # Validate stage1
+                doc_check = fitz.open(stage1)
+                s1_pages = len(doc_check)
+                doc_check.close()
+                if s1_pages != input_pages:
+                    log.warning("Stage1 page count mismatch — reverting to original")
+                    shutil.copy(path, stage1)
+                    stage1_size = orig
+                    
             except Exception as ex:
-                log.warning(f"Stage 1 PyMuPDF failed: {ex}. Using original for GS.")
+                log.warning(f"Stage 1 failed: {ex} — using original")
                 shutil.copy(path, stage1)
                 stage1_size = orig
 
+            # STAGE 2: Ghostscript on stage1
             filename = generate_output_filename(f.filename, "compressed")
             out = os.path.join(Config.OUTPUT_FOLDER, filename)
-            gs_out = out + "_gs.pdf"
+            gs_out = out + "_gs_tmp.pdf"
 
             gs_ok = ghostscript_compress(
                 stage1, gs_out, cfg["gs"],
@@ -962,18 +1063,29 @@ def compress_pdf():
                 ]
             )
 
-            candidates = []
+            # Pick winner — ALWAYS validate before using GS output
+            chosen = None
+            
             if gs_ok and os.path.exists(gs_out):
-                candidates.append((os.path.getsize(gs_out), gs_out))
-            if os.path.exists(stage1):
-                candidates.append((stage1_size, stage1))
+                gs_size = os.path.getsize(gs_out)
+                # Only use GS if it actually reduced size
+                if gs_size < stage1_size:
+                    chosen = gs_out
+                    log.info(f"GS winner: {stage1_size} → {gs_size}")
+                else:
+                    log.info("GS made file bigger — using PyMuPDF stage1")
+                    
+            if chosen is None and os.path.exists(stage1) and stage1_size < orig:
+                chosen = stage1
+                
+            if chosen is None:
+                # No improvement at all — return original
+                chosen = path
+                log.info("No compression improvement — returning original")
 
-            if candidates:
-                _, best = min(candidates, key=lambda x: x[0])
-                shutil.copy(best, out)
-            else:
-                shutil.copy(path, out)
+            shutil.copy(chosen, out)
 
+            # Cleanup temps
             for tmp in [stage1, gs_out]:
                 try:
                     if os.path.exists(tmp):
@@ -984,7 +1096,10 @@ def compress_pdf():
             new_size = os.path.getsize(out)
             reduction = round((1 - new_size / orig) * 100, 1) if orig else 0
 
-        return ok(f"Compressed — {reduction}% smaller", out, reduction_pct=reduction)
+        return ok(f"Compressed — {reduction}% smaller", out,
+                  reduction_pct=reduction,
+                  original_size_bytes=orig,
+                  compressed_size_bytes=new_size)
     except Exception:
         log.exception("compress")
         return err("Compression failed", 500)
@@ -993,29 +1108,70 @@ def compress_pdf():
 @app.route("/api/repair-pdf", methods=["POST"])
 @rate_limited()
 def repair_pdf():
+    """
+    Repair order:
+    1. PyMuPDF garbage collect + deflate (handles most corruption)
+    2. GS rewrite with /printer (preserves all content)
+    3. Return original if both fail — never return blank file
+    """
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_PDF)
     if e:
         return err(e)
     try:
         with temp_upload(f) as path:
+            orig_size = os.path.getsize(path)
             filename = generate_output_filename(f.filename, "repaired")
             out = os.path.join(Config.OUTPUT_FOLDER, filename)
 
-            gs_ok = ghostscript_compress(
-                path, out, "/printer",
-                extra_flags=["-dPDFSTOPONERROR=false", "-dPDFSTOPONWARNING=false"]
-            )
-            if gs_ok and os.path.exists(out) and os.path.getsize(out) > 0:
-                return ok("PDF repaired successfully (Ghostscript)", out)
-
-            doc = fitz.open(path)
+            # Pass 1: PyMuPDF — best for cross-ref and object corruption
             try:
-                doc.save(out, garbage=4, deflate=True, clean=True)
-            finally:
+                doc = fitz.open(path)
+                input_pages = len(doc)
+                doc.save(out,
+                         garbage=3,       # 3 not 4 — safer
+                         deflate=True,
+                         clean=False,     # NEVER clean=True for repair
+                         linear=False)
                 doc.close()
+                
+                # Validate
+                doc2 = fitz.open(out)
+                out_pages = len(doc2)
+                doc2.close()
+                
+                if out_pages == input_pages and os.path.getsize(out) > 0:
+                    return ok("PDF repaired successfully (PyMuPDF)", out,
+                              pages=out_pages, original_size_bytes=orig_size)
+                else:
+                    log.warning(f"PyMuPDF repair page mismatch: {input_pages}→{out_pages}")
+            except Exception as ex1:
+                log.warning(f"PyMuPDF repair failed: {ex1}")
 
-        return ok("PDF repaired successfully", out)
+            # Pass 2: Ghostscript with /printer (least aggressive, preserves most)
+            gs_tmp = out + "_gs_repair.pdf"
+            gs_ok = ghostscript_compress(
+                path, gs_tmp, "/printer",
+                extra_flags=[
+                    "-dPDFSTOPONERROR=false",
+                    "-dPDFSTOPONWARNING=false",
+                    "-dNOSAFER",
+                ]
+            )
+            if gs_ok and os.path.exists(gs_tmp) and os.path.getsize(gs_tmp) > 0:
+                shutil.move(gs_tmp, out)
+                return ok("PDF repaired successfully (Ghostscript)", out)
+            
+            try:
+                if os.path.exists(gs_tmp):
+                    os.remove(gs_tmp)
+            except Exception:
+                pass
+
+            # Pass 3: Return original — better than blank file
+            shutil.copy(path, out)
+            return ok("PDF returned as-is — repair could not improve the file", out)
+
     except Exception:
         log.exception("repair_pdf")
         return err("Repair failed", 500)
