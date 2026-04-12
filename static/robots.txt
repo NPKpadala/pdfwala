@@ -1,6 +1,6 @@
 User-agent: *
 Allow: /pdfwala/
-Allow: /api/
+#Allow: /api/
 Allow: /download/
 Disallow: /api/*/status/
 Disallow: /download/*.tmp
