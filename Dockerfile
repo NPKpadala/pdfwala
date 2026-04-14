@@ -34,9 +34,5 @@ RUN mkdir -p /app/uploads /app/outputs /app/cache
 # Expose port
 EXPOSE 5000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-    CMD curl -f http://localhost:5000/api/health || exit 1
-
-# Run with gunicorn
+# Run with gunicorn (health check will be defined in docker-compose for web, not here)
 CMD ["gunicorn", "-c", "gunicorn.conf.py", "app:app"]
