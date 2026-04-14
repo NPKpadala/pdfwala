@@ -12,3 +12,26 @@ loglevel    = "info"
 max_requests = 1000
 max_requests_jitter = 100
 templates/merge.html
+
+# Monitor secrets & runtime files
+.env
+monitor.log
+monitor_error.log
+monitor_heartbeat
+monitor_metrics.json
+monitor_log_hashes.json
+*.patch
+docker
+outputs/
+uploads/*.pdf
+downloads/*.pdf
+
+# Secrets & logs - NEVER commit these
+.env
+monitor.log
+monitor_error.log
+monitor_heartbeat
+monitor_metrics.json
+monitor_log_hashes.json
+*.patch
+docker
