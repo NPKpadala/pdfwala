@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<!-- [M4] robots meta -->
 <meta name="robots" content="index, follow"/>
 <meta name="description" content="PDFWala — 50+ free PDF tools online. Merge, split, compress, convert PDF, OCR, protect and more. No sign-up, no limits."/>
 <meta name="theme-color" content="#0A0E1A"/>
@@ -23,7 +22,6 @@
 <meta name="twitter:title" content="PDFWala — Free PDF Tools Online"/>
 <meta name="twitter:description" content="50+ free PDF tools. No sign-up. Instant processing."/>
 
-<!-- [M4] JSON-LD WebApplication -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -37,7 +35,6 @@
 }
 </script>
 
-<!-- [M4] JSON-LD SiteNavigationElement for top 8 tools -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -58,14 +55,13 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<!-- [P3] font-display=swap added -->
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet"/>
 
-<!-- [F2] FOUC FIX: Apply saved theme synchronously before body renders -->
 <script>
 (function(){
-  try {    var t = localStorage.getItem('pw-theme') ||
-      (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  try {
+    // ALWAYS default to dark, unless user explicitly chose light
+    var t = localStorage.getItem('pw-theme') || 'dark';
     document.documentElement.setAttribute('data-theme', t);
   } catch(e) {
     document.documentElement.setAttribute('data-theme', 'dark');
@@ -109,7 +105,6 @@
   --sh-xl:0 24px 80px rgba(0,0,0,.12); --sh-card:0 4px 20px rgba(0,0,0,.08);
 }
 
-/* [U5] prefers-reduced-motion: disable all decorative animations */
 @media (prefers-reduced-motion: reduce) {
   .hero-mesh, .float-card, .pop-band-chip, .badge-dot { animation: none !important; }
   * { transition-duration: 0.01ms !important; }
@@ -295,8 +290,7 @@ input,select,textarea{font-family:inherit}
 .recent-chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(59,130,246,.06)}
 
 /* ═══════════════════════════════════════════════
-   MOST POPULAR TOOLS BAND
-   [U2] chipFloat stops after 3 cycles via iteration-count
+   POPULAR TOOLS BAND
 ═══════════════════════════════════════════════ */
 .popular-tools-band{
   background:var(--bg-2);
@@ -321,7 +315,6 @@ input,select,textarea{font-family:inherit}
   font-size:13px;font-weight:600;color:var(--text);cursor:pointer;
   transition:all var(--t);white-space:nowrap;
   position:relative;
-  /* [U2] Stop after 3 cycles */
   animation: chipFloat 6s ease-in-out infinite;
 }
 .pop-band-chip:nth-child(1){animation-delay:0s}
@@ -345,8 +338,6 @@ input,select,textarea{font-family:inherit}
   75%{transform:translateY(4px) rotate(3deg)}
   100%{transform:translateY(0) rotate(0deg)}
 }
-
-/* Chip tooltip */
 .pop-band-chip::after{
   content:attr(data-tooltip);position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);
   background:var(--ink-900);color:var(--ink-50);font-size:11px;font-weight:500;white-space:nowrap;
@@ -361,8 +352,6 @@ input,select,textarea{font-family:inherit}
 .pop-band-chip:hover::after,.pop-band-chip:hover::before{opacity:1}
 [data-theme="light"] .pop-band-chip::after{background:var(--ink-800)}
 [data-theme="light"] .pop-band-chip::before{border-bottom-color:var(--ink-800)}
-
-
 
 /* ═══════════════════════════════════════════════
    PAGES
@@ -394,7 +383,6 @@ input,select,textarea{font-family:inherit}
 }
 [data-theme="light"] .hero-grid{opacity:.04}
 .hero-floats{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-/* [P1] Float cards: will-change + translateZ for compositor layer */
 .float-card{
   position:absolute;background:var(--bg-glass);border:1px solid var(--border);
   border-radius:var(--r-lg);backdrop-filter:blur(12px);padding:10px 14px;
@@ -446,10 +434,7 @@ input,select,textarea{font-family:inherit}
 .trust-pill svg{flex-shrink:0;color:var(--emerald-400)}
 
 /* Smart Search */
-.search-hero-wrap{
-  max-width:540px;margin:0 auto 28px;position:relative;
-  z-index:50;
-}
+.search-hero-wrap{max-width:540px;margin:0 auto 28px;position:relative;z-index:50;}
 .search-hero-input{
   width:100%;padding:14px 52px 14px 20px;
   border:1.5px solid var(--border);border-radius:var(--r-lg);
@@ -475,14 +460,12 @@ input,select,textarea{font-family:inherit}
   position:absolute;top:calc(100% + 8px);left:0;right:0;
   background:var(--bg-2);border:1px solid var(--border);
   border-radius:var(--r-lg);box-shadow:var(--sh-xl);
-  max-height:300px;overflow-y:auto;z-index:200;
-  display:none;
+  max-height:300px;overflow-y:auto;z-index:200;display:none;
 }
 .search-dropdown.open{display:block}
 .search-result-item{
   display:flex;align-items:center;gap:12px;
-  padding:10px 16px;cursor:pointer;
-  transition:background var(--t);font-size:13.5px;
+  padding:10px 16px;cursor:pointer;transition:background var(--t);font-size:13.5px;
 }
 .search-result-item:hover,.search-result-item.focused{background:var(--bg-3)}
 .search-result-item .sri-icon{font-size:18px;width:28px;text-align:center;flex-shrink:0}
@@ -491,7 +474,6 @@ input,select,textarea{font-family:inherit}
 .search-result-item .sri-arr{margin-left:auto;color:var(--text-3);font-size:12px}
 .search-no-results{padding:20px;text-align:center;color:var(--text-3);font-size:13.5px}
 
-/* Hero OR divider */
 .hero-or{
   display:flex;align-items:center;gap:12px;
   max-width:540px;margin:0 auto 28px;color:var(--text-3);font-size:12px;font-weight:600;
@@ -499,7 +481,6 @@ input,select,textarea{font-family:inherit}
 }
 .hero-or::before,.hero-or::after{content:'';flex:1;height:1px;background:var(--border)}
 
-/* [D1] Hero dropzone with gradient border animation on dragover */
 @keyframes borderGradient{
   0%{border-color:var(--blue-500)}
   33%{border-color:var(--violet-500)}
@@ -515,23 +496,14 @@ input,select,textarea{font-family:inherit}
   position:relative;z-index:10;
 }
 [data-theme="light"] .hero-dropzone{background:var(--bg-2)}
-.hero-dropzone:hover{
-  border-color:var(--accent);background:rgba(59,130,246,.05);
-  box-shadow:0 0 0 6px rgba(59,130,246,.08);
-}
-.hero-dropzone.dragover{
-  background:rgba(59,130,246,.05);
-  box-shadow:0 0 0 6px rgba(59,130,246,.08);
-  animation:borderGradient 2s linear infinite;
-}
+.hero-dropzone:hover{border-color:var(--accent);background:rgba(59,130,246,.05);box-shadow:0 0 0 6px rgba(59,130,246,.08);}
+.hero-dropzone.dragover{background:rgba(59,130,246,.05);box-shadow:0 0 0 6px rgba(59,130,246,.08);animation:borderGradient 2s linear infinite;}
 .hero-dropzone input{display:none}
 .hdz-icon{font-size:36px;margin-bottom:10px;display:block;transition:transform .3s var(--ease)}
 .hero-dropzone:hover .hdz-icon{transform:translateY(-4px) scale(1.1)}
 .hdz-text{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px}
 .hdz-text span{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .hdz-hint{font-size:12px;color:var(--text-3);line-height:1.6}
-
-/* File count badge */
 .file-count-badge{
   position:absolute;top:-8px;right:-8px;
   background:var(--blue-500);color:#fff;
@@ -541,8 +513,6 @@ input,select,textarea{font-family:inherit}
   box-shadow:0 2px 8px rgba(37,99,235,.5);
 }
 .file-count-badge.show{display:flex}
-
-/* 200MB popup warning */
 .size-popup{
   position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);
   background:rgba(244,63,94,.95);color:#fff;
@@ -554,16 +524,10 @@ input,select,textarea{font-family:inherit}
   transform:translateX(-50%) translateY(4px);z-index:300;
 }
 .size-popup.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.size-popup::after{
-  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
-  border:6px solid transparent;border-top-color:rgba(244,63,94,.95);
-}
-
-/* Global drag overlay */
+.size-popup::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:rgba(244,63,94,.95);}
 .global-drag-overlay{
   position:fixed;inset:0;z-index:9000;pointer-events:none;
-  background:rgba(59,130,246,.06);
-  border:3px dashed var(--blue-400);
+  background:rgba(59,130,246,.06);border:3px dashed var(--blue-400);
   opacity:0;transition:opacity .2s ease;
   display:flex;align-items:center;justify-content:center;
 }
@@ -579,10 +543,7 @@ input,select,textarea{font-family:inherit}
 .global-drag-overlay-sub{font-size:14px;color:var(--text-2);margin-top:6px}
 
 /* WHY SECTION */
-.why-section{
-  background:var(--bg-2);border-top:1px solid var(--border);
-  border-bottom:1px solid var(--border);padding:64px 28px;
-}
+.why-section{background:var(--bg-2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:64px 28px;}
 .why-inner{max-width:1280px;margin:auto}
 .why-header{text-align:center;margin-bottom:44px}
 .why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px}
@@ -602,423 +563,244 @@ input,select,textarea{font-family:inherit}
 .section-title{font-family:var(--font-h);font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px;line-height:1.15}
 
 /* ═══════════════════════════════════════════════
-   TOOL PAGE
+   TOOL PAGE — NEW CLEAN DESIGN
 ═══════════════════════════════════════════════ */
-#toolPage{min-height:80vh}
-.tool-page-inner{max-width:860px;margin:0 auto;padding:40px 28px 80px}
+#toolPage{min-height:80vh;background:var(--bg)}
 
-/* [U1] Skeleton shimmer */
-.skeleton{
-  background:linear-gradient(90deg,var(--bg-3) 25%,var(--bg-2) 50%,var(--bg-3) 75%);
-  background-size:200% 100%;
-  animation:shimmer 1.4s infinite;
-  border-radius:var(--r-sm);
+/* Hero strip */
+.tp-hero{
+  background:var(--bg-2);
+  border-bottom:1px solid var(--border);
+  padding:24px 28px;
 }
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.tool-skeleton{padding:40px 28px}
-.skel-line{height:14px;margin-bottom:10px}
-.skel-title{height:36px;width:60%;margin-bottom:16px}
-.skel-desc{height:12px;width:85%;margin-bottom:6px}
-.skel-box{height:160px;margin-top:20px;border-radius:var(--r-xl)}
-
-/* Breadcrumb */
-.breadcrumb{
-  display:flex;align-items:center;gap:6px;
-  font-size:12.5px;color:var(--text-3);margin-bottom:20px;
+.tp-hero-inner{
+  max-width:1200px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
 }
-.breadcrumb a,.breadcrumb span{display:flex;align-items:center;gap:4px}
-.breadcrumb a{color:var(--text-2);cursor:pointer;transition:color var(--t)}
-.breadcrumb a:hover{color:var(--accent)}
-.breadcrumb .sep{color:var(--text-3);font-size:11px}
-.breadcrumb .current{color:var(--text);font-weight:600}
-
-.tool-page-back{
+.tp-hero-left{display:flex;align-items:center;gap:16px}
+.tp-icon-box{
+  width:52px;height:52px;border-radius:14px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--blue-600),var(--violet-500));
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+  box-shadow:0 4px 16px rgba(37,99,235,.3);
+}
+.tp-title{font-family:var(--font-h);font-size:22px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px}
+.tp-sub{font-size:13.5px;color:var(--text-2)}
+.tp-breadcrumb{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-3);margin-bottom:5px}
+.tp-breadcrumb a{color:var(--text-3);cursor:pointer;transition:color var(--t)}
+.tp-breadcrumb a:hover{color:var(--accent)}
+.tp-back{
   display:inline-flex;align-items:center;gap:6px;
-  font-size:13px;color:var(--accent);margin-bottom:12px;cursor:pointer;
-  padding:6px 12px;border-radius:var(--r-sm);border:1px solid rgba(59,130,246,.2);
-  background:rgba(59,130,246,.06);transition:all var(--t);
+  font-size:13px;color:var(--text-2);
+  padding:7px 14px;border-radius:var(--r-sm);
+  border:1px solid var(--border);background:var(--bg-3);
+  transition:all var(--t);flex-shrink:0;
 }
-.tool-page-back:hover{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.4)}
-.tool-page-hero{margin-bottom:36px}
-.tool-page-icon{font-size:40px;margin-bottom:12px;display:block}
-.tool-page-h1{font-family:var(--font-h);font-size:clamp(26px,4vw,36px);font-weight:800;letter-spacing:-.5px;margin-bottom:12px;line-height:1.15}
-.tool-page-desc{font-size:16px;color:var(--text-2);line-height:1.8;max-width:640px;margin-bottom:24px}
+.tp-back:hover{color:var(--text);border-color:var(--border-hover)}
 
-/* Two-column layout with related tools sidebar */
-.tool-layout{display:grid;grid-template-columns:1fr 200px;gap:24px;align-items:start}
-.tool-side-col{
-  background:var(--bg-2);border:1px solid var(--border);
-  border-radius:var(--r-xl);padding:16px;position:sticky;top:80px;
+/* Body layout */
+.tp-body{
+  max-width:1200px;margin:0 auto;
+  padding:24px 28px 60px;
+  display:grid;
+  grid-template-columns:1fr 220px;
+  gap:20px;
+  align-items:start;
 }
-.tool-side-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:12px}
-.related-tool-chip{
-  display:flex;align-items:center;gap:8px;
-  padding:8px 10px;border-radius:var(--r-sm);
-  font-size:12.5px;font-weight:500;color:var(--text-2);
-  cursor:pointer;transition:all var(--t);margin-bottom:4px;
+@media(max-width:860px){
+  .tp-body{grid-template-columns:1fr}
+  .tp-sidebar{display:none}
 }
-.related-tool-chip:hover{background:var(--bg-3);color:var(--text)}
-.related-tool-chip .rtc-icon{font-size:14px;flex-shrink:0}
-@media(max-width:768px){.tool-layout{grid-template-columns:1fr}.tool-side-col{display:none}}
 
-/* Tool dropzone */
-/* [D1] Also animate border on tool dropzone dragover */
-.tool-dropzone-wrap{
-  border:2px dashed var(--border);border-radius:var(--r-xl);padding:36px 24px;
-  text-align:center;background:rgba(255,255,255,.02);
-  transition:background var(--t),box-shadow var(--t);
-  margin-bottom:20px;position:relative;
-  cursor:pointer;
+/* Main card */
+.tp-card{
+  background:var(--bg-2);
+  border:1px solid var(--border);
+  border-radius:var(--r-xl);
+  overflow:hidden;
 }
-[data-theme="light"] .tool-dropzone-wrap{background:var(--bg-2)}
-.tool-dropzone-wrap:hover{
-  border-color:var(--accent);background:rgba(59,130,246,.05);
-  box-shadow:0 0 0 6px rgba(59,130,246,.08);
+
+/* Step row */
+.tp-step-header{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 20px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg-3);
 }
-.tool-dropzone-wrap.dragover{
+.tp-step-num{
+  width:24px;height:24px;border-radius:50%;
+  background:rgba(59,130,246,.15);color:var(--blue-400);
+  font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all var(--t);
+}
+.tp-step-num.done{background:rgba(16,185,129,.15);color:var(--emerald-400)}
+.tp-step-label{font-size:13.5px;font-weight:600;color:var(--text-2);transition:color var(--t)}
+.tp-step-label.active{color:var(--text)}
+.tp-step-done-tag{
+  margin-left:auto;font-size:11.5px;color:var(--emerald-400);
+  display:none;align-items:center;gap:4px;
+}
+.tp-step-done-tag.show{display:flex}
+
+/* Dropzone */
+.tp-dropzone{
+  margin:20px;
+  border:2px dashed var(--border);border-radius:var(--r-lg);
+  padding:36px 24px;text-align:center;cursor:pointer;
+  transition:all var(--t);background:rgba(255,255,255,.02);
+}
+[data-theme="light"] .tp-dropzone{background:var(--bg-3)}
+.tp-dropzone:hover,.tp-dropzone.dragover{
+  border-color:var(--accent);
   background:rgba(59,130,246,.05);
-  box-shadow:0 0 0 6px rgba(59,130,246,.08);
-  animation:borderGradient 2s linear infinite;
+  box-shadow:0 0 0 5px rgba(59,130,246,.08);
 }
-.tool-dropzone-wrap input{display:none}
-.tdz-icon{font-size:32px;margin-bottom:10px;display:block}
-.tdz-text{font-size:14px;color:var(--text-2);line-height:1.6}
-.tdz-text strong{color:var(--accent)}
-.tdz-hint{font-size:11.5px;color:var(--text-3);margin-top:4px}
-.tdz-meta{display:flex;justify-content:center;gap:16px;margin-top:12px;flex-wrap:wrap}
-.tdz-meta-item{font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:4px}
-.tdz-meta-item svg{color:var(--emerald-400)}
+.tp-dropzone.dragover{animation:borderGradient 2s linear infinite}
+.tp-dropzone input{display:none}
+.tp-dz-icon{font-size:32px;margin-bottom:10px;display:block;transition:transform .25s var(--ease)}
+.tp-dropzone:hover .tp-dz-icon{transform:translateY(-4px) scale(1.08)}
+.tp-dz-main{font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px}
+.tp-dz-main span{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.tp-dz-hint{font-size:12px;color:var(--text-3)}
+.tp-dz-meta{display:flex;justify-content:center;gap:16px;margin-top:12px;flex-wrap:wrap}
+.tp-dz-meta-item{font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:4px}
+.tp-dz-meta-item svg{color:var(--emerald-400)}
 
-/* File preview thumbnails */
-.file-preview-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;margin-bottom:12px}
-.file-preview-item{
-  position:relative;border-radius:var(--r-sm);overflow:hidden;
-  border:1px solid var(--border);width:72px;height:72px;
-  display:flex;align-items:center;justify-content:center;
-  background:var(--bg-3);flex-direction:column;gap:2px;cursor:default;
+/* File list */
+.tp-file-list{padding:0 20px 16px;display:flex;flex-direction:column;gap:6px}
+.tp-file-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;
+  background:var(--bg-3);border:1px solid var(--border);
+  border-radius:var(--r-sm);border-left:3px solid var(--blue-500);
+  animation:slideIn .15s ease;
 }
-.file-preview-item canvas,.file-preview-item img{width:100%;height:100%;object-fit:cover;display:block}
-.file-preview-item .fp-icon{font-size:24px}
-.file-preview-item .fp-name{
-  font-size:9px;color:var(--text-3);max-width:70px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;padding:0 2px;
-}
-.file-preview-item .fp-del{
-  position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;
-  background:rgba(0,0,0,.6);color:#fff;font-size:9px;border:none;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;opacity:0;transition:opacity var(--t);
-}
-.file-preview-item:hover .fp-del{opacity:1}
+@keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+.tp-file-item.type-image{border-left-color:var(--emerald-500)}
+.tp-file-item.type-word{border-left-color:var(--amber-500)}
+.tp-file-item.type-excel{border-left-color:var(--cyan-500)}
+.tp-fi-icon{width:30px;height:30px;border-radius:8px;background:rgba(59,130,246,.12);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.tp-fi-name{flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tp-fi-size{font-size:11px;color:var(--text-3);flex-shrink:0}
+.tp-fi-del{background:none;border:none;color:var(--text-3);font-size:14px;padding:3px 5px;border-radius:4px;transition:color var(--t);cursor:pointer}
+.tp-fi-del:hover{color:var(--rose-400)}
 
-/* [U8] Output filename control */
-.output-filename-wrap{
-  margin-top:12px;display:none;
-}
-.output-filename-wrap.show{display:block}
-.output-filename-label{font-size:11.5px;font-weight:600;color:var(--text-3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:6px}
-.output-filename-input{
-  width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);
-  background:var(--bg);color:var(--text);font-size:13.5px;outline:none;
-  transition:border-color var(--t),box-shadow var(--t);font-family:monospace;
-}
-.output-filename-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+/* Options area */
+.tp-options{padding:0 20px 20px;transition:opacity var(--t)}
+.tp-options.locked{opacity:.35;pointer-events:none}
 
-/* Tool form options */
-.form-group{margin-top:16px}
-.form-label{display:block;font-size:11.5px;font-weight:600;color:var(--text-3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
-.form-input,.form-select{
-  width:100%;padding:9px 13px;border:1.5px solid var(--border);border-radius:var(--r-sm);
+/* Form elements */
+.tp-form-group{margin-bottom:14px}
+.tp-form-label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:6px}
+.tp-form-input,.tp-form-select{
+  width:100%;padding:9px 13px;
+  border:1.5px solid var(--border);border-radius:var(--r-sm);
   background:var(--bg);color:var(--text);font-size:14px;outline:none;
   transition:border-color var(--t),box-shadow var(--t);
 }
-.form-input:focus,.form-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
-.form-select option{background:var(--bg-2)}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.form-hint{font-size:11px;color:var(--text-3);margin-top:4px}
-.radio-group{display:flex;gap:6px;flex-wrap:wrap}
-.radio-chip{
+.tp-form-input:focus,.tp-form-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+.tp-form-select option{background:var(--bg-2)}
+.tp-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tp-form-hint{font-size:11px;color:var(--text-3);margin-top:4px}
+.tp-radio-group{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tp-radio-chip{
   padding:6px 13px;border:1.5px solid var(--border);border-radius:50px;
   font-size:12.5px;font-weight:500;color:var(--text-2);background:var(--bg);
   transition:all var(--t);cursor:pointer;user-select:none;
 }
-.radio-chip:hover{border-color:var(--accent);color:var(--accent)}
-.radio-chip.active{border-color:var(--accent);color:var(--accent);background:rgba(59,130,246,.1);font-weight:600}
+.tp-radio-chip:hover{border-color:var(--accent);color:var(--accent)}
+.tp-radio-chip.active{border-color:var(--accent);color:var(--accent);background:rgba(59,130,246,.1);font-weight:600}
 
-/* [D2] Section divider above options */
-.section-divider{
-  display:none;
-  align-items:center;gap:10px;
-  margin:20px 0 4px;
-  font-size:12px;font-weight:700;color:var(--text-3);
-  text-transform:uppercase;letter-spacing:.08em;
-}
-.section-divider.show{display:flex}
-.section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+/* Action row */
+.tp-action{padding:16px 20px;border-top:1px solid var(--border)}
 
-/* [D4] File items with colored left border by type */
-.tool-file-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
-.file-item{
-  display:flex;align-items:center;gap:10px;background:var(--bg);
-  border:1px solid var(--border);border-radius:var(--r-sm);
-  padding:9px 12px;font-size:13px;animation:sli .15s ease;
-  border-left:3px solid var(--border);
-}
-.file-item.type-pdf{border-left-color:var(--blue-500)}
-.file-item.type-image{border-left-color:var(--emerald-500)}
-.file-item.type-word{border-left-color:var(--amber-500)}
-.file-item.type-excel{border-left-color:var(--cyan-500)}
-/* [U4] Per-file size warning */
-.file-item .file-warn{
-  font-size:11px;color:var(--amber-400);display:flex;align-items:center;gap:3px;flex-shrink:0;
-  background:rgba(245,158,11,.1);padding:2px 6px;border-radius:50px;border:1px solid rgba(245,158,11,.25);
-}
-@keyframes sli{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
-.file-icon{width:28px;height:28px;border-radius:6px;background:rgba(59,130,246,.1);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
-.file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
-.file-size{color:var(--text-3);font-size:11.5px;flex-shrink:0}
-.file-del{background:none;border:none;color:var(--text-3);font-size:14px;padding:2px 4px;transition:color var(--t)}
-.file-del:hover{color:var(--rose-400)}
-/* [U9] Drag-to-reorder */
-.file-item.dragging{opacity:.4;border-style:dashed}
-.file-item.drag-over{border-top:2px solid var(--accent)}
+/* Progress */
+.tp-progress{margin-bottom:14px;display:none}
+.tp-progress.show{display:block}
+.tp-progress-track{height:3px;background:var(--bg-3);border-radius:50px;overflow:hidden;margin-bottom:8px}
+.tp-progress-fill{height:100%;width:0;border-radius:50px;background:linear-gradient(90deg,var(--blue-600),var(--violet-500));transition:width .3s ease}
+.tp-progress-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-2)}
+.tp-dot-loader{display:flex;gap:3px;align-items:center}
+.tp-dot-loader span{width:4px;height:4px;border-radius:50%;background:var(--accent);animation:db .9s ease-in-out infinite}
+.tp-dot-loader span:nth-child(2){animation-delay:.15s}
+.tp-dot-loader span:nth-child(3){animation-delay:.3s}
+@keyframes db{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
 
-/* [D3] Shake on disabled process button click */
-@keyframes shake{
-  0%,100%{transform:translateX(0)}
-  15%{transform:translateX(-5px)}
-  30%{transform:translateX(5px)}
-  45%{transform:translateX(-4px)}
-  60%{transform:translateX(4px)}
-  75%{transform:translateX(-2px)}
-  90%{transform:translateX(2px)}
-}
-.btn-process{
-  width:100%;margin-top:20px;padding:14px;
+/* Result */
+.tp-result{margin-bottom:12px;display:none}
+.tp-result.show{display:block}
+.tp-result-inner{padding:12px 14px;border-radius:var(--r);border:1px solid}
+.tp-result-inner.success{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);color:var(--emerald-400)}
+.tp-result-inner.error{background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.25);color:var(--rose-400)}
+[data-theme="light"] .tp-result-inner.success{background:#F0FDF4;border-color:#BBF7D0;color:#15803D}
+[data-theme="light"] .tp-result-inner.error{background:#FFF1F2;border-color:#FECDD3;color:#BE123C}
+.tp-result-title{font-weight:700;font-size:13px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.tp-result-pills{display:flex;flex-wrap:wrap;gap:5px}
+.tp-result-pill{font-size:11px;padding:2px 9px;border-radius:50px;font-weight:500;background:rgba(255,255,255,.07)}
+[data-theme="light"] .tp-result-pill{background:rgba(0,0,0,.05)}
+
+/* Buttons */
+.tp-btn-process{
+  width:100%;padding:13px;margin-bottom:8px;
   background:linear-gradient(135deg,var(--blue-600),var(--violet-600));
   color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:700;
   display:flex;align-items:center;justify-content:center;gap:8px;
   box-shadow:0 4px 20px rgba(37,99,235,.35);
   transition:transform var(--t),box-shadow var(--t),opacity var(--t);
 }
-.btn-process:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 30px rgba(37,99,235,.45)}
-.btn-process:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
-.btn-process.shake{animation:shake .4s var(--ease)}
-.btn-download{
-  width:100%;margin-top:8px;padding:14px;
-  background:rgba(16,185,129,.15);border:1.5px solid rgba(16,185,129,.3);
+.tp-btn-process:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 28px rgba(37,99,235,.45)}
+.tp-btn-process:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.tp-btn-download{
+  width:100%;padding:13px;
+  background:rgba(16,185,129,.12);border:1.5px solid rgba(16,185,129,.3);
   color:var(--emerald-400);border-radius:var(--r);font-size:15px;font-weight:700;
   align-items:center;justify-content:center;gap:8px;display:none;
   transition:all var(--t);
 }
-.btn-download:hover{background:rgba(16,185,129,.25);border-color:rgba(16,185,129,.6);transform:translateY(-1px)}
-
-/* [U3] Process Another File button */
-.btn-another{
+.tp-btn-download:hover{background:rgba(16,185,129,.2);border-color:rgba(16,185,129,.55);transform:translateY(-1px)}
+.tp-btn-again{
   width:100%;margin-top:8px;padding:10px;
-  background:none;border:1.5px solid var(--border);border-radius:var(--r);
-  color:var(--text-2);font-size:13.5px;font-weight:600;
+  background:none;border:1px solid var(--border);border-radius:var(--r);
+  color:var(--text-2);font-size:13px;font-weight:600;
   display:none;align-items:center;justify-content:center;gap:6px;
   transition:all var(--t);
 }
-.btn-another:hover{border-color:var(--border-hover);color:var(--text);background:var(--bg-3)}
-.btn-another.show{display:flex}
+.tp-btn-again:hover{border-color:var(--border-hover);color:var(--text);background:var(--bg-3)}
+.tp-btn-again.show{display:flex}
 
-/* Cancel button */
-.btn-cancel{
-  width:100%;margin-top:8px;padding:10px;
-  background:none;border:1.5px solid rgba(244,63,94,.3);
-  color:var(--rose-400);border-radius:var(--r);font-size:13.5px;font-weight:600;
-  display:none;align-items:center;justify-content:center;gap:6px;
-  transition:all var(--t);
-}
-.btn-cancel:hover{background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.5)}
-.btn-cancel.show{display:flex}
+/* Setup info box */
+.tp-setup-box{margin-top:10px;padding:14px 16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);display:none}
+.tp-setup-box.show{display:block}
+.tp-setup-box h4{font-size:13px;font-weight:700;margin-bottom:6px}
+.tp-setup-box p{font-size:12px;color:var(--text-2);margin-bottom:8px;line-height:1.6}
+.tp-code{background:var(--ink-900);color:#93C5FD;border-radius:var(--r-sm);padding:10px 12px;font-family:monospace;font-size:11px;line-height:1.75;overflow-x:auto;white-space:pre;border:1px solid var(--border)}
+[data-theme="light"] .tp-code{background:#0F172A}
 
-/* Share / copy URL button */
-.btn-share-link{
-  width:100%;margin-top:8px;padding:10px;
-  background:rgba(59,130,246,.08);border:1.5px solid rgba(59,130,246,.2);
-  color:var(--blue-400);border-radius:var(--r);font-size:13.5px;font-weight:600;
-  display:none;align-items:center;justify-content:center;gap:6px;
-  transition:all var(--t);
-}
-.btn-share-link:hover{background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.4)}
-.btn-share-link.show{display:flex}
-
-/* Progress */
-.progress-block{margin-top:18px;display:none}
-.progress-block.show{display:block}
-.progress-track{height:4px;background:var(--bg-3);border-radius:50px;overflow:hidden;margin-bottom:10px}
-.progress-fill{height:100%;width:0;border-radius:50px;background:linear-gradient(90deg,var(--blue-600),var(--violet-500));transition:width .3s ease;box-shadow:0 0 10px rgba(59,130,246,.6)}
-.progress-status{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--text-2)}
-.progress-left{display:flex;align-items:center;gap:8px}
-.dot-loader{display:flex;gap:3px;align-items:center}
-.dot-loader span{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:db .9s ease-in-out infinite}
-.dot-loader span:nth-child(2){animation-delay:.15s}
-.dot-loader span:nth-child(3){animation-delay:.3s}
-@keyframes db{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
-.eta-text{font-size:11.5px;color:var(--text-3);font-style:italic}
-
-/* [U7] Countdown timer */
-.countdown-timer{
-  display:none;margin-top:10px;padding:8px 14px;
-  background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);
-  border-radius:var(--r-sm);font-size:12.5px;color:var(--amber-400);
-  text-align:center;font-weight:500;
-}
-.countdown-timer.show{display:block}
-
-/* Result block */
-.result-block{margin-top:14px;display:none}
-.result-block.show{display:block}
-.result-inner{padding:14px 16px;border-radius:var(--r);border:1px solid}
-.result-inner.success{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);color:var(--emerald-400)}
-.result-inner.error{background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.25);color:var(--rose-400)}
-[data-theme="light"] .result-inner.success{background:#F0FDF4;border-color:#BBF7D0;color:#15803D}
-[data-theme="light"] .result-inner.error{background:#FFF1F2;border-color:#FECDD3;color:#BE123C}
-.result-title{font-weight:700;font-size:13.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.result-meta{display:flex;flex-wrap:wrap;gap:6px}
-.result-pill{font-size:11.5px;padding:3px 10px;border-radius:50px;font-weight:500;background:rgba(255,255,255,.07);color:inherit}
-[data-theme="light"] .result-pill{background:rgba(0,0,0,.05)}
-
-/* [D5] Animated checkmark with circle fill on animationend */
-.success-checkmark{
-  display:none;align-items:center;justify-content:center;margin-bottom:8px;
-}
-.success-checkmark.show{display:flex}
-.checkmark-svg{width:48px;height:48px}
-/* [F3] use CSS classes for reset, not style.animation = 'none' hack */
-.checkmark-circle{
-  fill:none;stroke:var(--emerald-400);stroke-width:2;
-  stroke-dasharray:166;stroke-dashoffset:166;
-}
-.checkmark-circle.animate{animation:stroke-circle .6s cubic-bezier(.65,0,.45,1) forwards}
-.checkmark-circle.filled{fill:rgba(16,185,129,0.08)}
-.checkmark-check{
-  fill:none;stroke:var(--emerald-400);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
-  stroke-dasharray:48;stroke-dashoffset:48;
-}
-.checkmark-check.animate{animation:stroke-check .4s cubic-bezier(.65,0,.45,1) .5s forwards}
-@keyframes stroke-circle{100%{stroke-dashoffset:0}}
-@keyframes stroke-check{100%{stroke-dashoffset:0}}
-
-/* Setup box */
-.setup-box{margin-top:14px;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);display:none}
-.setup-box.show{display:block}
-.setup-box h4{font-size:13px;font-weight:700;margin-bottom:8px}
-.setup-box p{font-size:12.5px;color:var(--text-2);margin-bottom:10px;line-height:1.6}
-.code-block{
-  background:var(--ink-900);color:#93C5FD;border-radius:var(--r-sm);
-  padding:12px 14px;font-family:'Fira Code','JetBrains Mono','Courier New',monospace;
-  font-size:11.5px;line-height:1.75;overflow-x:auto;white-space:pre;border:1px solid var(--border);
-}
-[data-theme="light"] .code-block{background:#0F172A;color:#93C5FD}
-
-/* SEO content on tool page */
-.tool-seo{margin-top:48px;border-top:1px solid var(--border);padding-top:40px}
-.tool-seo h2{font-family:var(--font-h);font-size:20px;font-weight:800;margin-bottom:16px}
-.tool-seo .steps-list{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px 24px;margin-bottom:28px}
-.tool-seo .steps-list ol{color:var(--text-2);line-height:1.85;padding-left:20px}
-.tool-seo .steps-list ol li{margin-bottom:6px}
-.tool-seo .faq-item{margin-bottom:22px}
-.tool-seo .faq-q{font-size:15px;font-weight:600;color:var(--accent);margin-bottom:5px}
-.tool-seo .faq-a{color:var(--text-2);font-size:13.5px;line-height:1.7}
-.popular-tools-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.pop-tool-chip{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:6px 13px;border:1px solid var(--border);border-radius:50px;
-  font-size:13px;color:var(--text-2);cursor:pointer;transition:all var(--t);
-}
-.pop-tool-chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(59,130,246,.06)}
-
-/* [U10] Session history panel */
-.session-history{
-  margin-bottom:24px;background:var(--bg-2);
-  border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;
-}
-.session-history-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 14px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--text-2);
-  transition:background var(--t);
-}
-.session-history-header:hover{background:var(--bg-3)}
-.session-history-header svg{transition:transform var(--t)}
-.session-history-header.open svg{transform:rotate(180deg)}
-.session-history-body{max-height:0;overflow:hidden;transition:max-height .3s var(--ease)}
-.session-history-body.open{max-height:300px}
-.session-history-item{
-  padding:8px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--text-2);
+/* Sidebar */
+.tp-sidebar{display:flex;flex-direction:column;gap:14px;position:sticky;top:80px}
+.tp-side-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px}
+.tp-side-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:10px}
+.tp-related-item{
   display:flex;align-items:center;gap:8px;
+  padding:7px 8px;border-radius:var(--r-sm);
+  font-size:13px;font-weight:500;color:var(--text-2);
+  cursor:pointer;transition:all var(--t);margin-bottom:2px;
 }
-.session-history-item .shi-tool{font-weight:600;color:var(--text)}
-.session-history-item .shi-ts{color:var(--text-3);font-size:10.5px;margin-left:auto}
+.tp-related-item:hover{background:var(--bg-3);color:var(--text)}
+.tp-related-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
+.tp-trust-list{display:flex;flex-direction:column;gap:8px}
+.tp-trust-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-2)}
+.tp-trust-icon{font-size:13px;flex-shrink:0}
 
-/* FILE SUGGESTION MODAL */
-.suggest-overlay{
-  display:none;position:fixed;inset:0;z-index:800;
-  background:rgba(0,0,0,.7);backdrop-filter:blur(8px);
-  align-items:center;justify-content:center;padding:20px;
-}
-.suggest-overlay.open{display:flex;animation:fi .15s ease}
-@keyframes fi{from{opacity:0}to{opacity:1}}
-.suggest-modal{
-  background:var(--bg-2);border:1px solid var(--border);
-  border-radius:var(--r-2xl);padding:28px;max-width:440px;width:100%;
-  box-shadow:var(--sh-xl);animation:su .22s var(--ease);
-}
-@keyframes su{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
-.suggest-icon{font-size:36px;margin-bottom:12px}
-.suggest-title{font-family:var(--font-h);font-size:20px;font-weight:800;margin-bottom:6px}
-.suggest-sub{font-size:13.5px;color:var(--text-2);margin-bottom:20px}
-.suggest-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.suggest-btn{
-  display:flex;flex-direction:column;align-items:flex-start;gap:4px;
-  padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--r-lg);
-  background:var(--bg);cursor:pointer;text-align:left;transition:all var(--t);
-}
-.suggest-btn:hover{border-color:var(--accent);background:rgba(59,130,246,.05);transform:translateY(-1px)}
-.suggest-btn .sb-icon{font-size:22px;margin-bottom:4px}
-.suggest-btn .sb-name{font-size:13px;font-weight:700;color:var(--text)}
-.suggest-btn .sb-desc{font-size:11px;color:var(--text-3)}
-.suggest-cancel{
-  width:100%;margin-top:12px;padding:10px;
-  background:none;border:1px solid var(--border);border-radius:var(--r-sm);
-  color:var(--text-3);font-size:13.5px;transition:all var(--t);
-}
-.suggest-cancel:hover{color:var(--text);border-color:var(--border-hover)}
+/* Skeleton */
+.tp-skeleton{padding:40px 28px;max-width:1200px;margin:0 auto}
+.skeleton{background:linear-gradient(90deg,var(--bg-3) 25%,var(--bg-2) 50%,var(--bg-3) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:var(--r-sm)}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-/* Keyboard Shortcuts Modal */
-.shortcuts-overlay{
-  display:none;position:fixed;inset:0;z-index:900;
-  background:rgba(0,0,0,.75);backdrop-filter:blur(10px);
-  align-items:center;justify-content:center;padding:20px;
-}
-.shortcuts-overlay.open{display:flex;animation:fi .15s ease}
-.shortcuts-modal{
-  background:var(--bg-2);border:1px solid var(--border);
-  border-radius:var(--r-2xl);padding:28px;max-width:480px;width:100%;
-  box-shadow:var(--sh-xl);animation:su .22s var(--ease);
-}
-.shortcuts-title{font-family:var(--font-h);font-size:20px;font-weight:800;margin-bottom:20px;display:flex;align-items:center;gap:10px}
-.shortcuts-grid{display:flex;flex-direction:column;gap:6px}
-.shortcut-row{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px;
-}
-.shortcut-keys{display:flex;gap:4px}
-.kbd{
-  background:var(--bg-3);border:1px solid var(--border);border-radius:5px;
-  padding:2px 8px;font-size:11px;font-weight:700;color:var(--text);
-  font-family:'Courier New',monospace;box-shadow:0 2px 0 var(--border);
-}
-.shortcut-desc{color:var(--text-2)}
-.shortcuts-close{
-  width:100%;margin-top:16px;padding:10px;
-  background:none;border:1px solid var(--border);border-radius:var(--r-sm);
-  color:var(--text-2);font-size:13.5px;transition:all var(--t);
-}
-.shortcuts-close:hover{color:var(--text);border-color:var(--border-hover)}
+/* Reveal */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
 
 /* TOAST */
 .toast{
@@ -1064,24 +846,17 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 .footer-bottom a{color:var(--text-3);transition:color var(--t)}
 .footer-bottom a:hover{color:var(--text-2)}
 .status-indicator{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-3)}
-.status-dot{
-  width:7px;height:7px;border-radius:50%;background:var(--emerald-400);}
-.status-dot.yellow{background:var(--amber-400)}
-.status-dot.red{background:var(--rose-400)}
-
-/* UTILITIES */
-.reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease}
-.reveal.visible{opacity:1;transform:translateY(0)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--emerald-400)}
 
 /* RESPONSIVE */
 @media(max-width:1024px){.footer-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:768px){
   .hero{padding:64px 20px 72px}
   .hero h1{letter-spacing:-1px}
-  .form-row{grid-template-columns:1fr}
+  .tp-form-row{grid-template-columns:1fr}
   .footer-grid{grid-template-columns:1fr 1fr}
-  .suggest-grid{grid-template-columns:1fr}
-  .tool-page-inner{padding:28px 20px 60px}
+  .tp-body{padding:16px 16px 48px}
+  .tp-hero{padding:18px 16px}
   .popular-tools-band-inner{flex-direction:column;align-items:flex-start}
 }
 @media(max-width:480px){.footer-grid{grid-template-columns:1fr}}
@@ -1089,34 +864,23 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 </head>
 <body>
 
-<!-- [M2] PWA: Manifest + Service Worker registered via Blob URLs -->
 <script>
 (function(){
-  // Register manifest
-  const manifest = {
-    name:"PDFWala",short_name:"PDFWala",
-    theme_color:"#0A0E1A",background_color:"#0A0E1A",
-    display:"standalone",start_url:"/pdfwala/",
-    icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%232563EB'/%3E%3Cpath d='M60 40h72a8 8 0 018 8v96a8 8 0 01-8 8H60a8 8 0 01-8-8V48a8 8 0 018-8z' fill='white' opacity='.9'/%3E%3C/svg%3E",sizes:"192x192",type:"image/svg+xml"}]
-  };
   try {
+    const manifest = {
+      name:"PDFWala",short_name:"PDFWala",
+      theme_color:"#0A0E1A",background_color:"#0A0E1A",
+      display:"standalone",start_url:"/pdfwala/",
+      icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%232563EB'/%3E%3Cpath d='M60 40h72a8 8 0 018 8v96a8 8 0 01-8 8H60a8 8 0 01-8-8V48a8 8 0 018-8z' fill='white' opacity='.9'/%3E%3C/svg%3E",sizes:"192x192",type:"image/svg+xml"}]
+    };
     const blob = new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
     const url = URL.createObjectURL(blob);
     const link = document.createElement('link');
     link.rel='manifest'; link.href=url;
     document.head.appendChild(link);
   } catch(e){}
-
-  // Register service worker
   if ('serviceWorker' in navigator) {
-    const swCode = `
-      const CACHE='pdfwala-v1';
-      self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE)));
-      self.addEventListener('fetch',e=>{
-        if(e.request.method!=='GET') return;
-        e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
-      });
-    `;
+    const swCode = `const CACHE='pdfwala-v1';self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE)));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});`;
     try {
       const swBlob = new Blob([swCode],{type:'application/javascript'});
       const swUrl = URL.createObjectURL(swBlob);
@@ -1126,7 +890,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 })();
 </script>
 
-<!-- Global drag overlay -->
 <div class="global-drag-overlay" id="globalDragOverlay" aria-hidden="true">
   <div class="global-drag-overlay-inner">
     <span class="global-drag-overlay-icon">📂</span>
@@ -1144,8 +907,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       PDF<span class="dot">Wala</span>
     </div>
     <div class="nav-links" id="navLinks">
-      
-      <!-- PDF TO ANYTHING -->
       <div class="nav-item" data-mega>
         <button class="nav-btn" aria-haspopup="true" aria-expanded="false">PDF to Anything<svg class="chv" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 4.5L6 7.5L9 4.5"/></svg></button>
         <div class="mega-drop mega-wide" role="menu">
@@ -1189,8 +950,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           </div>
         </div>
       </div>
-
-      <!-- IMAGE TOOLS -->
       <div class="nav-item" data-mega>
         <button class="nav-btn" aria-haspopup="true">Image Tools<svg class="chv" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 4.5L6 7.5L9 4.5"/></svg></button>
         <div class="mega-drop mega-mid" role="menu">
@@ -1212,8 +971,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           </div>
         </div>
       </div>
-
-      <!-- WORD TO ANYTHING (RESTORED) -->
       <div class="nav-item" data-mega>
         <button class="nav-btn" aria-haspopup="true">Word to Anything<svg class="chv" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 4.5L6 7.5L9 4.5"/></svg></button>
         <div class="mega-drop mega-mid" role="menu">
@@ -1242,8 +999,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           </div>
         </div>
       </div>
-
-      <!-- EXCEL TO ANYTHING (RESTORED) -->
       <div class="nav-item" data-mega>
         <button class="nav-btn" aria-haspopup="true">Excel to Anything<svg class="chv" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 4.5L6 7.5L9 4.5"/></svg></button>
         <div class="mega-drop mega-mid" role="menu">
@@ -1272,8 +1027,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           </div>
         </div>
       </div>
-
-      <!-- SECURITY -->
       <div class="nav-item" data-mega>
         <button class="nav-btn" aria-haspopup="true">Security<svg class="chv" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 4.5L6 7.5L9 4.5"/></svg></button>
         <div class="mega-drop mega-mid" role="menu">
@@ -1294,7 +1047,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           </div>
         </div>
       </div>
-
     </div>
     <div class="nav-right">
       <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle dark/light theme">🌙</button>
@@ -1312,19 +1064,19 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </div>
 </div>
 
-<!-- Most Popular Tools Band -->
+<!-- Most Popular Tools Band (home only) -->
 <div class="popular-tools-band" id="popularToolsBand">
   <div class="popular-tools-band-inner">
     <span class="popular-tools-band-label">Most Popular</span>
     <div class="popular-tools-chips" role="list">
-      <div class="pop-band-chip" onclick="openTool('merge')" data-tooltip="Combine multiple PDFs into one" role="listitem" aria-label="Merge PDF tool">🔗 Merge PDF</div>
-      <div class="pop-band-chip" onclick="openTool('compress')" data-tooltip="Reduce file size up to 75%" role="listitem" aria-label="Compress PDF tool">🗜️ Compress PDF</div>
-      <div class="pop-band-chip" onclick="openTool('pdf-to-word')" data-tooltip="Convert PDF to editable DOCX" role="listitem" aria-label="PDF to Word tool">📝 PDF to Word</div>
-      <div class="pop-band-chip" onclick="openTool('jpg-to-pdf')" data-tooltip="Convert JPG images to PDF" role="listitem" aria-label="JPG to PDF tool">📷 JPG to PDF</div>
-      <div class="pop-band-chip" onclick="openTool('split')" data-tooltip="Extract pages or split by range" role="listitem" aria-label="Split PDF tool">✂️ Split PDF</div>
-      <div class="pop-band-chip" onclick="openTool('protect')" data-tooltip="Encrypt with AES-256 password" role="listitem" aria-label="Protect PDF tool">🔒 Protect PDF</div>
-      <div class="pop-band-chip" onclick="openTool('watermark')" data-tooltip="Stamp text watermark on pages" role="listitem" aria-label="Watermark PDF tool">💧 Watermark</div>
-      <div class="pop-band-chip" onclick="openTool('rotate')" data-tooltip="Fix page orientation" role="listitem" aria-label="Rotate PDF tool">🔄 Rotate PDF</div>
+      <div class="pop-band-chip" onclick="openTool('merge')" data-tooltip="Combine multiple PDFs into one" role="listitem">🔗 Merge PDF</div>
+      <div class="pop-band-chip" onclick="openTool('compress')" data-tooltip="Reduce file size up to 75%" role="listitem">🗜️ Compress PDF</div>
+      <div class="pop-band-chip" onclick="openTool('pdf-to-word')" data-tooltip="Convert PDF to editable DOCX" role="listitem">📝 PDF to Word</div>
+      <div class="pop-band-chip" onclick="openTool('jpg-to-pdf')" data-tooltip="Convert JPG images to PDF" role="listitem">📷 JPG to PDF</div>
+      <div class="pop-band-chip" onclick="openTool('split')" data-tooltip="Extract pages or split by range" role="listitem">✂️ Split PDF</div>
+      <div class="pop-band-chip" onclick="openTool('protect')" data-tooltip="Encrypt with AES-256 password" role="listitem">🔒 Protect PDF</div>
+      <div class="pop-band-chip" onclick="openTool('watermark')" data-tooltip="Stamp text watermark on pages" role="listitem">💧 Watermark</div>
+      <div class="pop-band-chip" onclick="openTool('rotate')" data-tooltip="Fix page orientation" role="listitem">🔄 Rotate PDF</div>
     </div>
   </div>
 </div>
@@ -1354,9 +1106,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     HOME PAGE
-═══════════════════════════════════════════ -->
+<!-- ═══ HOME PAGE ═══ -->
 <div id="homePage">
   <section class="hero" role="main" id="heroSection">
     <div class="hero-mesh" aria-hidden="true"></div>
@@ -1377,9 +1127,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
         <div class="trust-pill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Auto-Delete 60 min</div>
         <div class="trust-pill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>No Sign-up Required</div>
       </div>
-
-
-      <!-- [F5] Debounced search (300ms) -->
       <div class="search-hero-wrap" id="searchHeroWrap">
         <input type="text" class="search-hero-input" id="heroSearch"
           placeholder="🔍  Search — compress, merge, pdf to word…"
@@ -1388,29 +1135,23 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
         <span class="search-kbd-hint" aria-hidden="true">/</span>
         <div class="search-dropdown" id="searchDropdown" role="listbox" aria-label="Search results"></div>
       </div>
-
       <div class="hero-or" aria-hidden="true">or drop a file</div>
-
-      <!-- [F1] Hero dropzone: <label> wrapping for mobile file input -->
-<div class="hero-dropzone" id="heroDropzone"
-  ondragover="heroDragOver(event)" ondragleave="heroDragLeave()" ondrop="heroDrop(event)"
-  role="region" aria-label="Drop file or click to browse. Maximum 200MB."
-  aria-describedby="heroDropHint">
-  <div class="size-popup" id="heroSizePopup" role="alert">⚠️ File exceeds 200MB limit — please choose a smaller file</div>
-  <div class="file-count-badge" id="heroFileBadge" aria-hidden="true"></div>
-  <label for="heroFileInput" style="cursor:pointer;display:block">
-    <svg class="hdz-empty-svg" width="56" height="56" viewBox="0 0 56 56" fill="none" aria-hidden="true">
-      <rect x="8" y="6" width="30" height="38" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
-      <rect x="14" y="12" width="30" height="38" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.2"/>
-      <path d="M23 24 L33 24 M23 28 L30 28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
-      <circle cx="40" cy="40" r="9" fill="none" stroke="var(--blue-400)" stroke-width="2" opacity="0.6"/>
-      <path d="M40 36v8M36 40h8" stroke="var(--blue-400)" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-    </svg>
-    <div class="hdz-text"><span>Click to browse</span> or drag &amp; drop any file</div>
-    <p class="hdz-hint" id="heroDropHint">We'll detect the type and suggest the best tools<br/>Auto-delete 60 min · All formats welcome</p>
-    <input type="file" id="heroFileInput" accept="*/*" onchange="heroFileSelect(event)" aria-label="Choose file to upload" style="display:none;"/>
-  </label>
-</div>
+      <div class="hero-dropzone" id="heroDropzone"
+        ondragover="heroDragOver(event)" ondragleave="heroDragLeave()" ondrop="heroDrop(event)"
+        role="region" aria-label="Drop file or click to browse">
+        <div class="size-popup" id="heroSizePopup" role="alert">⚠️ File exceeds 200MB limit</div>
+        <label for="heroFileInput" style="cursor:pointer;display:block">
+          <svg class="hdz-empty-svg" width="56" height="56" viewBox="0 0 56 56" fill="none" aria-hidden="true">
+            <rect x="8" y="6" width="30" height="38" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+            <rect x="14" y="12" width="30" height="38" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.2"/>
+            <circle cx="40" cy="40" r="9" fill="none" stroke="var(--blue-400)" stroke-width="2" opacity="0.6"/>
+            <path d="M40 36v8M36 40h8" stroke="var(--blue-400)" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+          </svg>
+          <div class="hdz-text"><span>Click to browse</span> or drag &amp; drop any file</div>
+          <p class="hdz-hint">We'll detect the type and suggest the best tools<br/>Auto-delete 60 min · All formats welcome</p>
+          <input type="file" id="heroFileInput" accept="*/*" onchange="heroFileSelect(event)" aria-label="Choose file to upload" style="display:none;"/>
+        </label>
+      </div>
     </div>
   </section>
 
@@ -1430,190 +1171,199 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </section>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     TOOL PAGE
-═══════════════════════════════════════════ -->
+<!-- ═══ TOOL PAGE ═══ -->
 <div id="toolPage">
-  <!-- [U1] Skeleton shown while tool page renders -->
-  <div id="toolSkeleton" class="tool-skeleton" style="display:none">
-    <div class="skel-line skeleton" style="width:40%"></div>
-    <div class="skel-title skeleton"></div>
-    <div class="skel-desc skeleton"></div>
-    <div class="skel-desc skeleton" style="width:70%"></div>
-    <div class="skel-box skeleton"></div>
+
+  <!-- Skeleton -->
+  <div id="toolSkeleton" style="display:none">
+    <div class="tp-skeleton">
+      <div class="skeleton" style="height:14px;width:35%;margin-bottom:16px"></div>
+      <div class="skeleton" style="height:32px;width:55%;margin-bottom:10px"></div>
+      <div class="skeleton" style="height:12px;width:70%;margin-bottom:24px"></div>
+      <div class="skeleton" style="height:200px;border-radius:16px"></div>
+    </div>
   </div>
 
-  <div class="tool-page-inner" id="toolPageInner">
-    <nav class="breadcrumb" id="toolBreadcrumb" aria-label="Breadcrumb navigation">
-      <a onclick="navigateHome()" aria-label="Home">🏠 Home</a>
-      <span class="sep" aria-hidden="true">›</span>
-      <a onclick="navigateHome()" aria-label="PDF Tools">📄 PDF Tools</a>
-      <span class="sep" aria-hidden="true">›</span>
-      <span class="current" id="breadcrumbCurrent">Tool</span>
-    </nav>
-
-    <button class="tool-page-back" onclick="navigateHome()" aria-label="Back to all tools">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-      Back to All Tools
-    </button>
-
-    <!-- [U10] Session history panel -->
-    <div class="session-history" id="sessionHistoryPanel" style="display:none">
-      <div class="session-history-header" onclick="toggleSessionHistory(this)" aria-expanded="false" aria-controls="sessionHistoryBody">
-        <span>🕐 Processed this session</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+  <!-- Hero strip -->
+  <div class="tp-hero" id="tpHero">
+    <div class="tp-hero-inner">
+      <div>
+        <nav class="tp-breadcrumb" aria-label="Breadcrumb">
+          <a onclick="navigateHome()">Home</a> ›
+          <a onclick="navigateHome()">PDF Tools</a> ›
+          <span id="tpBreadcrumbCurrent" style="color:var(--text)">Tool</span>
+        </nav>
+        <div class="tp-hero-left">
+          <div class="tp-icon-box" id="tpIconBox" aria-hidden="true">📄</div>
+          <div>
+            <div class="tp-title" id="tpTitle">Tool Name</div>
+            <div class="tp-sub" id="tpSubtitle">Tool description</div>
+          </div>
+        </div>
       </div>
-      <div class="session-history-body" id="sessionHistoryBody" role="list"></div>
+      <button class="tp-back" onclick="navigateHome()" aria-label="Back to all tools">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        All Tools
+      </button>
     </div>
+  </div>
 
-    <div class="tool-layout">
-      <div class="tool-main-col">
-        <div class="tool-page-hero" id="toolPageHero"></div>
+  <!-- Body -->
+  <div class="tp-body">
 
-        <!-- [F1] Tool dropzone: label wrapping for mobile -->
-        <div class="tool-dropzone-wrap" id="toolDropzoneWrap"
-          ondragover="toolDragOver(event)" ondragleave="toolDragLeave()" ondrop="toolDrop(event)"
-          role="region" aria-label="Upload files. Maximum 200MB per file."
-          aria-describedby="toolDropHint">
-          <div class="size-popup" id="toolSizePopup" role="alert">⚠️ File exceeds 200MB limit — please choose a smaller file</div>
-          <div class="file-count-badge" id="toolFileBadge" aria-hidden="true"></div>
-          <label for="toolFileInput" style="cursor:pointer;display:block">
-            <span class="tdz-icon" aria-hidden="true">📂</span>
-            <div class="tdz-text"><strong>Click to browse</strong> or drag &amp; drop</div>
-            <p class="tdz-hint" id="toolDropHint">Supported formats shown above</p>
-            <input type="file" id="toolFileInput" onchange="toolFileSelect(event)" aria-label="Choose files to upload" style="display:none;"/>
-          </label>
-          <div class="tdz-meta" aria-label="Upload requirements">
-            <span class="tdz-meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Max 200MB</span>
-            <span class="tdz-meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Auto-delete 60 min</span>
-            <span class="tdz-meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>No sign-up</span>
-          </div>
+    <!-- Main card -->
+    <div class="tp-card">
+
+      <!-- Step 1 header -->
+      <div class="tp-step-header">
+        <div class="tp-step-num" id="step1Num">1</div>
+        <div class="tp-step-label active">Upload your file</div>
+        <div class="tp-step-done-tag" id="step1Done">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="step1DoneText">File added</span>
         </div>
+      </div>
 
-        <div class="file-preview-grid" id="filePreviewGrid" aria-label="File previews"></div>
-        <div class="tool-file-list" id="toolFileList" role="list" aria-label="Selected files"></div>
-
-        <!-- [U8] Output filename control -->
-        <div class="output-filename-wrap" id="outputFilenameWrap">
-          <div class="output-filename-label">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Output filename
-          </div>
-          <input type="text" class="output-filename-input" id="outputFilenameInput"
-            placeholder="output.pdf" aria-label="Output filename"/>
+      <!-- Dropzone -->
+      <div class="tp-dropzone" id="tpDropzone"
+        ondragover="toolDragOver(event)" ondragleave="toolDragLeave()" ondrop="toolDrop(event)">
+        <div class="size-popup" id="toolSizePopup" role="alert">⚠️ File exceeds 200MB limit</div>
+        <label for="toolFileInput" style="cursor:pointer;display:block">
+          <span class="tp-dz-icon" aria-hidden="true">📂</span>
+          <div class="tp-dz-main"><span>Click to browse</span> or drag &amp; drop</div>
+          <p class="tp-dz-hint" id="tpDropHint">Accepted formats shown above</p>
+          <input type="file" id="toolFileInput" onchange="toolFileSelect(event)" aria-label="Choose files to upload" style="display:none;"/>
+        </label>
+        <div class="tp-dz-meta">
+          <span class="tp-dz-meta-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Max 200MB</span>
+          <span class="tp-dz-meta-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Auto-delete 60 min</span>
+          <span class="tp-dz-meta-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>No sign-up</span>
         </div>
+      </div>
 
-        <!-- [D2] Section divider above options (shown only when options exist) -->
-        <div class="section-divider" id="optionsDivider" aria-hidden="true">⚙️ Configure Options</div>
-        <div id="toolOptionsArea"></div>
+      <!-- File list -->
+      <div class="tp-file-list" id="tpFileList" role="list" aria-label="Selected files"></div>
+
+      <!-- Step 2 header -->
+      <div class="tp-step-header" id="step2Header">
+        <div class="tp-step-num" id="step2Num">2</div>
+        <div class="tp-step-label" id="step2Label">Configure options</div>
+      </div>
+
+      <!-- Options -->
+      <div class="tp-options locked" id="tpOptions">
+        <div style="height:16px"></div>
+        <div id="tpOptionsArea"></div>
+      </div>
+
+      <!-- Step 3 header -->
+      <div class="tp-step-header" id="step3Header">
+        <div class="tp-step-num" id="step3Num">3</div>
+        <div class="tp-step-label" id="step3Label">Process &amp; download</div>
+      </div>
+
+      <!-- Action area -->
+      <div class="tp-action">
 
         <!-- Progress -->
-        <div class="progress-block" id="toolProgressBlock" role="status" aria-live="polite">
-          <div class="progress-track" aria-label="Processing progress">
-            <div class="progress-fill" id="toolProgressFill" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+        <div class="tp-progress" id="tpProgress" role="status" aria-live="polite">
+          <div class="tp-progress-track">
+            <div class="tp-progress-fill" id="tpProgressFill" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
           </div>
-          <div class="progress-status">
-            <div class="progress-left"><div class="dot-loader" aria-hidden="true"><span></span><span></span><span></span></div><span id="toolProgressText">Preparing…</span></div>
-            <span class="eta-text" id="toolEtaText"></span>
+          <div class="tp-progress-row">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="tp-dot-loader" aria-hidden="true"><span></span><span></span><span></span></div>
+              <span id="tpProgressText">Processing…</span>
+            </div>
+            <span id="tpEtaText" style="font-size:11.5px;color:var(--text-3)"></span>
           </div>
         </div>
-
-        <button class="btn-cancel" id="toolCancelBtn"
-          onclick="cancelProcessing()"
-          aria-label="Cancel processing">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Cancel Processing
-        </button>
 
         <!-- Result -->
-        <div class="result-block" id="toolResultBlock" role="region" aria-label="Processing result">
-          <div class="success-checkmark" id="successCheckmark" aria-hidden="true">
-            <svg class="checkmark-svg" viewBox="0 0 52 52">
-              <circle class="checkmark-circle" cx="26" cy="26" r="25"/>
-              <path class="checkmark-check" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-            </svg>
-          </div>
-          <div class="result-inner" id="toolResultInner">
-            <div class="result-title" id="toolResultTitle"></div>
-            <div class="result-meta" id="toolResultMeta"></div>
+        <div class="tp-result" id="tpResult" role="region" aria-label="Result">
+          <div class="tp-result-inner" id="tpResultInner">
+            <div class="tp-result-title" id="tpResultTitle"></div>
+            <div class="tp-result-pills" id="tpResultPills"></div>
           </div>
         </div>
 
-        <!-- [U7] Countdown timer -->
-        <div class="countdown-timer" id="countdownTimer" aria-live="polite"></div>
-
-        <div class="setup-box" id="toolSetupBox">
+        <!-- Setup box -->
+        <div class="tp-setup-box" id="tpSetupBox">
           <h4>⚙️ Backend Setup Required</h4>
-          <p>This is a live UI preview. To process real files, start the Flask server on your machine:</p>
-          <div class="code-block">pip install -r requirements.txt
-python app.py
-# Then set: const API = window.location.origin;</div>
+          <p>This is a live UI preview. To process real files, start the Flask server:</p>
+          <div class="tp-code">pip install -r requirements.txt
+python app.py</div>
         </div>
 
-        <!-- [D3] Process button — shake on disabled click -->
-        <button class="btn-process" id="toolActionBtn"
-          onclick="handleProcessClick()"
-          aria-label="Process uploaded file(s)" disabled>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <!-- Process button -->
+        <button class="tp-btn-process" id="tpBtnProcess" onclick="processToolFile()" disabled aria-label="Process uploaded file">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Process File
         </button>
-        <button class="btn-download" id="toolDownloadBtn"
-          onclick="downloadToolResult()"
-          aria-label="Download processed file">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download Processed File
+
+        <!-- Download button (shown after success) -->
+        <button class="tp-btn-download" id="tpBtnDownload" onclick="downloadToolResult()" aria-label="Download processed file">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download File
         </button>
 
-        <!-- [U3] Process Another File button -->
-        <button class="btn-another" id="toolAnotherBtn"
-          onclick="resetToolPage()"
-          aria-label="Process another file">
-          ↩ Process Another File
+        <!-- Process another -->
+        <button class="tp-btn-again" id="tpBtnAgain" onclick="resetToolPage()" aria-label="Process another file">
+          ↩ Process another file
         </button>
 
-        <!-- [F6] Share: copies actual tool URL -->
-        <button class="btn-share-link" id="toolShareBtn"
-          onclick="copyToolUrl()"
-          aria-label="Copy link to this tool">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          Copy Tool URL
-        </button>
-
-        <div class="tool-seo" id="toolSeoArea"></div>
-      </div>
-
-      <!-- Related tools sidebar -->
-      <div class="tool-side-col" id="relatedToolsSidebar" aria-label="Related tools">
-        <div class="tool-side-title">Related Tools</div>
-        <div id="relatedToolsList" role="list"></div>
       </div>
     </div>
+    <!-- end tp-card -->
+
+    <!-- Sidebar -->
+    <div class="tp-sidebar" id="tpSidebar">
+
+      <div class="tp-side-card">
+        <div class="tp-side-title">Related Tools</div>
+        <div id="tpRelatedList" role="list"></div>
+      </div>
+
+      <div class="tp-side-card">
+        <div class="tp-side-title">Why PDFWala</div>
+        <div class="tp-trust-list">
+          <div class="tp-trust-item"><span class="tp-trust-icon">🔒</span>AES-256 encryption</div>
+          <div class="tp-trust-item"><span class="tp-trust-icon">⚡</span>Processed in seconds</div>
+          <div class="tp-trust-item"><span class="tp-trust-icon">🗑️</span>Files deleted after 60 min</div>
+          <div class="tp-trust-item"><span class="tp-trust-icon">🆓</span>100% free, no limits</div>
+          <div class="tp-trust-item"><span class="tp-trust-icon">📱</span>Works on any device</div>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 </div>
+<!-- end toolPage -->
 
 <!-- File Suggestion Modal -->
-<div class="suggest-overlay" id="suggestOverlay" onclick="closeSuggest(event)" role="dialog" aria-modal="true" aria-labelledby="suggestTitle">
-  <div class="suggest-modal" id="suggestModal">
-    <div class="suggest-icon" id="suggestIcon" aria-hidden="true">📄</div>
-    <div class="suggest-title" id="suggestTitle">What would you like to do?</div>
-    <div class="suggest-sub" id="suggestSub">We detected your file type. Choose a tool to continue.</div>
-    <div class="suggest-grid" id="suggestGrid" role="list"></div>
-    <button class="suggest-cancel" onclick="document.getElementById('suggestOverlay').classList.remove('open')">Cancel</button>
+<div class="suggest-overlay" id="suggestOverlay" onclick="closeSuggest(event)" role="dialog" aria-modal="true" aria-labelledby="suggestTitle" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-2xl);padding:28px;max-width:440px;width:100%;box-shadow:var(--sh-xl);">
+    <div style="font-size:36px;margin-bottom:12px" id="suggestIcon">📄</div>
+    <div style="font-family:var(--font-h);font-size:20px;font-weight:800;margin-bottom:6px" id="suggestTitle">What would you like to do?</div>
+    <div style="font-size:13.5px;color:var(--text-2);margin-bottom:20px" id="suggestSub">Choose a tool to continue.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="suggestGrid" role="list"></div>
+    <button onclick="document.getElementById('suggestOverlay').style.display='none'" style="width:100%;margin-top:12px;padding:10px;background:none;border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text-3);font-size:13.5px;cursor:pointer;transition:all var(--t)">Cancel</button>
   </div>
 </div>
 
 <!-- Keyboard Shortcuts Modal -->
-<div class="shortcuts-overlay" id="shortcutsOverlay" onclick="closeShortcuts(event)" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
-  <div class="shortcuts-modal">
-    <div class="shortcuts-title">⌨️ Keyboard Shortcuts</div>
-    <div class="shortcuts-grid" role="list">
-      <div class="shortcut-row"><span class="shortcut-desc">Focus search</span><div class="shortcut-keys"><span class="kbd">/</span></div></div>
-      <div class="shortcut-row"><span class="shortcut-desc">Show shortcuts</span><div class="shortcut-keys"><span class="kbd">?</span></div></div>
-      <div class="shortcut-row"><span class="shortcut-desc">Close / Go back</span><div class="shortcut-keys"><span class="kbd">Esc</span></div></div>
-      <div class="shortcut-row"><span class="shortcut-desc">Go Home</span><div class="shortcut-keys"><span class="kbd">H</span></div></div>
-      <div class="shortcut-row"><span class="shortcut-desc">Toggle Dark/Light</span><div class="shortcut-keys"><span class="kbd">D</span></div></div>
+<div id="shortcutsOverlay" onclick="closeShortcuts(event)" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.75);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:20px;" role="dialog" aria-modal="true">
+  <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-2xl);padding:28px;max-width:420px;width:100%;box-shadow:var(--sh-xl);">
+    <div style="font-family:var(--font-h);font-size:20px;font-weight:800;margin-bottom:20px">⌨️ Keyboard Shortcuts</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Focus search</span><span style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;font-family:monospace">/</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Show shortcuts</span><span style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;font-family:monospace">?</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Go back / Close</span><span style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;font-family:monospace">Esc</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Go Home</span><span style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;font-family:monospace">H</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Toggle theme</span><span style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;font-family:monospace">D</span></div>
     </div>
-    <button class="shortcuts-close" onclick="document.getElementById('shortcutsOverlay').classList.remove('open')">Close (Esc)</button>
+    <button onclick="document.getElementById('shortcutsOverlay').style.display='none'" style="width:100%;margin-top:16px;padding:10px;background:none;border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text-2);font-size:13.5px;cursor:pointer">Close (Esc)</button>
   </div>
 </div>
 
@@ -1631,10 +1381,7 @@ python app.py
     </div>
     <div class="footer-bottom">
       <span>© 2026 PDFWala · Made with ❤️ for the world</span>
-      <div class="status-indicator" aria-live="polite">
-        <div class="status-dot" id="statusDot" aria-hidden="true"></div>
-        <span id="statusText">All systems operational</span>
-      </div>
+      <div class="status-indicator" aria-live="polite"><div class="status-dot" id="statusDot"></div><span id="statusText">All systems operational</span></div>
       <div style="display:flex;gap:16px"><a href="/pdfwala/privacy/">Privacy</a><a href="/pdfwala/terms/">Terms</a><a href="/pdfwala/contact/">Contact</a></div>
     </div>
   </div>
@@ -1643,97 +1390,68 @@ python app.py
 <div class="toast" id="toast" role="status" aria-live="polite"><div class="toast-bar"></div><span id="toastMsg"></span></div>
 <button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Scroll to top">↑</button>
 
-<!-- [M1] PDF.js from CDN for real thumbnails -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <script>
-/* ════════════════════════════════════════════════════════════
-   [C3] APP_CONFIG — single source of truth for magic numbers
-════════════════════════════════════════════════════════════ */
 const APP_CONFIG = {
   MAX_FILE_SIZE_MB: 200,
   LARGE_FILE_WARN_MB: 50,
   AUTO_DELETE_MINUTES: 60,
   API_BASE: window.location.origin,
   MAX_RECENT_TOOLS: 3,
-  MAX_SESSION_HISTORY: 5,
   SEARCH_DEBOUNCE_MS: 300
 };
 
-/* XSS escape — always use when injecting user data into innerHTML */
 function esc(s) {
-  return String(s).replace(/[&<>"']/g, c => (
-    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
-  ));
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-/* ════════════════════════════════════════════════════════════
-   === DATA LAYER ===
-   TOOLS config, related tools map, file suggestions, slug maps
-════════════════════════════════════════════════════════════ */
-
-/* [P2] Tool configs split by category — non-PDF categories loaded lazily.
-   Core PDF tools are defined immediately; others loaded on first access. */
+/* ═══ TOOLS DATA ═══ */
 const TOOLS_PDF_CORE = {
   merge:{title:'Merge PDF',icon:'🔗',desc:'Combine multiple PDF files into one document.',multi:true,accept:'.pdf',endpoint:'/api/merge',field:'files',form:()=>''},
-  split:{title:'Split PDF',icon:'✂️',desc:'Extract individual pages or page ranges.',multi:false,accept:'.pdf',endpoint:'/api/split',field:'file',form:()=>`
-    <div class="form-group">
-      <div class="form-label">Split Mode</div>
-      <div class="radio-group">
-        <div class="radio-chip active" onclick="radioSelect(this,'mode','all');toggleSplitRange('all')">All Pages</div>
-        <div class="radio-chip" onclick="radioSelect(this,'mode','range');toggleSplitRange('range')">Page Range</div>
-      </div>
-      <input type="hidden" id="mode" value="all"/>
-    </div>
-    <div class="form-group" id="rangeGroup" style="display:none">
-      <label class="form-label">Page Range</label>
-      <input class="form-input" type="text" id="ranges" placeholder="e.g. 1-3, 5, 7-9"/>
-      <div class="form-hint">Comma-separated. Example: 1-3, 5, 8-10</div>
-    </div>`},
-  organize:{title:'Organize PDF',icon:'📋',desc:'Reorder, extract, or delete specific pages.',multi:false,accept:'.pdf',endpoint:'/api/organize',field:'file',form:()=>`<div class="form-group"><div class="form-label">Action</div><div class="radio-group"><div class="radio-chip active" onclick="radioSelect(this,'action','reorder')">Reorder</div><div class="radio-chip" onclick="radioSelect(this,'action','extract')">Extract</div><div class="radio-chip" onclick="radioSelect(this,'action','delete')">Delete</div></div><input type="hidden" id="action" value="reorder"/></div><div class="form-group"><label class="form-label">Page Order / Selection</label><input class="form-input" type="text" id="order" placeholder="e.g. 3,1,2,4 to reorder"/></div>`},
-  'remove-pages':{title:'Remove Pages',icon:'🗑️',desc:'Delete specific pages from your PDF.',multi:false,accept:'.pdf',endpoint:'/api/organize',field:'file',form:()=>`<div class="form-group"><label class="form-label">Pages to Remove</label><input class="form-input" type="text" id="order" placeholder="e.g. 1,3,5-8"/></div><input type="hidden" id="action" value="delete"/>`},
-  'extract-pages':{title:'Extract Pages',icon:'📤',desc:'Extract selected pages to a new PDF.',multi:false,accept:'.pdf',endpoint:'/api/organize',field:'file',form:()=>`<div class="form-group"><label class="form-label">Pages to Extract</label><input class="form-input" type="text" id="order" placeholder="e.g. 1,3,5-8"/></div><input type="hidden" id="action" value="extract"/>`},
-  compress:{title:'Compress PDF',icon:'🗜️',desc:'Reduce file size while maintaining quality. Up to 75% reduction.',multi:false,accept:'.pdf',endpoint:'/api/compress',field:'file',form:()=>`<div class="form-group"><div class="form-label">Compression Level</div><div class="radio-group"><div class="radio-chip" onclick="radioSelect(this,'quality','low')">Maximum</div><div class="radio-chip active" onclick="radioSelect(this,'quality','medium')">Balanced</div><div class="radio-chip" onclick="radioSelect(this,'quality','high')">High Quality</div></div><input type="hidden" id="quality" value="medium"/></div>`},
+  split:{title:'Split PDF',icon:'✂️',desc:'Extract individual pages or page ranges.',multi:false,accept:'.pdf',endpoint:'/api/split',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Split Mode</div><div class="tp-radio-group"><div class="tp-radio-chip active" onclick="tpRadio(this,'mode','all');toggleSplitRange('all')">All Pages</div><div class="tp-radio-chip" onclick="tpRadio(this,'mode','range');toggleSplitRange('range')">Page Range</div></div><input type="hidden" id="mode" value="all"/></div><div class="tp-form-group" id="rangeGroup" style="display:none"><label class="tp-form-label">Page Range</label><input class="tp-form-input" type="text" id="ranges" placeholder="e.g. 1-3, 5, 7-9"/><div class="tp-form-hint">Comma-separated. Example: 1-3, 5, 8-10</div></div>`},
+  organize:{title:'Organize PDF',icon:'📋',desc:'Reorder, extract, or delete specific pages.',multi:false,accept:'.pdf',endpoint:'/api/organize',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Action</div><div class="tp-radio-group"><div class="tp-radio-chip active" onclick="tpRadio(this,'action','reorder')">Reorder</div><div class="tp-radio-chip" onclick="tpRadio(this,'action','extract')">Extract</div><div class="tp-radio-chip" onclick="tpRadio(this,'action','delete')">Delete</div></div><input type="hidden" id="action" value="reorder"/></div><div class="tp-form-group"><label class="tp-form-label">Page Order / Selection</label><input class="tp-form-input" type="text" id="order" placeholder="e.g. 3,1,2,4 to reorder"/></div>`},
+  'remove-pages':{title:'Remove Pages',icon:'🗑️',desc:'Delete specific pages from your PDF.',multi:false,accept:'.pdf',endpoint:'/api/organize',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Pages to Remove</label><input class="tp-form-input" type="text" id="order" placeholder="e.g. 1,3,5-8"/></div><input type="hidden" id="action" value="delete"/>`},
+  'extract-pages':{title:'Extract Pages',icon:'📤',desc:'Extract selected pages to a new PDF.',multi:false,accept:'.pdf',endpoint:'/api/organize',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Pages to Extract</label><input class="tp-form-input" type="text" id="order" placeholder="e.g. 1,3,5-8"/></div><input type="hidden" id="action" value="extract"/>`},
+  compress:{title:'Compress PDF',icon:'🗜️',desc:'Reduce file size while maintaining quality.',multi:false,accept:'.pdf',endpoint:'/api/compress',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Compression Level</div><div class="tp-radio-group"><div class="tp-radio-chip" onclick="tpRadio(this,'quality','low')">Maximum</div><div class="tp-radio-chip active" onclick="tpRadio(this,'quality','medium')">Balanced</div><div class="tp-radio-chip" onclick="tpRadio(this,'quality','high')">High Quality</div></div><input type="hidden" id="quality" value="medium"/></div>`},
   'repair-pdf':{title:'Repair PDF',icon:'🔧',desc:'Fix corrupted or damaged PDF files.',multi:false,accept:'.pdf',endpoint:'/api/repair-pdf',field:'file',form:()=>''},
-  'pdf-to-image':{title:'PDF to Image',icon:'🖼️',desc:'Convert each PDF page into a high-resolution image.',multi:false,accept:'.pdf',endpoint:'/api/pdf-to-image',field:'file',form:()=>`<div class="form-row"><div class="form-group"><label class="form-label">Format</label><select class="form-select" id="format"><option value="jpg">JPG</option><option value="png">PNG</option></select></div><div class="form-group"><label class="form-label">Resolution</label><select class="form-select" id="dpi"><option value="96">96 dpi</option><option value="150" selected>150 dpi</option><option value="300">300 dpi</option></select></div></div>`},
-  'image-to-pdf':{title:'Image to PDF',icon:'📷',desc:'Combine JPG, PNG and other images into a single PDF.',multi:true,accept:'.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp',endpoint:'/api/image-to-pdf',field:'files',form:()=>`<div class="form-group"><div class="form-label">Page Size</div><select class="form-select" id="page_size"><option value="auto">Auto</option><option value="a4">A4</option><option value="letter">Letter</option></select></div>`},
-  rotate:{title:'Rotate PDF',icon:'🔄',desc:'Fix page orientation by rotating pages.',multi:false,accept:'.pdf',endpoint:'/api/rotate',field:'file',form:()=>`<div class="form-group"><div class="form-label">Rotation</div><div class="radio-group"><div class="radio-chip active" onclick="radioSelect(this,'angle','90')">90° Clockwise</div><div class="radio-chip" onclick="radioSelect(this,'angle','180')">180°</div><div class="radio-chip" onclick="radioSelect(this,'angle','270')">90° Counter</div></div><input type="hidden" id="angle" value="90"/></div><div class="form-group"><label class="form-label">Pages</label><input class="form-input" type="text" id="pages" value="all" placeholder="all — or 1-3,5"/></div>`},
-  watermark:{title:'Watermark PDF',icon:'💧',desc:'Stamp a text watermark across every page.',multi:false,accept:'.pdf',endpoint:'/api/watermark',field:'file',form:()=>`<div class="form-group"><label class="form-label">Watermark Text</label><input class="form-input" type="text" id="text" value="CONFIDENTIAL"/></div><div class="form-row"><div class="form-group"><label class="form-label">Color</label><select class="form-select" id="color"><option value="808080">Gray</option><option value="FF0000">Red</option><option value="0000FF">Blue</option><option value="000000">Black</option></select></div><div class="form-group"><label class="form-label">Opacity (%)</label><input class="form-input" type="number" id="opacity" value="30" min="5" max="90"/></div></div>`},
-  'page-numbers':{title:'Page Numbers',icon:'🔢',desc:'Add page numbers at your preferred position.',multi:false,accept:'.pdf',endpoint:'/api/page-numbers',field:'file',form:()=>`<div class="form-row"><div class="form-group"><label class="form-label">Position</label><select class="form-select" id="position"><option value="bottom">Bottom</option><option value="top">Top</option></select></div><div class="form-group"><label class="form-label">Start From</label><input class="form-input" type="number" id="start" value="1" min="1"/></div></div><div class="form-group"><label class="form-label">Prefix (optional)</label><input class="form-input" type="text" id="prefix" placeholder='e.g. "Page "'/></div>`},
-  crop:{title:'Crop PDF',icon:'📐',desc:'Trim margins from PDF pages.',multi:false,accept:'.pdf',endpoint:'/api/crop',field:'file',form:()=>`<div class="form-row"><div class="form-group"><label class="form-label">Left</label><input class="form-input" type="number" id="left" value="0" min="0"/></div><div class="form-group"><label class="form-label">Right</label><input class="form-input" type="number" id="right" value="0" min="0"/></div></div><div class="form-row"><div class="form-group"><label class="form-label">Top</label><input class="form-input" type="number" id="top" value="0" min="0"/></div><div class="form-group"><label class="form-label">Bottom</label><input class="form-input" type="number" id="bottom" value="0" min="0"/></div></div><div class="form-hint">72pt = 1 inch</div>`},
-  info:{title:'PDF Info',icon:'ℹ️',desc:'View detailed metadata, page count, file size, and dimensions.',multi:false,accept:'.pdf',endpoint:'/api/info',field:'file',form:()=>''},
-  protect:{title:'Protect PDF',icon:'🔒',desc:'Encrypt your PDF with AES-256 password protection.',multi:false,accept:'.pdf',endpoint:'/api/protect',field:'file',form:()=>`<div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="password" placeholder="Minimum 4 characters"/></div><div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" type="password" id="password2" placeholder="Repeat your password"/></div>`},
-  unlock:{title:'Unlock PDF',icon:'🔓',desc:'Remove password protection from a PDF you own.',multi:false,accept:'.pdf',endpoint:'/api/unlock',field:'file',form:()=>`<div class="form-group"><label class="form-label">Current Password</label><input class="form-input" type="password" id="password" placeholder="Enter the PDF password"/></div>`},
-  'jpg-to-pdf':{title:'JPG to PDF',icon:'🟨',desc:'Convert JPG images to a single PDF.',multi:true,accept:'.jpg,.jpeg',endpoint:'/api/jpg-to-pdf',field:'files',form:()=>`<div class="form-group"><div class="form-label">Page Size</div><select class="form-select" id="page_size"><option value="auto">Auto</option><option value="a4">A4</option></select></div>`},
+  'pdf-to-image':{title:'PDF to Image',icon:'🖼️',desc:'Convert each PDF page into a high-resolution image.',multi:false,accept:'.pdf',endpoint:'/api/pdf-to-image',field:'file',form:()=>`<div class="tp-form-row"><div class="tp-form-group"><label class="tp-form-label">Format</label><select class="tp-form-select" id="format"><option value="jpg">JPG</option><option value="png">PNG</option></select></div><div class="tp-form-group"><label class="tp-form-label">Resolution</label><select class="tp-form-select" id="dpi"><option value="96">96 dpi</option><option value="150" selected>150 dpi</option><option value="300">300 dpi</option></select></div></div>`},
+  'image-to-pdf':{title:'Image to PDF',icon:'📷',desc:'Combine images into a single PDF.',multi:true,accept:'.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp',endpoint:'/api/image-to-pdf',field:'files',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Page Size</div><select class="tp-form-select" id="page_size"><option value="auto">Auto</option><option value="a4">A4</option><option value="letter">Letter</option></select></div>`},
+  rotate:{title:'Rotate PDF',icon:'🔄',desc:'Fix page orientation by rotating pages.',multi:false,accept:'.pdf',endpoint:'/api/rotate',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Rotation</div><div class="tp-radio-group"><div class="tp-radio-chip active" onclick="tpRadio(this,'angle','90')">90° Clockwise</div><div class="tp-radio-chip" onclick="tpRadio(this,'angle','180')">180°</div><div class="tp-radio-chip" onclick="tpRadio(this,'angle','270')">90° Counter</div></div><input type="hidden" id="angle" value="90"/></div><div class="tp-form-group"><label class="tp-form-label">Pages</label><input class="tp-form-input" type="text" id="pages" value="all" placeholder="all — or 1-3,5"/></div>`},
+  watermark:{title:'Watermark PDF',icon:'💧',desc:'Stamp a text watermark across every page.',multi:false,accept:'.pdf',endpoint:'/api/watermark',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Watermark Text</label><input class="tp-form-input" type="text" id="text" value="CONFIDENTIAL"/></div><div class="tp-form-row"><div class="tp-form-group"><label class="tp-form-label">Color</label><select class="tp-form-select" id="color"><option value="808080">Gray</option><option value="FF0000">Red</option><option value="0000FF">Blue</option><option value="000000">Black</option></select></div><div class="tp-form-group"><label class="tp-form-label">Opacity (%)</label><input class="tp-form-input" type="number" id="opacity" value="30" min="5" max="90"/></div></div>`},
+  'page-numbers':{title:'Page Numbers',icon:'🔢',desc:'Add page numbers at your preferred position.',multi:false,accept:'.pdf',endpoint:'/api/page-numbers',field:'file',form:()=>`<div class="tp-form-row"><div class="tp-form-group"><label class="tp-form-label">Position</label><select class="tp-form-select" id="position"><option value="bottom">Bottom</option><option value="top">Top</option></select></div><div class="tp-form-group"><label class="tp-form-label">Start From</label><input class="tp-form-input" type="number" id="start" value="1" min="1"/></div></div><div class="tp-form-group"><label class="tp-form-label">Prefix (optional)</label><input class="tp-form-input" type="text" id="prefix" placeholder='e.g. "Page "'/></div>`},
+  crop:{title:'Crop PDF',icon:'📐',desc:'Trim margins from PDF pages.',multi:false,accept:'.pdf',endpoint:'/api/crop',field:'file',form:()=>`<div class="tp-form-row"><div class="tp-form-group"><label class="tp-form-label">Left</label><input class="tp-form-input" type="number" id="left" value="0" min="0"/></div><div class="tp-form-group"><label class="tp-form-label">Right</label><input class="tp-form-input" type="number" id="right" value="0" min="0"/></div></div><div class="tp-form-row"><div class="tp-form-group"><label class="tp-form-label">Top</label><input class="tp-form-input" type="number" id="top" value="0" min="0"/></div><div class="tp-form-group"><label class="tp-form-label">Bottom</label><input class="tp-form-input" type="number" id="bottom" value="0" min="0"/></div></div><div class="tp-form-hint">72pt = 1 inch</div>`},
+  info:{title:'PDF Info',icon:'ℹ️',desc:'View detailed metadata, page count, and dimensions.',multi:false,accept:'.pdf',endpoint:'/api/info',field:'file',form:()=>''},
+  protect:{title:'Protect PDF',icon:'🔒',desc:'Encrypt your PDF with AES-256 password protection.',multi:false,accept:'.pdf',endpoint:'/api/protect',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Password</label><input class="tp-form-input" type="password" id="password" placeholder="Minimum 4 characters"/></div><div class="tp-form-group"><label class="tp-form-label">Confirm Password</label><input class="tp-form-input" type="password" id="password2" placeholder="Repeat your password"/></div>`},
+  unlock:{title:'Unlock PDF',icon:'🔓',desc:'Remove password protection from a PDF you own.',multi:false,accept:'.pdf',endpoint:'/api/unlock',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Current Password</label><input class="tp-form-input" type="password" id="password" placeholder="Enter the PDF password"/></div>`},
+  'jpg-to-pdf':{title:'JPG to PDF',icon:'🟨',desc:'Convert JPG images to a single PDF.',multi:true,accept:'.jpg,.jpeg',endpoint:'/api/jpg-to-pdf',field:'files',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Page Size</div><select class="tp-form-select" id="page_size"><option value="auto">Auto</option><option value="a4">A4</option></select></div>`},
   'word-to-pdf':{title:'Word to PDF',icon:'📝',desc:'Convert DOCX documents to PDF format.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-pdf',field:'file',form:()=>''},
   'excel-to-pdf':{title:'Excel to PDF',icon:'📊',desc:'Turn spreadsheets into clean PDFs.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-pdf',field:'file',form:()=>''},
   'html-to-pdf':{title:'HTML to PDF',icon:'🌐',desc:'Convert HTML pages to PDF documents.',multi:false,accept:'.html,.htm',endpoint:'/api/html-to-pdf',field:'file',form:()=>''},
   'pdf-to-word':{title:'PDF to Word',icon:'📝',desc:'Convert PDF to editable DOCX.',multi:false,accept:'.pdf',endpoint:'/api/pdf-to-word',field:'file',form:()=>''},
   'pdf-to-excel':{title:'PDF to Excel',icon:'📊',desc:'Extract tables from PDF to XLSX.',multi:false,accept:'.pdf',endpoint:'/api/pdf-to-excel',field:'file',form:()=>''},
   'pdf-to-ppt':{title:'PDF to PPT',icon:'📑',desc:'Convert PDF to PowerPoint presentation.',multi:false,accept:'.pdf',endpoint:'/api/pdf-to-ppt',field:'file',form:()=>''},
-  'pdf-to-pdfa':{title:'PDF to PDF/A',icon:'📜',desc:'Convert PDF to archivable PDF/A format.',multi:false,accept:'.pdf',endpoint:'/api/pdf-to-pdfa',field:'file',form:()=>`<div class="form-group"><div class="form-label">PDF/A Version</div><div class="radio-group"><div class="radio-chip active" onclick="radioSelect(this,'version','1b')">PDF/A-1b</div><div class="radio-chip" onclick="radioSelect(this,'version','3b')">PDF/A-3b</div></div><input type="hidden" id="version" value="1b"/></div>`},
-  'ocr-pdf':{title:'OCR PDF',icon:'🔍',desc:'Make scanned PDFs text-searchable.',multi:false,accept:'.pdf',endpoint:'/api/ocr-pdf',field:'file',form:()=>`<div class="form-group"><div class="form-label">Language</div><select class="form-select" id="lang"><option value="eng">English</option><option value="spa">Spanish</option><option value="fra">French</option></select></div>`},
-  'sign-pdf':{title:'Sign PDF',icon:'✍️',desc:'Add digital signature to PDF documents.',multi:false,accept:'.pdf',endpoint:'/api/sign-pdf',field:'file',form:()=>`<div class="form-group"><label class="form-label">Signer Name</label><input class="form-input" type="text" id="name" placeholder="Full name"/></div><div class="form-group"><label class="form-label">Reason (optional)</label><input class="form-input" type="text" id="reason" placeholder="e.g., Approved"/></div>`},
-  'redact-pdf':{title:'Redact PDF',icon:'🖊️',desc:'Permanently remove sensitive information.',multi:false,accept:'.pdf',endpoint:'/api/redact-pdf',field:'file',form:()=>`<div class="form-group"><label class="form-label">Text to Redact</label><input class="form-input" type="text" id="search_text" placeholder="e.g., Social Security"/></div>`},
-  'compare-pdf':{title:'Compare PDF',icon:'⚖️',desc:'Find visual differences between two PDFs.',multi:true,accept:'.pdf',endpoint:'/api/compare-pdf',field:'files',form:()=>`<div class="form-hint" style="margin-top:8px;padding:10px;background:var(--bg-3);border-radius:8px;color:var(--text-2)">Upload exactly 2 PDF files for comparison.</div>`},
+  'pdf-to-pdfa':{title:'PDF to PDF/A',icon:'📜',desc:'Convert PDF to archivable PDF/A format.',multi:false,accept:'.pdf',endpoint:'/api/pdf-to-pdfa',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">PDF/A Version</div><div class="tp-radio-group"><div class="tp-radio-chip active" onclick="tpRadio(this,'version','1b')">PDF/A-1b</div><div class="tp-radio-chip" onclick="tpRadio(this,'version','3b')">PDF/A-3b</div></div><input type="hidden" id="version" value="1b"/></div>`},
+  'ocr-pdf':{title:'OCR PDF',icon:'🔍',desc:'Make scanned PDFs text-searchable.',multi:false,accept:'.pdf',endpoint:'/api/ocr-pdf',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Language</div><select class="tp-form-select" id="lang"><option value="eng">English</option><option value="spa">Spanish</option><option value="fra">French</option></select></div>`},
+  'sign-pdf':{title:'Sign PDF',icon:'✍️',desc:'Add digital signature to PDF documents.',multi:false,accept:'.pdf',endpoint:'/api/sign-pdf',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Signer Name</label><input class="tp-form-input" type="text" id="name" placeholder="Full name"/></div><div class="tp-form-group"><label class="tp-form-label">Reason (optional)</label><input class="tp-form-input" type="text" id="reason" placeholder="e.g., Approved"/></div>`},
+  'redact-pdf':{title:'Redact PDF',icon:'🖊️',desc:'Permanently remove sensitive information.',multi:false,accept:'.pdf',endpoint:'/api/redact-pdf',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Text to Redact</label><input class="tp-form-input" type="text" id="search_text" placeholder="e.g., Social Security"/></div>`},
+  'compare-pdf':{title:'Compare PDF',icon:'⚖️',desc:'Find visual differences between two PDFs.',multi:true,accept:'.pdf',endpoint:'/api/compare-pdf',field:'files',form:()=>`<div class="tp-form-hint" style="padding:10px;background:var(--bg-3);border-radius:8px;color:var(--text-2)">Upload exactly 2 PDF files for comparison.</div>`},
 };
 
-// [P2] Image/Word/Excel tools — lazy loaded on first access
 let TOOLS_EXTRA_LOADED = false;
 let TOOLS_EXTRA = {};
-
 function ensureExtraTools() {
   if (TOOLS_EXTRA_LOADED) return;
   TOOLS_EXTRA_LOADED = true;
   TOOLS_EXTRA = {
-    'compress-image':{title:'Compress Image',icon:'🗜️',desc:'Reduce image size with quality control.',multi:false,accept:'.jpg,.jpeg,.png,.webp',endpoint:'/api/compress-image',field:'file',form:()=>`<div class="form-group"><div class="form-label">Quality</div><div class="radio-group"><div class="radio-chip" onclick="radioSelect(this,'quality','80')">High</div><div class="radio-chip active" onclick="radioSelect(this,'quality','60')">Medium</div><div class="radio-chip" onclick="radioSelect(this,'quality','40')">Low</div></div><input type="hidden" id="quality" value="60"/></div>`},
-    'resize-image':{title:'Resize Image',icon:'📏',desc:'Change image dimensions exactly.',multi:false,accept:'.jpg,.jpeg,.png,.webp',endpoint:'/api/resize-image',field:'file',form:()=>`<div class="form-row"><div class="form-group"><label class="form-label">Width (px)</label><input class="form-input" type="number" id="width" value="800" min="1"/></div><div class="form-group"><label class="form-label">Height (px)</label><input class="form-input" type="number" id="height" value="600" min="1"/></div></div>`},
+    'compress-image':{title:'Compress Image',icon:'🗜️',desc:'Reduce image size with quality control.',multi:false,accept:'.jpg,.jpeg,.png,.webp',endpoint:'/api/compress-image',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Quality</div><div class="tp-radio-group"><div class="tp-radio-chip" onclick="tpRadio(this,'quality','80')">High</div><div class="tp-radio-chip active" onclick="tpRadio(this,'quality','60')">Medium</div><div class="tp-radio-chip" onclick="tpRadio(this,'quality','40')">Low</div></div><input type="hidden" id="quality" value="60"/></div>`},
+    'resize-image':{title:'Resize Image',icon:'📏',desc:'Change image dimensions exactly.',multi:false,accept:'.jpg,.jpeg,.png,.webp',endpoint:'/api/resize-image',field:'file',form:()=>`<div class="tp-form-row"><div class="tp-form-group"><label class="tp-form-label">Width (px)</label><input class="tp-form-input" type="number" id="width" value="800" min="1"/></div><div class="tp-form-group"><label class="tp-form-label">Height (px)</label><input class="tp-form-input" type="number" id="height" value="600" min="1"/></div></div>`},
     'image-to-word':{title:'Image to Word',icon:'📝',desc:'Convert image text to editable Word document.',multi:false,accept:'.jpg,.jpeg,.png',endpoint:'/api/image-to-word',field:'file',form:()=>''},
     'image-to-excel':{title:'Image to Excel',icon:'📊',desc:'Extract tables from images to Excel.',multi:false,accept:'.jpg,.jpeg,.png',endpoint:'/api/image-to-excel',field:'file',form:()=>''},
-    'webp-to-jpg':{title:'WebP to JPG',icon:'🔄',desc:'Convert WebP images to JPG format.',multi:true,accept:'.webp',endpoint:'/api/webp-to-jpg',field:'files',form:()=>`<div class="form-group"><div class="form-label">Quality</div><select class="form-select" id="quality"><option value="85">High</option><option value="75" selected>Good</option><option value="60">Medium</option></select></div>`},
-    'png-to-jpg':{title:'PNG to JPG',icon:'🔄',desc:'Convert PNG images to JPG format.',multi:true,accept:'.png',endpoint:'/api/png-to-jpg',field:'files',form:()=>`<div class="form-group"><div class="form-label">Quality</div><select class="form-select" id="quality"><option value="85">High</option><option value="75" selected>Good</option><option value="60">Medium</option></select></div>`},
-    'protect-word':{title:'Protect Word',icon:'🔒',desc:'Password-protect your Word documents.',multi:false,accept:'.doc,.docx',endpoint:'/api/protect-word',field:'file',form:()=>`<div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="password" placeholder="Minimum 4 characters"/></div><div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" type="password" id="password2" placeholder="Repeat password"/></div>`},
-    'protect-excel':{title:'Protect Excel',icon:'🔒',desc:'Encrypt Excel workbooks with a password.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/protect-excel',field:'file',form:()=>`<div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="password" placeholder="Minimum 4 characters"/></div><div class="form-group"><label class="form-label">Confirm Password</label><input class="form-input" type="password" id="password2" placeholder="Repeat password"/></div>`},
+    'webp-to-jpg':{title:'WebP to JPG',icon:'🔄',desc:'Convert WebP images to JPG format.',multi:true,accept:'.webp',endpoint:'/api/webp-to-jpg',field:'files',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Quality</div><select class="tp-form-select" id="quality"><option value="85">High</option><option value="75" selected>Good</option><option value="60">Medium</option></select></div>`},
+    'png-to-jpg':{title:'PNG to JPG',icon:'🔄',desc:'Convert PNG images to JPG format.',multi:true,accept:'.png',endpoint:'/api/png-to-jpg',field:'files',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Quality</div><select class="tp-form-select" id="quality"><option value="85">High</option><option value="75" selected>Good</option><option value="60">Medium</option></select></div>`},
+    'protect-word':{title:'Protect Word',icon:'🔒',desc:'Password-protect your Word documents.',multi:false,accept:'.doc,.docx',endpoint:'/api/protect-word',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Password</label><input class="tp-form-input" type="password" id="password" placeholder="Minimum 4 characters"/></div><div class="tp-form-group"><label class="tp-form-label">Confirm Password</label><input class="tp-form-input" type="password" id="password2" placeholder="Repeat password"/></div>`},
+    'protect-excel':{title:'Protect Excel',icon:'🔒',desc:'Encrypt Excel workbooks with a password.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/protect-excel',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Password</label><input class="tp-form-input" type="password" id="password" placeholder="Minimum 4 characters"/></div><div class="tp-form-group"><label class="tp-form-label">Confirm Password</label><input class="tp-form-input" type="password" id="password2" placeholder="Repeat password"/></div>`},
     'word-to-jpg':{title:'Word to JPG',icon:'🖼️',desc:'Convert Word document to JPG images.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-jpg',field:'file',form:()=>''},
     'word-to-png':{title:'Word to PNG',icon:'🖼️',desc:'Convert Word document to PNG images.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-png',field:'file',form:()=>''},
     'word-to-txt':{title:'Word to TXT',icon:'📝',desc:'Extract plain text from Word documents.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-txt',field:'file',form:()=>''},
@@ -1741,9 +1459,9 @@ function ensureExtraTools() {
     'word-to-ppt':{title:'Word to PPT',icon:'📑',desc:'Convert Word document to PowerPoint.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-ppt',field:'file',form:()=>''},
     'word-to-html':{title:'Word to HTML',icon:'🌐',desc:'Convert Word document to HTML.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-html',field:'file',form:()=>''},
     'word-to-json':{title:'Word to JSON',icon:'🔄',desc:'Convert Word content to JSON data.',multi:false,accept:'.doc,.docx',endpoint:'/api/word-to-json',field:'file',form:()=>''},
-    'compress-word':{title:'Compress Word',icon:'🗜️',desc:'Reduce Word document file size.',multi:false,accept:'.doc,.docx',endpoint:'/api/compress-word',field:'file',form:()=>`<div class="form-group"><div class="form-label">Level</div><div class="radio-group"><div class="radio-chip" onclick="radioSelect(this,'quality','low')">Maximum</div><div class="radio-chip active" onclick="radioSelect(this,'quality','medium')">Balanced</div><div class="radio-chip" onclick="radioSelect(this,'quality','high')">Quality</div></div><input type="hidden" id="quality" value="medium"/></div>`},
-    'unlock-word':{title:'Unlock Word',icon:'🔓',desc:'Remove password from Word files.',multi:false,accept:'.doc,.docx',endpoint:'/api/unlock-word',field:'file',form:()=>`<div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="password" placeholder="Enter document password"/></div>`},
-    'edit-word':{title:'Edit Word',icon:'✏️',desc:'Find and replace text in Word documents.',multi:false,accept:'.doc,.docx',endpoint:'/api/edit-word',field:'file',form:()=>`<div class="form-row"><div class="form-group"><label class="form-label">Find</label><input class="form-input" type="text" id="find_text" placeholder="Text to find"/></div><div class="form-group"><label class="form-label">Replace With</label><input class="form-input" type="text" id="replace_text" placeholder="Replacement"/></div></div>`},
+    'compress-word':{title:'Compress Word',icon:'🗜️',desc:'Reduce Word document file size.',multi:false,accept:'.doc,.docx',endpoint:'/api/compress-word',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Level</div><div class="tp-radio-group"><div class="tp-radio-chip" onclick="tpRadio(this,'quality','low')">Maximum</div><div class="tp-radio-chip active" onclick="tpRadio(this,'quality','medium')">Balanced</div><div class="tp-radio-chip" onclick="tpRadio(this,'quality','high')">Quality</div></div><input type="hidden" id="quality" value="medium"/></div>`},
+    'unlock-word':{title:'Unlock Word',icon:'🔓',desc:'Remove password from Word files.',multi:false,accept:'.doc,.docx',endpoint:'/api/unlock-word',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Password</label><input class="tp-form-input" type="password" id="password" placeholder="Enter document password"/></div>`},
+    'edit-word':{title:'Edit Word',icon:'✏️',desc:'Find and replace text in Word documents.',multi:false,accept:'.doc,.docx',endpoint:'/api/edit-word',field:'file',form:()=>`<div class="tp-form-row"><div class="tp-form-group"><label class="tp-form-label">Find</label><input class="tp-form-input" type="text" id="find_text" placeholder="Text to find"/></div><div class="tp-form-group"><label class="tp-form-label">Replace With</label><input class="tp-form-input" type="text" id="replace_text" placeholder="Replacement"/></div></div>`},
     'excel-to-csv':{title:'Excel to CSV',icon:'📋',desc:'Convert Excel to CSV format.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-csv',field:'file',form:()=>''},
     'excel-to-jpg':{title:'Excel to JPG',icon:'🖼️',desc:'Convert Excel sheets to JPG images.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-jpg',field:'file',form:()=>''},
     'excel-to-png':{title:'Excel to PNG',icon:'🖼️',desc:'Convert Excel sheets to PNG images.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-png',field:'file',form:()=>''},
@@ -1751,31 +1469,18 @@ function ensureExtraTools() {
     'excel-to-ppt':{title:'Excel to PPT',icon:'📑',desc:'Convert Excel to PowerPoint.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-ppt',field:'file',form:()=>''},
     'excel-to-html':{title:'Excel to HTML',icon:'🌐',desc:'Convert Excel to HTML tables.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-html',field:'file',form:()=>''},
     'excel-to-json':{title:'Excel to JSON',icon:'🔄',desc:'Convert Excel data to JSON.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/excel-to-json',field:'file',form:()=>''},
-    'compress-excel':{title:'Compress Excel',icon:'🗜️',desc:'Reduce Excel workbook size.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/compress-excel',field:'file',form:()=>`<div class="form-group"><div class="form-label">Level</div><div class="radio-group"><div class="radio-chip" onclick="radioSelect(this,'quality','low')">Maximum</div><div class="radio-chip active" onclick="radioSelect(this,'quality','medium')">Balanced</div><div class="radio-chip" onclick="radioSelect(this,'quality','high')">Quality</div></div><input type="hidden" id="quality" value="medium"/></div>`},
-    'unlock-excel':{title:'Unlock Excel',icon:'🔓',desc:'Remove password from Excel files.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/unlock-excel',field:'file',form:()=>`<div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="password" placeholder="Enter workbook password"/></div>`},
+    'compress-excel':{title:'Compress Excel',icon:'🗜️',desc:'Reduce Excel workbook size.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/compress-excel',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Level</div><div class="tp-radio-group"><div class="tp-radio-chip" onclick="tpRadio(this,'quality','low')">Maximum</div><div class="tp-radio-chip active" onclick="tpRadio(this,'quality','medium')">Balanced</div><div class="tp-radio-chip" onclick="tpRadio(this,'quality','high')">Quality</div></div><input type="hidden" id="quality" value="medium"/></div>`},
+    'unlock-excel':{title:'Unlock Excel',icon:'🔓',desc:'Remove password from Excel files.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/unlock-excel',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Password</label><input class="tp-form-input" type="password" id="password" placeholder="Enter workbook password"/></div>`},
     'repair-excel':{title:'Repair Excel',icon:'🔧',desc:'Fix corrupted Excel workbooks.',multi:false,accept:'.xls,.xlsx',endpoint:'/api/repair-excel',field:'file',form:()=>''}
   };
 }
 
-// TOOLS proxy — lazily merges extra tools on access
 const TOOLS = new Proxy({}, {
-  get(_, key) {
-    if (key in TOOLS_PDF_CORE) return TOOLS_PDF_CORE[key];
-    ensureExtraTools();
-    return TOOLS_EXTRA[key];
-  },
-  has(_, key) {
-    if (key in TOOLS_PDF_CORE) return true;
-    ensureExtraTools();
-    return key in TOOLS_EXTRA;
-  },
-  ownKeys() {
-    ensureExtraTools();
-    return [...Object.keys(TOOLS_PDF_CORE), ...Object.keys(TOOLS_EXTRA)];
-  }
+  get(_, key) { if (key in TOOLS_PDF_CORE) return TOOLS_PDF_CORE[key]; ensureExtraTools(); return TOOLS_EXTRA[key]; },
+  has(_, key) { if (key in TOOLS_PDF_CORE) return true; ensureExtraTools(); return key in TOOLS_EXTRA; },
+  ownKeys() { ensureExtraTools(); return [...Object.keys(TOOLS_PDF_CORE), ...Object.keys(TOOLS_EXTRA)]; }
 });
 
-/* Related tools map */
 const RELATED_TOOLS = {
   merge:['split','compress','organize','extract-pages'],
   split:['merge','compress','extract-pages','remove-pages'],
@@ -1793,7 +1498,6 @@ const RELATED_TOOLS = {
   'compress-image':['resize-image','image-to-pdf','webp-to-jpg','png-to-jpg'],
 };
 
-/* Slug maps */
 const TOOL_SLUG_MAP = {
   merge:'merge-pdf',split:'split-pdf',organize:'organize-pdf','remove-pages':'remove-pages',
   'extract-pages':'extract-pages',info:'pdf-info',compress:'compress-pdf','repair-pdf':'repair-pdf',
@@ -1816,7 +1520,6 @@ const TOOL_SLUG_MAP = {
 };
 const SLUG_TO_TOOL = Object.fromEntries(Object.entries(TOOL_SLUG_MAP).map(([k,v])=>[v,k]));
 
-/* File type suggestions */
 const FILE_SUGGESTIONS = {
   pdf:['compress','pdf-to-word','pdf-to-image','merge','split','protect','watermark','ocr-pdf'],
   image:['compress-image','image-to-pdf','resize-image','webp-to-jpg','png-to-jpg','image-to-word'],
@@ -1825,20 +1528,42 @@ const FILE_SUGGESTIONS = {
   html:['html-to-pdf']
 };
 
-/* ════════════════════════════════════════════════════════════
-   APP STATE
-════════════════════════════════════════════════════════════ */
+/* ═══ STATE ═══ */
 const API = APP_CONFIG.API_BASE;
 let currentToolId = null;
 let toolSelectedFiles = [];
 let toolLastFilename = null;
 let toolLastDownloadUrl = null;
 let processingController = null;
-let countdownInterval = null;
 
-/* ════════════════════════════════════════════════════════════
-   FILE TYPE DETECTION
-════════════════════════════════════════════════════════════ */
+/* ═══ SAFE STORAGE ═══ */
+function safeGetLS(key, def='') { try { return localStorage.getItem(key) || def; } catch(e) { return def; } }
+function safeSetLS(key, val) { try { localStorage.setItem(key, val); } catch(e) {} }
+
+/* ═══ RECENT TOOLS ═══ */
+function trackRecentTool(toolId) {
+  try {
+    let recent = JSON.parse(safeGetLS('pw-recent','[]'));
+    recent = [toolId, ...recent.filter(id=>id!==toolId)].slice(0, APP_CONFIG.MAX_RECENT_TOOLS);
+    safeSetLS('pw-recent', JSON.stringify(recent));
+    renderRecentTools();
+  } catch(e){}
+}
+function renderRecentTools() {
+  try {
+    const recent = JSON.parse(safeGetLS('pw-recent','[]'));
+    const bar = document.getElementById('recentToolsBar');
+    const chips = document.getElementById('recentToolsChips');
+    if (!recent.length || !bar || !chips) { bar && bar.classList.remove('visible'); return; }
+    bar.classList.add('visible');
+    chips.innerHTML = recent.map(id=>{
+      const t = TOOLS[id]; if (!t) return '';
+      return `<span class="recent-chip" onclick="openTool('${id}')">${t.icon} ${t.title}</span>`;
+    }).join('');
+  } catch(e){}
+}
+
+/* ═══ FILE TYPE DETECTION ═══ */
 function detectFileType(file) {
   const ext = file.name.split('.').pop().toLowerCase();
   const mime = file.type;
@@ -1850,93 +1575,7 @@ function detectFileType(file) {
   return 'unknown';
 }
 
-/* ════════════════════════════════════════════════════════════
-   [C5] SAFE STORAGE HELPERS — try-catch for private mode
-════════════════════════════════════════════════════════════ */
-function safeGetLS(key, def='') {
-  try { return localStorage.getItem(key) || def; } catch(e) { return def; }
-}
-function safeSetLS(key, val) {
-  try { localStorage.setItem(key, val); } catch(e) {}
-}
-function safeGetSS(key, def='') {
-  try { return sessionStorage.getItem(key) || def; } catch(e) { return def; }
-}
-function safeSetSS(key, val) {
-  try { sessionStorage.setItem(key, val); } catch(e) {}
-}
-
-/* ════════════════════════════════════════════════════════════
-   RECENTLY USED TOOLS
-════════════════════════════════════════════════════════════ */
-function trackRecentTool(toolId) {
-  try {
-    let recent = JSON.parse(safeGetLS('pw-recent','[]'));
-    recent = [toolId, ...recent.filter(id=>id!==toolId)].slice(0, APP_CONFIG.MAX_RECENT_TOOLS);
-    safeSetLS('pw-recent', JSON.stringify(recent));
-    renderRecentTools();
-  } catch(e){}
-}
-
-function renderRecentTools() {
-  try {
-    const recent = JSON.parse(safeGetLS('pw-recent','[]'));
-    const bar = document.getElementById('recentToolsBar');
-    const chips = document.getElementById('recentToolsChips');
-    if (!recent.length || !bar || !chips) { bar && bar.classList.remove('visible'); return; }
-    bar.classList.add('visible');
-    chips.innerHTML = recent.map(id=>{
-      const t = TOOLS[id];
-      if (!t) return '';
-      return `<span class="recent-chip" onclick="openTool('${id}')" role="listitem" aria-label="Open ${t.title}">${t.icon} ${t.title}</span>`;
-    }).join('');
-  } catch(e){}
-}
-
-/* ════════════════════════════════════════════════════════════
-   [U10] SESSION HISTORY
-════════════════════════════════════════════════════════════ */
-function addSessionHistory(toolId, filename) {
-  try {
-    let hist = JSON.parse(safeGetSS('pw-history','[]'));
-    const ts = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-    hist.unshift({toolId, filename, ts});
-    hist = hist.slice(0, APP_CONFIG.MAX_SESSION_HISTORY);
-    safeSetSS('pw-history', JSON.stringify(hist));
-    renderSessionHistory();
-  } catch(e){}
-}
-
-function renderSessionHistory() {
-  try {
-    const hist = JSON.parse(safeGetSS('pw-history','[]'));
-    const panel = document.getElementById('sessionHistoryPanel');
-    const body = document.getElementById('sessionHistoryBody');
-    if (!hist.length || !panel || !body) { panel && (panel.style.display='none'); return; }
-    panel.style.display = 'block';
-   body.innerHTML = hist.map(h=>{
-      const t = TOOLS[h.toolId];
-      return `<div class="session-history-item" role="listitem">
-        <span>${t?t.icon:'📄'}</span>
-        <span class="shi-tool">${t?t.title:h.toolId}</span>
-        <span style="color:var(--text-3);font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(h.filename)}</span>
-        <span class="shi-ts">${h.ts}</span>
-      </div>`;
-    }).join('');
-  } catch(e){}
-}
-
-function toggleSessionHistory(btn) {
-  const body = document.getElementById('sessionHistoryBody');
-  const open = body.classList.contains('open');
-  body.classList.toggle('open');
-  btn.classList.toggle('open');
-  btn.setAttribute('aria-expanded', String(!open));
-}
-
-/* ════════════════════════════════════════════════════════════
-   URL ROUTING
-════════════════════════════════════════════════════════════ */
+/* ═══ URL ROUTING ═══ */
 function openTool(toolId) {
   const tool = TOOLS[toolId];
   if (!tool) { toast('Tool not found: ' + toolId, 'error'); return; }
@@ -1946,240 +1585,116 @@ function openTool(toolId) {
   renderToolPage(toolId);
   trackRecentTool(toolId);
 }
-
 function navigateHome() {
-  window.history.pushState({}, 'PDFWala — Free PDF Tools', '/pdfwala/');
+  window.history.pushState({}, 'PDFWala', '/pdfwala/');
   updateMetaForHome();
   showHomePage();
 }
-
 function showHomePage() {
   document.getElementById('homePage').style.display = 'block';
   document.getElementById('toolPage').style.display = 'none';
+  document.getElementById('popularToolsBand').style.display = 'block';
   currentToolId = null;
   toolSelectedFiles = [];
-  clearCountdown();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
-/* ════════════════════════════════════════════════════════════
-   RENDER TOOL PAGE
-════════════════════════════════════════════════════════════ */
+/* ═══ RENDER TOOL PAGE ═══ */
 function renderToolPage(toolId) {
   const tool = TOOLS[toolId];
   if (!tool) return;
 
-  // [U1] Show skeleton briefly
   const skeleton = document.getElementById('toolSkeleton');
-  const inner = document.getElementById('toolPageInner');
-  if (skeleton && inner) {
-    skeleton.style.display = 'block';
-    inner.style.display = 'none';
-    setTimeout(() => {
-      skeleton.style.display = 'none';
-      inner.style.display = 'block';
-    }, 280);
-  }
+  const inner = document.getElementById('tpHero');
+  if (skeleton) { skeleton.style.display = 'block'; }
+
+  setTimeout(() => {
+    if (skeleton) skeleton.style.display = 'none';
+  }, 250);
 
   currentToolId = toolId;
   toolSelectedFiles = [];
   toolLastFilename = null;
   toolLastDownloadUrl = null;
-  clearCountdown();
 
   document.getElementById('homePage').style.display = 'none';
   document.getElementById('toolPage').style.display = 'block';
+  document.getElementById('popularToolsBand').style.display = 'none';
 
   // Hero
-  document.getElementById('toolPageHero').innerHTML = `
-    <span class="tool-page-icon" aria-hidden="true">${tool.icon}</span>
-    <h1 class="tool-page-h1">${tool.title}</h1>
-    <p class="tool-page-desc">${tool.desc}</p>`;
-
-  document.getElementById('breadcrumbCurrent').textContent = tool.title;
+  document.getElementById('tpIconBox').textContent = tool.icon;
+  document.getElementById('tpTitle').textContent = tool.title;
+  document.getElementById('tpSubtitle').textContent = tool.desc;
+  document.getElementById('tpBreadcrumbCurrent').textContent = tool.title;
 
   // File input
   const fi = document.getElementById('toolFileInput');
   fi.accept = tool.accept;
   fi.multiple = tool.multi || false;
   fi.value = '';
-  document.getElementById('toolDropHint').textContent =
+  document.getElementById('tpDropHint').textContent =
     'Accepted: ' + tool.accept.replace(/,/g,' ') + (tool.multi ? ' (multiple files)' : '');
 
-  // Options form
-  const optArea = document.getElementById('toolOptionsArea');
+  // Options
+  const optArea = document.getElementById('tpOptionsArea');
   const optContent = tool.form();
   optArea.innerHTML = optContent;
-  // [D2] Show section divider only if options exist
-  const divider = document.getElementById('optionsDivider');
-  if (divider) divider.classList.toggle('show', !!optContent.trim());
 
-  // Reset all UI elements — [C2] cached variables
-  const fileList = document.getElementById('toolFileList');
-  const previewGrid = document.getElementById('filePreviewGrid');
-  const progressBlock = document.getElementById('toolProgressBlock');
-  const progressFill = document.getElementById('toolProgressFill');
-  const resultBlock = document.getElementById('toolResultBlock');
-  const setupBox = document.getElementById('toolSetupBox');
-  const actionBtn = document.getElementById('toolActionBtn');
-  const downloadBtn = document.getElementById('toolDownloadBtn');
-  const cancelBtn = document.getElementById('toolCancelBtn');
-  const shareBtn = document.getElementById('toolShareBtn');
-  const anotherBtn = document.getElementById('toolAnotherBtn');
-  const checkmark = document.getElementById('successCheckmark');
-  const toolFileBadge = document.getElementById('toolFileBadge');
-  const filenameWrap = document.getElementById('outputFilenameWrap');
-  const countdownEl = document.getElementById('countdownTimer');
+  // If no options, hide step 2 header
+  const step2 = document.getElementById('step2Header');
+  if (step2) step2.style.display = optContent.trim() ? 'flex' : 'none';
+  const opts = document.getElementById('tpOptions');
+  if (opts) { opts.style.display = optContent.trim() ? 'block' : 'none'; opts.classList.add('locked'); }
 
-  fileList.innerHTML = '';
-  previewGrid.innerHTML = '';
-  progressBlock.classList.remove('show');
-  resultBlock.classList.remove('show');
-  setupBox.classList.remove('show');
-  cancelBtn.classList.remove('show');
-  shareBtn.classList.remove('show');
-  anotherBtn.classList.remove('show');
-  checkmark.classList.remove('show');
-  toolFileBadge.classList.remove('show');
-  filenameWrap.classList.remove('show');
-  if (countdownEl) { countdownEl.classList.remove('show'); countdownEl.textContent=''; }
-  downloadBtn.style.display = 'none';
-  actionBtn.disabled = true;
-  actionBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Process File`;
-  progressFill.style.width = '0';
+  // Reset UI
+  document.getElementById('tpFileList').innerHTML = '';
+  document.getElementById('tpProgress').classList.remove('show');
+  document.getElementById('tpResult').classList.remove('show');
+  document.getElementById('tpSetupBox').classList.remove('show');
+  document.getElementById('tpBtnDownload').style.display = 'none';
+  document.getElementById('tpBtnAgain').classList.remove('show');
+  document.getElementById('tpBtnProcess').disabled = true;
+  document.getElementById('tpProgressFill').style.width = '0';
 
-  // Related tools sidebar
+  // Step indicators reset
+  document.getElementById('step1Num').classList.remove('done');
+  document.getElementById('step1Done').classList.remove('show');
+  document.getElementById('step3Num').style.opacity = '.5';
+  document.getElementById('step3Label').style.opacity = '.5';
+  if (document.getElementById('step2Num')) {
+    document.getElementById('step2Num').style.opacity = '.5';
+    document.getElementById('step2Label').style.opacity = '.5';
+  }
+
+  // Dropzone
+  document.getElementById('tpDropzone').style.display = 'block';
+
+  // Related tools
   renderRelatedTools(toolId);
 
-  // Session history
-  renderSessionHistory();
-
-  renderToolSeo(toolId);
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
-/* ════════════════════════════════════════════════════════════
-   [F4] SPLIT RANGE TOGGLE — wired to radio chip click directly
-════════════════════════════════════════════════════════════ */
-function toggleSplitRange(value) {
-  const rg = document.getElementById('rangeGroup');
-  if (rg) rg.style.display = value === 'range' ? 'block' : 'none';
-}
-
-/* ════════════════════════════════════════════════════════════
-   RELATED TOOLS SIDEBAR
-════════════════════════════════════════════════════════════ */
+/* ═══ RELATED TOOLS ═══ */
 function renderRelatedTools(toolId) {
-  const relatedIds = RELATED_TOOLS[toolId] || ['merge','compress','split','pdf-to-word'];
-  const list = document.getElementById('relatedToolsList');
+  const ids = RELATED_TOOLS[toolId] || ['merge','compress','split','pdf-to-word'];
+  const list = document.getElementById('tpRelatedList');
   if (!list) return;
-  list.innerHTML = relatedIds.slice(0,5).map(id=>{
-    const t = TOOLS[id];
-    if (!t) return '';
-    return `<div class="related-tool-chip" onclick="openTool('${id}')" role="listitem" aria-label="Open ${t.title}">
-      <span class="rtc-icon" aria-hidden="true">${t.icon}</span><span>${t.title}</span>
-    </div>`;
+  list.innerHTML = ids.slice(0,5).map(id => {
+    const t = TOOLS[id]; if (!t) return '';
+    return `<div class="tp-related-item" onclick="openTool('${id}')"><span class="tp-related-icon">${t.icon}</span>${t.title}</div>`;
   }).join('');
 }
 
-/* ════════════════════════════════════════════════════════════
-   [M1] PDF THUMBNAIL via PDF.js
-════════════════════════════════════════════════════════════ */
-async function renderPdfThumbnail(file, canvas) {
-  if (typeof pdfjsLib === 'undefined') return false;
-  try {
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    const ab = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({data: ab}).promise;
-    const page = await pdf.getPage(1);
-    const vp = page.getViewport({scale: 1});
-    const scale = Math.min(72/vp.width, 72/vp.height);
-    const scaled = page.getViewport({scale});
-    canvas.width = scaled.width;
-    canvas.height = scaled.height;
-    await page.render({canvasContext: canvas.getContext('2d'), viewport: scaled}).promise;
-    return true;
-  } catch(e) { return false; }
-}
-
-/* ════════════════════════════════════════════════════════════
-   FILE PREVIEW THUMBNAILS
-════════════════════════════════════════════════════════════ */
-function renderFilePreview(files) {
-  const grid = document.getElementById('filePreviewGrid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  files.forEach((file, i) => {
-    const item = document.createElement('div');
-    item.className = 'file-preview-item';
-    const type = detectFileType(file);
-    if (type === 'image') {
-      const img = document.createElement('img');
-      img.alt = file.name;
-      const url = URL.createObjectURL(file);
-      img.src = url;
-      img.onload = () => URL.revokeObjectURL(url);
-      item.appendChild(img);
-    } else if (type === 'pdf') {
-      const canvas = document.createElement('canvas');
-      canvas.width = 72; canvas.height = 72;
-      // [M1] Try real PDF.js thumbnail, fall back to icon
-      renderPdfThumbnail(file, canvas).then(ok => {
-        if (!ok) {
-          // Fallback drawing
-          const ctx = canvas.getContext('2d');
-          ctx.fillStyle = '#1A2235';
-          ctx.fillRect(0,0,72,72);
-          ctx.fillStyle = '#fff';
-          ctx.font = 'bold 11px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('PDF', 36, 28);
-          ctx.fillStyle = 'rgba(255,255,255,0.4)';
-          for (let l=0;l<4;l++) ctx.fillRect(12,36+l*8,48,3);
-        }
-      });
-      item.appendChild(canvas);
-    } else {
-      const icons = {word:'📝',excel:'📊',html:'🌐',unknown:'📁'};
-      const icon = document.createElement('div');
-      icon.className = 'fp-icon';
-      icon.textContent = icons[type] || '📁';
-      icon.setAttribute('aria-hidden', 'true');
-      item.appendChild(icon);
-    }
-    const name = document.createElement('div');
-    name.className = 'fp-name';
-    name.textContent = file.name.length > 10 ? file.name.substring(0,8)+'…' : file.name;
-    item.appendChild(name);
-    const del = document.createElement('button');
-    del.className = 'fp-del';
-    del.textContent = '✕';
-    del.setAttribute('aria-label', 'Remove ' + file.name);
-    del.onclick = e => { e.stopPropagation(); removeToolFile(i); };
-    item.appendChild(del);
-    grid.appendChild(item);
-  });
-}
-
-/* ════════════════════════════════════════════════════════════
-   SIZE POPUP
-════════════════════════════════════════════════════════════ */
-function showSizePopup(popupId) {
-  const popup = document.getElementById(popupId);
-  if (!popup) return;
-  popup.classList.add('show');
-  clearTimeout(popup._timer);
-  popup._timer = setTimeout(() => popup.classList.remove('show'), 4000);
-}
-
-/* ════════════════════════════════════════════════════════════
-   TOOL FILE HANDLING
-════════════════════════════════════════════════════════════ */
-function toolDragOver(e) { e.preventDefault(); document.getElementById('toolDropzoneWrap').classList.add('dragover'); }
-function toolDragLeave() { document.getElementById('toolDropzoneWrap').classList.remove('dragover'); }
-function toolDrop(e) { e.preventDefault(); document.getElementById('toolDropzoneWrap').classList.remove('dragover'); handleToolFiles(Array.from(e.dataTransfer.files)); }
+/* ═══ DRAG/DROP ═══ */
+function toolDragOver(e) { e.preventDefault(); document.getElementById('tpDropzone').classList.add('dragover'); }
+function toolDragLeave() { document.getElementById('tpDropzone').classList.remove('dragover'); }
+function toolDrop(e) { e.preventDefault(); document.getElementById('tpDropzone').classList.remove('dragover'); handleToolFiles(Array.from(e.dataTransfer.files)); }
 function toolFileSelect(e) { handleToolFiles(Array.from(e.target.files)); }
+function heroDragOver(e) { e.preventDefault(); document.getElementById('heroDropzone').classList.add('dragover'); }
+function heroDragLeave() { document.getElementById('heroDropzone').classList.remove('dragover'); }
+function heroDrop(e) { e.preventDefault(); document.getElementById('heroDropzone').classList.remove('dragover'); handleHeroFile(e.dataTransfer.files[0]); }
+function heroFileSelect(e) { if (e.target.files[0]) handleHeroFile(e.target.files[0]); }
 
 function handleToolFiles(files) {
   if (!currentToolId) return;
@@ -2193,174 +1708,109 @@ function handleToolFiles(files) {
   }
   toolSelectedFiles = tool.multi ? [...toolSelectedFiles, ...files] : [files[0]];
   renderToolFileList();
-  renderFilePreview(toolSelectedFiles);
-  updateToolFileBadge();
-  updateOutputFilename();
 
-  const actionBtn = document.getElementById('toolActionBtn');
-  const resultBlock = document.getElementById('toolResultBlock');
-  const downloadBtn = document.getElementById('toolDownloadBtn');
-  const shareBtn = document.getElementById('toolShareBtn');
-  const anotherBtn = document.getElementById('toolAnotherBtn');
-
-  actionBtn.disabled = !toolSelectedFiles.length;
-  resultBlock.classList.remove('show');
-  downloadBtn.style.display = 'none';
-  shareBtn.classList.remove('show');
-  anotherBtn.classList.remove('show');
-}
-
-function updateToolFileBadge() {
-  const badge = document.getElementById('toolFileBadge');
-  if (!badge) return;
-  if (toolSelectedFiles.length > 1) {
-    badge.textContent = toolSelectedFiles.length + ' files';
-    badge.classList.add('show');
-  } else {
-    badge.classList.remove('show');
+  // Unlock step 2 & 3
+  const opts = document.getElementById('tpOptions');
+  if (opts) { opts.classList.remove('locked'); }
+  if (document.getElementById('step2Num')) {
+    document.getElementById('step2Num').style.opacity = '1';
+    document.getElementById('step2Label').style.opacity = '1';
   }
-}
+  document.getElementById('step3Num').style.opacity = '1';
+  document.getElementById('step3Label').style.opacity = '1';
+  document.getElementById('step1Num').classList.add('done');
+  const doneTag = document.getElementById('step1Done');
+  document.getElementById('step1DoneText').textContent = toolSelectedFiles.length > 1
+    ? toolSelectedFiles.length + ' files selected'
+    : toolSelectedFiles[0].name;
+  doneTag.classList.add('show');
 
-/* [U8] Smart output filename default */
-function updateOutputFilename() {
-  const wrap = document.getElementById('outputFilenameWrap');
-  const input = document.getElementById('outputFilenameInput');
-  if (!wrap || !input || !toolSelectedFiles.length) return;
-  wrap.classList.add('show');
-  const tool = TOOLS[currentToolId];
-  if (!tool) return;
-  const firstName = toolSelectedFiles[0].name.replace(/\.[^.]+$/, '');
-  // Guess output extension from tool
-  const extMap = {
-    'pdf-to-word':'docx','pdf-to-excel':'xlsx','pdf-to-image':'zip',
-    'word-to-pdf':'pdf','excel-to-pdf':'pdf','image-to-pdf':'pdf',
-    'jpg-to-pdf':'pdf','compress':'pdf','merge':'pdf','split':'zip',
-    'compress-image':'jpg','resize-image':'jpg','webp-to-jpg':'jpg','png-to-jpg':'jpg',
-  };
-  const ext = extMap[currentToolId] || 'pdf';
-  const toolPrefix = tool.title.toLowerCase().replace(/\s+/g,'-');
-  input.value = toolSelectedFiles.length > 1
-    ? `${toolPrefix}_output.${ext}`
-    : `${firstName}_${toolPrefix}.${ext}`;
+  document.getElementById('tpBtnProcess').disabled = false;
+  document.getElementById('tpResult').classList.remove('show');
+  document.getElementById('tpBtnDownload').style.display = 'none';
+  document.getElementById('tpBtnAgain').classList.remove('show');
 }
-
-/* [U9] Drag-to-reorder file list for merge tool */
-let dragSrcIdx = null;
 
 function renderToolFileList() {
-  const isMerge = currentToolId === 'merge';
   const warnMB = APP_CONFIG.LARGE_FILE_WARN_MB * 1024 * 1024;
-  const warnMax = APP_CONFIG.MAX_FILE_SIZE_MB * 1024 * 1024;
-
-  document.getElementById('toolFileList').innerHTML = toolSelectedFiles.map((f, i) => {
+  document.getElementById('tpFileList').innerHTML = toolSelectedFiles.map((f, i) => {
     const type = detectFileType(f);
-    const typeClass = `type-${type}`;
-    // [U4] size warning
-    let warnHtml = '';
-    if (f.size >= warnMB && f.size < warnMax) {
-      warnHtml = `<span class="file-warn" title="Large file — processing may be slow">⚠️ Large</span>`;
-    }
-    const draggable = isMerge ? 'draggable="true"' : '';
-    const dndHandlers = isMerge
-      ? `ondragstart="fileDragStart(event,${i})" ondragover="fileDragOver(event,${i})" ondrop="fileDrop(event,${i})" ondragend="fileDragEnd()"`
-      : '';
-    return `<div class="file-item ${typeClass}" data-idx="${i}" ${draggable} ${dndHandlers} role="listitem">
-      <div class="file-icon" aria-hidden="true">📄</div>
-      <span class="file-name">${esc(f.name)}</span>
-      <span class="file-size">${fmtSz(f.size)}</span>
-      ${warnHtml}
-      <button class="file-del" onclick="removeToolFile(${i})" aria-label="Remove ${f.name}">✕</button>
+    let warn = '';
+    if (f.size >= warnMB) warn = `<span style="font-size:11px;color:var(--amber-400);flex-shrink:0">⚠️ Large</span>`;
+    return `<div class="tp-file-item type-${type}" role="listitem">
+      <div class="tp-fi-icon">📄</div>
+      <span class="tp-fi-name">${esc(f.name)}</span>
+      <span class="tp-fi-size">${fmtSz(f.size)}</span>
+      ${warn}
+      <button class="tp-fi-del" onclick="removeToolFile(${i})" aria-label="Remove ${esc(f.name)}">✕</button>
     </div>`;
   }).join('');
-}
-
-/* [U9] HTML5 drag-to-reorder handlers */
-function fileDragStart(e, i) {
-  dragSrcIdx = i;
-  e.currentTarget.classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move';
-}
-function fileDragOver(e, i) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  document.querySelectorAll('.file-item').forEach((el,j) => el.classList.toggle('drag-over', j===i && i!==dragSrcIdx));
-}
-function fileDrop(e, i) {
-  e.preventDefault();
-  if (dragSrcIdx === null || dragSrcIdx === i) return;
-  const moved = toolSelectedFiles.splice(dragSrcIdx, 1)[0];
-  toolSelectedFiles.splice(i, 0, moved);
-  renderToolFileList();
-  renderFilePreview(toolSelectedFiles);
-}
-function fileDragEnd() {
-  dragSrcIdx = null;
-  document.querySelectorAll('.file-item').forEach(el => el.classList.remove('dragging','drag-over'));
 }
 
 function removeToolFile(i) {
   toolSelectedFiles.splice(i, 1);
   renderToolFileList();
-  renderFilePreview(toolSelectedFiles);
-  updateToolFileBadge();
   if (!toolSelectedFiles.length) {
-    document.getElementById('outputFilenameWrap').classList.remove('show');
+    document.getElementById('tpBtnProcess').disabled = true;
+    document.getElementById('step1Num').classList.remove('done');
+    document.getElementById('step1Done').classList.remove('show');
+    const opts = document.getElementById('tpOptions');
+    if (opts) opts.classList.add('locked');
+    if (document.getElementById('step2Num')) {
+      document.getElementById('step2Num').style.opacity = '.5';
+      document.getElementById('step2Label').style.opacity = '.5';
+    }
+    document.getElementById('step3Num').style.opacity = '.5';
+    document.getElementById('step3Label').style.opacity = '.5';
   }
-  document.getElementById('toolActionBtn').disabled = !toolSelectedFiles.length;
 }
 
-/* ════════════════════════════════════════════════════════════
-   HERO DROPZONE
-════════════════════════════════════════════════════════════ */
-function heroDragOver(e) { e.preventDefault(); document.getElementById('heroDropzone').classList.add('dragover'); }
-function heroDragLeave() { document.getElementById('heroDropzone').classList.remove('dragover'); }
-function heroDrop(e) { e.preventDefault(); document.getElementById('heroDropzone').classList.remove('dragover'); handleHeroFile(e.dataTransfer.files[0]); }
-function heroFileSelect(e) { if (e.target.files[0]) handleHeroFile(e.target.files[0]); }
+function showSizePopup(id) {
+  const p = document.getElementById(id);
+  if (!p) return;
+  p.classList.add('show');
+  clearTimeout(p._t);
+  p._t = setTimeout(() => p.classList.remove('show'), 4000);
+}
 
+/* ═══ HERO FILE ═══ */
 function handleHeroFile(file) {
   if (!file) return;
-  if (file.size > APP_CONFIG.MAX_FILE_SIZE_MB * 1024 * 1024) {
-    showSizePopup('heroSizePopup'); return;
-  }
+  if (file.size > APP_CONFIG.MAX_FILE_SIZE_MB * 1024 * 1024) { showSizePopup('heroSizePopup'); return; }
   const type = detectFileType(file);
   const suggestions = FILE_SUGGESTIONS[type] || ['compress','merge','split'];
   showFileSuggestions(file, type, suggestions);
 }
-
 function showFileSuggestions(file, type, suggestionIds) {
   const typeLabels = {pdf:'PDF',image:'Image',word:'Word Document',excel:'Excel Spreadsheet',html:'HTML File',unknown:'File'};
   const typeIcons = {pdf:'📄',image:'🖼️',word:'📝',excel:'📊',html:'🌐',unknown:'📁'};
   document.getElementById('suggestIcon').textContent = typeIcons[type] || '📁';
   document.getElementById('suggestTitle').textContent = 'We detected a ' + (typeLabels[type] || 'File');
-  document.getElementById('suggestSub').textContent = '"' + file.name + '" — ' + fmtSz(file.size) + ' · What would you like to do?';
+  document.getElementById('suggestSub').textContent = '"' + file.name + '" · ' + fmtSz(file.size) + ' — choose a tool:';
   const grid = document.getElementById('suggestGrid');
-  grid.innerHTML = suggestionIds.slice(0,6).map(id=>{
-    const t = TOOLS[id];
-    if (!t) return '';
-    return `<button class="suggest-btn" onclick="openToolWithFile('${id}', window.suggestPendingFile)" role="listitem" aria-label="Use ${t.title}">
-      <span class="sb-icon" aria-hidden="true">${t.icon}</span>
-      <span class="sb-name">${t.title}</span>
-      <span class="sb-desc">${t.desc.split('.')[0]}</span>
+  grid.innerHTML = suggestionIds.slice(0,6).map(id => {
+    const t = TOOLS[id]; if (!t) return '';
+    return `<button onclick="openToolWithFile('${id}', window.suggestPendingFile)" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--r-lg);background:var(--bg);cursor:pointer;text-align:left;transition:all var(--t)" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+      <span style="font-size:20px">${t.icon}</span>
+      <span style="font-size:13px;font-weight:700;color:var(--text)">${t.title}</span>
+      <span style="font-size:11px;color:var(--text-3)">${t.desc.split('.')[0]}</span>
     </button>`;
   }).join('');
   window.suggestPendingFile = file;
-  document.getElementById('suggestOverlay').classList.add('open');
+  const overlay = document.getElementById('suggestOverlay');
+  overlay.style.display = 'flex';
 }
-
 function openToolWithFile(toolId, file) {
-  document.getElementById('suggestOverlay').classList.remove('open');
+  document.getElementById('suggestOverlay').style.display = 'none';
   openTool(toolId);
   setTimeout(() => { if (file) handleToolFiles([file]); }, 100);
 }
-
 function closeSuggest(e) {
   if (e.target === document.getElementById('suggestOverlay'))
-    document.getElementById('suggestOverlay').classList.remove('open');
+    document.getElementById('suggestOverlay').style.display = 'none';
 }
 
-/* ════════════════════════════════════════════════════════════
-   GLOBAL DRAG & DROP
-════════════════════════════════════════════════════════════ */
+/* ═══ GLOBAL DRAG ═══ */
 let globalDragCount = 0;
 document.addEventListener('dragenter', e => {
   if (e.dataTransfer && e.dataTransfer.types.includes('Files')) {
@@ -2372,13 +1822,11 @@ document.addEventListener('dragleave', () => {
   globalDragCount = Math.max(0, globalDragCount - 1);
   if (!globalDragCount) document.getElementById('globalDragOverlay').classList.remove('active');
 });
-document.addEventListener('dragover', e => {
-  if (e.dataTransfer && e.dataTransfer.types.includes('Files')) e.preventDefault();
-});
+document.addEventListener('dragover', e => { if (e.dataTransfer && e.dataTransfer.types.includes('Files')) e.preventDefault(); });
 document.addEventListener('drop', e => {
   globalDragCount = 0;
   document.getElementById('globalDragOverlay').classList.remove('active');
-  if (e.target.closest('#heroDropzone') || e.target.closest('#toolDropzoneWrap')) return;
+  if (e.target.closest('#heroDropzone') || e.target.closest('#tpDropzone')) return;
   e.preventDefault();
   const file = e.dataTransfer.files[0];
   if (!file) return;
@@ -2386,351 +1834,210 @@ document.addEventListener('drop', e => {
   else handleHeroFile(file);
 });
 
-/* ════════════════════════════════════════════════════════════
-   [U6] Ctrl/Cmd+V PASTE SUPPORT
-════════════════════════════════════════════════════════════ */
+/* ═══ PASTE SUPPORT ═══ */
 document.addEventListener('paste', e => {
   const tag = document.activeElement.tagName.toLowerCase();
-  if (['input','textarea'].includes(tag)) return; // Don't intercept text paste
+  if (['input','textarea'].includes(tag)) return;
   const items = e.clipboardData && e.clipboardData.items;
   if (!items) return;
   const files = [];
-  for (const item of items) {
-    if (item.kind === 'file') {
-      const file = item.getAsFile();
-      if (file) files.push(file);
-    }
-  }
+  for (const item of items) { if (item.kind === 'file') { const f = item.getAsFile(); if (f) files.push(f); } }
   if (!files.length) return;
   e.preventDefault();
-  // [M3] Paste toast confirmation
   toast('📋 File pasted!', 'success');
   if (currentToolId) handleToolFiles(files);
   else handleHeroFile(files[0]);
 });
 
-/* ════════════════════════════════════════════════════════════
-   [F5] DEBOUNCED SEARCH (300ms)
-════════════════════════════════════════════════════════════ */
+/* ═══ SEARCH ═══ */
 let searchFocusedIdx = -1;
 let searchDebounceTimer = null;
-
 function initSearch() {
   const input = document.getElementById('heroSearch');
   const dropdown = document.getElementById('searchDropdown');
   if (!input || !dropdown) return;
-
   input.addEventListener('input', () => {
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(() => {
       const q = input.value.trim().toLowerCase();
       searchFocusedIdx = -1;
-      if (!q) { dropdown.classList.remove('open'); input.setAttribute('aria-expanded','false'); return; }
+      if (!q) { dropdown.classList.remove('open'); return; }
       ensureExtraTools();
       const allTools = {...TOOLS_PDF_CORE, ...TOOLS_EXTRA};
-      const results = Object.entries(allTools).filter(([id,t])=>
+      const results = Object.entries(allTools).filter(([id,t]) =>
         t.title.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q) || id.includes(q)
       ).slice(0,8);
       if (!results.length) {
-        dropdown.innerHTML = `<div class="search-no-results">No tools found for "${q}"<br><small>Try "compress", "merge", or "pdf to word"</small></div>`;
+        dropdown.innerHTML = `<div class="search-no-results">No tools found for "${q}"</div>`;
       } else {
-        dropdown.innerHTML = results.map(([id,t])=>`
-          <div class="search-result-item" data-tool="${id}" role="option" tabindex="-1"
+        dropdown.innerHTML = results.map(([id,t]) => `
+          <div class="search-result-item" data-tool="${id}"
             onclick="input.value='';dropdown.classList.remove('open');openTool('${id}')">
-            <span class="sri-icon" aria-hidden="true">${t.icon}</span>
+            <span class="sri-icon">${t.icon}</span>
             <div><div class="sri-name">${t.title}</div><div class="sri-desc">${t.desc}</div></div>
-            <span class="sri-arr" aria-hidden="true">→</span>
+            <span class="sri-arr">→</span>
           </div>`).join('');
       }
       dropdown.classList.add('open');
-      input.setAttribute('aria-expanded','true');
     }, APP_CONFIG.SEARCH_DEBOUNCE_MS);
   });
-
   input.addEventListener('keydown', e => {
     const items = dropdown.querySelectorAll('.search-result-item');
-    if (e.key === 'ArrowDown') { e.preventDefault(); searchFocusedIdx = Math.min(searchFocusedIdx+1, items.length-1); items.forEach((el,i)=>el.classList.toggle('focused',i===searchFocusedIdx)); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); searchFocusedIdx = Math.max(searchFocusedIdx-1,0); items.forEach((el,i)=>el.classList.toggle('focused',i===searchFocusedIdx)); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); searchFocusedIdx = Math.min(searchFocusedIdx+1, items.length-1); items.forEach((el,i) => el.classList.toggle('focused', i===searchFocusedIdx)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); searchFocusedIdx = Math.max(searchFocusedIdx-1,0); items.forEach((el,i) => el.classList.toggle('focused', i===searchFocusedIdx)); }
     else if (e.key === 'Enter' && searchFocusedIdx >= 0) { const f=items[searchFocusedIdx]; if(f){input.value='';dropdown.classList.remove('open');openTool(f.dataset.tool);} }
     else if (e.key === 'Escape') { dropdown.classList.remove('open'); input.blur(); }
   });
-
-  document.addEventListener('click', e => {
-    if (!e.target.closest('#searchHeroWrap')) { dropdown.classList.remove('open'); input.setAttribute('aria-expanded','false'); }
-  });
+  document.addEventListener('click', e => { if (!e.target.closest('#searchHeroWrap')) dropdown.classList.remove('open'); });
 }
 
-/* ════════════════════════════════════════════════════════════
-   KEYBOARD SHORTCUTS
-════════════════════════════════════════════════════════════ */
+/* ═══ KEYBOARD SHORTCUTS ═══ */
 document.addEventListener('keydown', e => {
   const tag = document.activeElement.tagName.toLowerCase();
   const isInput = ['input','textarea','select'].includes(tag);
   if (e.key === 'Escape') {
-    document.getElementById('shortcutsOverlay').classList.remove('open');
-    document.getElementById('suggestOverlay').classList.remove('open');
+    document.getElementById('shortcutsOverlay').style.display = 'none';
+    document.getElementById('suggestOverlay').style.display = 'none';
     closeMob(); return;
   }
   if (isInput) return;
   if (e.key === '/') { e.preventDefault(); const s=document.getElementById('heroSearch'); if(s){s.focus();s.select();} return; }
-  if (e.key === '?') { e.preventDefault(); document.getElementById('shortcutsOverlay').classList.toggle('open'); return; }
+  if (e.key === '?') { e.preventDefault(); const o=document.getElementById('shortcutsOverlay'); o.style.display=o.style.display==='flex'?'none':'flex'; return; }
   if (e.key === 'h' || e.key === 'H') { navigateHome(); return; }
   if (e.key === 'd' || e.key === 'D') { toggleTheme(); return; }
 });
-
 function closeShortcuts(e) {
   if (e.target === document.getElementById('shortcutsOverlay'))
-    document.getElementById('shortcutsOverlay').classList.remove('open');
+    document.getElementById('shortcutsOverlay').style.display = 'none';
 }
 
-/* ════════════════════════════════════════════════════════════
-   ETA
-════════════════════════════════════════════════════════════ */
+/* ═══ ETA ═══ */
 function getEta(totalBytes) {
   const mb = totalBytes / (1024 * 1024);
-  if (mb < 1) return '~1 second';
-  if (mb < 5) return '~2 seconds';
-  if (mb < 20) return '~5 seconds';
-  if (mb < 50) return '~15 seconds';
-  if (mb < 100) return '~30 seconds';
-  return '~45 seconds';
+  if (mb < 1) return '~1 sec'; if (mb < 5) return '~2 sec';
+  if (mb < 20) return '~5 sec'; if (mb < 50) return '~15 sec';
+  return '~30 sec';
 }
 
-/* ════════════════════════════════════════════════════════════
-   [U7] COUNTDOWN TIMER
-════════════════════════════════════════════════════════════ */
-function startCountdown() {
-  clearCountdown();
-  const el = document.getElementById('countdownTimer');
-  if (!el) return;
-  el.classList.add('show');
-  let remaining = APP_CONFIG.AUTO_DELETE_MINUTES * 60;
-  function update() {
-    const m = Math.floor(remaining / 60);
-    const s = remaining % 60;
-    el.textContent = `🕐 Auto-deletes in ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    if (remaining <= 0) { clearCountdown(); el.textContent = '🗑️ File deleted'; return; }
-    remaining--;
-  }
-  update();
-  countdownInterval = setInterval(update, 1000);
-}
-
-function clearCountdown() {
-  if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
-  const el = document.getElementById('countdownTimer');
-  if (el) { el.classList.remove('show'); el.textContent = ''; }
-}
-
-/* ════════════════════════════════════════════════════════════
-   CANCEL PROCESSING
-════════════════════════════════════════════════════════════ */
-function cancelProcessing() {
-  if (processingController) { processingController.abort(); processingController = null; }
-  const aBtn = document.getElementById('toolActionBtn');
-  document.getElementById('toolProgressBlock').classList.remove('show');
-  document.getElementById('toolCancelBtn').classList.remove('show');
-  aBtn.disabled = !toolSelectedFiles.length;
-  aBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Process File`;
-  toast('Processing cancelled', 'error');
-}
-
-/* ════════════════════════════════════════════════════════════
-   [D3] Process button click handler — shake if disabled
-════════════════════════════════════════════════════════════ */
-function handleProcessClick() {
-  const btn = document.getElementById('toolActionBtn');
-  if (btn.disabled) {
-    btn.classList.remove('shake');
-    void btn.offsetWidth; // force reflow
-    btn.classList.add('shake');
-    btn.addEventListener('animationend', () => btn.classList.remove('shake'), {once:true});
-    return;
-  }
-  processToolFile();
-}
-
-/* ════════════════════════════════════════════════════════════
-   PROCESS FILE
-════════════════════════════════════════════════════════════ */
+/* ═══ PROCESS FILE ═══ */
 async function processToolFile() {
   if (!currentToolId || !toolSelectedFiles.length) return;
   const tool = TOOLS[currentToolId];
 
-  // [C2] Cached variables
-  const aBtn = document.getElementById('toolActionBtn');
-  const pBlock = document.getElementById('toolProgressBlock');
-  const pFill = document.getElementById('toolProgressFill');
-  const pText = document.getElementById('toolProgressText');
-  const etaText = document.getElementById('toolEtaText');
-  const rBlock = document.getElementById('toolResultBlock');
-  const dBtn = document.getElementById('toolDownloadBtn');
-  const sBox = document.getElementById('toolSetupBox');
-  const cancelBtn = document.getElementById('toolCancelBtn');
-  const checkmark = document.getElementById('successCheckmark');
-  const anotherBtn = document.getElementById('toolAnotherBtn');
+  const btn = document.getElementById('tpBtnProcess');
+  const prog = document.getElementById('tpProgress');
+  const fill = document.getElementById('tpProgressFill');
+  const pText = document.getElementById('tpProgressText');
+  const eta = document.getElementById('tpEtaText');
+  const result = document.getElementById('tpResult');
+  const dlBtn = document.getElementById('tpBtnDownload');
+  const setupBox = document.getElementById('tpSetupBox');
+  const againBtn = document.getElementById('tpBtnAgain');
 
-  aBtn.disabled = true;
-  aBtn.innerHTML = `<div class="dot-loader" aria-hidden="true"><span style="background:#fff"></span><span style="background:#fff"></span><span style="background:#fff"></span></div>&nbsp;Processing…`;
-  pBlock.classList.add('show');
-  cancelBtn.classList.add('show');
-  rBlock.classList.remove('show');
-  dBtn.style.display = 'none';
-  sBox.classList.remove('show');
-  checkmark.classList.remove('show');
-  anotherBtn.classList.remove('show');
-  pFill.style.width = '0';
+  btn.disabled = true;
+  btn.innerHTML = `<div class="tp-dot-loader"><span style="background:#fff"></span><span style="background:#fff"></span><span style="background:#fff"></span></div>&nbsp;Processing…`;
+  prog.classList.add('show');
+  result.classList.remove('show');
+  dlBtn.style.display = 'none';
+  setupBox.classList.remove('show');
+  againBtn.classList.remove('show');
+  fill.style.width = '0';
 
-  const totalBytes = toolSelectedFiles.reduce((s,f)=>s+f.size, 0);
-  if (etaText) etaText.textContent = 'ETA: ' + getEta(totalBytes);
+  const totalBytes = toolSelectedFiles.reduce((s,f) => s+f.size, 0);
+  if (eta) eta.textContent = getEta(totalBytes);
 
   let pct = 0;
+  const msgs = ['Uploading…','Processing…','Optimizing…','Almost done…'];
   const tick = setInterval(() => {
     pct = Math.min(pct + Math.random() * 12, 88);
-    pFill.style.width = pct + '%';
-    pFill.setAttribute('aria-valuenow', Math.round(pct));
-    pText.textContent = pct < 30 ? 'Uploading file…' : pct < 60 ? 'Processing…' : 'Finalizing…';
+    fill.style.width = pct + '%';
+    fill.setAttribute('aria-valuenow', Math.round(pct));
+    pText.textContent = msgs[Math.floor(pct / 25)] || 'Finalizing…';
   }, 350);
 
   processingController = new AbortController();
 
   try {
     const fd = new FormData();
-    if (tool.multi) toolSelectedFiles.forEach(f=>fd.append(tool.field, f));
+    if (tool.multi) toolSelectedFiles.forEach(f => fd.append(tool.field, f));
     else fd.append(tool.field, toolSelectedFiles[0]);
 
     ['mode','ranges','quality','format','dpi','angle','pages','text','color','opacity','password','password2',
      'position','start','prefix','action','order','left','right','top','bottom','page_size','version','lang',
-     'width','height','keep_ratio','name','reason','search_text','find_text','replace_text'].forEach(id=>{
+     'width','height','name','reason','search_text','find_text','replace_text'].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
       let val = el.value;
-      if (id==='opacity') val = (parseFloat(val)/100).toFixed(2);
+      if (id === 'opacity') val = (parseFloat(val)/100).toFixed(2);
       fd.append(id, val);
     });
 
     const res = await fetch(API + tool.endpoint, {method:'POST', body:fd, signal:processingController.signal});
     const data = await res.json();
     clearInterval(tick);
-    pFill.style.width = '100%';
+    fill.style.width = '100%';
     pText.textContent = 'Done!';
-    if (etaText) etaText.textContent = '';
-    cancelBtn.classList.remove('show');
+    if (eta) eta.textContent = '';
     showToolResult(data.success ? 'success' : 'error', data);
-    // Track session history
-    const fname = toolSelectedFiles[0]?.name || 'file';
-    addSessionHistory(currentToolId, fname);
-    } catch(err) {
+
+  } catch(err) {
     clearInterval(tick);
-    cancelBtn.classList.remove('show');
-    if (etaText) etaText.textContent = '';
-    if (err.name === 'AbortError') { 
-      pFill.style.width = '0'; 
-      pBlock.classList.remove('show'); 
+    if (eta) eta.textContent = '';
+    if (err.name === 'AbortError') {
+      fill.style.width = '0'; prog.classList.remove('show');
     } else if (/fetch|NetworkError|Failed/i.test(err.message)) {
-      toast('Unable to connect. Please check your internet and try again.', 'error');
+      setupBox.classList.add('show');
+      prog.classList.remove('show');
     } else {
-      showToolResult('error', {message: 'Unexpected error: ' + err.message});
+      showToolResult('error', {message: 'Error: ' + err.message});
     }
   }
 
   processingController = null;
-  aBtn.disabled = !toolSelectedFiles.length;
-  aBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Process File`;
+  btn.disabled = !toolSelectedFiles.length;
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Process File`;
 }
 
-/* ════════════════════════════════════════════════════════════
-   [F6] COPY TOOL URL (not fake share link)
-════════════════════════════════════════════════════════════ */
-function copyToolUrl() {
-  const url = window.location.href;
-  navigator.clipboard.writeText(url).then(() => {
-    toast('🔗 Tool URL copied to clipboard!', 'success');
-  }).catch(() => {
-    toast('URL: ' + url, 'success');
-  });
-}
-
-/* ════════════════════════════════════════════════════════════
-   SHOW RESULT
-════════════════════════════════════════════════════════════ */
+/* ═══ SHOW RESULT ═══ */
 function showToolResult(type, data) {
-  const rBlock = document.getElementById('toolResultBlock');
-  const rInner = document.getElementById('toolResultInner');
-  const rTitle = document.getElementById('toolResultTitle');
-  const rMeta = document.getElementById('toolResultMeta');
-  const dBtn = document.getElementById('toolDownloadBtn');
-  const shareBtn = document.getElementById('toolShareBtn');
-  const checkmark = document.getElementById('successCheckmark');
-  const anotherBtn = document.getElementById('toolAnotherBtn');
+  const result = document.getElementById('tpResult');
+  const inner = document.getElementById('tpResultInner');
+  const title = document.getElementById('tpResultTitle');
+  const pills = document.getElementById('tpResultPills');
+  const dlBtn = document.getElementById('tpBtnDownload');
+  const againBtn = document.getElementById('tpBtnAgain');
+  const prog = document.getElementById('tpProgress');
 
-  rBlock.classList.add('show');
-  rInner.className = 'result-inner ' + type;
+  prog.classList.remove('show');
+  result.classList.add('show');
+  inner.className = 'tp-result-inner ' + type;
 
-  /* [F3] Checkmark reset via class toggle + forced reflow — NOT style.animation='none' hack */
-  if (type === 'success') {
-    checkmark.classList.add('show');
-    const circle = checkmark.querySelector('.checkmark-circle');
-    const check = checkmark.querySelector('.checkmark-check');
-    if (circle) {
-      circle.classList.remove('animate','filled');
-      void circle.offsetWidth; // force reflow
-      circle.classList.add('animate');
-      circle.addEventListener('animationend', () => {
-        // [D5] Fill circle subtly after animation completes
-        circle.classList.add('filled');
-      }, {once:true});
-    }
-    if (check) {
-      check.classList.remove('animate');
-      void check.offsetWidth;
-      check.classList.add('animate');
-    }
-  }
+  title.textContent = (type === 'success' ? '✓ ' : '✕ ') + (data.message || data.error || 'Processing failed');
 
-  if (type === 'success' && data.page_count !== undefined) {
-    rTitle.textContent = '✓ Analysis Complete';
-    rMeta.innerHTML = `<div style="width:100%;margin-top:10px;background:rgba(0,0,0,.18);padding:12px;border-radius:8px;color:var(--text-2);font-size:13px">
-      <table style="width:100%;border-collapse:collapse">
-        ${[['📄 Pages',data.page_count],['💾 Size',data.size_human],['👤 Author',data.author||'—'],['🔒 Locked',data.encrypted?'Yes':'No']].map(([k,v])=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px 0">${k}</td><td style="text-align:right;color:var(--text)">${v}</td></tr>`).join('')}
-      </table></div>`;
-    dBtn.style.display = 'none';
-    toast('Analysis complete!', 'success');
-    anotherBtn.classList.add('show');
-    return;
-  }
-
-  rTitle.textContent = (type==='success'?'✓ ':'✕ ') + (data.message || data.error || 'Processing failed');
-  const pills = [];
-  if (data.pages) pills.push(data.pages + ' pages');
-  if (data.size_human) pills.push(data.size_human);
-  if (data.reduction_pct) pills.push(data.reduction_pct + '% smaller');
-  rMeta.innerHTML = pills.map(p=>`<span class="result-pill">${p}</span>`).join('');
+  const pillArr = [];
+  if (data.pages) pillArr.push(data.pages + ' pages');
+  if (data.size_human) pillArr.push(data.size_human);
+  if (data.reduction_pct) pillArr.push(data.reduction_pct + '% smaller');
+  pills.innerHTML = pillArr.map(p => `<span class="tp-result-pill">${p}</span>`).join('');
 
   if (type === 'success') {
-    const url = data.download_url || (data.filename ? API+'/download/'+data.filename : null);
+    const url = data.download_url || (data.filename ? API + '/download/' + data.filename : null);
     if (url) {
-      // [U8] Use custom filename if set
-      const customName = document.getElementById('outputFilenameInput')?.value || data.filename || 'pdfwala_output';
-      toolLastFilename = customName;
+      toolLastFilename = data.filename || 'pdfwala_output';
       toolLastDownloadUrl = url;
-      dBtn.style.display = 'flex';
-      shareBtn.classList.add('show');
-      // [U7] Start countdown after successful processing
-      startCountdown();
+      dlBtn.style.display = 'flex';
       toast('File ready — download below!', 'success');
     } else {
-      dBtn.style.display = 'none';
       toast(data.message || 'Done!', 'success');
     }
-    anotherBtn.classList.add('show');
+    againBtn.classList.add('show');
   } else {
-    dBtn.style.display = 'none';
-    shareBtn.classList.remove('show');
+    dlBtn.style.display = 'none';
     toast(data.error || data.message || 'Processing failed.', 'error');
   }
 }
 
+/* ═══ DOWNLOAD ═══ */
 function downloadToolResult() {
   if (!toolLastDownloadUrl) return;
   const a = document.createElement('a');
@@ -2741,72 +2048,49 @@ function downloadToolResult() {
   document.body.removeChild(a);
 }
 
-/* [U3] Process Another File — reset dropzone, files, previews, result */
+/* ═══ RESET ═══ */
 function resetToolPage() {
   toolSelectedFiles = [];
   toolLastFilename = null;
   toolLastDownloadUrl = null;
-  clearCountdown();
 
-  const el = id => document.getElementById(id);
+  document.getElementById('tpFileList').innerHTML = '';
+  document.getElementById('tpProgress').classList.remove('show');
+  document.getElementById('tpResult').classList.remove('show');
+  document.getElementById('tpSetupBox').classList.remove('show');
+  document.getElementById('tpBtnDownload').style.display = 'none';
+  document.getElementById('tpBtnAgain').classList.remove('show');
+  document.getElementById('tpBtnProcess').disabled = true;
+  document.getElementById('tpProgressFill').style.width = '0';
+  document.getElementById('toolFileInput').value = '';
+  document.getElementById('step1Num').classList.remove('done');
+  document.getElementById('step1Done').classList.remove('show');
 
-  el('toolFileList').innerHTML = '';
-  el('filePreviewGrid').innerHTML = '';
-  el('toolProgressBlock').classList.remove('show');
-  el('toolResultBlock').classList.remove('show');
-  el('toolSetupBox').classList.remove('show');
-  el('toolCancelBtn').classList.remove('show');
-  el('toolShareBtn').classList.remove('show');
-  el('toolAnotherBtn').classList.remove('show');
-  el('successCheckmark').classList.remove('show');
-  el('toolFileBadge').classList.remove('show');
-  el('outputFilenameWrap').classList.remove('show');
-  el('toolDownloadBtn').style.display = 'none';
-  el('toolActionBtn').disabled = true;
-  el('toolActionBtn').innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Process File`;
-  el('toolProgressFill').style.width = '0';
-  el('toolFileInput').value = '';
+  const opts = document.getElementById('tpOptions');
+  if (opts) opts.classList.add('locked');
+  if (document.getElementById('step2Num')) {
+    document.getElementById('step2Num').style.opacity = '.5';
+    document.getElementById('step2Label').style.opacity = '.5';
+  }
+  document.getElementById('step3Num').style.opacity = '.5';
+  document.getElementById('step3Label').style.opacity = '.5';
 
-  window.scrollTo({top: document.getElementById('toolDropzoneWrap').getBoundingClientRect().top + window.scrollY - 80, behavior:'smooth'});
+  window.scrollTo({top: document.getElementById('tpDropzone').getBoundingClientRect().top + window.scrollY - 80, behavior:'smooth'});
 }
 
-/* ════════════════════════════════════════════════════════════
-   SEO CONTENT
-════════════════════════════════════════════════════════════ */
-const TOOL_SEO = {
-  compress:{steps:['Upload your PDF','Choose compression level (Maximum / Balanced / High Quality)','Click "Process File"','Download your compressed PDF'],faqs:[{q:'How much can files be compressed?',a:'Typically 50–75% reduction depending on content type and images.'},{q:'Does quality suffer?',a:'Minimal loss — we use industry-standard Ghostscript optimization.'},{q:'Is there a file size limit?',a:'Up to 200MB per file.'}]},
-  merge:{steps:['Upload two or more PDF files','Click "Process File"','Download your merged PDF'],faqs:[{q:'How many files can I merge?',a:'As many as you need in a single operation.'},{q:'Is quality affected?',a:'No — we combine PDFs losslessly with all formatting preserved.'}]},
-  split:{steps:['Upload your PDF','Choose "All Pages" or enter a page range','Click "Process File"','Download split files as ZIP'],faqs:[{q:'Can I extract specific pages?',a:'Yes — enter ranges like "1-3, 5, 8-10".'},{q:'What format are the output files?',a:'Each section is saved as a separate PDF.'}]},
-  'pdf-to-word':{steps:['Upload your PDF','Click "Process File"','Download the editable DOCX file'],faqs:[{q:'Is formatting preserved?',a:'Yes — text, tables, and basic formatting are maintained.'},{q:'How long does conversion take?',a:'Small files: seconds. Large files: 1–3 minutes.'}]},
-};
-
-function getToolSeo(toolId) {
-  return TOOL_SEO[toolId] || {
-    steps:['Upload your file','Configure any options if needed','Click "Process File"','Download your result'],
-    faqs:[{q:'Is this tool free?',a:'Yes, completely free with no watermarks or limits.'},{q:'Is my file safe?',a:'Yes — all files are processed securely and deleted after 60 minutes.'}]
-  };
+/* ═══ RADIO CHIP ═══ */
+function tpRadio(el, fieldId, value) {
+  el.closest('.tp-radio-group').querySelectorAll('.tp-radio-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const h = document.getElementById(fieldId);
+  if (h) h.value = value;
+}
+function toggleSplitRange(value) {
+  const rg = document.getElementById('rangeGroup');
+  if (rg) rg.style.display = value === 'range' ? 'block' : 'none';
 }
 
-function renderToolSeo(toolId) {
-  const tool = TOOLS[toolId];
-  const seo = getToolSeo(toolId);
-  const popularIds = ['merge','compress','split','pdf-to-word','jpg-to-pdf','protect','watermark','rotate'].filter(id=>id!==toolId);
-  document.getElementById('toolSeoArea').innerHTML = `
-    <h2>How to Use ${tool.title}</h2>
-    <div class="steps-list"><ol>${seo.steps.map(s=>`<li>${s}</li>`).join('')}</ol></div>
-    <h2>Frequently Asked Questions</h2>
-    ${seo.faqs.map(f=>`<div class="faq-item"><div class="faq-q">${f.q}</div><p class="faq-a">${f.a}</p></div>`).join('')}
-    <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">
-      <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">🔥 More Popular Tools</h3>
-      <div class="popular-tools-row">
-        ${popularIds.slice(0,6).map(id=>{const t=TOOLS[id];if(!t)return'';return`<div class="pop-tool-chip" onclick="openTool('${id}')" role="button" aria-label="Open ${t.title}">${t.icon} ${t.title}</div>`;}).join('')}
-      </div>
-    </div>`;
-}
-
-/* ════════════════════════════════════════════════════════════
-   META UPDATES
-════════════════════════════════════════════════════════════ */
+/* ═══ META ═══ */
 function updateMetaForTool(toolId) {
   const tool = TOOLS[toolId];
   const slug = TOOL_SLUG_MAP[toolId] || toolId;
@@ -2816,18 +2100,12 @@ function updateMetaForTool(toolId) {
   document.title = title;
   setMeta('description', desc);
   setCanonical(url);
-  setOGMeta(title, desc, url);
-  removeSchemas();
-  injectFAQSchema(toolId);
 }
-
 function updateMetaForHome() {
   document.title = 'PDFWala — 50+ Free PDF Tools Online | No Signup';
   setMeta('description','50+ free PDF tools: Merge, split, compress, convert PDF. No sign-up, no limits.');
   setCanonical('https://npkpadala.com/pdfwala/');
-  removeSchemas();
 }
-
 function setMeta(name, content) {
   let el = document.querySelector('meta[name="'+name+'"]');
   if (!el) { el=document.createElement('meta'); el.name=name; document.head.appendChild(el); }
@@ -2838,101 +2116,41 @@ function setCanonical(url) {
   if (!el) { el=document.createElement('link'); el.rel='canonical'; document.head.appendChild(el); }
   el.href = url;
 }
-function setOGMeta(title, desc, url) {
-  [['og:title',title],['og:description',desc],['og:url',url]].forEach(([prop,content])=>{
-    let el = document.querySelector('meta[property="'+prop+'"]');
-    if (!el) { el=document.createElement('meta'); el.setAttribute('property',prop); document.head.appendChild(el); }
-    el.content = content;
-  });
-}
-function removeSchemas() { document.querySelectorAll('script[data-dyn-schema]').forEach(s=>s.remove()); }
-function injectFAQSchema(toolId) {
-  const seo = getToolSeo(toolId);
-  const schema = {'@context':'https://schema.org','@type':'FAQPage','mainEntity':seo.faqs.map(f=>({'@type':'Question','name':f.q,'acceptedAnswer':{'@type':'Answer','text':f.a}}))};
-  const s = document.createElement('script'); s.type='application/ld+json'; s.setAttribute('data-dyn-schema','1'); s.textContent=JSON.stringify(schema); document.head.appendChild(s);
-}
 
-/* ════════════════════════════════════════════════════════════
-   POPSTATE
-════════════════════════════════════════════════════════════ */
+/* ═══ POPSTATE ═══ */
 window.addEventListener('popstate', () => {
   const toolId = getToolFromURL();
   if (toolId && TOOLS[toolId]) { updateMetaForTool(toolId); renderToolPage(toolId); }
   else { updateMetaForHome(); showHomePage(); }
 });
-
 function getToolFromURL() {
   const match = window.location.pathname.match(/^\/pdfwala\/([^\/]+)\/?$/);
   if (match && match[1] && match[1] !== 'pdfwala') return SLUG_TO_TOOL[match[1]] || null;
   return null;
 }
 
-/* ════════════════════════════════════════════════════════════
-   INIT
-════════════════════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
-  // [F2] Theme already applied synchronously in <head>; just sync button icon here
-  const theme = document.documentElement.getAttribute('data-theme');
-  const themeBtn = document.getElementById('themeBtn');
-  if (themeBtn) themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
-
-  // Check URL for direct tool link
-  const toolId = getToolFromURL();
-  if (toolId && TOOLS[toolId]) { updateMetaForTool(toolId); renderToolPage(toolId); }
-  else { updateMetaForHome(); showHomePage(); }
-
-  // Init search
-  initSearch();
-
-  // Reveal animations
-  const revObs = new IntersectionObserver(entries=>{
-    entries.forEach(e=>{ if(e.isIntersecting){e.target.classList.add('visible');revObs.unobserve(e.target);} });
-  },{threshold:0.1});
-  document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));
-
-  // Recent tools
-  renderRecentTools();
-
-  // Scroll to top button
-  window.addEventListener('scroll', ()=>{
-    const btn = document.getElementById('scrollTopBtn');
-    if (btn) btn.classList.toggle('show', window.scrollY > 300);
-  });
-
- // Status indicator
-const dot = document.getElementById('statusDot');
-const text = document.getElementById('statusText');
-if (dot && text) {
-  dot.className = 'status-dot';
-  text.textContent = 'All systems operational';
-}
-
-});
-
-/* ════════════════════════════════════════════════════════════
-   NAV
-════════════════════════════════════════════════════════════ */
-(function initMega(){
+/* ═══ NAV ═══ */
+(function initMega() {
   const items = document.querySelectorAll('.nav-item[data-mega]');
   let closeTimer = null;
-  items.forEach(item=>{
-    item.addEventListener('mouseenter',()=>{clearTimeout(closeTimer);items.forEach(i=>i.classList.remove('open'));item.classList.add('open');item.querySelector('.nav-btn')?.setAttribute('aria-expanded','true');});
-    item.addEventListener('mouseleave',()=>{closeTimer=setTimeout(()=>{item.classList.remove('open');item.querySelector('.nav-btn')?.setAttribute('aria-expanded','false');},160);});
+  items.forEach(item => {
+    item.addEventListener('mouseenter', () => { clearTimeout(closeTimer); items.forEach(i => i.classList.remove('open')); item.classList.add('open'); });
+    item.addEventListener('mouseleave', () => { closeTimer = setTimeout(() => item.classList.remove('open'), 160); });
     const drop = item.querySelector('.mega-drop');
     if (drop) {
-      drop.addEventListener('mouseenter',()=>clearTimeout(closeTimer));
-      drop.addEventListener('mouseleave',()=>{closeTimer=setTimeout(()=>item.classList.remove('open'),160);});
+      drop.addEventListener('mouseenter', () => clearTimeout(closeTimer));
+      drop.addEventListener('mouseleave', () => { closeTimer = setTimeout(() => item.classList.remove('open'), 160); });
     }
   });
-  document.addEventListener('click',e=>{if(!e.target.closest('.nav-item[data-mega]'))items.forEach(i=>i.classList.remove('open'));});
+  document.addEventListener('click', e => { if (!e.target.closest('.nav-item[data-mega]')) items.forEach(i => i.classList.remove('open')); });
 })();
 
 function toggleMob() {
   const n = document.getElementById('mobNav');
   const btn = document.getElementById('mobBtn');
   n.classList.toggle('open');
-  document.body.style.overflow = n.classList.contains('open')?'hidden':'';
-  btn.textContent = n.classList.contains('open')?'✕':'☰';
+  document.body.style.overflow = n.classList.contains('open') ? 'hidden' : '';
+  btn.textContent = n.classList.contains('open') ? '✕' : '☰';
   btn.setAttribute('aria-expanded', String(n.classList.contains('open')));
 }
 function closeMob() {
@@ -2940,41 +2158,30 @@ function closeMob() {
   const btn = document.getElementById('mobBtn');
   n.classList.remove('open');
   document.body.style.overflow = '';
-  if (btn) { btn.textContent='☰'; btn.setAttribute('aria-expanded','false'); }
+  if (btn) { btn.textContent = '☰'; btn.setAttribute('aria-expanded','false'); }
 }
 function toggleMobSec(btn) {
   const sub = btn.nextElementSibling;
   const open = sub.classList.contains('open');
-  document.querySelectorAll('.mob-sub.open').forEach(s=>s.classList.remove('open'));
-  document.querySelectorAll('.mob-section-btn.active').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.mob-sub.open').forEach(s => s.classList.remove('open'));
+  document.querySelectorAll('.mob-section-btn.active').forEach(b => b.classList.remove('active'));
   if (!open) { sub.classList.add('open'); btn.classList.add('active'); }
 }
 function toggleTheme() {
   const h = document.documentElement;
-  const isDark = h.getAttribute('data-theme') === 'dark';
-  const next = isDark ? 'light' : 'dark';
+  const next = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   h.setAttribute('data-theme', next);
   const btn = document.getElementById('themeBtn');
   if (btn) btn.textContent = next === 'dark' ? '☀️' : '🌙';
   safeSetLS('pw-theme', next);
 }
 
-/* ════════════════════════════════════════════════════════════
-   UTILITIES
-════════════════════════════════════════════════════════════ */
+/* ═══ UTILS ═══ */
 function fmtSz(b) {
   if (b < 1024) return b + ' B';
   if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
   return (b/1048576).toFixed(1) + ' MB';
 }
-
-function radioSelect(el, fieldId, value) {
-  el.closest('.radio-group').querySelectorAll('.radio-chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  const h = document.getElementById(fieldId);
-  if (h) h.value = value;
-}
-
 function toast(msg, type='success') {
   const t = document.getElementById('toast');
   const ms = document.getElementById('toastMsg');
@@ -2985,6 +2192,34 @@ function toast(msg, type='success') {
   t._timer = setTimeout(() => t.classList.remove('show'), 3500);
 }
 
+/* ═══ INIT ═══ */
+document.addEventListener('DOMContentLoaded', () => {
+  const theme = document.documentElement.getAttribute('data-theme');
+  const themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+
+  const toolId = getToolFromURL();
+  if (toolId && TOOLS[toolId]) { updateMetaForTool(toolId); renderToolPage(toolId); }
+  else { updateMetaForHome(); showHomePage(); }
+
+  initSearch();
+
+  const revObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); revObs.unobserve(e.target); } });
+  }, {threshold:0.1});
+  document.querySelectorAll('.reveal').forEach(el => revObs.observe(el));
+
+  renderRecentTools();
+
+  window.addEventListener('scroll', () => {
+    const btn = document.getElementById('scrollTopBtn');
+    if (btn) btn.classList.toggle('show', window.scrollY > 300);
+  });
+
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  if (dot && text) { dot.className = 'status-dot'; text.textContent = 'All systems operational'; }
+});
 </script>
 </body>
 </html>
