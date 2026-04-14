@@ -60,7 +60,6 @@
 <script>
 (function(){
   try {
-    // ALWAYS default to dark, unless user explicitly chose light
     var t = localStorage.getItem('pw-theme') || 'dark';
     document.documentElement.setAttribute('data-theme', t);
   } catch(e) {
@@ -243,30 +242,45 @@ input,select,textarea{font-family:inherit}
   background:var(--bg-3);color:var(--text-2);font-size:18px;
   align-items:center;justify-content:center;transition:all var(--t);
 }
+
+/* ═══════════════════════════════════════════════
+   MOBILE NAV — ALL TOOLS, COLLAPSIBLE CATEGORIES
+   FIX #3: Each section independently collapsible
+═══════════════════════════════════════════════ */
 .mob-nav{
   display:none;position:fixed;inset:0;z-index:490;
-  background:var(--bg);padding:76px 20px 20px;
+  background:var(--bg);padding:76px 0 20px;
   overflow-y:auto;transform:translateX(100%);
   transition:transform .35s var(--ease);
 }
 .mob-nav.open{transform:translateX(0)}
-.mob-section{border-bottom:1px solid var(--border)}
+.mob-section{border-bottom:1px solid var(--border);padding:0 20px}
 .mob-section-btn{
   display:flex;align-items:center;justify-content:space-between;
   width:100%;padding:14px 0;font-size:15px;font-weight:600;
   color:var(--text);background:none;border:none;text-align:left;cursor:pointer;
 }
-.mob-section-btn svg{width:16px;height:16px;transition:transform var(--t);color:var(--text-3)}
-.mob-section-btn.active svg{transform:rotate(180deg)}
-.mob-sub{max-height:0;overflow:hidden;transition:max-height .35s var(--ease)}
-.mob-sub.open{max-height:2000px}
-.mob-sub-inner{padding-bottom:12px}
-.mob-cat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);padding:8px 0 4px}
+/* FIX #3: Each section btn has its own .active class, not shared state */
+.mob-section-btn svg{width:16px;height:16px;transition:transform var(--t);color:var(--text-3);flex-shrink:0}
+.mob-section-btn.active svg{transform:rotate(180deg);color:var(--accent)}
+.mob-sub{
+  max-height:0;overflow:hidden;
+  transition:max-height .35s var(--ease),opacity .25s ease;
+  opacity:0;
+}
+.mob-sub.open{max-height:3000px;opacity:1}
+.mob-sub-inner{padding-bottom:14px}
+.mob-cat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);padding:10px 0 4px}
 .mob-link{
   display:block;padding:8px 12px;font-size:13.5px;color:var(--text-2);
   border-radius:var(--r-sm);transition:color var(--t),background var(--t);cursor:pointer;
 }
 .mob-link:hover{color:var(--text);background:var(--bg-3)}
+.mob-all-link{
+  display:block;padding:14px 20px;font-size:15px;font-weight:600;
+  color:var(--accent);border-bottom:1px solid var(--border);
+}
+
 @media(max-width:1080px){
   .nav-links{display:none}
   .mob-btn{display:flex}
@@ -504,15 +518,6 @@ input,select,textarea{font-family:inherit}
 .hdz-text{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px}
 .hdz-text span{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .hdz-hint{font-size:12px;color:var(--text-3);line-height:1.6}
-.file-count-badge{
-  position:absolute;top:-8px;right:-8px;
-  background:var(--blue-500);color:#fff;
-  font-size:11px;font-weight:700;min-width:20px;height:20px;
-  border-radius:50px;padding:0 6px;
-  display:none;align-items:center;justify-content:center;
-  box-shadow:0 2px 8px rgba(37,99,235,.5);
-}
-.file-count-badge.show{display:flex}
 .size-popup{
   position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);
   background:rgba(244,63,94,.95);color:#fff;
@@ -563,7 +568,7 @@ input,select,textarea{font-family:inherit}
 .section-title{font-family:var(--font-h);font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px;line-height:1.15}
 
 /* ═══════════════════════════════════════════════
-   TOOL PAGE — NEW CLEAN DESIGN
+   TOOL PAGE — SIDE-BY-SIDE LAYOUT
 ═══════════════════════════════════════════════ */
 #toolPage{min-height:80vh;background:var(--bg)}
 
@@ -571,7 +576,7 @@ input,select,textarea{font-family:inherit}
 .tp-hero{
   background:var(--bg-2);
   border-bottom:1px solid var(--border);
-  padding:24px 28px;
+  padding:20px 28px;
 }
 .tp-hero-inner{
   max-width:1200px;margin:0 auto;
@@ -579,99 +584,169 @@ input,select,textarea{font-family:inherit}
 }
 .tp-hero-left{display:flex;align-items:center;gap:16px}
 .tp-icon-box{
-  width:52px;height:52px;border-radius:14px;flex-shrink:0;
+  width:44px;height:44px;border-radius:12px;flex-shrink:0;
   background:linear-gradient(135deg,var(--blue-600),var(--violet-500));
-  display:flex;align-items:center;justify-content:center;font-size:24px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;
   box-shadow:0 4px 16px rgba(37,99,235,.3);
 }
-.tp-title{font-family:var(--font-h);font-size:22px;font-weight:800;letter-spacing:-.3px;margin-bottom:4px}
-.tp-sub{font-size:13.5px;color:var(--text-2)}
-.tp-breadcrumb{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-3);margin-bottom:5px}
-.tp-breadcrumb a{color:var(--text-3);cursor:pointer;transition:color var(--t)}
+.tp-title{font-family:var(--font-h);font-size:19px;font-weight:800;letter-spacing:-.3px;margin-bottom:3px}
+.tp-sub{font-size:12.5px;color:var(--text-2)}
+
+/* FIX #6: Breadcrumb truncation on mobile */
+.tp-breadcrumb{
+  display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-3);
+  margin-bottom:4px;
+  /* truncate long breadcrumbs */
+  min-width:0;flex-wrap:nowrap;overflow:hidden;
+}
+.tp-breadcrumb a{color:var(--text-3);cursor:pointer;transition:color var(--t);flex-shrink:0}
 .tp-breadcrumb a:hover{color:var(--accent)}
+.tp-breadcrumb #tpBreadcrumbCurrent{
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  min-width:0;max-width:180px;
+  color:var(--text);
+}
+@media(max-width:480px){
+  .tp-breadcrumb #tpBreadcrumbCurrent{max-width:100px}
+  .tp-breadcrumb .bc-sep-extra{display:none}
+}
 .tp-back{
   display:inline-flex;align-items:center;gap:6px;
   font-size:13px;color:var(--text-2);
   padding:7px 14px;border-radius:var(--r-sm);
   border:1px solid var(--border);background:var(--bg-3);
-  transition:all var(--t);flex-shrink:0;
+  transition:all var(--t);flex-shrink:0;white-space:nowrap;
 }
 .tp-back:hover{color:var(--text);border-color:var(--border-hover)}
 
-/* Body layout */
+/* ═══ BODY GRID ═══ */
 .tp-body{
   max-width:1200px;margin:0 auto;
-  padding:24px 28px 60px;
-  display:grid;
-  grid-template-columns:1fr 220px;
-  gap:20px;
-  align-items:start;
-}
-@media(max-width:860px){
-  .tp-body{grid-template-columns:1fr}
-  .tp-sidebar{display:none}
+  padding:20px 28px 48px;
 }
 
-/* Main card */
-.tp-card{
+/* Side-by-side top row: Step 1 | Step 2 */
+.tp-top-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:16px;
+  align-items:start;
+}
+
+/* FIX #1: When step2 is hidden, step1 takes full width */
+.tp-top-grid.no-options{
+  grid-template-columns:1fr;
+}
+.tp-top-grid.no-options .tp-panel-upload{
+  /* single column - upload takes full row */
+}
+
+/* Bottom row: Process button | Result (side-by-side) */
+.tp-bottom-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  align-items:start;
+}
+
+@media(max-width:768px){
+  .tp-top-grid,
+  .tp-top-grid.no-options,
+  .tp-bottom-grid{
+    grid-template-columns:1fr;
+  }
+  .tp-body{padding:12px 12px 40px}
+}
+
+/* ═══ PANEL CARDS ═══ */
+.tp-panel{
   background:var(--bg-2);
   border:1px solid var(--border);
   border-radius:var(--r-xl);
   overflow:hidden;
+  transition:border-color var(--t);
 }
+.tp-panel.step-active{border-color:rgba(59,130,246,.3)}
+.tp-panel.step-done{border-color:rgba(16,185,129,.25)}
 
-/* Step row */
-.tp-step-header{
-  display:flex;align-items:center;gap:12px;
-  padding:14px 20px;
+/* Panel header */
+.tp-panel-header{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 16px;
   border-bottom:1px solid var(--border);
   background:var(--bg-3);
 }
+
+/* Step numbers — FIX #4 state machine */
 .tp-step-num{
-  width:24px;height:24px;border-radius:50%;
-  background:rgba(59,130,246,.15);color:var(--blue-400);
-  font-size:12px;font-weight:700;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--bg-2);border:2px solid var(--border);color:var(--text-3);
+  font-size:11px;font-weight:700;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  transition:all var(--t);
+  transition:all 0.3s ease;
 }
-.tp-step-num.done{background:rgba(16,185,129,.15);color:var(--emerald-400)}
-.tp-step-label{font-size:13.5px;font-weight:600;color:var(--text-2);transition:color var(--t)}
-.tp-step-label.active{color:var(--text)}
+.tp-step-num.active{
+  background:rgba(59,130,246,.15);
+  border-color:var(--blue-500);
+  color:var(--blue-400);
+  box-shadow:0 0 0 3px rgba(59,130,246,.15);
+}
+.tp-step-num.done{
+  background:rgba(16,185,129,.15);
+  border-color:var(--emerald-500);
+  color:var(--emerald-400);
+}
+
+.tp-panel-label{font-size:13px;font-weight:600;color:var(--text-2);transition:color var(--t)}
+.tp-panel-label.active{color:var(--text)}
 .tp-step-done-tag{
-  margin-left:auto;font-size:11.5px;color:var(--emerald-400);
+  margin-left:auto;font-size:11px;color:var(--emerald-400);
   display:none;align-items:center;gap:4px;
+  background:rgba(16,185,129,.1);padding:3px 8px;border-radius:50px;
+  white-space:nowrap;overflow:hidden;max-width:140px;
 }
+.tp-step-done-tag span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tp-step-done-tag.show{display:flex}
 
-/* Dropzone */
+/* Panel body */
+.tp-panel-body{padding:14px}
+
+/* ═══ COMPACT DROPZONE (FIX #5) ═══ */
 .tp-dropzone{
-  margin:20px;
   border:2px dashed var(--border);border-radius:var(--r-lg);
-  padding:36px 24px;text-align:center;cursor:pointer;
+  padding:16px 14px;  /* FIX: was 36px, now 16px */
+  text-align:center;cursor:pointer;
   transition:all var(--t);background:rgba(255,255,255,.02);
+  position:relative;
 }
 [data-theme="light"] .tp-dropzone{background:var(--bg-3)}
 .tp-dropzone:hover,.tp-dropzone.dragover{
   border-color:var(--accent);
   background:rgba(59,130,246,.05);
-  box-shadow:0 0 0 5px rgba(59,130,246,.08);
+  box-shadow:0 0 0 4px rgba(59,130,246,.08);
 }
 .tp-dropzone.dragover{animation:borderGradient 2s linear infinite}
 .tp-dropzone input{display:none}
-.tp-dz-icon{font-size:32px;margin-bottom:10px;display:block;transition:transform .25s var(--ease)}
-.tp-dropzone:hover .tp-dz-icon{transform:translateY(-4px) scale(1.08)}
-.tp-dz-main{font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px}
+.tp-dz-icon{font-size:24px;margin-bottom:6px;display:block;transition:transform .25s var(--ease)} /* FIX: was 32px */
+.tp-dropzone:hover .tp-dz-icon{transform:translateY(-3px) scale(1.08)}
+.tp-dz-main{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
 .tp-dz-main span{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
-.tp-dz-hint{font-size:12px;color:var(--text-3)}
-.tp-dz-meta{display:flex;justify-content:center;gap:16px;margin-top:12px;flex-wrap:wrap}
-.tp-dz-meta-item{font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:4px}
-.tp-dz-meta-item svg{color:var(--emerald-400)}
+.tp-dz-hint{font-size:11.5px;color:var(--text-3)}
+
+/* FIX #5: meta info on ONE LINE */
+.tp-dz-meta{
+  display:flex;justify-content:center;
+  margin-top:8px;
+  font-size:10.5px;color:var(--text-3);
+  gap:0;
+}
 
 /* File list */
-.tp-file-list{padding:0 20px 16px;display:flex;flex-direction:column;gap:6px}
+.tp-file-list{display:flex;flex-direction:column;gap:5px;margin-top:10px}
 .tp-file-item{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 12px;
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;
   background:var(--bg-3);border:1px solid var(--border);
   border-radius:var(--r-sm);border-left:3px solid var(--blue-500);
   animation:slideIn .15s ease;
@@ -680,47 +755,52 @@ input,select,textarea{font-family:inherit}
 .tp-file-item.type-image{border-left-color:var(--emerald-500)}
 .tp-file-item.type-word{border-left-color:var(--amber-500)}
 .tp-file-item.type-excel{border-left-color:var(--cyan-500)}
-.tp-fi-icon{width:30px;height:30px;border-radius:8px;background:rgba(59,130,246,.12);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-.tp-fi-name{flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tp-fi-size{font-size:11px;color:var(--text-3);flex-shrink:0}
-.tp-fi-del{background:none;border:none;color:var(--text-3);font-size:14px;padding:3px 5px;border-radius:4px;transition:color var(--t);cursor:pointer}
+.tp-fi-icon{width:26px;height:26px;border-radius:6px;background:rgba(59,130,246,.12);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.tp-fi-name{flex:1;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tp-fi-size{font-size:10.5px;color:var(--text-3);flex-shrink:0}
+.tp-fi-del{background:none;border:none;color:var(--text-3);font-size:13px;padding:2px 4px;border-radius:4px;transition:color var(--t);cursor:pointer;flex-shrink:0}
 .tp-fi-del:hover{color:var(--rose-400)}
 
-/* Options area */
-.tp-options{padding:0 20px 20px;transition:opacity var(--t)}
+/* Options (Step 2) */
+.tp-options{transition:opacity var(--t)}
 .tp-options.locked{opacity:.35;pointer-events:none}
 
 /* Form elements */
-.tp-form-group{margin-bottom:14px}
-.tp-form-label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:6px}
+.tp-form-group{margin-bottom:12px}
+.tp-form-label{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:5px}
 .tp-form-input,.tp-form-select{
-  width:100%;padding:9px 13px;
+  width:100%;padding:8px 12px;
   border:1.5px solid var(--border);border-radius:var(--r-sm);
-  background:var(--bg);color:var(--text);font-size:14px;outline:none;
+  background:var(--bg);color:var(--text);font-size:13px;outline:none;
   transition:border-color var(--t),box-shadow var(--t);
 }
 .tp-form-input:focus,.tp-form-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
 .tp-form-select option{background:var(--bg-2)}
-.tp-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.tp-form-hint{font-size:11px;color:var(--text-3);margin-top:4px}
-.tp-radio-group{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tp-form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.tp-form-row{grid-template-columns:1fr}}
+.tp-form-hint{font-size:10.5px;color:var(--text-3);margin-top:3px}
+.tp-radio-group{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
 .tp-radio-chip{
-  padding:6px 13px;border:1.5px solid var(--border);border-radius:50px;
-  font-size:12.5px;font-weight:500;color:var(--text-2);background:var(--bg);
+  padding:5px 11px;border:1.5px solid var(--border);border-radius:50px;
+  font-size:12px;font-weight:500;color:var(--text-2);background:var(--bg);
   transition:all var(--t);cursor:pointer;user-select:none;
 }
 .tp-radio-chip:hover{border-color:var(--accent);color:var(--accent)}
 .tp-radio-chip.active{border-color:var(--accent);color:var(--accent);background:rgba(59,130,246,.1);font-weight:600}
 
-/* Action row */
-.tp-action{padding:16px 20px;border-top:1px solid var(--border)}
+/* ═══ STEP 3 BOTTOM PANELS ═══ */
+.tp-panel-action{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;}
+.tp-panel-result{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;}
+
+.tp-action-body{padding:14px}
+.tp-result-body{padding:14px;min-height:80px;display:flex;flex-direction:column;justify-content:center}
 
 /* Progress */
-.tp-progress{margin-bottom:14px;display:none}
+.tp-progress{margin-bottom:10px;display:none}
 .tp-progress.show{display:block}
-.tp-progress-track{height:3px;background:var(--bg-3);border-radius:50px;overflow:hidden;margin-bottom:8px}
+.tp-progress-track{height:3px;background:var(--bg-3);border-radius:50px;overflow:hidden;margin-bottom:7px}
 .tp-progress-fill{height:100%;width:0;border-radius:50px;background:linear-gradient(90deg,var(--blue-600),var(--violet-500));transition:width .3s ease}
-.tp-progress-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-2)}
+.tp-progress-row{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-2)}
 .tp-dot-loader{display:flex;gap:3px;align-items:center}
 .tp-dot-loader span{width:4px;height:4px;border-radius:50%;background:var(--accent);animation:db .9s ease-in-out infinite}
 .tp-dot-loader span:nth-child(2){animation-delay:.15s}
@@ -728,70 +808,70 @@ input,select,textarea{font-family:inherit}
 @keyframes db{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
 
 /* Result */
-.tp-result{margin-bottom:12px;display:none}
+.tp-result{display:none}
 .tp-result.show{display:block}
-.tp-result-inner{padding:12px 14px;border-radius:var(--r);border:1px solid}
+.tp-result-inner{padding:11px 13px;border-radius:var(--r);border:1px solid}
 .tp-result-inner.success{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);color:var(--emerald-400)}
 .tp-result-inner.error{background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.25);color:var(--rose-400)}
 [data-theme="light"] .tp-result-inner.success{background:#F0FDF4;border-color:#BBF7D0;color:#15803D}
 [data-theme="light"] .tp-result-inner.error{background:#FFF1F2;border-color:#FECDD3;color:#BE123C}
-.tp-result-title{font-weight:700;font-size:13px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
-.tp-result-pills{display:flex;flex-wrap:wrap;gap:5px}
-.tp-result-pill{font-size:11px;padding:2px 9px;border-radius:50px;font-weight:500;background:rgba(255,255,255,.07)}
+.tp-result-title{font-weight:700;font-size:12.5px;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.tp-result-pills{display:flex;flex-wrap:wrap;gap:4px}
+.tp-result-pill{font-size:10.5px;padding:2px 8px;border-radius:50px;font-weight:500;background:rgba(255,255,255,.07)}
 [data-theme="light"] .tp-result-pill{background:rgba(0,0,0,.05)}
 
-/* Buttons */
+/* Setup box */
+.tp-setup-box{margin-top:10px;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);display:none}
+.tp-setup-box.show{display:block}
+.tp-setup-box h4{font-size:12px;font-weight:700;margin-bottom:5px}
+.tp-setup-box p{font-size:11.5px;color:var(--text-2);margin-bottom:7px;line-height:1.6}
+.tp-code{background:var(--ink-900);color:#93C5FD;border-radius:var(--r-sm);padding:9px 11px;font-family:monospace;font-size:10.5px;line-height:1.75;overflow-x:auto;white-space:pre;border:1px solid var(--border)}
+[data-theme="light"] .tp-code{background:#0F172A}
+
+/* ═══ BUTTONS ═══ */
 .tp-btn-process{
-  width:100%;padding:13px;margin-bottom:8px;
+  width:100%;padding:12px;margin-bottom:8px;
   background:linear-gradient(135deg,var(--blue-600),var(--violet-600));
-  color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:700;
+  color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:700;
   display:flex;align-items:center;justify-content:center;gap:8px;
   box-shadow:0 4px 20px rgba(37,99,235,.35);
   transition:transform var(--t),box-shadow var(--t),opacity var(--t);
 }
 .tp-btn-process:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 28px rgba(37,99,235,.45)}
-.tp-btn-process:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
-.tp-btn-download{
-  width:100%;padding:13px;
-  background:rgba(16,185,129,.12);border:1.5px solid rgba(16,185,129,.3);
-  color:var(--emerald-400);border-radius:var(--r);font-size:15px;font-weight:700;
-  align-items:center;justify-content:center;gap:8px;display:none;
-  transition:all var(--t);
+.tp-btn-process:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* FIX #4: Download button with glowPulse */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(16,185,129,0.4); }
+  50% { box-shadow: 0 8px 32px rgba(16,185,129,0.7); }
 }
-.tp-btn-download:hover{background:rgba(16,185,129,.2);border-color:rgba(16,185,129,.55);transform:translateY(-1px)}
+.tp-btn-download{
+  width:100%;padding:12px;
+  background:linear-gradient(135deg,var(--emerald-500),#059669);
+  border:none;
+  color:#fff;border-radius:var(--r);font-size:14px;font-weight:700;
+  align-items:center;justify-content:center;gap:8px;display:none;
+  transition:transform var(--t);
+  animation: glowPulse 2s infinite;
+}
+.tp-btn-download:hover{transform:translateY(-1px);}
+
 .tp-btn-again{
-  width:100%;margin-top:8px;padding:10px;
+  width:100%;margin-top:8px;padding:9px;
   background:none;border:1px solid var(--border);border-radius:var(--r);
-  color:var(--text-2);font-size:13px;font-weight:600;
+  color:var(--text-2);font-size:12.5px;font-weight:600;
   display:none;align-items:center;justify-content:center;gap:6px;
   transition:all var(--t);
 }
 .tp-btn-again:hover{border-color:var(--border-hover);color:var(--text);background:var(--bg-3)}
 .tp-btn-again.show{display:flex}
 
-/* Setup info box */
-.tp-setup-box{margin-top:10px;padding:14px 16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);display:none}
-.tp-setup-box.show{display:block}
-.tp-setup-box h4{font-size:13px;font-weight:700;margin-bottom:6px}
-.tp-setup-box p{font-size:12px;color:var(--text-2);margin-bottom:8px;line-height:1.6}
-.tp-code{background:var(--ink-900);color:#93C5FD;border-radius:var(--r-sm);padding:10px 12px;font-family:monospace;font-size:11px;line-height:1.75;overflow-x:auto;white-space:pre;border:1px solid var(--border)}
-[data-theme="light"] .tp-code{background:#0F172A}
-
-/* Sidebar */
-.tp-sidebar{display:flex;flex-direction:column;gap:14px;position:sticky;top:80px}
-.tp-side-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px}
-.tp-side-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:10px}
-.tp-related-item{
-  display:flex;align-items:center;gap:8px;
-  padding:7px 8px;border-radius:var(--r-sm);
-  font-size:13px;font-weight:500;color:var(--text-2);
-  cursor:pointer;transition:all var(--t);margin-bottom:2px;
+/* Placeholder when no result yet */
+.tp-result-placeholder{
+  text-align:center;padding:20px 10px;color:var(--text-3);
+  font-size:12.5px;display:flex;flex-direction:column;align-items:center;gap:8px;
 }
-.tp-related-item:hover{background:var(--bg-3);color:var(--text)}
-.tp-related-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
-.tp-trust-list{display:flex;flex-direction:column;gap:8px}
-.tp-trust-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-2)}
-.tp-trust-icon{font-size:13px;flex-shrink:0}
+.tp-result-placeholder .ph-icon{font-size:28px;opacity:.4}
 
 /* Skeleton */
 .tp-skeleton{padding:40px 28px;max-width:1200px;margin:0 auto}
@@ -855,9 +935,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   .hero h1{letter-spacing:-1px}
   .tp-form-row{grid-template-columns:1fr}
   .footer-grid{grid-template-columns:1fr 1fr}
-  .tp-body{padding:16px 16px 48px}
-  .tp-hero{padding:18px 16px}
-  .popular-tools-band-inner{flex-direction:column;align-items:flex-start}
+  .tp-hero{padding:14px 16px}
 }
 @media(max-width:480px){.footer-grid{grid-template-columns:1fr}}
 </style>
@@ -1081,28 +1159,156 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </div>
 </div>
 
-<!-- Mobile Nav -->
+<!-- FIX #3: Mobile Nav — ALL 57 tools, independently collapsible sections -->
 <div class="mob-nav" id="mobNav" role="dialog" aria-label="Mobile navigation" aria-modal="true">
+  <a class="mob-all-link" onclick="navigateHome();closeMob()">🧰 All Tools (57+)</a>
+
+  <!-- PDF Organize -->
   <div class="mob-section">
-    <button class="mob-section-btn" onclick="toggleMobSec(this)">📄 PDF Tools<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg></button>
+    <button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">
+      📦 Organize PDF
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
     <div class="mob-sub"><div class="mob-sub-inner">
-      <div class="mob-cat">Organize</div>
-      <a class="mob-link" onclick="openTool('merge');closeMob()">Merge PDF</a>
-      <a class="mob-link" onclick="openTool('split');closeMob()">Split PDF</a>
-      <a class="mob-link" onclick="openTool('compress');closeMob()">Compress PDF</a>
-      <a class="mob-link" onclick="openTool('rotate');closeMob()">Rotate PDF</a>
-      <div class="mob-cat">Convert</div>
-      <a class="mob-link" onclick="openTool('pdf-to-word');closeMob()">PDF to Word</a>
-      <a class="mob-link" onclick="openTool('pdf-to-image');closeMob()">PDF to Image</a>
-      <a class="mob-link" onclick="openTool('word-to-pdf');closeMob()">Word to PDF</a>
-      <a class="mob-link" onclick="openTool('image-to-pdf');closeMob()">Image to PDF</a>
-      <div class="mob-cat">Security</div>
-      <a class="mob-link" onclick="openTool('protect');closeMob()">Protect PDF</a>
-      <a class="mob-link" onclick="openTool('unlock');closeMob()">Unlock PDF</a>
+      <a class="mob-link" onclick="openTool('merge');closeMob()">🔗 Merge PDF</a>
+      <a class="mob-link" onclick="openTool('split');closeMob()">✂️ Split PDF</a>
+      <a class="mob-link" onclick="openTool('organize');closeMob()">📋 Organize PDF</a>
+      <a class="mob-link" onclick="openTool('remove-pages');closeMob()">🗑️ Remove Pages</a>
+      <a class="mob-link" onclick="openTool('extract-pages');closeMob()">📤 Extract Pages</a>
     </div></div>
   </div>
-  <div class="mob-section" style="border-bottom:none">
-    <a class="mob-link" style="font-size:15px;font-weight:600;padding:14px 0" onclick="navigateHome();closeMob()">🧰 All Tools (50+)</a>
+
+  <!-- PDF Optimize -->
+  <div class="mob-section">
+    <button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">
+      ⚡ Optimize PDF
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
+    <div class="mob-sub"><div class="mob-sub-inner">
+      <a class="mob-link" onclick="openTool('compress');closeMob()">🗜️ Compress PDF</a>
+      <a class="mob-link" onclick="openTool('repair-pdf');closeMob()">🔧 Repair PDF</a>
+      <a class="mob-link" onclick="openTool('ocr-pdf');closeMob()">🔍 OCR PDF</a>
+    </div></div>
+  </div>
+
+  <!-- Convert to PDF -->
+  <div class="mob-section">
+    <button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">
+      📥 Convert to PDF
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
+    <div class="mob-sub"><div class="mob-sub-inner">
+      <a class="mob-link" onclick="openTool('image-to-pdf');closeMob()">📷 Image to PDF</a>
+      <a class="mob-link" onclick="openTool('jpg-to-pdf');closeMob()">🟨 JPG to PDF</a>
+      <a class="mob-link" onclick="openTool('word-to-pdf');closeMob()">📝 Word to PDF</a>
+      <a class="mob-link" onclick="openTool('excel-to-pdf');closeMob()">📊 Excel to PDF</a>
+      <a class="mob-link" onclick="openTool('html-to-pdf');closeMob()">🌐 HTML to PDF</a>
+    </div></div>
+  </div>
+
+  <!-- Convert from PDF -->
+  <div class="mob-section">
+    <button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">
+      📤 Convert from PDF
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
+    <div class="mob-sub"><div class="mob-sub-inner">
+      <a class="mob-link" onclick="openTool('pdf-to-image');closeMob()">🖼️ PDF to Image</a>
+      <a class="mob-link" onclick="openTool('pdf-to-word');closeMob()">📝 PDF to Word</a>
+      <a class="mob-link" onclick="openTool('pdf-to-excel');closeMob()">📊 PDF to Excel</a>
+      <a class="mob-link" onclick="openTool('pdf-to-ppt');closeMob()">📑 PDF to PPT</a>
+      <a class="mob-link" onclick="openTool('pdf-to-pdfa');closeMob()">📜 PDF to PDF/A</a>
+    </div></div>
+  </div>
+
+  <!-- Edit PDF -->
+  <div class="mob-section">
+    <button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">
+      ✏️ Edit PDF
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
+    <div class="mob-sub"><div class="mob-sub-inner">
+      <a class="mob-link" onclick="openTool('rotate');closeMob()">🔄 Rotate PDF</a>
+      <a class="mob-link" onclick="openTool('watermark');closeMob()">💧 Watermark PDF</a>
+      <a class="mob-link" onclick="openTool('page-numbers');closeMob()">🔢 Page Numbers</a>
+      <a class="mob-link" onclick="openTool('crop');closeMob()">📐 Crop PDF</a>
+      <a class="mob-link" onclick="openTool('info');closeMob()">ℹ️ PDF Info</a>
+    </div></div>
+  </div>
+
+  <!-- Security -->
+  <div class="mob-section">
+    <button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">
+      🔐 Security
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
+    <div class="mob-sub"><div class="mob-sub-inner">
+      <a class="mob-link" onclick="openTool('protect');closeMob()">🔒 Protect PDF</a>
+      <a class="mob-link" onclick="openTool('unlock');closeMob()">🔓 Unlock PDF</a>
+      <a class="mob-link" onclick="openTool('sign-pdf');closeMob()">✍️ Sign PDF</a>
+      <a class="mob-link" onclick="openTool('redact-pdf');closeMob()">🖊️ Redact PDF</a>
+      <a class="mob-link" onclick="openTool('compare-pdf');closeMob()">⚖️ Compare PDF</a>
+      <a class="mob-link" onclick="openTool('protect-word');closeMob()">🔒 Protect Word</a>
+      <a class="mob-link" onclick="openTool('protect-excel');closeMob()">🔒 Protect Excel</a>
+      <a class="mob-link" onclick="openTool('unlock-word');closeMob()">🔓 Unlock Word</a>
+      <a class="mob-link" onclick="openTool('unlock-excel');closeMob()">🔓 Unlock Excel</a>
+    </div></div>
+  </div>
+
+  <!-- Image Tools -->
+  <div class="mob-section">
+    <button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">
+      🖼️ Image Tools
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
+    <div class="mob-sub"><div class="mob-sub-inner">
+      <a class="mob-link" onclick="openTool('compress-image');closeMob()">🗜️ Compress Image</a>
+      <a class="mob-link" onclick="openTool('resize-image');closeMob()">📏 Resize Image</a>
+      <a class="mob-link" onclick="openTool('webp-to-jpg');closeMob()">🔄 WebP to JPG</a>
+      <a class="mob-link" onclick="openTool('png-to-jpg');closeMob()">🔄 PNG to JPG</a>
+      <a class="mob-link" onclick="openTool('image-to-word');closeMob()">📝 Image to Word</a>
+      <a class="mob-link" onclick="openTool('image-to-excel');closeMob()">📊 Image to Excel</a>
+    </div></div>
+  </div>
+
+  <!-- Word Tools -->
+  <div class="mob-section">
+    <button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">
+      📝 Word Tools
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
+    <div class="mob-sub"><div class="mob-sub-inner">
+      <a class="mob-link" onclick="openTool('word-to-pdf');closeMob()">📄 Word to PDF</a>
+      <a class="mob-link" onclick="openTool('word-to-jpg');closeMob()">🖼️ Word to JPG</a>
+      <a class="mob-link" onclick="openTool('word-to-png');closeMob()">🖼️ Word to PNG</a>
+      <a class="mob-link" onclick="openTool('word-to-txt');closeMob()">📝 Word to TXT</a>
+      <a class="mob-link" onclick="openTool('word-to-excel');closeMob()">📊 Word to Excel</a>
+      <a class="mob-link" onclick="openTool('word-to-ppt');closeMob()">📑 Word to PPT</a>
+      <a class="mob-link" onclick="openTool('word-to-html');closeMob()">🌐 Word to HTML</a>
+      <a class="mob-link" onclick="openTool('word-to-json');closeMob()">🔄 Word to JSON</a>
+      <a class="mob-link" onclick="openTool('compress-word');closeMob()">🗜️ Compress Word</a>
+      <a class="mob-link" onclick="openTool('edit-word');closeMob()">✏️ Edit Word</a>
+    </div></div>
+  </div>
+
+  <!-- Excel Tools -->
+  <div class="mob-section">
+    <button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">
+      📊 Excel Tools
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg>
+    </button>
+    <div class="mob-sub"><div class="mob-sub-inner">
+      <a class="mob-link" onclick="openTool('excel-to-pdf');closeMob()">📄 Excel to PDF</a>
+      <a class="mob-link" onclick="openTool('excel-to-csv');closeMob()">📋 Excel to CSV</a>
+      <a class="mob-link" onclick="openTool('excel-to-jpg');closeMob()">🖼️ Excel to JPG</a>
+      <a class="mob-link" onclick="openTool('excel-to-png');closeMob()">🖼️ Excel to PNG</a>
+      <a class="mob-link" onclick="openTool('excel-to-word');closeMob()">📝 Excel to Word</a>
+      <a class="mob-link" onclick="openTool('excel-to-ppt');closeMob()">📑 Excel to PPT</a>
+      <a class="mob-link" onclick="openTool('excel-to-html');closeMob()">🌐 Excel to HTML</a>
+      <a class="mob-link" onclick="openTool('excel-to-json');closeMob()">🔄 Excel to JSON</a>
+      <a class="mob-link" onclick="openTool('compress-excel');closeMob()">🗜️ Compress Excel</a>
+      <a class="mob-link" onclick="openTool('repair-excel');closeMob()">🔧 Repair Excel</a>
+    </div></div>
   </div>
 </div>
 
@@ -1171,7 +1377,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </section>
 </div>
 
-<!-- ═══ TOOL PAGE ═══ -->
+<!-- ═══ TOOL PAGE — SIDE-BY-SIDE LAYOUT ═══ -->
 <div id="toolPage">
 
   <!-- Skeleton -->
@@ -1180,22 +1386,28 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       <div class="skeleton" style="height:14px;width:35%;margin-bottom:16px"></div>
       <div class="skeleton" style="height:32px;width:55%;margin-bottom:10px"></div>
       <div class="skeleton" style="height:12px;width:70%;margin-bottom:24px"></div>
-      <div class="skeleton" style="height:200px;border-radius:16px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="skeleton" style="height:200px;border-radius:16px"></div>
+        <div class="skeleton" style="height:200px;border-radius:16px"></div>
+      </div>
     </div>
   </div>
 
-  <!-- Hero strip -->
+  <!-- Hero strip (compact) -->
   <div class="tp-hero" id="tpHero">
     <div class="tp-hero-inner">
-      <div>
+      <div style="min-width:0;flex:1">
+        <!-- FIX #6: breadcrumb with truncation -->
         <nav class="tp-breadcrumb" aria-label="Breadcrumb">
-          <a onclick="navigateHome()">Home</a> ›
-          <a onclick="navigateHome()">PDF Tools</a> ›
-          <span id="tpBreadcrumbCurrent" style="color:var(--text)">Tool</span>
+          <a onclick="navigateHome()">Home</a>
+          <span style="flex-shrink:0"> › </span>
+          <a onclick="navigateHome()" class="bc-sep-extra">PDF Tools</a>
+          <span class="bc-sep-extra" style="flex-shrink:0"> › </span>
+          <span id="tpBreadcrumbCurrent">Tool</span>
         </nav>
         <div class="tp-hero-left">
           <div class="tp-icon-box" id="tpIconBox" aria-hidden="true">📄</div>
-          <div>
+          <div style="min-width:0">
             <div class="tp-title" id="tpTitle">Tool Name</div>
             <div class="tp-sub" id="tpSubtitle">Tool description</div>
           </div>
@@ -1211,133 +1423,132 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   <!-- Body -->
   <div class="tp-body">
 
-    <!-- Main card -->
-    <div class="tp-card">
+    <!-- TOP GRID: Step 1 (Upload) | Step 2 (Configure) side by side -->
+    <!-- FIX #1 & #2: .no-options class added by JS when form is empty -->
+    <div class="tp-top-grid" id="tpTopGrid">
 
-      <!-- Step 1 header -->
-      <div class="tp-step-header">
-        <div class="tp-step-num" id="step1Num">1</div>
-        <div class="tp-step-label active">Upload your file</div>
-        <div class="tp-step-done-tag" id="step1Done">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span id="step1DoneText">File added</span>
-        </div>
-      </div>
-
-      <!-- Dropzone -->
-      <div class="tp-dropzone" id="tpDropzone"
-        ondragover="toolDragOver(event)" ondragleave="toolDragLeave()" ondrop="toolDrop(event)">
-        <div class="size-popup" id="toolSizePopup" role="alert">⚠️ File exceeds 200MB limit</div>
-        <label for="toolFileInput" style="cursor:pointer;display:block">
-          <span class="tp-dz-icon" aria-hidden="true">📂</span>
-          <div class="tp-dz-main"><span>Click to browse</span> or drag &amp; drop</div>
-          <p class="tp-dz-hint" id="tpDropHint">Accepted formats shown above</p>
-          <input type="file" id="toolFileInput" onchange="toolFileSelect(event)" aria-label="Choose files to upload" style="display:none;"/>
-        </label>
-        <div class="tp-dz-meta">
-          <span class="tp-dz-meta-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Max 200MB</span>
-          <span class="tp-dz-meta-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Auto-delete 60 min</span>
-          <span class="tp-dz-meta-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>No sign-up</span>
-        </div>
-      </div>
-
-      <!-- File list -->
-      <div class="tp-file-list" id="tpFileList" role="list" aria-label="Selected files"></div>
-
-      <!-- Step 2 header -->
-      <div class="tp-step-header" id="step2Header">
-        <div class="tp-step-num" id="step2Num">2</div>
-        <div class="tp-step-label" id="step2Label">Configure options</div>
-      </div>
-
-      <!-- Options -->
-      <div class="tp-options locked" id="tpOptions">
-        <div style="height:16px"></div>
-        <div id="tpOptionsArea"></div>
-      </div>
-
-      <!-- Step 3 header -->
-      <div class="tp-step-header" id="step3Header">
-        <div class="tp-step-num" id="step3Num">3</div>
-        <div class="tp-step-label" id="step3Label">Process &amp; download</div>
-      </div>
-
-      <!-- Action area -->
-      <div class="tp-action">
-
-        <!-- Progress -->
-        <div class="tp-progress" id="tpProgress" role="status" aria-live="polite">
-          <div class="tp-progress-track">
-            <div class="tp-progress-fill" id="tpProgressFill" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+      <!-- Step 1: Upload -->
+      <div class="tp-panel tp-panel-upload step-active" id="panelUpload">
+        <div class="tp-panel-header">
+          <div class="tp-step-num active" id="step1Num">1</div>
+          <div class="tp-panel-label active">Upload your file</div>
+          <!-- done tag -->
+          <div class="tp-step-done-tag" id="step1Done">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span id="step1DoneText">File added</span>
           </div>
-          <div class="tp-progress-row">
-            <div style="display:flex;align-items:center;gap:8px">
-              <div class="tp-dot-loader" aria-hidden="true"><span></span><span></span><span></span></div>
-              <span id="tpProgressText">Processing…</span>
+        </div>
+        <div class="tp-panel-body">
+          <!-- Compact dropzone (FIX #5) -->
+          <div class="tp-dropzone" id="tpDropzone"
+            ondragover="toolDragOver(event)" ondragleave="toolDragLeave()" ondrop="toolDrop(event)">
+            <div class="size-popup" id="toolSizePopup" role="alert">⚠️ File exceeds 200MB limit</div>
+            <label for="toolFileInput" style="cursor:pointer;display:block">
+              <span class="tp-dz-icon" aria-hidden="true">📂</span>
+              <div class="tp-dz-main"><span>Click to browse</span> or drag &amp; drop</div>
+              <p class="tp-dz-hint" id="tpDropHint">Supported formats listed above</p>
+              <!-- FIX #5: inline meta on ONE line -->
+              <div class="tp-dz-meta">Max 200MB &nbsp;·&nbsp; Auto-delete 60 min &nbsp;·&nbsp; No sign-up</div>
+              <input type="file" id="toolFileInput" onchange="toolFileSelect(event)" aria-label="Choose files to upload" style="display:none;"/>
+            </label>
+          </div>
+          <!-- File list -->
+          <div class="tp-file-list" id="tpFileList" role="list" aria-label="Selected files"></div>
+        </div>
+      </div>
+
+      <!-- Step 2: Configure Options -->
+      <!-- FIX #1 & #2: hidden when no options -->
+      <div class="tp-panel" id="panelOptions" style="display:none">
+        <div class="tp-panel-header">
+          <div class="tp-step-num" id="step2Num">2</div>
+          <div class="tp-panel-label" id="step2Label">Configure options</div>
+        </div>
+        <div class="tp-panel-body">
+          <div class="tp-options locked" id="tpOptions">
+            <div id="tpOptionsArea"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end tp-top-grid -->
+
+    <!-- BOTTOM GRID: Process button | Result area side-by-side -->
+    <div class="tp-bottom-grid">
+
+      <!-- Step 3 left: Process -->
+      <div class="tp-panel-action">
+        <div class="tp-panel-header">
+          <div class="tp-step-num" id="step3Num">3</div>
+          <div class="tp-panel-label" id="step3Label" style="opacity:.6">Process &amp; download</div>
+        </div>
+        <div class="tp-action-body">
+          <!-- Progress -->
+          <div class="tp-progress" id="tpProgress" role="status" aria-live="polite">
+            <div class="tp-progress-track">
+              <div class="tp-progress-fill" id="tpProgressFill" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
             </div>
-            <span id="tpEtaText" style="font-size:11.5px;color:var(--text-3)"></span>
+            <div class="tp-progress-row">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="tp-dot-loader" aria-hidden="true"><span></span><span></span><span></span></div>
+                <span id="tpProgressText">Processing…</span>
+              </div>
+              <span id="tpEtaText" style="font-size:11px;color:var(--text-3)"></span>
+            </div>
           </div>
-        </div>
 
-        <!-- Result -->
-        <div class="tp-result" id="tpResult" role="region" aria-label="Result">
-          <div class="tp-result-inner" id="tpResultInner">
-            <div class="tp-result-title" id="tpResultTitle"></div>
-            <div class="tp-result-pills" id="tpResultPills"></div>
-          </div>
-        </div>
-
-        <!-- Setup box -->
-        <div class="tp-setup-box" id="tpSetupBox">
-          <h4>⚙️ Backend Setup Required</h4>
-          <p>This is a live UI preview. To process real files, start the Flask server:</p>
-          <div class="tp-code">pip install -r requirements.txt
+          <!-- Setup box -->
+          <div class="tp-setup-box" id="tpSetupBox">
+            <h4>⚙️ Backend Setup Required</h4>
+            <p>This is a live UI preview. To process real files, start the Flask server:</p>
+            <div class="tp-code">pip install -r requirements.txt
 python app.py</div>
-        </div>
+          </div>
 
-        <!-- Process button -->
-        <button class="tp-btn-process" id="tpBtnProcess" onclick="processToolFile()" disabled aria-label="Process uploaded file">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Process File
-        </button>
+          <!-- Process button -->
+          <button class="tp-btn-process" id="tpBtnProcess" onclick="processToolFile()" disabled aria-label="Process uploaded file">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Process File
+          </button>
 
-        <!-- Download button (shown after success) -->
-        <button class="tp-btn-download" id="tpBtnDownload" onclick="downloadToolResult()" aria-label="Download processed file">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download File
-        </button>
+          <!-- Download button (replaces process on success) -->
+          <button class="tp-btn-download" id="tpBtnDownload" onclick="downloadToolResult()" aria-label="Download processed file">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download File
+          </button>
 
-        <!-- Process another -->
-        <button class="tp-btn-again" id="tpBtnAgain" onclick="resetToolPage()" aria-label="Process another file">
-          ↩ Process another file
-        </button>
-
-      </div>
-    </div>
-    <!-- end tp-card -->
-
-    <!-- Sidebar -->
-    <div class="tp-sidebar" id="tpSidebar">
-
-      <div class="tp-side-card">
-        <div class="tp-side-title">Related Tools</div>
-        <div id="tpRelatedList" role="list"></div>
-      </div>
-
-      <div class="tp-side-card">
-        <div class="tp-side-title">Why PDFWala</div>
-        <div class="tp-trust-list">
-          <div class="tp-trust-item"><span class="tp-trust-icon">🔒</span>AES-256 encryption</div>
-          <div class="tp-trust-item"><span class="tp-trust-icon">⚡</span>Processed in seconds</div>
-          <div class="tp-trust-item"><span class="tp-trust-icon">🗑️</span>Files deleted after 60 min</div>
-          <div class="tp-trust-item"><span class="tp-trust-icon">🆓</span>100% free, no limits</div>
-          <div class="tp-trust-item"><span class="tp-trust-icon">📱</span>Works on any device</div>
+          <!-- Process another -->
+          <button class="tp-btn-again" id="tpBtnAgain" onclick="resetToolPage()" aria-label="Process another file">
+            ↩ Process another file
+          </button>
         </div>
       </div>
 
-    </div>
+      <!-- Step 3 right: Result -->
+      <div class="tp-panel-result" id="panelResult">
+        <div class="tp-panel-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-3)"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          <div class="tp-panel-label" style="margin-left:6px">Result</div>
+        </div>
+        <div class="tp-result-body">
+          <!-- Placeholder -->
+          <div class="tp-result-placeholder" id="tpResultPlaceholder">
+            <span class="ph-icon">📋</span>
+            <span>Your result will appear here after processing</span>
+          </div>
+          <!-- Result -->
+          <div class="tp-result" id="tpResult" role="region" aria-label="Result">
+            <div class="tp-result-inner" id="tpResultInner">
+              <div class="tp-result-title" id="tpResultTitle"></div>
+              <div class="tp-result-pills" id="tpResultPills"></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  </div>
+    </div><!-- end tp-bottom-grid -->
+
+  </div><!-- end tp-body -->
 </div>
 <!-- end toolPage -->
 
@@ -1599,18 +1810,17 @@ function showHomePage() {
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
-/* ═══ RENDER TOOL PAGE ═══ */
+/* ═══ RENDER TOOL PAGE ═══
+   FIX #1: When no options, top grid collapses to single column
+   FIX #2: Empty form check — hide panelOptions entirely if no content
+*/
 function renderToolPage(toolId) {
   const tool = TOOLS[toolId];
   if (!tool) return;
 
   const skeleton = document.getElementById('toolSkeleton');
-  const inner = document.getElementById('tpHero');
   if (skeleton) { skeleton.style.display = 'block'; }
-
-  setTimeout(() => {
-    if (skeleton) skeleton.style.display = 'none';
-  }, 250);
+  setTimeout(() => { if (skeleton) skeleton.style.display = 'none'; }, 250);
 
   currentToolId = toolId;
   toolSelectedFiles = [];
@@ -1633,57 +1843,65 @@ function renderToolPage(toolId) {
   fi.multiple = tool.multi || false;
   fi.value = '';
   document.getElementById('tpDropHint').textContent =
-    'Accepted: ' + tool.accept.replace(/,/g,' ') + (tool.multi ? ' (multiple files)' : '');
+    'Accepted: ' + tool.accept.replace(/,/g,' ') + (tool.multi ? ' (multiple OK)' : '');
 
-  // Options
-  const optArea = document.getElementById('tpOptionsArea');
+  // FIX #2: Options content check — only show panel if content is non-empty
   const optContent = tool.form();
-  optArea.innerHTML = optContent;
+  const hasOptions = optContent.trim().length > 0;
 
-  // If no options, hide step 2 header
-  const step2 = document.getElementById('step2Header');
-  if (step2) step2.style.display = optContent.trim() ? 'flex' : 'none';
+  const panelOptions = document.getElementById('panelOptions');
+  const topGrid = document.getElementById('tpTopGrid');
+
+  if (hasOptions) {
+    document.getElementById('tpOptionsArea').innerHTML = optContent;
+    panelOptions.style.display = 'block';
+    // FIX #1: two-column grid when there are options
+    topGrid.style.gridTemplateColumns = '1fr 1fr';
+    topGrid.classList.remove('no-options');
+  } else {
+    // FIX #1 & #2: hide step 2 panel, expand step 1 to full width
+    panelOptions.style.display = 'none';
+    topGrid.style.gridTemplateColumns = '1fr';
+    topGrid.classList.add('no-options');
+  }
+
+  // Reset options lock
   const opts = document.getElementById('tpOptions');
-  if (opts) { opts.style.display = optContent.trim() ? 'block' : 'none'; opts.classList.add('locked'); }
+  if (opts) opts.classList.add('locked');
 
-  // Reset UI
+  // Reset UI state
   document.getElementById('tpFileList').innerHTML = '';
   document.getElementById('tpProgress').classList.remove('show');
   document.getElementById('tpResult').classList.remove('show');
   document.getElementById('tpSetupBox').classList.remove('show');
   document.getElementById('tpBtnDownload').style.display = 'none';
   document.getElementById('tpBtnAgain').classList.remove('show');
+  document.getElementById('tpBtnProcess').style.display = 'flex';
   document.getElementById('tpBtnProcess').disabled = true;
   document.getElementById('tpProgressFill').style.width = '0';
 
-  // Step indicators reset
-  document.getElementById('step1Num').classList.remove('done');
+  // Show result placeholder
+  const placeholder = document.getElementById('tpResultPlaceholder');
+  if (placeholder) placeholder.style.display = 'flex';
+
+  // Reset step indicators
+  const s1n = document.getElementById('step1Num');
+  s1n.className = 'tp-step-num active';
   document.getElementById('step1Done').classList.remove('show');
-  document.getElementById('step3Num').style.opacity = '.5';
-  document.getElementById('step3Label').style.opacity = '.5';
-  if (document.getElementById('step2Num')) {
-    document.getElementById('step2Num').style.opacity = '.5';
-    document.getElementById('step2Label').style.opacity = '.5';
+  document.getElementById('panelUpload').classList.add('step-active');
+  document.getElementById('panelUpload').classList.remove('step-done');
+
+  const s2n = document.getElementById('step2Num');
+  if (s2n) { s2n.className = 'tp-step-num'; }
+  if (document.getElementById('step2Label')) {
+    document.getElementById('step2Label').style.opacity = '.6';
   }
 
-  // Dropzone
-  document.getElementById('tpDropzone').style.display = 'block';
-
-  // Related tools
-  renderRelatedTools(toolId);
+  const s3n = document.getElementById('step3Num');
+  s3n.className = 'tp-step-num';
+  document.getElementById('step3Label').style.opacity = '.6';
 
   window.scrollTo({top:0, behavior:'smooth'});
-}
-
-/* ═══ RELATED TOOLS ═══ */
-function renderRelatedTools(toolId) {
-  const ids = RELATED_TOOLS[toolId] || ['merge','compress','split','pdf-to-word'];
-  const list = document.getElementById('tpRelatedList');
-  if (!list) return;
-  list.innerHTML = ids.slice(0,5).map(id => {
-    const t = TOOLS[id]; if (!t) return '';
-    return `<div class="tp-related-item" onclick="openTool('${id}')"><span class="tp-related-icon">${t.icon}</span>${t.title}</div>`;
-  }).join('');
 }
 
 /* ═══ DRAG/DROP ═══ */
@@ -1709,26 +1927,42 @@ function handleToolFiles(files) {
   toolSelectedFiles = tool.multi ? [...toolSelectedFiles, ...files] : [files[0]];
   renderToolFileList();
 
-  // Unlock step 2 & 3
+  // Unlock step 2 options
   const opts = document.getElementById('tpOptions');
-  if (opts) { opts.classList.remove('locked'); }
-  if (document.getElementById('step2Num')) {
-    document.getElementById('step2Num').style.opacity = '1';
+  if (opts) opts.classList.remove('locked');
+
+  // Step 2 indicator (if visible)
+  const s2n = document.getElementById('step2Num');
+  if (s2n) {
+    s2n.className = 'tp-step-num active';
     document.getElementById('step2Label').style.opacity = '1';
   }
-  document.getElementById('step3Num').style.opacity = '1';
+
+  // Step 3 indicator
+  document.getElementById('step3Num').className = 'tp-step-num active';
   document.getElementById('step3Label').style.opacity = '1';
-  document.getElementById('step1Num').classList.add('done');
+
+  // Step 1 mark done
+  document.getElementById('step1Num').className = 'tp-step-num done';
+  document.getElementById('step1Num').textContent = '✓';
   const doneTag = document.getElementById('step1Done');
   document.getElementById('step1DoneText').textContent = toolSelectedFiles.length > 1
     ? toolSelectedFiles.length + ' files selected'
     : toolSelectedFiles[0].name;
   doneTag.classList.add('show');
+  document.getElementById('panelUpload').classList.remove('step-active');
+  document.getElementById('panelUpload').classList.add('step-done');
 
+  // Enable process button
   document.getElementById('tpBtnProcess').disabled = false;
+
+  // Reset result state
   document.getElementById('tpResult').classList.remove('show');
   document.getElementById('tpBtnDownload').style.display = 'none';
   document.getElementById('tpBtnAgain').classList.remove('show');
+  document.getElementById('tpBtnProcess').style.display = 'flex';
+  const placeholder = document.getElementById('tpResultPlaceholder');
+  if (placeholder) placeholder.style.display = 'flex';
 }
 
 function renderToolFileList() {
@@ -1736,7 +1970,7 @@ function renderToolFileList() {
   document.getElementById('tpFileList').innerHTML = toolSelectedFiles.map((f, i) => {
     const type = detectFileType(f);
     let warn = '';
-    if (f.size >= warnMB) warn = `<span style="font-size:11px;color:var(--amber-400);flex-shrink:0">⚠️ Large</span>`;
+    if (f.size >= warnMB) warn = `<span style="font-size:10px;color:var(--amber-400);flex-shrink:0">⚠️ Large</span>`;
     return `<div class="tp-file-item type-${type}" role="listitem">
       <div class="tp-fi-icon">📄</div>
       <span class="tp-fi-name">${esc(f.name)}</span>
@@ -1752,16 +1986,19 @@ function removeToolFile(i) {
   renderToolFileList();
   if (!toolSelectedFiles.length) {
     document.getElementById('tpBtnProcess').disabled = true;
-    document.getElementById('step1Num').classList.remove('done');
+    document.getElementById('step1Num').className = 'tp-step-num active';
+    document.getElementById('step1Num').textContent = '1';
     document.getElementById('step1Done').classList.remove('show');
+    document.getElementById('panelUpload').classList.add('step-active');
+    document.getElementById('panelUpload').classList.remove('step-done');
+
     const opts = document.getElementById('tpOptions');
     if (opts) opts.classList.add('locked');
-    if (document.getElementById('step2Num')) {
-      document.getElementById('step2Num').style.opacity = '.5';
-      document.getElementById('step2Label').style.opacity = '.5';
-    }
-    document.getElementById('step3Num').style.opacity = '.5';
-    document.getElementById('step3Label').style.opacity = '.5';
+
+    const s2n = document.getElementById('step2Num');
+    if (s2n) { s2n.className = 'tp-step-num'; document.getElementById('step2Label').style.opacity = '.6'; }
+    document.getElementById('step3Num').className = 'tp-step-num';
+    document.getElementById('step3Label').style.opacity = '.6';
   }
 }
 
@@ -1933,6 +2170,7 @@ async function processToolFile() {
   const dlBtn = document.getElementById('tpBtnDownload');
   const setupBox = document.getElementById('tpSetupBox');
   const againBtn = document.getElementById('tpBtnAgain');
+  const placeholder = document.getElementById('tpResultPlaceholder');
 
   btn.disabled = true;
   btn.innerHTML = `<div class="tp-dot-loader"><span style="background:#fff"></span><span style="background:#fff"></span><span style="background:#fff"></span></div>&nbsp;Processing…`;
@@ -1942,6 +2180,10 @@ async function processToolFile() {
   setupBox.classList.remove('show');
   againBtn.classList.remove('show');
   fill.style.width = '0';
+  if (placeholder) placeholder.style.display = 'none';
+
+  // Step 3 active
+  document.getElementById('step3Num').className = 'tp-step-num active';
 
   const totalBytes = toolSelectedFiles.reduce((s,f) => s+f.size, 0);
   if (eta) eta.textContent = getEta(totalBytes);
@@ -1988,6 +2230,7 @@ async function processToolFile() {
     } else if (/fetch|NetworkError|Failed/i.test(err.message)) {
       setupBox.classList.add('show');
       prog.classList.remove('show');
+      if (placeholder) { placeholder.style.display = 'flex'; placeholder.innerHTML = '<span class="ph-icon">⚙️</span><span>Start the backend server to process files</span>'; }
     } else {
       showToolResult('error', {message: 'Error: ' + err.message});
     }
@@ -2005,10 +2248,13 @@ function showToolResult(type, data) {
   const title = document.getElementById('tpResultTitle');
   const pills = document.getElementById('tpResultPills');
   const dlBtn = document.getElementById('tpBtnDownload');
+  const processBtn = document.getElementById('tpBtnProcess');
   const againBtn = document.getElementById('tpBtnAgain');
   const prog = document.getElementById('tpProgress');
+  const placeholder = document.getElementById('tpResultPlaceholder');
 
   prog.classList.remove('show');
+  if (placeholder) placeholder.style.display = 'none';
   result.classList.add('show');
   inner.className = 'tp-result-inner ' + type;
 
@@ -2025,14 +2271,19 @@ function showToolResult(type, data) {
     if (url) {
       toolLastFilename = data.filename || 'pdfwala_output';
       toolLastDownloadUrl = url;
+      // FIX #4: Replace process button with download, show again btn
+      processBtn.style.display = 'none';
       dlBtn.style.display = 'flex';
       toast('File ready — download below!', 'success');
     } else {
       toast(data.message || 'Done!', 'success');
     }
     againBtn.classList.add('show');
+    // Step 3 done
+    document.getElementById('step3Num').className = 'tp-step-num done';
   } else {
     dlBtn.style.display = 'none';
+    processBtn.style.display = 'flex';
     toast(data.error || data.message || 'Processing failed.', 'error');
   }
 }
@@ -2060,22 +2311,31 @@ function resetToolPage() {
   document.getElementById('tpSetupBox').classList.remove('show');
   document.getElementById('tpBtnDownload').style.display = 'none';
   document.getElementById('tpBtnAgain').classList.remove('show');
+  document.getElementById('tpBtnProcess').style.display = 'flex';
   document.getElementById('tpBtnProcess').disabled = true;
   document.getElementById('tpProgressFill').style.width = '0';
   document.getElementById('toolFileInput').value = '';
-  document.getElementById('step1Num').classList.remove('done');
+
+  // Reset step indicators
+  document.getElementById('step1Num').className = 'tp-step-num active';
+  document.getElementById('step1Num').textContent = '1';
   document.getElementById('step1Done').classList.remove('show');
+  document.getElementById('panelUpload').classList.add('step-active');
+  document.getElementById('panelUpload').classList.remove('step-done');
 
   const opts = document.getElementById('tpOptions');
   if (opts) opts.classList.add('locked');
-  if (document.getElementById('step2Num')) {
-    document.getElementById('step2Num').style.opacity = '.5';
-    document.getElementById('step2Label').style.opacity = '.5';
-  }
-  document.getElementById('step3Num').style.opacity = '.5';
-  document.getElementById('step3Label').style.opacity = '.5';
 
-  window.scrollTo({top: document.getElementById('tpDropzone').getBoundingClientRect().top + window.scrollY - 80, behavior:'smooth'});
+  const s2n = document.getElementById('step2Num');
+  if (s2n) { s2n.className = 'tp-step-num'; document.getElementById('step2Label').style.opacity = '.6'; }
+  document.getElementById('step3Num').className = 'tp-step-num';
+  document.getElementById('step3Label').style.opacity = '.6';
+
+  // Show placeholder
+  const placeholder = document.getElementById('tpResultPlaceholder');
+  if (placeholder) { placeholder.style.display = 'flex'; placeholder.innerHTML = '<span class="ph-icon">📋</span><span>Your result will appear here after processing</span>'; }
+
+  window.scrollTo({top:0, behavior:'smooth'});
 }
 
 /* ═══ RADIO CHIP ═══ */
@@ -2129,7 +2389,7 @@ function getToolFromURL() {
   return null;
 }
 
-/* ═══ NAV ═══ */
+/* ═══ NAV MEGA ═══ */
 (function initMega() {
   const items = document.querySelectorAll('.nav-item[data-mega]');
   let closeTimer = null;
@@ -2145,6 +2405,7 @@ function getToolFromURL() {
   document.addEventListener('click', e => { if (!e.target.closest('.nav-item[data-mega]')) items.forEach(i => i.classList.remove('open')); });
 })();
 
+/* ═══ MOBILE NAV ═══ */
 function toggleMob() {
   const n = document.getElementById('mobNav');
   const btn = document.getElementById('mobBtn');
@@ -2160,13 +2421,28 @@ function closeMob() {
   document.body.style.overflow = '';
   if (btn) { btn.textContent = '☰'; btn.setAttribute('aria-expanded','false'); }
 }
+
+/* FIX #3: Each section independently toggles its own sub — NO shared state, 
+   NO querySelectorAll closing others. Each btn only manages its own .mob-sub. */
 function toggleMobSec(btn) {
+  // Get THIS button's sibling .mob-sub
   const sub = btn.nextElementSibling;
-  const open = sub.classList.contains('open');
-  document.querySelectorAll('.mob-sub.open').forEach(s => s.classList.remove('open'));
-  document.querySelectorAll('.mob-section-btn.active').forEach(b => b.classList.remove('active'));
-  if (!open) { sub.classList.add('open'); btn.classList.add('active'); }
+  if (!sub || !sub.classList.contains('mob-sub')) return;
+
+  const isOpen = sub.classList.contains('open');
+
+  // Toggle ONLY this section
+  if (isOpen) {
+    sub.classList.remove('open');
+    btn.classList.remove('active');
+    btn.setAttribute('aria-expanded','false');
+  } else {
+    sub.classList.add('open');
+    btn.classList.add('active');
+    btn.setAttribute('aria-expanded','true');
+  }
 }
+
 function toggleTheme() {
   const h = document.documentElement;
   const next = h.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
