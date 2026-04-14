@@ -2267,31 +2267,11 @@ function showToolResult(type, data) {
   pills.innerHTML = pillArr.map(p => `<span class="tp-result-pill">${p}</span>`).join('');
 
   if (type === 'success') {
-  // Special handling for PDF Info
-  if (currentToolId === 'info' && data.page_count !== undefined) {
-    title.textContent = '✓ PDF Info Retrieved';
-    pills.innerHTML = `
-      <div style="width:100%;margin-top:10px;background:rgba(0,0,0,0.1);padding:12px;border-radius:8px;font-size:13px">
-        <table style="width:100%;border-collapse:collapse;color:inherit">
-          <tr><td style="padding:5px 0">📄 Pages</td><td style="text-align:right"><strong>${data.page_count}</strong></td></tr>
-          <tr><td style="padding:5px 0">💾 Size</td><td style="text-align:right"><strong>${data.size_human}</strong></td></tr>
-          <tr><td style="padding:5px 0">📌 Version</td><td style="text-align:right"><strong>${data.pdf_version || 'Unknown'}</strong></td></tr>
-          <tr><td style="padding:5px 0">🔒 Encrypted</td><td style="text-align:right"><strong>${data.encrypted ? 'Yes' : 'No'}</strong></td></tr>
-          <tr><td style="padding:5px 0">👤 Author</td><td style="text-align:right"><strong>${data.author || '—'}</strong></td></tr>
-          <tr><td style="padding:5px 0">📝 Title</td><td style="text-align:right"><strong>${data.title || '—'}</strong></td></tr>
-          <tr><td style="padding:5px 0">🖼️ Images</td><td style="text-align:right"><strong>${data.image_count || 0}</strong></td></tr>
-        </table>
-      </div>`;
-    processBtn.style.display = 'none';
-    dlBtn.style.display = 'none';
-    againBtn.classList.add('show');
-    document.getElementById('step3Num').className = 'tp-step-num done';
-  } else {
-    // Normal file download handling for other tools
     const url = data.download_url || (data.filename ? API + '/download/' + data.filename : null);
     if (url) {
       toolLastFilename = data.filename || 'pdfwala_output';
       toolLastDownloadUrl = url;
+      // FIX #4: Replace process button with download, show again btn
       processBtn.style.display = 'none';
       dlBtn.style.display = 'flex';
       toast('File ready — download below!', 'success');
@@ -2299,12 +2279,13 @@ function showToolResult(type, data) {
       toast(data.message || 'Done!', 'success');
     }
     againBtn.classList.add('show');
+    // Step 3 done
     document.getElementById('step3Num').className = 'tp-step-num done';
+  } else {
+    dlBtn.style.display = 'none';
+    processBtn.style.display = 'flex';
+    toast(data.error || data.message || 'Processing failed.', 'error');
   }
-} else {
-  dlBtn.style.display = 'none';
-  processBtn.style.display = 'flex';
-  toast(data.error || data.message || 'Processing failed.', 'error');
 }
 
 /* ═══ DOWNLOAD ═══ */
