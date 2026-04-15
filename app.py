@@ -2460,6 +2460,242 @@ def excel_to_ppt():
     except Exception:
         log.exception("excel_to_ppt"); return err("Excel to PPT failed", 500)
 
+@app.route("/api/v1/jpg-to-pdf", methods=["POST"])
+@app.route("/api/jpg-to-pdf", methods=["POST"])
+@require_auth
+@require_rate_limit
+def jpg_to_pdf():
+    """Convert JPG images to PDF"""
+    files = request.files.getlist("files")
+    if not files or all(f.filename == "" for f in files):
+        return err("At least one JPG file required")
+    for f in files:
+        e = validate_file(f, Config.ALLOWED_JPG)
+        if e: return err(e)
+    page_size = request.form.get("page_size", "auto")
+    try:
+        with FileService.temp_uploads(files) as paths:
+            fname = generate_output_filename(files[0].filename, "to_pdf", 
+                                              is_multi=True, filenames=[f.filename for f in files])
+            fname = re.sub(r'\.(jpg|jpeg)$', '.pdf', fname, flags=re.IGNORECASE)
+            if not fname.endswith(".pdf"): fname = Path(fname).stem + ".pdf"
+            out = _images_to_pdf(paths, page_size, fname)
+        return ok(f"Converted {len(files)} JPG(s) to PDF", out)
+    except Exception:
+        log.exception("jpg_to_pdf"); return err("JPG to PDF failed", 500)
+
+
+@app.route("/api/v1/word-to-jpg", methods=["POST"])
+@app.route("/api/word-to-jpg", methods=["POST"])
+@require_auth
+@require_rate_limit
+def word_to_jpg():
+    """Convert Word to JPG images"""
+    f = request.files.get("file")
+    e = validate_file(f, Config.ALLOWED_DOC)
+    if e: return err(e)
+    try:
+        with FileService.temp_upload(f) as path:
+            pdf_path = libre(path, "pdf", temp=True)
+            if not pdf_path: return err("LibreOffice conversion failed", 500)
+            doc = fitz.open(pdf_path)
+            try:
+                buf = io.BytesIO()
+                with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                    for i, page in enumerate(doc):
+                        pix = page.get_pixmap(dpi=150)
+                        zf.writestr(f"page_{i+1:04d}.jpg", pix.tobytes("jpeg"))
+            finally:
+                doc.close()
+            try: os.remove(pdf_path)
+            except OSError: pass
+            fname = generate_output_filename(f.filename, "to_jpg")
+            fname = re.sub(r'\.(doc|docx)$', '.zip', fname, flags=re.IGNORECASE)
+            out = os.path.join(Config.OUTPUT_FOLDER, fname)
+            with open(out, "wb") as fh: fh.write(buf.getvalue())
+        return ok("Word converted to JPG images", out)
+    except Exception:
+        log.exception("word_to_jpg"); return err("Word to JPG failed", 500)
+
+
+@app.route("/api/v1/word-to-png", methods=["POST"])
+@app.route("/api/word-to-png", methods=["POST"])
+@require_auth
+@require_rate_limit
+def word_to_png():
+    """Convert Word to PNG images"""
+    f = request.files.get("file")
+    e = validate_file(f, Config.ALLOWED_DOC)
+    if e: return err(e)
+    try:
+        with FileService.temp_upload(f) as path:
+            pdf_path = libre(path, "pdf", temp=True)
+            if not pdf_path: return err("LibreOffice conversion failed", 500)
+            doc = fitz.open(pdf_path)
+            try:
+                buf = io.BytesIO()
+                with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                    for i, page in enumerate(doc):
+                        pix = page.get_pixmap(dpi=150)
+                        zf.writestr(f"page_{i+1:04d}.png", pix.tobytes("png"))
+            finally:
+                doc.close()
+            try: os.remove(pdf_path)
+            except OSError: pass
+            fname = generate_output_filename(f.filename, "to_png")
+            fname = re.sub(r'\.(doc|docx)$', '.zip', fname, flags=re.IGNORECASE)
+            out = os.path.join(Config.OUTPUT_FOLDER, fname)
+            with open(out, "wb") as fh: fh.write(buf.getvalue())
+        return ok("Word converted to PNG images", out)
+    except Exception:
+        log.exception("word_to_png"); return err("Word to PNG failed", 500)
+
+
+@app.route("/api/v1/word-to-html", methods=["POST"])
+@app.route("/api/word-to-html", methods=["POST"])
+@require_auth
+@require_rate_limit
+def word_to_html():
+    """Convert Word to HTML"""
+    f = request.files.get("file")
+    e = validate_file(f, Config.ALLOWED_DOC)
+    if e: return err(e)
+    try:
+        with FileService.temp_upload(f) as path:
+            fname = generate_output_filename(f.filename, "to_html")
+            fname = re.sub(r'\.(doc|docx)$', '.html', fname, flags=re.IGNORECASE)
+            out = libre(path, "html", output_filename=fname)
+            if not out: return err("LibreOffice conversion failed", 500)
+        return ok("Word converted to HTML", out)
+    except Exception:
+        log.exception("word_to_html"); return err("Word to HTML failed", 500)
+
+
+@app.route("/api/v1/word-to-json", methods=["POST"])
+@app.route("/api/word-to-json", methods=["POST"])
+@require_auth
+@require_rate_limit
+def word_to_json():
+    """Convert Word to JSON"""
+    if not DOCX_AVAILABLE: return err("Requires python-docx", 501)
+    f = request.files.get("file")
+    e = validate_file(f, Config.ALLOWED_DOC)
+    if e: return err(e)
+    try:
+        with FileService.temp_upload(f) as path:
+            doc = DocxDocument(path)
+            data = {"paragraphs": [p.text for p in doc.paragraphs], "tables": []}
+            for table in doc.tables:
+                tdata = [[cell.text for cell in row.cells] for row in table.rows]
+                data["tables"].append(tdata)
+            fname = generate_output_filename(f.filename, "to_json")
+            fname = re.sub(r'\.(doc|docx)$', '.json', fname, flags=re.IGNORECASE)
+            out = os.path.join(Config.OUTPUT_FOLDER, fname)
+            with open(out, "w", encoding="utf-8") as fh:
+                json.dump(data, fh, ensure_ascii=False, indent=2)
+        return ok("Word converted to JSON", out)
+    except Exception:
+        log.exception("word_to_json"); return err("Word to JSON failed", 500)
+
+
+@app.route("/api/v1/excel-to-png", methods=["POST"])
+@app.route("/api/excel-to-png", methods=["POST"])
+@require_auth
+@require_rate_limit
+def excel_to_png():
+    """Convert Excel to PNG images"""
+    f = request.files.get("file")
+    e = validate_file(f, Config.ALLOWED_XLS)
+    if e: return err(e)
+    try:
+        with FileService.temp_upload(f) as path:
+            pdf_path = libre(path, "pdf", temp=True)
+            if pdf_path and os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 100:
+                doc = fitz.open(pdf_path)
+                try:
+                    buf = io.BytesIO()
+                    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                        for i, page in enumerate(doc):
+                            pix = page.get_pixmap(dpi=150)
+                            zf.writestr(f"sheet_{i+1:04d}.png", pix.tobytes("png"))
+                    fname = generate_output_filename(f.filename, "to_png")
+                    fname = re.sub(r'\.(xls|xlsx)$', '.zip', fname, flags=re.IGNORECASE)
+                    out = os.path.join(Config.OUTPUT_FOLDER, fname)
+                    with open(out, "wb") as fh: fh.write(buf.getvalue())
+                    return ok("Excel sheets exported as PNG", out)
+                finally:
+                    doc.close()
+                    try: os.remove(pdf_path)
+                    except OSError: pass
+            return err("Excel to PNG failed — LibreOffice unavailable", 500)
+    except Exception:
+        log.exception("excel_to_png"); return err("Excel to PNG failed", 500)
+
+
+@app.route("/api/v1/excel-to-html", methods=["POST"])
+@app.route("/api/excel-to-html", methods=["POST"])
+@require_auth
+@require_rate_limit
+def excel_to_html():
+    """Convert Excel to HTML"""
+    f = request.files.get("file")
+    e = validate_file(f, Config.ALLOWED_XLS)
+    if e: return err(e)
+    try:
+        with FileService.temp_upload(f) as path:
+            fname = generate_output_filename(f.filename, "to_html")
+            fname = re.sub(r'\.(xls|xlsx)$', '.html', fname, flags=re.IGNORECASE)
+            out = libre(path, "html", output_filename=fname)
+            if not out: return err("LibreOffice conversion failed", 500)
+        return ok("Excel converted to HTML", out)
+    except Exception:
+        log.exception("excel_to_html"); return err("Excel to HTML failed", 500)
+
+
+@app.route("/api/v1/image-to-word", methods=["POST"])
+@app.route("/api/image-to-word", methods=["POST"])
+@require_auth
+@require_rate_limit
+def image_to_word():
+    """Convert Image to Word (OCR)"""
+    if not DOCX_AVAILABLE: return err("Requires python-docx", 501)
+    f = request.files.get("file")
+    e = validate_file(f, Config.ALLOWED_IMAGE)
+    if e: return err(e)
+    try:
+        with FileService.temp_upload(f) as path:
+            img = Image.open(path)
+            doc = DocxDocument()
+            doc.add_heading("Image OCR Result", 0)
+            
+            if TESSERACT_AVAILABLE:
+                text = pytesseract.image_to_string(img)
+                for para in text.split('\n\n'):
+                    if para.strip():
+                        doc.add_paragraph(para.strip())
+            else:
+                tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+                img.save(tmp.name, format="PNG"); tmp.close()
+                doc.add_picture(tmp.name, width=Inches(6))
+                os.unlink(tmp.name)
+                doc.add_paragraph("(OCR not available — image embedded)")
+            
+            fname = generate_output_filename(f.filename, "to_word")
+            fname = re.sub(r'\.(jpg|jpeg|png|gif|bmp|tiff|webp)$', '.docx', 
+                           fname, flags=re.IGNORECASE)
+            out = os.path.join(Config.OUTPUT_FOLDER, fname)
+            doc.save(out)
+        return ok("Image converted to Word", out)
+    except Exception:
+        log.exception("image_to_word"); return err("Image to Word failed", 500)
+
+
+# ============================================================================
+# ERROR HANDLERS
+# ============================================================================
+@app.errorhandler(400)
+def _e400(e): return jsonify(...)
+
 # ============================================================================
 # ERROR HANDLERS
 # ============================================================================
