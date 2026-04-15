@@ -1,6 +1,6 @@
 FROM python:3.11-slim AS base
 
-# System dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice \
     ghostscript \
@@ -12,27 +12,38 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto \
     fonts-liberation \
     libgl1 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
+# Copy requirements first (better layer caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy application code
 COPY . .
 
-RUN mkdir -p /data/uploads /data/outputs /data/temp
+# Create data directories (consistent paths)
+RUN mkdir -p /home/opc/pdfwala/uploads \
+    /home/opc/pdfwala/outputs \
+    /home/opc/pdfwala/temp
 
+# Environment variables
 ENV BASE_DIR=/app \
-    BASE_DATA_DIR=/data \
-    UPLOAD_FOLDER=/data/uploads \
-    OUTPUT_FOLDER=/data/outputs \
-    TEMP_FOLDER=/data/temp \
-    LOG_LEVEL=INFO
+    BASE_DATA_DIR=/home/opc/pdfwala \
+    UPLOAD_FOLDER=/home/opc/pdfwala/uploads \
+    OUTPUT_FOLDER=/home/opc/pdfwala/outputs \
+    TEMP_FOLDER=/home/opc/pdfwala/temp \
+    LOG_LEVEL=INFO \
+    PYTHONUNBUFFERED=1
 
 EXPOSE 5000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", \
-     "--timeout", "300", "--keep-alive", "5", \
-     "--worker-class", "gthread", "--threads", "2", \
-     "app:application"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
+# FIXED: Use gunicorn.conf.py instead of inline flags
+# This resolves the conflict - all settings now come from the config file
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "app:application"]
