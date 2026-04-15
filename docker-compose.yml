@@ -1,10 +1,15 @@
-
 services:
   redis:
     image: redis:7-alpine
     container_name: pdfwala_redis
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
     networks:
       - pdfwala_net
 
@@ -22,6 +27,7 @@ services:
       - RATE_LIMIT=30
       - MAX_FILE_SIZE=209715200
       - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=743b4015191aec42fd09c5dd198603d8d59c59eb278a04dd4e68151ec215a565
     volumes:
       - ./uploads:/app/uploads
       - ./outputs:/app/outputs
@@ -33,13 +39,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 20s
+      start_period: 60s
     mem_limit: 6g
     shm_size: 2g
     networks:
       - pdfwala_net
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
 
   worker:
     build:
@@ -62,7 +69,8 @@ services:
     networks:
       - pdfwala_net
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
 
   nginx:
     image: nginx:1.25-alpine

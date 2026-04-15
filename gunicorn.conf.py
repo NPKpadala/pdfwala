@@ -13,8 +13,8 @@ keepalive = 5
 limit_request_line = 8190
 limit_request_fields = 200
 
-max_requests = 1000
-max_requests_jitter = 30
+max_requests = 5000
+max_requests_jitter = 200
 
 accesslog = "-"
 errorlog = "-"
