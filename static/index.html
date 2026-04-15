@@ -1612,6 +1612,7 @@ const APP_CONFIG = {
   MAX_RECENT_TOOLS: 3,
   SEARCH_DEBOUNCE_MS: 300
 };
+window.__PDFWALA_API_KEY__ = '';  // No auth during testing
 
 function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
