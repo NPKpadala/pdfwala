@@ -1,10 +1,15 @@
-
 services:
   redis:
     image: redis:7-alpine
     container_name: pdfwala_redis
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
     networks:
       - pdfwala_net
 
@@ -39,7 +44,8 @@ services:
     networks:
       - pdfwala_net
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
 
   worker:
     build:
@@ -62,7 +68,8 @@ services:
     networks:
       - pdfwala_net
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
 
   nginx:
     image: nginx:1.25-alpine
