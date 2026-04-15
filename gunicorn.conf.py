@@ -17,7 +17,7 @@ max_requests = 1000
 max_requests_jitter = 30
 
 accesslog = "-"
-errorlog = "/app/gunicorn_error.log"
+errorlog = "-"
 loglevel = "info"
 access_log_format = '%(h)s "%(r)s" %(s)s %(b)s %(D)sµs'
 
