@@ -1,18 +1,20 @@
 FROM python:3.11-slim AS base
 
 # Install system dependencies
+# NOTE: wkhtmltopdf removed - not available in Debian Trixie
+# HTML to PDF will fallback to weasyprint
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice \
     ghostscript \
     tesseract-ocr \
     tesseract-ocr-eng \
-    wkhtmltopdf \
     pngquant \
     fonts-dejavu \
     fonts-noto \
     fonts-liberation \
     libgl1 \
     curl \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -44,6 +46,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
-# FIXED: Use gunicorn.conf.py instead of inline flags
-# This resolves the conflict - all settings now come from the config file
+# Use gunicorn.conf.py
 CMD ["gunicorn", "-c", "gunicorn.conf.py", "app:application"]
