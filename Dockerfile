@@ -1,38 +1,38 @@
-FROM ubuntu:22.04
+FROM python:3.11-slim AS base
 
-# Set non-interactive mode to avoid timezone prompt
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    python3.11 python3.11-dev python3-pip \
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice \
-    tesseract-ocr tesseract-ocr-eng \
-    ghostscript poppler-utils \
+    ghostscript \
+    tesseract-ocr \
+    tesseract-ocr-eng \
     wkhtmltopdf \
     pngquant \
-    default-jre-headless \
-    curl \
+    fonts-dejavu \
+    fonts-noto \
+    fonts-liberation \
+    libgl1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy requirements first (better caching)
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Python packages
-RUN pip3 install --no-cache-dir -r requirements.txt
+COPY . .
 
-# Copy all application files
-COPY app.py .
-COPY gunicorn.conf.py .
-COPY static/ ./static/
+RUN mkdir -p /data/uploads /data/outputs /data/temp
 
-# Create necessary directories
-RUN mkdir -p /app/uploads /app/outputs /app/cache
+ENV BASE_DIR=/app \
+    BASE_DATA_DIR=/data \
+    UPLOAD_FOLDER=/data/uploads \
+    OUTPUT_FOLDER=/data/outputs \
+    TEMP_FOLDER=/data/temp \
+    LOG_LEVEL=INFO
 
-# Expose port
 EXPOSE 5000
 
-# Run with gunicorn (health check will be defined in docker-compose for web, not here)
-CMD ["gunicorn", "-c", "gunicorn.conf.py", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", \
+     "--timeout", "300", "--keep-alive", "5", \
+     "--worker-class", "gthread", "--threads", "2", \
+     "app:application"]
