@@ -15,13 +15,13 @@ class Config:
     API_KEY        = os.environ.get("API_KEY",         "")
     SIGNED_URL_SECRET = os.environ.get("SIGNED_URL_SECRET", SECRET_KEY)
 
-    # ── Paths ──────────────────────────────────────────────────────────────────
-    BASE_DIR       = os.environ.get("BASE_DIR",        "/app")
-    BASE_DATA_DIR  = os.environ.get("BASE_DATA_DIR",   "/data")
-    UPLOAD_FOLDER  = os.environ.get("UPLOAD_FOLDER",   "/data/uploads")
-    OUTPUT_FOLDER  = os.environ.get("OUTPUT_FOLDER",   "/data/outputs")
-    TEMP_FOLDER    = os.environ.get("TEMP_FOLDER",     "/data/temp")
-    STATIC_FOLDER  = os.environ.get("STATIC_FOLDER",   "/app/static")
+    # ── Paths (UPDATED FOR ORACLE VM) ─────────────────────────────────────────
+    BASE_DIR       = os.environ.get("BASE_DIR",        "/home/opc/pdfwala")
+    BASE_DATA_DIR  = os.environ.get("BASE_DATA_DIR",   "/home/opc/pdfwala")
+    UPLOAD_FOLDER  = os.environ.get("UPLOAD_FOLDER",   "/home/opc/pdfwala/uploads")
+    OUTPUT_FOLDER  = os.environ.get("OUTPUT_FOLDER",   "/home/opc/pdfwala/outputs")
+    TEMP_FOLDER    = os.environ.get("TEMP_FOLDER",     "/home/opc/pdfwala/temp")
+    STATIC_FOLDER  = os.environ.get("STATIC_FOLDER",   "/home/opc/pdfwala/static")
 
     # ── Limits ─────────────────────────────────────────────────────────────────
     MAX_FILE_SIZE   = int(os.environ.get("MAX_FILE_SIZE",   200 * 1024 * 1024))
@@ -29,8 +29,8 @@ class Config:
     FILE_TTL_SEC    = int(os.environ.get("FILE_TTL_SEC",    3600))
     EXCEL_ROW_LIMIT = int(os.environ.get("EXCEL_ROW_LIMIT", 5000))
 
-    # ── Redis ──────────────────────────────────────────────────────────────────
-    REDIS_URL             = os.environ.get("REDIS_URL", "redis://redis:6379/0")
+    # ── Redis (UPDATED FOR DOCKER COMPOSE) ────────────────────────────────────
+    REDIS_URL             = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
     REDIS_MAX_CONNECTIONS = int(os.environ.get("REDIS_MAX_CONNECTIONS", 50))
 
     # ── Rate limiting ──────────────────────────────────────────────────────────
@@ -83,7 +83,12 @@ class Config:
     # Log level
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 
-    # Celery queues
+    # Celery queue backpressure limits
     CELERY_FAST_QUEUE_MAX   = int(os.environ.get("CELERY_FAST_QUEUE_MAX",   500))
     CELERY_OFFICE_QUEUE_MAX = int(os.environ.get("CELERY_OFFICE_QUEUE_MAX", 200))
     CELERY_SLOW_QUEUE_MAX   = int(os.environ.get("CELERY_SLOW_QUEUE_MAX",   100))
+
+
+# Create required directories on import
+for _dir in [Config.UPLOAD_FOLDER, Config.OUTPUT_FOLDER, Config.TEMP_FOLDER]:
+    os.makedirs(_dir, exist_ok=True)
