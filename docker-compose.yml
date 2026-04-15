@@ -27,6 +27,7 @@ services:
       - RATE_LIMIT=30
       - MAX_FILE_SIZE=209715200
       - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=743b4015191aec42fd09c5dd198603d8d59c59eb278a04dd4e68151ec215a565
     volumes:
       - ./uploads:/app/uploads
       - ./outputs:/app/outputs
