@@ -2484,6 +2484,73 @@ def jpg_to_pdf():
     except Exception:
         log.exception("jpg_to_pdf"); return err("JPG to PDF failed", 500)
 
+@app.route("/api/v1/pdf-to-jpg", methods=["POST"])
+@app.route("/api/pdf-to-jpg", methods=["POST"])
+@require_auth
+@require_rate_limit
+def pdf_to_jpg():
+    """Convert PDF to JPG images"""
+    f = request.files.get("file")
+    e = validate_file(f, Config.ALLOWED_PDF)
+    if e: return err(e)
+    
+    try:
+        with FileService.temp_upload(f) as path:
+            doc = fitz.open(path)
+            count = len(doc)
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                for i, page in enumerate(doc):
+                    pix = page.get_pixmap(dpi=150)
+                    zf.writestr(f"page_{i+1:04d}.jpg", pix.tobytes("jpeg"))
+            doc.close()
+            
+            fname = generate_output_filename(f.filename, "to_jpg")
+            fname = re.sub(r'\.pdf$', '.zip', fname, flags=re.IGNORECASE)
+            if not fname.endswith('.zip'):
+                fname = Path(fname).stem + '.zip'
+            out = os.path.join(Config.OUTPUT_FOLDER, fname)
+            with open(out, "wb") as fh:
+                fh.write(buf.getvalue())
+        return ok(f"Exported {count} page(s) as JPG", out)
+    except Exception:
+        log.exception("pdf_to_jpg")
+        return err("PDF to JPG failed", 500)
+
+
+@app.route("/api/v1/pdf-to-png", methods=["POST"])
+@app.route("/api/pdf-to-png", methods=["POST"])
+@require_auth
+@require_rate_limit
+def pdf_to_png():
+    """Convert PDF to PNG images"""
+    f = request.files.get("file")
+    e = validate_file(f, Config.ALLOWED_PDF)
+    if e: return err(e)
+    
+    try:
+        with FileService.temp_upload(f) as path:
+            doc = fitz.open(path)
+            count = len(doc)
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                for i, page in enumerate(doc):
+                    pix = page.get_pixmap(dpi=150)
+                    zf.writestr(f"page_{i+1:04d}.png", pix.tobytes("png"))
+            doc.close()
+            
+            fname = generate_output_filename(f.filename, "to_png")
+            fname = re.sub(r'\.pdf$', '.zip', fname, flags=re.IGNORECASE)
+            if not fname.endswith('.zip'):
+                fname = Path(fname).stem + '.zip'
+            out = os.path.join(Config.OUTPUT_FOLDER, fname)
+            with open(out, "wb") as fh:
+                fh.write(buf.getvalue())
+        return ok(f"Exported {count} page(s) as PNG", out)
+    except Exception:
+        log.exception("pdf_to_png")
+        return err("PDF to PNG failed", 500)
+
 
 @app.route("/api/v1/word-to-jpg", methods=["POST"])
 @app.route("/api/word-to-jpg", methods=["POST"])
