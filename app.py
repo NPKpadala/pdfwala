@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# PDFWala V10.0.1 — 24 bugs patched (audit 2026-04-19)
 """PDFWala Enterprise V10.0 — Modular Production Backend"""
 __version__ = "10.0.0"
 import os, sys, io, re, csv, json, uuid, time, shutil, signal, zipfile
@@ -426,19 +426,22 @@ def merge_pdf():
         if e: return err(e)
     try:
         with FileService.temp_uploads(files) as paths:
-            merger = PdfMerger()
             page_sizes = set()
             for p in paths:
                 doc = fitz.open(p)
                 for pg in doc:
                     page_sizes.add((round(pg.rect.width,0), round(pg.rect.height,0)))
                 doc.close()
-                merger.append(p)
+            out_doc = fitz.open()
+            for p in paths:
+                src = fitz.open(p)
+                out_doc.insert_pdf(src)
+                src.close()
             fname = generate_output_filename(files[0].filename, "merged",
                                               is_multi=True, filenames=[f.filename for f in files])
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
-            merger.write(out)
-            merger.close()
+            out_doc.save(out)
+            out_doc.close()
         return ok(f"Merged {len(files)} PDFs", out, mixed_page_sizes=(len(page_sizes)>1))
     except Exception:
         log.exception("merge"); return err("Merge failed", 500)
@@ -686,13 +689,29 @@ def linearize_pdf():
             orig_size = os.path.getsize(path)
             fname = generate_output_filename(f.filename, "linearized")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
+            # Try qpdf first (true linearization)
+            try:
+                result = subprocess.run(
+                    ["qpdf", "--linearize", path, out],
+                    capture_output=True, timeout=120
+                )
+                if result.returncode == 0 and os.path.exists(out) and os.path.getsize(out) > 0:
+                    new_size = os.path.getsize(out)
+                    reduction = round((1 - new_size / orig_size) * 100, 1) if orig_size else 0
+                    return ok(f"PDF linearized (fast-web-view) — {reduction}% size change", out,
+                              original_size_bytes=orig_size, new_size_bytes=new_size,
+                              method="qpdf")
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                pass
+            # Fallback: Ghostscript (recompresses but does not truly linearize)
             gs_ok = ghostscript_compress(path, out, gs_setting="/printer")
             if not gs_ok or not os.path.exists(out) or os.path.getsize(out) == 0:
-                return err("Linearization failed — ensure Ghostscript is installed.", 500)
+                return err("Linearization failed — install qpdf for true linearization.", 500)
             new_size = os.path.getsize(out)
             reduction = round((1 - new_size / orig_size) * 100, 1) if orig_size else 0
-        return ok(f"PDF processed — {reduction}% size change", out,
-                  original_size_bytes=orig_size, new_size_bytes=new_size)
+            return ok(f"PDF recompressed — {reduction}% size change (install qpdf for true linearization)", out,
+                      original_size_bytes=orig_size, new_size_bytes=new_size,
+                      method="ghostscript_fallback")
     except Exception:
         log.exception("linearize"); return err("Linearization failed", 500)
 # ============================================================================
@@ -1007,8 +1026,11 @@ def protect_pdf():
                 if allow_copy: permissions |= int(fitz.PDF_PERM_COPY)
                 fname = generate_output_filename(f.filename, "protected")
                 out = os.path.join(Config.OUTPUT_FOLDER, fname)
+                import secrets as _secrets
+                _owner_pw = pw + "_o_" + _secrets.token_hex(12)
                 doc.save(out, encryption=fitz.PDF_ENCRYPT_AES_256,
-                         owner_pw=pw, user_pw=pw, permissions=permissions)
+                         owner_pw=_owner_pw, user_pw=pw,
+                         permissions=permissions)
             finally:
                 doc.close()
         return ok("PDF password-protected with AES-256", out)
@@ -1027,9 +1049,12 @@ def unlock_pdf():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
-            if doc.is_encrypted:
-                if not doc.authenticate(pw):
-                    doc.close(); return err("Wrong password", 401)
+            if not doc.is_encrypted:
+                doc.close()
+                return err("This PDF is not password-protected.", 400)
+            if not doc.authenticate(pw):
+                doc.close()
+                return err("Incorrect password.", 401)
             fname = generate_output_filename(f.filename, "unlocked")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
             doc.save(out, encryption=fitz.PDF_ENCRYPT_NONE)
@@ -1148,8 +1173,18 @@ def redact_pdf():
                             page.add_redact_annot(rect, fill=(0,0,0)); count += 1
                     else:
                         for match in compiled.finditer(page.get_text("text")):
-                            for rect in page.search_for(match.group()):
-                                page.add_redact_annot(rect, fill=(0,0,0)); count += 1
+                            matched = match.group().strip()
+                            if not matched:
+                                continue
+                            rects = page.search_for(matched)
+                            if not rects:
+                                # fallback: search word by word
+                                for word in matched.split():
+                                    if word.strip():
+                                        rects += page.search_for(word.strip())
+                            for rect in rects:
+                                page.add_redact_annot(rect, fill=(0, 0, 0))
+                                count += 1
                     page.apply_redactions()
                 fname = generate_output_filename(f.filename, "redacted")
                 out = os.path.join(Config.OUTPUT_FOLDER, fname)
@@ -1182,15 +1217,13 @@ def pdf_to_image():
                 with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                     for i, page in enumerate(doc):
                         mat = fitz.Matrix(dpi/72, dpi/72)
-                        pix = page.get_pixmap(matrix=mat, alpha=True)
-                        pil = Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGBA")
-                        bg = Image.new("RGB", pil.size, (255,255,255))
-                        bg.paste(pil, mask=pil.split()[3])
+                        pix = page.get_pixmap(matrix=mat, alpha=False, colorspace=fitz.csRGB)
+                        pil = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
                         img_buf = io.BytesIO()
                         if fmt == "jpg":
-                            bg.save(img_buf, "JPEG", quality=85, optimize=True)
+                            pil.save(img_buf, "JPEG", quality=85, optimize=True)
                         else:
-                            bg.save(img_buf, "PNG")
+                            pil.save(img_buf, "PNG")
                         zf.writestr(f"page_{i+1:04d}.{fmt}", img_buf.getvalue())
             finally:
                 doc.close()
@@ -1221,13 +1254,28 @@ def pdf_to_word():
     out = os.path.join(Config.OUTPUT_FOLDER, fname)
     PDF2WORD_SYNC_LIMIT = getattr(Config, 'PDF2WORD_SYNC_LIMIT', 10*1024*1024)
     if file_size <= PDF2WORD_SYNC_LIMIT:
-        try:
-            cv = Pdf2DocxConverter(upload_path)
-            cv.convert(out, start=0, end=None)
-            cv.close()
-        finally:
+        _result = {}
+        def _convert_sync():
+            try:
+                cv = Pdf2DocxConverter(upload_path)
+                cv.convert(out, start=0, end=None)
+                cv.close()
+                _result['ok'] = True
+            except Exception as ex:
+                _result['err'] = str(ex)
+        _t = threading.Thread(target=_convert_sync, daemon=True)
+        _t.start()
+        _t.join(timeout=90)
+        if _t.is_alive():
             try: os.remove(upload_path)
             except OSError: pass
+            return err("Conversion timed out — file may be too complex", 504)
+        if _result.get('err'):
+            try: os.remove(upload_path)
+            except OSError: pass
+            return err(f"Conversion failed: {_result['err']}", 500)
+        try: os.remove(upload_path)
+        except OSError: pass
         if not os.path.exists(out) or os.path.getsize(out) == 0:
             return err("Conversion failed — output is empty", 500)
         return ok("PDF converted to Word", out)
@@ -1290,8 +1338,19 @@ def pdf_to_excel():
                 try:
                     with pdfplumber.open(path) as pdf:
                         for page in pdf.pages:
-                            for table in page.extract_tables({"vertical_strategy":"lines",
-                                                               "horizontal_strategy":"lines","snap_tolerance":3}):
+                            tables = page.extract_tables({
+                                "vertical_strategy": "lines",
+                                "horizontal_strategy": "lines",
+                                "snap_tolerance": 5
+                            })
+                            if not tables:
+                                tables = page.extract_tables({
+                                    "vertical_strategy": "text",
+                                    "horizontal_strategy": "text",
+                                    "snap_tolerance": 3,
+                                    "join_tolerance": 3
+                                })
+                            for table in tables:
                                 if table and any(any(c for c in row if c) for row in table):
                                     tables_extracted += 1
                                     ws = wb.create_sheet(f"Table_{tables_extracted}")
@@ -1355,10 +1414,15 @@ def pdf_to_ppt():
                 for page in doc:
                     pix = page.get_pixmap(dpi=200)
                     tmp_img = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-                    tmp_img.write(pix.tobytes("png")); tmp_img.close()
-                    slide = prs.slides.add_slide(blank)
-                    slide.shapes.add_picture(tmp_img.name, 0, 0, prs.slide_width, prs.slide_height)
-                    os.unlink(tmp_img.name)
+                    try:
+                        tmp_img.write(pix.tobytes("png"))
+                        tmp_img.close()
+                        slide = prs.slides.add_slide(blank)
+                        slide.shapes.add_picture(tmp_img.name, 0, 0,
+                                                  prs.slide_width, prs.slide_height)
+                    finally:
+                        try: os.unlink(tmp_img.name)
+                        except OSError: pass
             finally:
                 doc.close()
             fname = generate_output_filename(f.filename, "to_ppt")
@@ -1424,30 +1488,33 @@ def compare_pdf():
         with FileService.temp_uploads(files) as paths:
             doc1 = fitz.open(paths[0]); doc2 = fitz.open(paths[1])
             try:
+                extra_pages = abs(len(doc1) - len(doc2))
                 pages = min(len(doc1), len(doc2))
                 buf = io.BytesIO()
                 text_diff_pages = []; overall_sims = []
                 MAX_WORDS = 500
                 with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-                    for i in range(pages):
-                        pix1 = doc1[i].get_pixmap(dpi=150); pix2 = doc2[i].get_pixmap(dpi=150)
+                    for page_idx in range(pages):
+                        pix1 = doc1[page_idx].get_pixmap(dpi=150); pix2 = doc2[page_idx].get_pixmap(dpi=150)
                         img1 = Image.open(io.BytesIO(pix1.tobytes("png"))).convert("RGB")
                         img2 = Image.open(io.BytesIO(pix2.tobytes("png"))).convert("RGB")
                         if img1.size != img2.size: img2 = img2.resize(img1.size, Image.LANCZOS)
                         diff = ImageChops.difference(img1, img2)
                         diff_e = diff.point(lambda x: min(x*8, 255))
                         diff_out = io.BytesIO(); diff_e.save(diff_out, "PNG")
-                        zf.writestr(f"diff_page_{i+1:04d}.png", diff_out.getvalue())
-                        words1 = [w[4] for w in doc1[i].get_text("words")][:MAX_WORDS]
-                        words2 = [w[4] for w in doc2[i].get_text("words")][:MAX_WORDS]
+                        zf.writestr(f"diff_page_{page_idx+1:04d}.png", diff_out.getvalue())
+                        words1 = [w[4] for w in doc1[page_idx].get_text("words")][:MAX_WORDS]
+                        words2 = [w[4] for w in doc2[page_idx].get_text("words")][:MAX_WORDS]
                         sm = difflib.SequenceMatcher(None, words1, words2)
                         sim = round(sm.ratio()*100, 1); overall_sims.append(sim)
-                        added = removed = []
-                        for tag,i1,i2,j1,j2 in sm.get_opcodes():
-                            if tag=="insert": added = words2[j1:j2]
-                            elif tag=="delete": removed = words1[i1:i2]
-                            elif tag=="replace": removed = words1[i1:i2]; added = words2[j1:j2]
-                        text_diff_pages.append({"page":i+1,"similarity_pct":sim,
+                        added, removed = [], []
+                        for tag, a1, a2, b1, b2 in sm.get_opcodes():
+                            if tag == "insert": added += words2[b1:b2]
+                            elif tag == "delete": removed += words1[a1:a2]
+                            elif tag == "replace":
+                                removed += words1[a1:a2]
+                                added += words2[b1:b2]
+                        text_diff_pages.append({"page":page_idx+1,"similarity_pct":sim,
                                                  "words_added":added[:50],"words_removed":removed[:50]})
                     overall_sim = round(sum(overall_sims)/len(overall_sims),1) if overall_sims else 0.0
                     zf.writestr("text_diff_summary.json",
@@ -1459,7 +1526,12 @@ def compare_pdf():
                                               is_multi=True, filenames=[f.filename for f in files])
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
             with open(out,"wb") as fh: fh.write(buf.getvalue())
-        return ok(f"Compared {pages} page(s)", out)
+        warning_msg = (f"{extra_pages} extra page(s) in the longer PDF were not compared"
+                       if extra_pages else None)
+        return ok(f"Compared {pages} page(s)", out,
+                  pages_compared=pages,
+                  pages_skipped=extra_pages,
+                  warning=warning_msg)
     except Exception:
         log.exception("compare_pdf"); return err("Comparison failed", 500)
 # ============================================================================
@@ -1483,7 +1555,7 @@ def _images_to_pdf(paths, page_size_str, output_filename):
             if sh > ph*0.95:
                 sh = ph*0.95; sw = sh*iw/ih
             x = (pw-sw)/2; y = (ph-sh)/2
-            c._pagesize = (pw, ph)
+            c.setPageSize((pw, ph))
             c.drawImage(path, x, y, width=sw, height=sh)
             c.showPage()
         except Exception as ex:
@@ -1770,7 +1842,13 @@ def image_to_excel():
                     warning = f"OCR failed ({ocr_ex}) — falling back to image embed"
             else:
                 warning = "pytesseract not available — falling back to image embed"
+            
             wb = Workbook(); ws = wb.active; msg = ""
+            fname = generate_output_filename(f.filename,"to_excel")
+            fname = re.sub(r'\.(jpg|jpeg|png|gif|bmp|tiff|webp)$','.xlsx',
+                           fname, flags=re.IGNORECASE)
+            out = os.path.join(Config.OUTPUT_FOLDER, fname)
+            
             if ocr_grid:
                 ws.title = "OCR_Table"
                 for r_idx, row_cells in enumerate(ocr_grid):
@@ -1778,21 +1856,23 @@ def image_to_excel():
                         cell = ws.cell(row=r_idx+1, column=c_idx+1, value=val)
                         if r_idx == 0: cell.font = Font(bold=True)
                 msg = f"OCR extracted {len(ocr_grid)} rows"
+                wb.save(out)
             else:
                 ws.title = "Image"
                 tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
                 img.save(tmp.name, format="PNG"); tmp.close()
                 xl_img = XlImage(tmp.name); xl_img.anchor = "B2"
-                ws.add_image(xl_img); os.unlink(tmp.name)
+                ws.add_image(xl_img)
+                wb.save(out)
+                try: os.unlink(tmp.name)
+                except OSError: pass
                 msg = "Image embedded in Excel"
-            fname = generate_output_filename(f.filename,"to_excel")
-            fname = re.sub(r'\.(jpg|jpeg|png|gif|bmp|tiff|webp)$','.xlsx',fname,flags=re.IGNORECASE)
-            out = os.path.join(Config.OUTPUT_FOLDER, fname)
-            wb.save(out)
+            
             if warning: msg += f" | Warning: {warning}"
         return ok(msg, out, ocr_warning=warning)
     except Exception:
         log.exception("image_to_excel"); return err("Image to Excel failed", 500)
+
 # ============================================================================
 # WORD TOOLS
 # ============================================================================
@@ -1810,7 +1890,23 @@ def word_to_txt():
             fname = re.sub(r'\.(doc|docx)$','.txt',fname,flags=re.IGNORECASE)
             if DOCX_AVAILABLE and path.endswith(".docx"):
                 doc = DocxDocument(path)
-                text = "\n".join(p.text for p in doc.paragraphs)
+                lines = []
+                for p in doc.paragraphs:
+                    if p.text.strip():
+                        lines.append(p.text)
+                for table in doc.tables:
+                    for row in table.rows:
+                        seen_ids = set()
+                        row_cells = []
+                        for cell in row.cells:
+                            cid = id(cell._tc)
+                            if cid not in seen_ids:
+                                seen_ids.add(cid)
+                                if cell.text.strip():
+                                    row_cells.append(cell.text.strip())
+                        if row_cells:
+                            lines.append(" | ".join(row_cells))
+                text = "\n".join(lines)
                 out = os.path.join(Config.OUTPUT_FOLDER, fname)
                 with open(out,"w",encoding="utf-8") as fh: fh.write(text)
             else:
@@ -1910,8 +2006,18 @@ def word_to_ppt():
                             pr = current_tf.add_paragraph(); pr.text = text
                             if pr.runs: pr.runs[0].font.bold = True
                     else:
+                        if current_tf is None:
+                            # No body placeholder in layout — add a text box manually
+                            txBox = slide.shapes.add_textbox(
+                                PptxInches(0.5), PptxInches(1.5),
+                                PptxInches(9), PptxInches(5)
+                            )
+                            current_tf = txBox.text_frame
+                            current_tf.clear()
                         if current_tf:
-                            pr = current_tf.add_paragraph(); pr.text = text; pr.level = 1
+                            pr = current_tf.add_paragraph()
+                            pr.text = text
+                            pr.level = 1
             out = os.path.join(Config.OUTPUT_FOLDER, fname); prs.save(out)
         return ok("Word converted to PowerPoint", out)
     except Exception:
@@ -1958,9 +2064,7 @@ def compress_word():
                                     mask = img.split()[-1] if img.mode in ("RGBA","LA") else None
                                     bg.paste(img,mask=mask); img=bg
                                 elif img.mode!="RGB": img=img.convert("RGB")
-                                new_path = os.path.splitext(img_path)[0]+".jpg"
-                                img.save(new_path,format="JPEG",quality=jpeg_quality,optimize=True)
-                                if new_path != img_path: os.remove(img_path)
+                                img.save(img_path,format="JPEG",quality=jpeg_quality,optimize=True)
                             elif ext_img==".png" or img.mode in ("RGBA","LA","P"):
                                 if img.mode not in ("RGBA","RGB","L"): img=img.convert("RGBA")
                                 img.save(img_path,format="PNG",optimize=True,compress_level=9)
@@ -2142,8 +2246,11 @@ def excel_to_word():
                 rows_write = all_rows[:row_limit]
                 if not rows_write: doc.add_paragraph("(empty sheet)"); continue
                 n_cols = max((len(r) for r in rows_write), default=1)
-                try: table = doc.add_table(rows=len(rows_write), cols=n_cols); table.style="Light Grid Accent 1"
-                except Exception: table = doc.add_table(rows=len(rows_write), cols=n_cols)
+                table = doc.add_table(rows=len(rows_write), cols=n_cols)
+                try:
+                    table.style = "Light Grid Accent 1"
+                except Exception:
+                    pass
                 for r_idx, row_data in enumerate(rows_write):
                     for c_idx in range(n_cols):
                         val = row_data[c_idx] if c_idx < len(row_data) else None
@@ -2343,8 +2450,9 @@ def excel_to_jpg():
         with FileService.temp_upload(f) as path:
             pdf_path = libre(path, "pdf", temp=True)
             if pdf_path and os.path.exists(pdf_path) and os.path.getsize(pdf_path)>100:
-                doc = fitz.open(pdf_path)
+                doc = None
                 try:
+                    doc = fitz.open(pdf_path)
                     buf = io.BytesIO()
                     with zipfile.ZipFile(buf,"w",zipfile.ZIP_DEFLATED) as zf:
                         for i, page in enumerate(doc):
@@ -2356,9 +2464,10 @@ def excel_to_jpg():
                     with open(out,"wb") as fh: fh.write(buf.getvalue())
                     return ok("Excel sheets exported as JPG", out)
                 finally:
-                    doc.close()
-                    try: os.remove(pdf_path)
-                    except OSError: pass
+                    if doc: doc.close()
+                    if pdf_path:
+                        try: os.remove(pdf_path)
+                        except OSError: pass
             return err("Excel to JPG failed — LibreOffice unavailable", 500)
     except Exception:
         log.exception("excel_to_jpg"); return err("Excel to JPG failed", 500)
@@ -2436,12 +2545,13 @@ def pdf_to_jpg():
    
     try:
         with FileService.temp_upload(f) as path:
+            dpi = safe_int(request.form.get("dpi", "150"), 150, 72, 300)
             doc = fitz.open(path)
             count = len(doc)
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                 for i, page in enumerate(doc):
-                    pix = page.get_pixmap(dpi=150)
+                    pix = page.get_pixmap(dpi=dpi)
                     zf.writestr(f"page_{i+1:04d}.jpg", pix.tobytes("jpeg"))
             doc.close()
            
@@ -2468,12 +2578,13 @@ def pdf_to_png():
    
     try:
         with FileService.temp_upload(f) as path:
+            dpi = safe_int(request.form.get("dpi", "150"), 150, 72, 300)
             doc = fitz.open(path)
             count = len(doc)
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                 for i, page in enumerate(doc):
-                    pix = page.get_pixmap(dpi=150)
+                    pix = page.get_pixmap(dpi=dpi)
                     zf.writestr(f"page_{i+1:04d}.png", pix.tobytes("png"))
             doc.close()
            
@@ -2501,17 +2612,19 @@ def word_to_jpg():
         with FileService.temp_upload(f) as path:
             pdf_path = libre(path, "pdf", temp=True)
             if not pdf_path: return err("LibreOffice conversion failed", 500)
-            doc = fitz.open(pdf_path)
+            doc = None
             try:
+                doc = fitz.open(pdf_path)
                 buf = io.BytesIO()
                 with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                     for i, page in enumerate(doc):
                         pix = page.get_pixmap(dpi=150)
                         zf.writestr(f"page_{i+1:04d}.jpg", pix.tobytes("jpeg"))
             finally:
-                doc.close()
-            try: os.remove(pdf_path)
-            except OSError: pass
+                if doc: doc.close()
+                if pdf_path:
+                    try: os.remove(pdf_path)
+                    except OSError: pass
             fname = generate_output_filename(f.filename, "to_jpg")
             fname = re.sub(r'\.(doc|docx)$', '.zip', fname, flags=re.IGNORECASE)
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
@@ -2532,17 +2645,19 @@ def word_to_png():
         with FileService.temp_upload(f) as path:
             pdf_path = libre(path, "pdf", temp=True)
             if not pdf_path: return err("LibreOffice conversion failed", 500)
-            doc = fitz.open(pdf_path)
+            doc = None
             try:
+                doc = fitz.open(pdf_path)
                 buf = io.BytesIO()
                 with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                     for i, page in enumerate(doc):
                         pix = page.get_pixmap(dpi=150)
                         zf.writestr(f"page_{i+1:04d}.png", pix.tobytes("png"))
             finally:
-                doc.close()
-            try: os.remove(pdf_path)
-            except OSError: pass
+                if doc: doc.close()
+                if pdf_path:
+                    try: os.remove(pdf_path)
+                    except OSError: pass
             fname = generate_output_filename(f.filename, "to_png")
             fname = re.sub(r'\.(doc|docx)$', '.zip', fname, flags=re.IGNORECASE)
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
@@ -2563,7 +2678,7 @@ def word_to_html():
         with FileService.temp_upload(f) as path:
             fname = generate_output_filename(f.filename, "to_html")
             fname = re.sub(r'\.(doc|docx)$', '.html', fname, flags=re.IGNORECASE)
-            out = libre(path, "xhtml", output_filename=fname)
+            out = libre(path, "html", output_filename=fname)
             if not out: return err("LibreOffice conversion failed", 500)
         return ok("Word converted to HTML", out)
     except Exception:
@@ -2583,7 +2698,16 @@ def word_to_json():
             doc = DocxDocument(path)
             data = {"paragraphs": [p.text for p in doc.paragraphs], "tables": []}
             for table in doc.tables:
-                tdata = [[cell.text for cell in row.cells] for row in table.rows]
+                tdata = []
+                for row in table.rows:
+                    seen = set()
+                    cells = []
+                    for cell in row.cells:
+                        cid = id(cell._tc)
+                        if cid not in seen:
+                            seen.add(cid)
+                            cells.append(cell.text)
+                    tdata.append(cells)
                 data["tables"].append(tdata)
             fname = generate_output_filename(f.filename, "to_json")
             fname = re.sub(r'\.(doc|docx)$', '.json', fname, flags=re.IGNORECASE)
@@ -2606,8 +2730,9 @@ def excel_to_png():
         with FileService.temp_upload(f) as path:
             pdf_path = libre(path, "pdf", temp=True)
             if pdf_path and os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 100:
-                doc = fitz.open(pdf_path)
+                doc = None
                 try:
+                    doc = fitz.open(pdf_path)
                     buf = io.BytesIO()
                     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                         for i, page in enumerate(doc):
@@ -2619,9 +2744,10 @@ def excel_to_png():
                     with open(out, "wb") as fh: fh.write(buf.getvalue())
                     return ok("Excel sheets exported as PNG", out)
                 finally:
-                    doc.close()
-                    try: os.remove(pdf_path)
-                    except OSError: pass
+                    if doc: doc.close()
+                    if pdf_path:
+                        try: os.remove(pdf_path)
+                        except OSError: pass
             return err("Excel to PNG failed — LibreOffice unavailable", 500)
     except Exception:
         log.exception("excel_to_png"); return err("Excel to PNG failed", 500)
@@ -2638,7 +2764,7 @@ def excel_to_html():
         with FileService.temp_upload(f) as path:
             fname = generate_output_filename(f.filename, "to_html")
             fname = re.sub(r'\.(xls|xlsx)$', '.html', fname, flags=re.IGNORECASE)
-            out = libre(path, "xhtml", output_filename=fname)
+            out = libre(path, "html", output_filename=fname)
             if not out: return err("LibreOffice conversion failed", 500)
         return ok("Excel converted to HTML", out)
     except Exception:
