@@ -1,5 +1,5 @@
 """PDFWala Enterprise V10.0 — Modular Production Backend"""
-__version__ = "10.0.0"
+__version__ = "10.0.1"
 import os, sys, io, re, csv, json, uuid, time, shutil, signal, zipfile
 import logging, unicodedata, threading, subprocess, tempfile
 from datetime import datetime
