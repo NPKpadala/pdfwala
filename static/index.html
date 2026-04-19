@@ -1261,7 +1261,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
-const APP_CONFIG={MAX_FILE_SIZE_MB:200,LARGE_FILE_WARN_MB:50,API_BASE:window.location.origin + '/pdfwala',MAX_RECENT_TOOLS:3,SEARCH_DEBOUNCE_MS:200};
+const APP_CONFIG={MAX_FILE_SIZE_MB:200,LARGE_FILE_WARN_MB:50,API_BASE:window.location.origin,MAX_RECENT_TOOLS:3,SEARCH_DEBOUNCE_MS:200};
 
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
