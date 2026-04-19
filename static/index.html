@@ -4,13 +4,13 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="robots" content="index, follow"/>
-<meta name="description" content="PDFWala — All-in-One Document Automation Platform. Convert, compress, edit, and automate files in seconds. 50+ powerful tools."/>
+<meta name="description" content="PDFWala — Every document tool you'll ever need. Merge, compress, convert, and secure any file. Fast, free, and private."/>
 <meta name="theme-color" content="#0A0E1A"/>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232563EB'/%3E%3Cpath d='M10 8h12a2 2 0 012 2v12a2 2 0 01-2 2H10a2 2 0 01-2-2V10a2 2 0 012-2z' fill='white' opacity='.9'/%3E%3C/svg%3E"/>
-<title>PDFWala — All-in-One Document Automation Platform</title>
+<title>PDFWala — Every Document Tool You'll Ever Need</title>
 <link rel="canonical" href="https://npkpadala.com/pdfwala/"/>
 <meta property="og:title" content="PDFWala — Document Automation Platform"/>
-<meta property="og:description" content="Convert, compress, edit, and automate files in seconds. 50+ powerful tools."/>
+<meta property="og:description" content="Merge, compress, convert, and secure any file. Fast, free, and private."/>
 <meta property="og:url" content="https://npkpadala.com/pdfwala/"/>
 <meta property="og:type" content="website"/>
 <meta property="og:site_name" content="PDFWala"/>
@@ -19,11 +19,11 @@
 <meta property="og:image:height" content="630"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="PDFWala — Document Automation Platform"/>
-<meta name="twitter:description" content="Convert, compress, edit, and automate files in seconds."/>
+<meta name="twitter:description" content="Merge, compress, convert, and secure any file. Fast, free, and private."/>
 <meta name="twitter:image" content="https://npkpadala.com/pdfwala/og-image.png"/>
 
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebApplication","name":"PDFWala","url":"https://npkpadala.com/pdfwala/","description":"50+ document automation tools including merge, split, compress, convert.","applicationCategory":"UtilitiesApplication","operatingSystem":"All","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+{"@context":"https://schema.org","@type":"WebApplication","name":"PDFWala","url":"https://npkpadala.com/pdfwala/","description":"50+ document tools including merge, split, compress, convert.","applicationCategory":"UtilitiesApplication","operatingSystem":"All","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -38,9 +38,9 @@
 </script>
 
 <style>
-/* ═══════════════════════════════════════
+/* ========================================
    DESIGN TOKENS
-═══════════════════════════════════════ */
+======================================== */
 :root{
   --ink-900:#0A0E1A;--ink-800:#111827;--ink-700:#1A2235;--ink-600:#222D42;
   --ink-500:#2E3D58;--ink-400:#4A5878;--ink-300:#6B7A9A;--ink-200:#9AA5BE;
@@ -77,10 +77,12 @@
   *{animation:none!important;transition-duration:0.01ms!important}
 }
 
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+/* FIX: Global overflow prevention */
+html,body{overflow-x:hidden;max-width:100vw;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;min-width:0;}
 html{scroll-behavior:smooth;font-size:16px}
 body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;
-  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
   transition:background var(--t-lg),color var(--t)}
 a{color:inherit;text-decoration:none}
 button{cursor:pointer;font-family:inherit}
@@ -90,7 +92,7 @@ input,select,textarea{font-family:inherit}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--ink-500);border-radius:3px}
 
-/* ═══ NAV ═══ */
+/* ======== NAV ======== */
 .nav{
   position:sticky;top:0;z-index:500;
   background:var(--bg-glass);border-bottom:1px solid var(--border);
@@ -188,7 +190,7 @@ input,select,textarea{font-family:inherit}
   color:var(--text-2);align-items:center;justify-content:center;transition:all var(--t);
 }
 
-/* ═══ MOBILE NAV ═══ */
+/* ======== MOBILE NAV ======== */
 .mob-nav{
   display:none;position:fixed;inset:0;z-index:490;
   background:var(--bg);padding:76px 0 20px;
@@ -223,10 +225,10 @@ input,select,textarea{font-family:inherit}
   .mob-nav{display:block}
 }
 
-/* ═══ RECENT + POPULAR BANDS ═══ */
-.recent-tools-bar{background:var(--bg-2);border-bottom:1px solid var(--border);padding:6px 28px;display:none}
+/* ======== RECENT + POPULAR BANDS ======== */
+.recent-tools-bar{background:var(--bg-2);border-bottom:1px solid var(--border);padding:6px 28px;display:none;overflow:hidden}
 .recent-tools-bar.visible{display:block}
-.recent-tools-inner{max-width:1320px;margin:auto;display:flex;align-items:center;gap:8px}
+.recent-tools-inner{max-width:1320px;margin:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .recent-tools-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);white-space:nowrap}
 .recent-chip{
   display:inline-flex;align-items:center;gap:5px;padding:4px 10px;
@@ -234,16 +236,23 @@ input,select,textarea{font-family:inherit}
   font-size:12px;font-weight:500;color:var(--text-2);cursor:pointer;transition:all var(--t);
 }
 .recent-chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(59,130,246,.06)}
-.popular-tools-band{background:var(--bg-2);border-bottom:1px solid var(--border);padding:14px 28px;position:relative;z-index:100}
-.popular-tools-band-inner{max-width:1320px;margin:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+
+/* FIX: Popular band overflow on mobile - FINAL */
+.popular-tools-band{background:var(--bg-2);border-bottom:1px solid var(--border);padding:14px 28px;position:relative;z-index:100;overflow:hidden}
+.popular-tools-band-inner{max-width:1320px;margin:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;overflow:hidden}
 .popular-tools-band-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);white-space:nowrap;flex-shrink:0}
-.popular-tools-chips{display:flex;gap:8px;flex-wrap:wrap}
+.popular-tools-chips{display:flex;gap:8px;flex-wrap:wrap;overflow:hidden;max-width:100%}
 .pop-band-chip{
   display:inline-flex;align-items:center;gap:7px;
   background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);
   padding:7px 14px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;
   transition:all var(--t);white-space:nowrap;position:relative;
   animation:chipFloat 6s ease-in-out infinite;
+  max-width:calc(100vw - 32px);
+}
+@media(max-width:480px){
+  .popular-tools-band{padding:10px 16px}
+  .pop-band-chip{font-size:12px;padding:6px 11px;max-width:calc(100vw - 32px)}
 }
 .pop-band-chip:nth-child(1){animation-delay:0s}.pop-band-chip:nth-child(2){animation-delay:0.2s}
 .pop-band-chip:nth-child(3){animation-delay:0.4s}.pop-band-chip:nth-child(4){animation-delay:0.6s}
@@ -268,10 +277,10 @@ input,select,textarea{font-family:inherit}
 [data-theme="light"] .pop-band-chip::after{background:var(--ink-800)}
 [data-theme="light"] .pop-band-chip::before{border-bottom-color:var(--ink-800)}
 
-/* ═══ PAGES ═══ */
+/* ======== PAGES ======== */
 #homePage{display:block}#toolPage{display:none}
 
-/* ═══ HERO ═══ */
+/* ======== HERO ======== */
 .hero{position:relative;overflow:hidden;padding:88px 28px 96px;text-align:center;background:var(--bg)}
 .hero-mesh{
   position:absolute;inset:0;z-index:0;pointer-events:none;
@@ -306,7 +315,8 @@ input,select,textarea{font-family:inherit}
 @keyframes f1{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-14px) rotate(1deg)}}
 @keyframes f2{0%,100%{transform:translateY(0) rotate(1.5deg)}50%{transform:translateY(-18px) rotate(-1deg)}}
 @media(max-width:768px){.hero-floats{display:none}}
-.hero-content{position:relative;z-index:1;max-width:700px;margin:0 auto}
+
+.hero-content{position:relative;z-index:1;max-width:700px;margin:0 auto;padding:0 4px}
 .hero-badge{
   display:inline-flex;align-items:center;gap:8px;
   background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);
@@ -420,7 +430,7 @@ input,select,textarea{font-family:inherit}
 .global-drag-overlay-text{font-size:20px;font-weight:700;color:var(--text)}
 .global-drag-overlay-sub{font-size:14px;color:var(--text-2);margin-top:6px}
 
-/* ═══ WHY SECTION ═══ */
+/* ======== WHY SECTION ======== */
 .why-section{background:var(--bg-2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:64px 28px}
 .why-inner{max-width:1280px;margin:auto}
 .why-header{text-align:center;margin-bottom:44px}
@@ -440,7 +450,7 @@ input,select,textarea{font-family:inherit}
 .section-kicker{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
 .section-title{font-family:var(--font-h);font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px;line-height:1.15}
 
-/* ═══ TOOL PAGE ═══ */
+/* ======== TOOL PAGE ======== */
 #toolPage{min-height:80vh;background:var(--bg);position:relative}
 #toolPage::before{
   content:'';position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.02;
@@ -549,6 +559,7 @@ input,select,textarea{font-family:inherit}
 .tp-fi-size{font-size:10.5px;color:var(--text-3);flex-shrink:0}
 .tp-fi-del{background:none;border:none;color:var(--text-3);padding:2px 4px;border-radius:4px;transition:color var(--t);cursor:pointer;flex-shrink:0;display:flex}
 .tp-fi-del:hover{color:var(--rose-400)}
+.tp-fi-large{font-size:14px;flex-shrink:0;line-height:1}
 
 .tp-options{transition:opacity var(--t)}
 .tp-options.locked{opacity:.35;pointer-events:none}
@@ -617,6 +628,15 @@ input,select,textarea{font-family:inherit}
 .tp-btn-process:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 28px rgba(37,99,235,.45)}
 .tp-btn-process:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
 
+.tp-btn-cancel{
+  display:none;width:100%;padding:10px;margin-top:6px;margin-bottom:2px;
+  background:none;border:1px solid var(--border);border-radius:var(--r);
+  color:var(--text-2);font-size:13px;font-weight:600;
+  align-items:center;justify-content:center;gap:6px;transition:all var(--t);
+}
+.tp-btn-cancel.show{display:flex}
+.tp-btn-cancel:hover{border-color:var(--rose-400);color:var(--rose-400)}
+
 @keyframes glowPulse{
   0%,100%{box-shadow:0 4px 20px rgba(16,185,129,0.4)}
   50%{box-shadow:0 8px 32px rgba(16,185,129,0.7)}
@@ -650,7 +670,7 @@ input,select,textarea{font-family:inherit}
 .reveal{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease}
 .reveal.visible{opacity:1;transform:translateY(0)}
 
-/* ═══ TOAST ═══ */
+/* ======== TOAST ======== */
 .toast{
   position:fixed;bottom:24px;right:24px;z-index:9999;
   padding:12px 16px 12px 14px;border-radius:var(--r);font-size:13.5px;font-weight:500;
@@ -673,7 +693,7 @@ input,select,textarea{font-family:inherit}
 .scroll-top-btn.show{opacity:1;pointer-events:auto;transform:translateY(0)}
 .scroll-top-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px)}
 
-/* ═══ SIGN-IN MODAL ═══ */
+/* ======== SIGN-IN MODAL ======== */
 .signin-modal-overlay{
   display:none;position:fixed;inset:0;z-index:850;
   background:rgba(0,0,0,.7);backdrop-filter:blur(8px);
@@ -704,7 +724,7 @@ input,select,textarea{font-family:inherit}
 }
 .signin-modal-close:hover{border-color:var(--border-hover);color:var(--text);background:var(--bg-3)}
 
-/* ═══ FOOTER ═══ */
+/* ======== FOOTER ======== */
 footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28px 32px}
 .footer-inner{max-width:1280px;margin:auto}
 .footer-grid{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px}
@@ -717,6 +737,9 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 .footer-bottom{border-top:1px solid var(--border);padding-top:24px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-3);flex-wrap:wrap;gap:10px}
 .footer-bottom a{color:var(--text-3);transition:color var(--t)}
 .footer-bottom a:hover{color:var(--text-2)}
+.footer-links{display:flex;gap:16px;align-items:center}
+.footer-links a::after{content:'·';margin-left:16px;opacity:.4}
+.footer-links a:last-child::after{display:none}
 .status-indicator{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-3)}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--emerald-400)}
 
@@ -727,7 +750,10 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   .footer-grid{grid-template-columns:1fr 1fr}
   .tp-hero{padding:14px 16px}
 }
-@media(max-width:480px){.footer-grid{grid-template-columns:1fr}}
+@media(max-width:480px){
+  .footer-grid{grid-template-columns:1fr}
+  .nav-inner{padding:0 16px}
+}
 </style>
 </head>
 <body>
@@ -783,8 +809,11 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     const u=URL.createObjectURL(b);const l=document.createElement('link');l.rel='manifest';l.href=u;document.head.appendChild(l);
   }catch(e){}
   if('serviceWorker' in navigator){
-    try{const sc=`const C='pw-v1';self.addEventListener('install',e=>e.waitUntil(caches.open(C)));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});`;
-    const sb=new Blob([sc],{type:'application/javascript'});navigator.serviceWorker.register(URL.createObjectURL(sb)).catch(()=>{});}catch(e){}
+    try{
+      const sc=`const C='pw-v1';self.addEventListener('install',e=>e.waitUntil(caches.open(C)));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;if(e.request.url.includes('/api/'))return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});`;
+      const sb=new Blob([sc],{type:'application/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(sb)).catch(()=>{});
+    }catch(e){}
   }
 })();
 </script>
@@ -802,12 +831,42 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 <div class="signin-modal-overlay" id="signinModal" onclick="closeSigninModal(event)">
   <div class="signin-modal">
     <div class="signin-modal-icon"><svg width="24" height="24"><use href="#ic-user"/></svg></div>
-    <h3>Sign in launching soon</h3>
-    <p>We're building accounts, saved history, and team features. Be the first to know when it's ready.</p>
+    <h3>Accounts coming soon</h3>
+    <p>We're building saved history, team workspaces, and more. Be the first to know when it launches.</p>
     <div class="signin-modal-badge"><svg width="12" height="12"><use href="#ic-check"/></svg>Coming soon</div>
     <button class="signin-modal-close" onclick="document.getElementById('signinModal').classList.remove('open')">Got it</button>
   </div>
 </div>
+
+<!-- File Suggestion Modal -->
+<div id="suggestOverlay" onclick="closeSuggest(event)" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-2xl);padding:28px;max-width:440px;width:100%;box-shadow:var(--sh-xl)">
+    <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--blue-600),var(--violet-500));display:flex;align-items:center;justify-content:center;color:#fff;margin-bottom:14px" id="suggestIconBox"><svg width="22" height="22"><use href="#ic-file"/></svg></div>
+    <div style="font-family:var(--font-h);font-size:20px;font-weight:800;margin-bottom:6px" id="suggestTitle">What would you like to do?</div>
+    <div style="font-size:13.5px;color:var(--text-2);margin-bottom:20px" id="suggestSub">Choose a tool to get started.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="suggestGrid" role="list"></div>
+    <button onclick="document.getElementById('suggestOverlay').style.display='none'" style="width:100%;margin-top:12px;padding:10px;background:none;border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text-3);font-size:13.5px;cursor:pointer">Cancel</button>
+  </div>
+</div>
+
+<!-- Keyboard Shortcuts Modal -->
+<div id="shortcutsOverlay" onclick="closeShortcuts(event)"
+  style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.75);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:20px;" role="dialog" aria-modal="true">
+  <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-2xl);padding:28px;max-width:420px;width:100%;box-shadow:var(--sh-xl)">
+    <div style="font-family:var(--font-h);font-size:20px;font-weight:800;margin-bottom:20px">Keyboard shortcuts</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Focus search</span><kbd style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">/</kbd></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Show shortcuts</span><kbd style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">?</kbd></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Close / Go back</span><kbd style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">Esc</kbd></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Go home</span><kbd style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">H</kbd></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Toggle theme</span><kbd style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">D</kbd></div>
+    </div>
+    <button onclick="document.getElementById('shortcutsOverlay').style.display='none'" style="width:100%;margin-top:16px;padding:10px;background:none;border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text-2);font-size:13.5px;cursor:pointer">Close</button>
+  </div>
+</div>
+
+<!-- Visually hidden live region for progress announcements -->
+<div id="tpProgressAnnouncer" role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap"></div>
 
 <!-- NAV -->
 <nav class="nav" role="navigation" aria-label="Main navigation">
@@ -960,7 +1019,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle theme">
         <svg width="16" height="16" id="themeIcon"><use href="#ic-moon"/></svg>
       </button>
-      <button class="nav-signin" onclick="openSigninModal()">Sign in <span style="font-size:11px;opacity:.6">(Coming soon)</span></button>
+      <button class="nav-signin" onclick="openSigninModal()">Sign in</button>
       <button class="nav-cta" onclick="navigateHome()">All Tools</button>
       <button class="mob-btn" onclick="toggleMob()" id="mobBtn" aria-label="Open menu" aria-expanded="false">
         <svg width="18" height="18" id="mobIcon"><use href="#ic-menu"/></svg>
@@ -1010,22 +1069,22 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     <div class="hero-grid" aria-hidden="true"></div>
     <div class="hero-floats" aria-hidden="true">
       <div class="float-card fc1"><svg class="fc-icon" width="18" height="18"><use href="#ic-file"/></svg><div><div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:3px">report_final.pdf</div><div class="fc-bar"><span style="width:75%;background:linear-gradient(90deg,var(--blue-500),var(--violet-500))"></span></div></div></div>
-      <div class="float-card fc2"><svg class="fc-icon" width="18" height="18"><use href="#ic-compress"/></svg><div><div style="font-size:10px;font-weight:700;color:var(--emerald-400);margin-bottom:3px">File compressed · 68% smaller</div><div class="fc-bar"><span style="width:32%;background:var(--emerald-500)"></span></div></div></div>
+      <div class="float-card fc2"><svg class="fc-icon" width="18" height="18"><use href="#ic-compress"/></svg><div><div style="font-size:10px;font-weight:700;color:var(--emerald-400);margin-bottom:3px">Compressed · 68% smaller</div><div class="fc-bar"><span style="width:32%;background:var(--emerald-500)"></span></div></div></div>
       <div class="float-card fc3"><svg class="fc-icon" width="18" height="18"><use href="#ic-shield"/></svg><div style="font-size:10px;font-weight:600;color:var(--text-2)">Privacy First</div></div>
       <div class="float-card fc4"><svg class="fc-icon" width="18" height="18"><use href="#ic-check"/></svg><div style="font-size:10px;font-weight:600;color:var(--emerald-400)">12 pages combined</div></div>
       <div class="float-card fc5"><svg class="fc-icon" width="18" height="18"><use href="#ic-zap"/></svg><div style="font-size:10px;font-weight:600;color:var(--blue-400)">Processing your file...</div></div>
     </div>
     <div class="hero-content">
-      <div class="hero-badge"><div class="badge-dot"></div>50+ Powerful Tools · Privacy First · Fast Processing</div>
-      <h1>All-in-One<br/><span class="grad">Document Automation</span></h1>
-      <p class="hero-sub">Convert, compress, edit, and automate files in seconds — right in your browser.</p>
+      <div class="hero-badge"><div class="badge-dot"></div>50+ Tools · Privacy First · No signup needed</div>
+      <h1>Every document tool<br/><span class="grad">you'll ever need</span></h1>
+      <p class="hero-sub">Merge, compress, convert, and secure any file. Fast, free, and private.</p>
       <div class="trust-row">
-        <div class="trust-pill"><svg width="13" height="13"><use href="#ic-check"/></svg>Secure &amp; Encrypted</div>
-        <div class="trust-pill"><svg width="13" height="13"><use href="#ic-check"/></svg>Files auto-deleted after processing</div>
-        <div class="trust-pill"><svg width="13" height="13"><use href="#ic-check"/></svg>Privacy First</div>
+        <div class="trust-pill"><svg width="13" height="13"><use href="#ic-lock"/></svg>Bank-grade encryption</div>
+        <div class="trust-pill"><svg width="13" height="13"><use href="#ic-zap"/></svg>Processing in seconds</div>
+        <div class="trust-pill"><svg width="13" height="13"><use href="#ic-shield"/></svg>Your data stays yours</div>
       </div>
       <div class="search-hero-wrap" id="searchHeroWrap">
-        <input type="text" class="search-hero-input" id="heroSearch" placeholder="Search tools — compress, merge, PDF to Word…" autocomplete="off" aria-label="Search tools" role="combobox"/>
+        <input type="text" class="search-hero-input" id="heroSearch" placeholder="Search tools — compress, merge, PDF to Word..." autocomplete="off" aria-label="Search tools" role="combobox"/>
         <span class="search-kbd-hint" aria-hidden="true">/</span>
         <svg class="search-hero-icon" width="16" height="16"><use href="#ic-search"/></svg>
         <div class="search-dropdown" id="searchDropdown" role="listbox"></div>
@@ -1036,7 +1095,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
         <label for="heroFileInput" style="cursor:pointer;display:block">
           <div class="hdz-icon"><svg width="56" height="56"><use href="#ic-drag"/></svg></div>
           <div class="hdz-text"><span>Upload your file</span> or drag &amp; drop</div>
-          <p class="hdz-hint">We'll detect the type and suggest the right tools<br/>Files auto-deleted after processing · All formats welcome</p>
+          <p class="hdz-hint">We'll detect the file type and suggest the right tools<br/>Files deleted after processing · All formats welcome</p>
           <input type="file" id="heroFileInput" accept="*/*" onchange="heroFileSelect(event)" aria-label="Choose file" style="display:none;"/>
         </label>
       </div>
@@ -1047,13 +1106,13 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
     <div class="why-inner">
       <div class="why-header reveal">
         <div class="section-kicker" style="text-align:center">Why PDFWala</div>
-        <h2 class="section-title" style="text-align:center;font-size:28px">Built for speed, privacy &amp; simplicity</h2>
+        <h2 class="section-title" style="text-align:center;font-size:28px">Built for speed, privacy and simplicity</h2>
       </div>
       <div class="why-grid reveal">
-        <div class="why-card"><div class="why-icon"><svg width="22" height="22"><use href="#ic-shield"/></svg></div><div class="why-name">Secure &amp; Private</div><div class="why-desc">Every file is processed in an isolated session and permanently deleted after processing. We never read, store, or share your data.</div></div>
-        <div class="why-card"><div class="why-icon"><svg width="22" height="22"><use href="#ic-zap"/></svg></div><div class="why-name">Lightning Fast</div><div class="why-desc">Optimized engine handles most files in under a second. Built for performance — even on large documents with hundreds of pages.</div></div>
-        <div class="why-card"><div class="why-icon"><svg width="22" height="22"><use href="#ic-lock"/></svg></div><div class="why-name">Privacy First</div><div class="why-desc">Files auto-deleted after processing. No account needed. Your documents are yours — we process them and they're gone.</div></div>
-        <div class="why-card"><div class="why-icon"><svg width="22" height="22"><use href="#ic-monitor"/></svg></div><div class="why-name">Works Everywhere</div><div class="why-desc">Fully responsive across mobile, tablet, and desktop. No apps to install, no plugins needed. Just open and use.</div></div>
+        <div class="why-card"><div class="why-icon"><svg width="22" height="22"><use href="#ic-shield"/></svg></div><div class="why-name">Secure and Private</div><div class="why-desc">Every file is processed in an isolated session and permanently deleted after. We never read, store, or share your data.</div></div>
+        <div class="why-card"><div class="why-icon"><svg width="22" height="22"><use href="#ic-zap"/></svg></div><div class="why-name">Lightning Fast</div><div class="why-desc">Our engine handles most files in under a second. Built for performance, even on large documents with hundreds of pages.</div></div>
+        <div class="why-card"><div class="why-icon"><svg width="22" height="22"><use href="#ic-lock"/></svg></div><div class="why-name">No Account Needed</div><div class="why-desc">Files are deleted after processing. No account needed. Your documents are yours; we process them and they're gone.</div></div>
+        <div class="why-card"><div class="why-icon"><svg width="22" height="22"><use href="#ic-monitor"/></svg></div><div class="why-name">Works Everywhere</div><div class="why-desc">Fully responsive across mobile, tablet, and desktop. No apps to install, no plugins needed. Just open and use it.</div></div>
       </div>
     </div>
   </section>
@@ -1084,7 +1143,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
         <div class="tp-hero-left">
           <div class="tp-icon-box" id="tpIconBox"><svg width="22" height="22"><use href="#ic-file"/></svg></div>
           <div style="min-width:0">
-            <div class="tp-title" id="tpTitle">Tool Name</div>
+            <div class="tp-title" id="tpTitle" tabindex="-1">Tool Name</div>
             <div class="tp-sub" id="tpSubtitle">Tool description</div>
           </div>
         </div>
@@ -1097,7 +1156,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       <div class="tp-panel tp-panel-upload step-active" id="panelUpload">
         <div class="tp-panel-header">
           <div class="tp-step-num active" id="step1Num">1</div>
-          <div class="tp-panel-label active">Upload your file</div>
+          <div class="tp-panel-label active">1. Choose your file</div>
           <div class="tp-step-done-tag" id="step1Done"><svg width="11" height="11"><use href="#ic-check"/></svg><span id="step1DoneText">File added</span></div>
         </div>
         <div class="tp-panel-body">
@@ -1105,9 +1164,9 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
             <div class="size-popup" id="toolSizePopup" role="alert">File exceeds 200MB limit</div>
             <label for="toolFileInput" style="cursor:pointer;display:block">
               <div class="tp-dz-icon"><svg width="28" height="28"><use href="#ic-upload"/></svg></div>
-              <div class="tp-dz-main"><span>Upload your file</span> or drag &amp; drop</div>
+              <div class="tp-dz-main"><span>Choose a file</span> or drag it here</div>
               <p class="tp-dz-hint" id="tpDropHint">Supported formats listed above</p>
-              <div class="tp-dz-meta">Max 200MB &nbsp;·&nbsp; Files auto-deleted after processing</div>
+              <div class="tp-dz-meta">Max 200MB &nbsp;·&nbsp; Files deleted after processing</div>
               <input type="file" id="toolFileInput" onchange="toolFileSelect(event)" style="display:none;"/>
             </label>
           </div>
@@ -1117,7 +1176,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       <div class="tp-panel" id="panelOptions" style="display:none">
         <div class="tp-panel-header">
           <div class="tp-step-num" id="step2Num">2</div>
-          <div class="tp-panel-label" id="step2Label">Configure options</div>
+          <div class="tp-panel-label" id="step2Label">2. Adjust settings</div>
         </div>
         <div class="tp-panel-body">
           <div class="tp-options locked" id="tpOptions"><div id="tpOptionsArea"></div></div>
@@ -1128,25 +1187,28 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       <div class="tp-panel-action">
         <div class="tp-panel-header">
           <div class="tp-step-num" id="step3Num">3</div>
-          <div class="tp-panel-label" id="step3Label" style="opacity:.6">Process &amp; download</div>
+          <div class="tp-panel-label" id="step3Label" style="opacity:.6">3. Get your result</div>
         </div>
         <div class="tp-action-body">
           <div class="tp-progress" id="tpProgress" role="status" aria-live="polite">
             <div class="tp-progress-track"><div class="tp-progress-fill" id="tpProgressFill" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></div>
             <div class="tp-progress-row">
-              <div style="display:flex;align-items:center;gap:8px"><div class="tp-dot-loader" aria-hidden="true"><span></span><span></span><span></span></div><span id="tpProgressText">Processing your file...</span></div>
+              <div style="display:flex;align-items:center;gap:8px"><div class="tp-dot-loader" aria-hidden="true"><span></span><span></span><span></span></div><span id="tpProgressText">Sending your file...</span></div>
               <span id="tpEtaText" style="font-size:11px;color:var(--text-3)"></span>
             </div>
           </div>
           <div class="tp-setup-box" id="tpSetupBox">
             <h4><svg width="12" height="12"><use href="#ic-x"/></svg> Connection error</h4>
-            <p>We couldn't reach the processing server. Please check your internet connection and try again.</p>
+            <p>We couldn't reach the server. Please check your internet connection and try again.</p>
           </div>
           <button class="tp-btn-process" id="tpBtnProcess" onclick="processToolFile()" disabled>
             <svg width="14" height="14"><use href="#ic-play"/></svg> Process file
           </button>
+          <button class="tp-btn-cancel" id="tpBtnCancel" onclick="cancelProcessing()">
+            <svg width="14" height="14"><use href="#ic-x"/></svg> Cancel
+          </button>
           <button class="tp-btn-download" id="tpBtnDownload" onclick="downloadToolResult()">
-            <svg width="14" height="14"><use href="#ic-download"/></svg> Download file
+            <svg width="14" height="14"><use href="#ic-download"/></svg> Download your file
           </button>
           <button class="tp-btn-again" id="tpBtnAgain" onclick="resetToolPage()">
             <svg width="12" height="12"><use href="#ic-rotate"/></svg> Start over
@@ -1161,7 +1223,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
         <div class="tp-result-body">
           <div class="tp-result-placeholder" id="tpResultPlaceholder">
             <svg class="ph-icon" width="28" height="28"><use href="#ic-result"/></svg>
-            <span>Your result will appear here</span>
+            <span>Your processed file will appear here</span>
           </div>
           <div class="tp-result" id="tpResult" role="region" aria-label="Processing result">
             <div class="tp-result-inner" id="tpResultInner">
@@ -1175,49 +1237,21 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   </div>
 </div>
 
-<!-- File Suggestion Modal -->
-<div id="suggestOverlay" onclick="closeSuggest(event)" role="dialog" aria-modal="true"
-  style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;">
-  <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-2xl);padding:28px;max-width:440px;width:100%;box-shadow:var(--sh-xl)">
-    <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--blue-600),var(--violet-500));display:flex;align-items:center;justify-content:center;color:#fff;margin-bottom:14px" id="suggestIconBox"><svg width="22" height="22"><use href="#ic-file"/></svg></div>
-    <div style="font-family:var(--font-h);font-size:20px;font-weight:800;margin-bottom:6px" id="suggestTitle">What would you like to do?</div>
-    <div style="font-size:13.5px;color:var(--text-2);margin-bottom:20px" id="suggestSub">Choose a tool to get started.</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="suggestGrid" role="list"></div>
-    <button onclick="document.getElementById('suggestOverlay').style.display='none'" style="width:100%;margin-top:12px;padding:10px;background:none;border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text-3);font-size:13.5px;cursor:pointer">Cancel</button>
-  </div>
-</div>
-
-<!-- Keyboard Shortcuts Modal -->
-<div id="shortcutsOverlay" onclick="closeShortcuts(event)"
-  style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.75);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:20px;" role="dialog" aria-modal="true">
-  <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-2xl);padding:28px;max-width:420px;width:100%;box-shadow:var(--sh-xl)">
-    <div style="font-family:var(--font-h);font-size:20px;font-weight:800;margin-bottom:20px">Keyboard shortcuts</div>
-    <div style="display:flex;flex-direction:column;gap:6px">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Focus search</span><kbd style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">/</kbd></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Show shortcuts</span><kbd style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">?</kbd></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Close / Go back</span><kbd style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">Esc</kbd></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Go home</span><kbd style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">H</kbd></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-sm);background:var(--bg);font-size:13px"><span style="color:var(--text-2)">Toggle theme</span><kbd style="background:var(--bg-3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">D</kbd></div>
-    </div>
-    <button onclick="document.getElementById('shortcutsOverlay').style.display='none'" style="width:100%;margin-top:16px;padding:10px;background:none;border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text-2);font-size:13.5px;cursor:pointer">Close</button>
-  </div>
-</div>
-
 <footer role="contentinfo">
   <div class="footer-inner">
     <div class="footer-grid">
       <div>
         <div class="footer-brand-name"><div class="footer-brand-mark"><svg width="14" height="14"><use href="#ic-file"/></svg></div>PDF<span style="color:var(--accent)">Wala</span></div>
-        <p class="footer-brand-desc">Your all-in-one document automation platform — built for speed, privacy, and simplicity.</p>
+        <p class="footer-brand-desc">Your all-in-one document platform, built for speed, privacy, and simplicity.</p>
       </div>
       <div class="footer-col"><div class="footer-col-title">Organize</div><a onclick="openTool('merge')">Merge PDF</a><a onclick="openTool('split')">Split PDF</a><a onclick="openTool('organize')">Organize Pages</a><a onclick="openTool('rotate')">Rotate PDF</a></div>
       <div class="footer-col"><div class="footer-col-title">Convert</div><a onclick="openTool('pdf-to-image')">PDF to Image</a><a onclick="openTool('image-to-pdf')">Image to PDF</a><a onclick="openTool('word-to-pdf')">Word to PDF</a><a onclick="openTool('excel-to-pdf')">Excel to PDF</a></div>
       <div class="footer-col"><div class="footer-col-title">Company</div><a href="/pdfwala/about/">About</a><a href="/pdfwala/privacy/">Privacy Policy</a><a href="/pdfwala/terms/">Terms of Service</a><a href="/pdfwala/contact/">Contact</a></div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 PDFWala</span>
-      <div class="status-indicator" aria-live="polite"><div class="status-dot" id="statusDot"></div><span id="statusText">All systems operational</span></div>
-      <div style="display:flex;gap:16px"><a href="/pdfwala/privacy/">Privacy</a><a href="/pdfwala/terms/">Terms</a><a href="/pdfwala/contact/">Contact</a></div>
+      <span>© 2026 PDFWala — Made for everyone</span>
+      <div class="status-indicator" aria-live="polite"><div class="status-dot" id="statusDot"></div><span id="statusText">All systems online</span></div>
+      <div class="footer-links"><a href="/pdfwala/privacy/">Privacy</a><a href="/pdfwala/terms/">Terms</a><a href="/pdfwala/contact/">Contact</a></div>
     </div>
   </div>
 </footer>
@@ -1227,14 +1261,14 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
-const APP_CONFIG={MAX_FILE_SIZE_MB:200,LARGE_FILE_WARN_MB:50,API_BASE:window.location.origin,MAX_RECENT_TOOLS:3,SEARCH_DEBOUNCE_MS:300};
-window.__PDFWALA_API_KEY__='';
+const APP_CONFIG={MAX_FILE_SIZE_MB:200,LARGE_FILE_WARN_MB:50,API_BASE:window.location.origin + '/pdfwala',MAX_RECENT_TOOLS:3,SEARCH_DEBOUNCE_MS:200};
 
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 /* Sign-in modal */
 function openSigninModal(){document.getElementById('signinModal').classList.add('open')}
 function closeSigninModal(e){if(e.target===document.getElementById('signinModal'))document.getElementById('signinModal').classList.remove('open')}
+function closeSuggest(e){if(e.target===document.getElementById('suggestOverlay'))document.getElementById('suggestOverlay').style.display='none';}
 
 /* ICON HELPER */
 const ICON_MAP={merge:'ic-merge',split:'ic-split',compress:'ic-compress',image:'ic-image',lock:'ic-lock',unlock:'ic-unlock',rotate:'ic-rotate',edit:'ic-edit',file:'ic-file',pages:'ic-pages',sign:'ic-sign',redact:'ic-redact',compare:'ic-compare',repair:'ic-repair',info:'ic-info',ocr:'ic-ocr',watermark:'ic-watermark',crop:'ic-crop',upload:'ic-upload',globe:'ic-globe',spreadsheet:'ic-spreadsheet','x':'ic-x',check:'ic-check',tools:'ic-tools',shield:'ic-shield',zap:'ic-zap',search:'ic-search',user:'ic-user',result:'ic-result'};
@@ -1243,15 +1277,15 @@ function svgIcon(name,sz=22){const id=ICON_MAP[name]||'ic-file';return`<svg widt
 /* TOOLS DATA */
 const TOOLS_PDF_CORE={
   merge:{title:'Merge PDF',icon:'merge',desc:'Combine multiple PDF files into one document.',multi:true,accept:'.pdf',endpoint:'/api/merge',field:'files',form:()=>''},
-  split:{title:'Split PDF',icon:'split',desc:'Extract individual pages or page ranges.',multi:false,accept:'.pdf',endpoint:'/api/split',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Split Mode</div><div class="tp-radio-group"><div class="tp-radio-chip active" onclick="tpRadio(this,'mode','all');toggleSplitRange('all')">All Pages</div><div class="tp-radio-chip" onclick="tpRadio(this,'mode','range');toggleSplitRange('range')">Page Range</div></div><input type="hidden" id="mode" value="all"/></div><div class="tp-form-group" id="rangeGroup" style="display:none"><label class="tp-form-label">Page Range</label><input class="tp-form-input" type="text" id="ranges" placeholder="e.g. 1-3, 5, 7-9"/><div class="tp-form-hint">Comma-separated. Example: 1-3, 5, 8-10</div></div>`},
+  split:{title:'Split PDF',icon:'split',desc:'Extract individual pages or page ranges.',multi:false,accept:'.pdf',endpoint:'/api/split',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Split Mode</div><div class="tp-radio-group"><div class="tp-radio-chip active" onclick="tpRadio(this,'mode','all')">All Pages</div><div class="tp-radio-chip" onclick="tpRadio(this,'mode','range')">Page Range</div></div><input type="hidden" id="mode" value="all"/></div><div class="tp-form-group" id="rangeGroup" style="display:none"><label class="tp-form-label">Page Range</label><input class="tp-form-input" type="text" id="ranges" placeholder="e.g. 1-3, 5, 7-9"/><div class="tp-form-hint">Comma-separated. Example: 1-3, 5, 8-10</div></div>`},
   organize:{title:'Organize PDF',icon:'pages',desc:'Reorder, extract, or delete specific pages.',multi:false,accept:'.pdf',endpoint:'/api/organize',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Action</div><div class="tp-radio-group"><div class="tp-radio-chip active" onclick="tpRadio(this,'action','reorder')">Reorder</div><div class="tp-radio-chip" onclick="tpRadio(this,'action','extract')">Extract</div><div class="tp-radio-chip" onclick="tpRadio(this,'action','delete')">Delete</div></div><input type="hidden" id="action" value="reorder"/></div><div class="tp-form-group"><label class="tp-form-label">Page Order / Selection</label><input class="tp-form-input" type="text" id="order" placeholder="e.g. 3,1,2,4 to reorder"/></div>`},
   'remove-pages':{title:'Remove Pages',icon:'x',desc:'Delete specific pages from your PDF.',multi:false,accept:'.pdf',endpoint:'/api/organize',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Pages to Remove</label><input class="tp-form-input" type="text" id="order" placeholder="e.g. 1,3,5-8"/></div><input type="hidden" id="action" value="delete"/>`},
   'extract-pages':{title:'Extract Pages',icon:'upload',desc:'Extract selected pages to a new PDF.',multi:false,accept:'.pdf',endpoint:'/api/organize',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Pages to Extract</label><input class="tp-form-input" type="text" id="order" placeholder="e.g. 1,3,5-8"/></div><input type="hidden" id="action" value="extract"/>`},
-  compress:{title:'Compress PDF',icon:'compress',desc:'Reduce file size while maintaining quality.',multi:false,accept:'.pdf',endpoint:'/api/compress',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Compression Level</div><div class="tp-radio-group"><div class="tp-radio-chip" onclick="tpRadio(this,'quality','low')">Maximum</div><div class="tp-radio-chip active" onclick="tpRadio(this,'quality','medium')">Balanced</div><div class="tp-radio-chip" onclick="tpRadio(this,'quality','high')">High Quality</div></div><input type="hidden" id="quality" value="medium"/></div>`},
+  compress:{title:'Compress PDF',icon:'compress',desc:'Reduce file size while keeping quality.',multi:false,accept:'.pdf',endpoint:'/api/compress',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Compression Level</div><div class="tp-radio-group"><div class="tp-radio-chip" onclick="tpRadio(this,'quality','low')">Maximum</div><div class="tp-radio-chip active" onclick="tpRadio(this,'quality','medium')">Balanced</div><div class="tp-radio-chip" onclick="tpRadio(this,'quality','high')">High Quality</div></div><input type="hidden" id="quality" value="medium"/></div>`},
   'repair-pdf':{title:'Repair PDF',icon:'repair',desc:'Fix corrupted or damaged PDF files.',multi:false,accept:'.pdf',endpoint:'/api/repair-pdf',field:'file',form:()=>''},
   'pdf-to-image':{title:'PDF to Image',icon:'image',desc:'Convert each PDF page into a high-resolution image.',multi:false,accept:'.pdf',endpoint:'/api/pdf-to-image',field:'file',form:()=>`<div class="tp-form-row"><div class="tp-form-group"><label class="tp-form-label">Format</label><select class="tp-form-select" id="format"><option value="jpg">JPG</option><option value="png">PNG</option></select></div><div class="tp-form-group"><label class="tp-form-label">Resolution</label><select class="tp-form-select" id="dpi"><option value="96">96 dpi</option><option value="150" selected>150 dpi</option><option value="300">300 dpi</option></select></div></div>`},
   'image-to-pdf':{title:'Image to PDF',icon:'image',desc:'Combine images into a single PDF.',multi:true,accept:'.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp',endpoint:'/api/image-to-pdf',field:'files',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Page Size</div><select class="tp-form-select" id="page_size"><option value="auto">Auto</option><option value="a4">A4</option><option value="letter">Letter</option></select></div>`},
-  rotate:{title:'Rotate PDF',icon:'rotate',desc:'Fix page orientation by rotating pages.',multi:false,accept:'.pdf',endpoint:'/api/rotate',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Rotation</div><div class="tp-radio-group"><div class="tp-radio-chip active" onclick="tpRadio(this,'angle','90')">90° Clockwise</div><div class="tp-radio-chip" onclick="tpRadio(this,'angle','180')">180°</div><div class="tp-radio-chip" onclick="tpRadio(this,'angle','270')">90° Counter</div></div><input type="hidden" id="angle" value="90"/></div><div class="tp-form-group"><label class="tp-form-label">Pages</label><input class="tp-form-input" type="text" id="pages" value="all" placeholder="all — or 1-3,5"/></div>`},
+  rotate:{title:'Rotate PDF',icon:'rotate',desc:'Fix page orientation by rotating pages.',multi:false,accept:'.pdf',endpoint:'/api/rotate',field:'file',form:()=>`<div class="tp-form-group"><div class="tp-form-label">Rotation</div><div class="tp-radio-group"><div class="tp-radio-chip active" onclick="tpRadio(this,'angle','90')">90° Clockwise</div><div class="tp-radio-chip" onclick="tpRadio(this,'angle','180')">180°</div><div class="tp-radio-chip" onclick="tpRadio(this,'angle','270')">90° Counter</div></div><input type="hidden" id="angle" value="90"/></div><div class="tp-form-group"><label class="tp-form-label">Pages</label><input class="tp-form-input" type="text" id="pages" value="all" placeholder="all or 1-3,5"/></div>`},
   watermark:{title:'Watermark PDF',icon:'watermark',desc:'Stamp a text watermark across every page.',multi:false,accept:'.pdf',endpoint:'/api/watermark',field:'file',form:()=>`<div class="tp-form-group"><label class="tp-form-label">Watermark Text</label><input class="tp-form-input" type="text" id="text" value="CONFIDENTIAL"/></div><div class="tp-form-row"><div class="tp-form-group"><label class="tp-form-label">Color</label><select class="tp-form-select" id="color"><option value="808080">Gray</option><option value="FF0000">Red</option><option value="0000FF">Blue</option><option value="000000">Black</option></select></div><div class="tp-form-group"><label class="tp-form-label">Opacity (%)</label><input class="tp-form-input" type="number" id="opacity" value="30" min="5" max="90"/></div></div>`},
   'page-numbers':{title:'Page Numbers',icon:'pages',desc:'Add page numbers at your preferred position.',multi:false,accept:'.pdf',endpoint:'/api/page-numbers',field:'file',form:()=>`<div class="tp-form-row"><div class="tp-form-group"><label class="tp-form-label">Position</label><select class="tp-form-select" id="position"><option value="bottom">Bottom</option><option value="top">Top</option></select></div><div class="tp-form-group"><label class="tp-form-label">Start From</label><input class="tp-form-input" type="number" id="start" value="1" min="1"/></div></div><div class="tp-form-group"><label class="tp-form-label">Prefix (optional)</label><input class="tp-form-input" type="text" id="prefix" placeholder='e.g. "Page "'/></div>`},
   crop:{title:'Crop PDF',icon:'crop',desc:'Trim margins from PDF pages.',multi:false,accept:'.pdf',endpoint:'/api/crop',field:'file',form:()=>`<div class="tp-form-row"><div class="tp-form-group"><label class="tp-form-label">Left</label><input class="tp-form-input" type="number" id="left" value="0" min="0"/></div><div class="tp-form-group"><label class="tp-form-label">Right</label><input class="tp-form-input" type="number" id="right" value="0" min="0"/></div></div><div class="tp-form-row"><div class="tp-form-group"><label class="tp-form-label">Top</label><input class="tp-form-input" type="number" id="top" value="0" min="0"/></div><div class="tp-form-group"><label class="tp-form-label">Bottom</label><input class="tp-form-input" type="number" id="bottom" value="0" min="0"/></div></div><div class="tp-form-hint">72pt = 1 inch</div>`},
@@ -1319,7 +1353,7 @@ const SLUG_TO_TOOL=Object.fromEntries(Object.entries(SLUG_MAP).map(([k,v])=>[v,k
 const FILE_SUGGEST={pdf:['compress','pdf-to-word','pdf-to-image','merge','split','protect','watermark','ocr-pdf'],image:['compress-image','image-to-pdf','resize-image','webp-to-jpg','png-to-jpg','image-to-word'],word:['word-to-pdf','word-to-jpg','compress-word','word-to-txt','protect-word','word-to-excel'],excel:['excel-to-pdf','excel-to-csv','compress-excel','excel-to-json','protect-excel','excel-to-jpg'],html:['html-to-pdf']};
 
 const API=APP_CONFIG.API_BASE;
-let curTool=null,selFiles=[],lastFn=null,lastUrl=null,abortCtrl=null;
+let curTool=null,selFiles=[],lastFn=null,lastUrl=null,abortCtrl=null,revealObserver=null;
 
 function safeGet(k,d=''){try{return localStorage.getItem(k)||d;}catch(e){return d;}}
 function safeSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
@@ -1330,7 +1364,10 @@ function trackRecent(id){
 }
 function renderRecent(){
   try{
-    const r=JSON.parse(safeGet('pw-recent','[]')),bar=document.getElementById('recentToolsBar'),chips=document.getElementById('recentToolsChips');
+    let r=[];
+    try{r=JSON.parse(safeGet('pw-recent','[]'));}catch(e){safeSet('pw-recent','[]');}
+    if(!Array.isArray(r)){r=[];safeSet('pw-recent','[]');}
+    const bar=document.getElementById('recentToolsBar'),chips=document.getElementById('recentToolsChips');
     if(!r.length||!bar||!chips){bar&&bar.classList.remove('visible');return;}
     bar.classList.add('visible');
     chips.innerHTML=r.map(id=>{const t=TOOLS[id];if(!t)return'';return`<span class="recent-chip" onclick="openTool('${id}')">${svgIcon(t.icon,12)} ${t.title}</span>`;}).join('');
@@ -1351,11 +1388,19 @@ function detectType(f){
 /* ROUTING */
 function openTool(id){
   const t=TOOLS[id];if(!t){toast('Tool not found','error');return;}
+  closeMob();
   window.history.pushState({id},t.title+' — PDFWala','/pdfwala/'+(SLUG_MAP[id]||id)+'/');
   updateMeta(id);renderTool(id);trackRecent(id);
 }
-function navigateHome(){window.history.pushState({},'PDFWala','/pdfwala/');updateMetaHome();showHome();}
+
+function navigateHome(){
+  window.history.pushState({},'PDFWala','/pdfwala/');
+  updateMetaHome();
+  showHome();
+}
+
 function showHome(){
+  if(revealObserver)revealObserver.disconnect();
   document.getElementById('homePage').style.display='block';
   document.getElementById('toolPage').style.display='none';
   document.getElementById('popularToolsBand').style.display='block';
@@ -1363,6 +1408,7 @@ function showHome(){
 }
 
 function renderTool(id){
+  if(abortCtrl){abortCtrl.abort();abortCtrl=null;}
   const t=TOOLS[id];if(!t)return;
   const sk=document.getElementById('toolSkeleton');if(sk)sk.style.display='block';
   setTimeout(()=>{if(sk)sk.style.display='none';},250);
@@ -1378,7 +1424,7 @@ function renderTool(id){
   document.getElementById('tpBreadcrumbCurrent').textContent=t.title;
 
   const fi=document.getElementById('toolFileInput');fi.accept=t.accept;fi.multiple=!!t.multi;fi.value='';
-  document.getElementById('tpDropHint').textContent='Accepted: '+t.accept.replace(/,/g,' ')+(t.multi?' (multiple OK)':'');
+  document.getElementById('tpDropHint').textContent='Accepted: '+t.accept.replace(/,/g,' ')+(t.multi?' (multiple files OK)':'');
 
   const oc=t.form(),hasOpts=oc.trim().length>0;
   const po=document.getElementById('panelOptions'),tg=document.getElementById('tpTopGrid');
@@ -1392,6 +1438,7 @@ function renderTool(id){
   document.getElementById('tpBtnAgain').classList.remove('show');
   document.getElementById('tpBtnProcess').style.display='flex';
   document.getElementById('tpBtnProcess').disabled=true;
+  document.getElementById('tpBtnCancel').classList.remove('show');
   document.getElementById('tpProgressFill').style.width='0';
   resetPlaceholder();
 
@@ -1404,11 +1451,13 @@ function renderTool(id){
   document.getElementById('step3Num').className='tp-step-num';
   document.getElementById('step3Label').style.opacity='.6';
   window.scrollTo({top:0,behavior:'smooth'});
+  const titleEl=document.getElementById('tpTitle');
+  if(titleEl){titleEl.setAttribute('tabindex','-1');titleEl.focus();}
 }
 
 function resetPlaceholder(){
   const p=document.getElementById('tpResultPlaceholder');
-  if(p){p.style.display='flex';p.innerHTML=`${svgIcon('result',28)} <span>Your result will appear here</span>`;}
+  if(p){p.style.display='flex';p.innerHTML=`${svgIcon('result',28)} <span>Your processed file will appear here</span>`;}
 }
 
 /* DND */
@@ -1424,7 +1473,10 @@ function heroFileSelect(e){if(e.target.files[0])handleHeroFile(e.target.files[0]
 function handleFiles(files){
   if(!curTool)return;const t=TOOLS[curTool];const max=APP_CONFIG.MAX_FILE_SIZE_MB*1024*1024;
   for(const f of files){if(f.size>max){showPop('toolSizePopup');return;}}
-  if(curTool==='compare-pdf'&&files.length!==2){toast('Please upload exactly 2 PDF files','error');return;}
+  if(curTool==='compare-pdf'){
+    const proposed=[...selFiles,...files];
+    if(proposed.length>2){toast('Compare needs exactly 2 PDF files','error');return;}
+  }
   selFiles=t.multi?[...selFiles,...files]:[files[0]];
   renderFileList();
 
@@ -1449,7 +1501,8 @@ function handleFiles(files){
 function renderFileList(){
   const warn=APP_CONFIG.LARGE_FILE_WARN_MB*1024*1024;
   document.getElementById('tpFileList').innerHTML=selFiles.map((f,i)=>{
-    const tp=detectType(f);const w=f.size>=warn?`<span style="font-size:10px;color:var(--amber-400);flex-shrink:0">Large</span>`:'';
+    const tp=detectType(f);
+    const w=f.size>=warn?`<span class="tp-fi-large" title="Large file, may take longer">⚠️</span>`:'';
     return`<div class="tp-file-item type-${tp}" role="listitem"><div class="tp-fi-icon">${svgIcon('file',14)}</div><span class="tp-fi-name">${esc(f.name)}</span><span class="tp-fi-size">${fmt(f.size)}</span>${w}<button class="tp-fi-del" onclick="rmFile(${i})" aria-label="Remove">${svgIcon('x',12)}</button></div>`;
   }).join('');
 }
@@ -1477,20 +1530,44 @@ function handleHeroFile(f){
 function showSuggest(f,tp,ids){
   const labels={pdf:'PDF File',image:'Image',word:'Word Document',excel:'Excel Spreadsheet',html:'HTML File',unknown:'File'};
   document.getElementById('suggestTitle').textContent='What would you like to do with this '+(labels[tp]||'file')+'?';
-  document.getElementById('suggestSub').textContent='"'+f.name+'" · '+fmt(f.size)+' — choose a tool to get started.';
-  document.getElementById('suggestGrid').innerHTML=ids.slice(0,6).map(id=>{
-    const t=TOOLS[id];if(!t)return'';
-    return`<button onclick="openWithFile('${id}',window.__suggestFile)" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--r-lg);background:var(--bg);cursor:pointer;text-align:left;transition:all var(--t)" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"><span style="color:var(--accent)">${svgIcon(t.icon,18)}</span><span style="font-size:13px;font-weight:700;color:var(--text)">${t.title}</span><span style="font-size:11px;color:var(--text-3)">${t.desc.split('.')[0]}</span></button>`;
-  }).join('');
-  window.__suggestFile=f;document.getElementById('suggestOverlay').style.display='flex';
+  document.getElementById('suggestSub').textContent='"'+f.name+'" · '+fmt(f.size);
+  const grid=document.getElementById('suggestGrid');
+  grid.innerHTML='';
+  ids.slice(0,6).forEach(id=>{
+    const t=TOOLS[id];if(!t)return;
+    const btn=document.createElement('button');
+    btn.setAttribute('data-tool',id);
+    btn.style.cssText='display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--r-lg);background:var(--bg);cursor:pointer;text-align:left;transition:all var(--t)';
+    btn.innerHTML=`<span style="color:var(--accent)">${svgIcon(t.icon,18)}</span><span style="font-size:13px;font-weight:700;color:var(--text)">${esc(t.title)}</span><span style="font-size:11px;color:var(--text-3)">${esc(t.desc.split('.')[0])}</span>`;
+    grid.appendChild(btn);
+  });
+  document.getElementById('suggestOverlay').style.display='flex';
 }
-function openWithFile(id,f){document.getElementById('suggestOverlay').style.display='none';openTool(id);setTimeout(()=>{if(f)handleFiles([f]);},100);}
-function closeSuggest(e){if(e.target===document.getElementById('suggestOverlay'))document.getElementById('suggestOverlay').style.display='none';}
+// ✅ Move event listener to DOMContentLoaded
+let suggestGridListenerAttached = false;
+function attachSuggestGridListener() {
+  if (suggestGridListenerAttached) return;
+  const grid = document.getElementById('suggestGrid');
+  if (!grid) return;
+  grid.addEventListener('click', e => {
+    const btn = e.target.closest('[data-tool]');
+    if (!btn) return;
+    const toolId = btn.dataset.tool;
+    document.getElementById('suggestOverlay').style.display = 'none';
+    openTool(toolId);
+  });
+  suggestGridListenerAttached = true;
+}
 
 /* GLOBAL DND */
 let dgCnt=0;
 document.addEventListener('dragenter',e=>{if(e.dataTransfer&&e.dataTransfer.types.includes('Files')){dgCnt++;document.getElementById('globalDragOverlay').classList.add('active');}});
-document.addEventListener('dragleave',()=>{dgCnt=Math.max(0,dgCnt-1);if(!dgCnt)document.getElementById('globalDragOverlay').classList.remove('active');});
+document.addEventListener('dragleave',e=>{
+  if(!e.relatedTarget||e.relatedTarget===document.documentElement){
+    dgCnt=0;
+    document.getElementById('globalDragOverlay').classList.remove('active');
+  }
+});
 document.addEventListener('dragover',e=>{if(e.dataTransfer&&e.dataTransfer.types.includes('Files'))e.preventDefault();});
 document.addEventListener('drop',e=>{
   dgCnt=0;document.getElementById('globalDragOverlay').classList.remove('active');
@@ -1504,36 +1581,74 @@ document.addEventListener('paste',e=>{
   const tg=document.activeElement.tagName.toLowerCase();if(['input','textarea'].includes(tg))return;
   const items=e.clipboardData&&e.clipboardData.items;if(!items)return;
   const files=[];for(const it of items){if(it.kind==='file'){const f=it.getAsFile();if(f)files.push(f);}}
-  if(!files.length)return;e.preventDefault();toast('File pasted','success');
+  if(!files.length)return;e.preventDefault();toast('File pasted from clipboard','success');
   if(curTool)handleFiles(files);else handleHeroFile(files[0]);
 });
 
-/* SEARCH */
+/* SEARCH - Fixed with proper event delegation */
 let sfIdx=-1,sdTimer=null;
 function initSearch(){
   const inp=document.getElementById('heroSearch'),dd=document.getElementById('searchDropdown');if(!inp||!dd)return;
-  inp.addEventListener('input',()=>{
-    clearTimeout(sdTimer);sdTimer=setTimeout(()=>{
-      const q=inp.value.trim().toLowerCase();sfIdx=-1;if(!q){dd.classList.remove('open');return;}
-      loadExtra();const all={...TOOLS_PDF_CORE,...EX};
-      const res=Object.entries(all).filter(([id,t])=>t.title.toLowerCase().includes(q)||t.desc.toLowerCase().includes(q)||id.includes(q)).slice(0,8);
-      dd.innerHTML=res.length?res.map(([id,t])=>`<div class="search-result-item" data-tool="${id}" onclick="inp.value='';dd.classList.remove('open');openTool('${id}')">${svgIcon(t.icon,16)}<div><div class="sri-name">${t.title}</div><div class="sri-desc">${t.desc}</div></div><span class="sri-arr">→</span></div>`).join(''):`<div class="search-no-results">No tools found for "${q}"</div>`;
-      dd.classList.add('open');
-    },APP_CONFIG.SEARCH_DEBOUNCE_MS);
+
+  function buildResults(q){
+    sfIdx=-1;if(!q){dd.classList.remove('open');return;}
+    loadExtra();const all={...TOOLS_PDF_CORE,...EX};
+    const res=Object.entries(all).filter(([id,t])=>t.title.toLowerCase().includes(q)||t.desc.toLowerCase().includes(q)||id.includes(q)).slice(0,8);
+    if(!res.length){dd.innerHTML=`<div class="search-no-results">No tools found for "${esc(q)}"</div>`;dd.classList.add('open');return;}
+    dd.innerHTML=res.map(([id,t])=>`<div class="search-result-item" data-tool="${id}"><div class="sri-icon">${svgIcon(t.icon,16)}</div><div><div class="sri-name">${t.title}</div><div class="sri-desc">${t.desc}</div></div><span class="sri-arr">→</span></div>`).join('');
+    dd.classList.add('open');
+  }
+
+  inp.addEventListener('input',()=>{clearTimeout(sdTimer);sdTimer=setTimeout(()=>buildResults(inp.value.trim().toLowerCase()),APP_CONFIG.SEARCH_DEBOUNCE_MS);});
+
+  dd.addEventListener('click',e=>{
+    const item=e.target.closest('.search-result-item');
+    if(!item)return;
+    const toolId=item.dataset.tool;
+    if(toolId){inp.value='';dd.classList.remove('open');openTool(toolId);}
   });
+
   inp.addEventListener('keydown',e=>{
     const its=dd.querySelectorAll('.search-result-item');
-    if(e.key==='ArrowDown'){e.preventDefault();sfIdx=Math.min(sfIdx+1,its.length-1);its.forEach((el,i)=>el.classList.toggle('focused',i===sfIdx));}
-    else if(e.key==='ArrowUp'){e.preventDefault();sfIdx=Math.max(sfIdx-1,0);its.forEach((el,i)=>el.classList.toggle('focused',i===sfIdx));}
-    else if(e.key==='Enter'&&sfIdx>=0){const f=its[sfIdx];if(f){inp.value='';dd.classList.remove('open');openTool(f.dataset.tool);}}
-    else if(e.key==='Escape'){dd.classList.remove('open');inp.blur();}
+    if(e.key==='ArrowDown'){
+      e.preventDefault();
+      if(its.length===0)return;
+      sfIdx=(sfIdx+1)%its.length;
+      its.forEach((el,i)=>el.classList.toggle('focused',i===sfIdx));
+    }
+    else if(e.key==='ArrowUp'){
+      e.preventDefault();
+      if(its.length===0)return;
+      sfIdx=sfIdx<=0?its.length-1:sfIdx-1;
+      its.forEach((el,i)=>el.classList.toggle('focused',i===sfIdx));
+    }
+    else if(e.key==='Enter'){
+      if(sfIdx>=0&&its[sfIdx]){
+        const f=its[sfIdx];
+        inp.value='';dd.classList.remove('open');
+        openTool(f.dataset.tool);
+        sfIdx=-1;
+      }else if(inp.value.trim()){
+        const first=dd.querySelector('.search-result-item');
+        if(first){
+          inp.value='';dd.classList.remove('open');
+          openTool(first.dataset.tool);
+          sfIdx=-1;
+        }
+      }
+    }
+    else if(e.key==='Escape'){
+      dd.classList.remove('open');inp.blur();
+      sfIdx=-1;
+    }
   });
+  
   document.addEventListener('click',e=>{if(!e.target.closest('#searchHeroWrap'))dd.classList.remove('open');});
 }
-
 /* KEYBOARD SHORTCUTS */
 document.addEventListener('keydown',e=>{
   const tg=document.activeElement.tagName.toLowerCase(),inp=['input','textarea','select'].includes(tg);
+  if(e.key==='/'&&!inp){e.preventDefault();const s=document.getElementById('heroSearch');if(s){s.focus();s.select();}return;}
   if(e.key==='Escape'){
     document.getElementById('shortcutsOverlay').style.display='none';
     document.getElementById('suggestOverlay').style.display='none';
@@ -1541,28 +1656,43 @@ document.addEventListener('keydown',e=>{
     closeMob();return;
   }
   if(inp)return;
-  if(e.key==='/'){e.preventDefault();const s=document.getElementById('heroSearch');if(s){s.focus();s.select();}return;}
   if(e.key==='?'){e.preventDefault();const o=document.getElementById('shortcutsOverlay');o.style.display=o.style.display==='flex'?'none':'flex';return;}
+  const skipNav=['input','textarea','select','button'].includes(tg);
+  if(skipNav)return;
   if(e.key==='h'||e.key==='H'){navigateHome();return;}
   if(e.key==='d'||e.key==='D'){toggleTheme();return;}
 });
 function closeShortcuts(e){if(e.target===document.getElementById('shortcutsOverlay'))document.getElementById('shortcutsOverlay').style.display='none';}
 
-/* ETA */
+/* ETA - shortened for mobile */
 function eta(bytes){const mb=bytes/1048576;if(mb<1)return'~1 sec';if(mb<5)return'~2 sec';if(mb<20)return'~5 sec';return'~30 sec';}
 
 /* PROCESS */
 async function processToolFile(){
   if(!curTool||!selFiles.length)return;
   const t=TOOLS[curTool];
-  const btn=document.getElementById('tpBtnProcess'),prog=document.getElementById('tpProgress'),
-        fill=document.getElementById('tpProgressFill'),pTxt=document.getElementById('tpProgressText'),
-        etaTxt=document.getElementById('tpEtaText'),res=document.getElementById('tpResult'),
-        dlBtn=document.getElementById('tpBtnDownload'),setupBox=document.getElementById('tpSetupBox'),
-        again=document.getElementById('tpBtnAgain'),ph=document.getElementById('tpResultPlaceholder');
 
-  btn.disabled=true;
-  btn.innerHTML=`<div class="tp-dot-loader"><span style="background:#fff"></span><span style="background:#fff"></span><span style="background:#fff"></span></div> Uploading your file...`;
+  if(curTool==='protect'||curTool==='protect-word'||curTool==='protect-excel'){
+    const pw1=document.getElementById('password')?.value||'';
+    const pw2=document.getElementById('password2')?.value||'';
+    if(pw1!==pw2){toast('Passwords do not match','error');return;}
+    if(pw1.length<4){toast('Password must be at least 4 characters','error');return;}
+  }
+  const btn=document.getElementById('tpBtnProcess'),
+        cancelBtn=document.getElementById('tpBtnCancel'),
+        prog=document.getElementById('tpProgress'),
+        fill=document.getElementById('tpProgressFill'),
+        pTxt=document.getElementById('tpProgressText'),
+        etaTxt=document.getElementById('tpEtaText'),
+        res=document.getElementById('tpResult'),
+        dlBtn=document.getElementById('tpBtnDownload'),
+        setupBox=document.getElementById('tpSetupBox'),
+        again=document.getElementById('tpBtnAgain'),
+        ph=document.getElementById('tpResultPlaceholder'),
+        announcer=document.getElementById('tpProgressAnnouncer');
+
+  btn.disabled=true;btn.style.display='none';
+  cancelBtn.classList.add('show');
   prog.classList.add('show');res.classList.remove('show');dlBtn.style.display='none';
   setupBox.classList.remove('show');again.classList.remove('show');fill.style.width='0';
   if(ph)ph.style.display='none';
@@ -1570,35 +1700,76 @@ async function processToolFile(){
 
   const tb=selFiles.reduce((s,f)=>s+f.size,0);if(etaTxt)etaTxt.textContent=eta(tb);
 
-  let pct=0;const msgs=['Uploading your file...','Processing your file...','Optimizing...','Preparing your file...'];
-  const tick=setInterval(()=>{
+  let pct=0;const msgs=['Sending your file...','Working on it...','Almost there...','Wrapping up...'];
+  let tick=null;
+  const toolAtCallTime=curTool;
+
+  tick=setInterval(()=>{
     pct=Math.min(pct+Math.random()*12,88);fill.style.width=pct+'%';fill.setAttribute('aria-valuenow',Math.round(pct));
-    pTxt.textContent=msgs[Math.floor(pct/25)]||'Preparing your file...';
+    pTxt.textContent=msgs[Math.floor(pct/25)]||'Wrapping up...';
+    if(announcer)announcer.textContent=pTxt.textContent;
   },350);
 
   abortCtrl=new AbortController();
   try{
     const fd=new FormData();
     if(t.multi)selFiles.forEach(f=>fd.append(t.field,f));else fd.append(t.field,selFiles[0]);
-    ['mode','ranges','quality','format','dpi','angle','pages','text','color','opacity','password','password2','position','start','prefix','action','order','left','right','top','bottom','page_size','version','lang','width','height','name','reason','search_text','find_text','replace_text'].forEach(id=>{
-      const el=document.getElementById(id);if(!el)return;
-      let v=el.value;if(id==='opacity')v=(parseFloat(v)/100).toFixed(2);fd.append(id,v);
-    });
-    const r=await fetch(API+t.endpoint,{method:'POST',body:fd,signal:abortCtrl.signal});
+    
+    const optionsArea=document.getElementById('tpOptionsArea');
+    if(optionsArea){
+      const formElements=optionsArea.querySelectorAll('input, select, textarea');
+      formElements.forEach(el=>{
+        if(!el.id||el.type==='hidden'&&!el.value)return;
+        if(curTool==='unlock'&&el.id==='password2')return;
+        if(curTool==='unlock-word'&&el.id==='password2')return;
+        if(curTool==='unlock-excel'&&el.id==='password2')return;
+        let v=el.value;
+        if(el.id==='opacity')v=(parseFloat(v)/100).toFixed(2);
+        fd.append(el.id,v);
+      });
+    }
+    
+    const signal=AbortSignal.any?AbortSignal.any([abortCtrl.signal,AbortSignal.timeout(300000)]):abortCtrl.signal;
+    const r=await fetch(API+t.endpoint,{method:'POST',body:fd,signal,headers:{'X-Requested-With':'XMLHttpRequest'}});
     const d=await r.json();
-    clearInterval(tick);fill.style.width='100%';pTxt.textContent='Done';if(etaTxt)etaTxt.textContent='';
+    if(curTool!==toolAtCallTime)return;
     showResult(d.success?'success':'error',d);
   }catch(err){
-    clearInterval(tick);if(etaTxt)etaTxt.textContent='';
-    if(err.name==='AbortError'){fill.style.width='0';prog.classList.remove('show');}
+    if(err.name==='AbortError'){
+      abortCtrl=null;
+      fill.style.width='0';prog.classList.remove('show');
+      cancelBtn.classList.remove('show');
+      btn.disabled=!selFiles.length;
+      btn.style.display='flex';
+      if(ph){ph.style.display='flex';ph.innerHTML=`${svgIcon('result',28)}<span>Processing cancelled</span>`;}
+      return;
+    }
     else if(/fetch|NetworkError|Failed/i.test(err.message)){
       setupBox.classList.add('show');prog.classList.remove('show');
-      if(ph){ph.style.display='flex';ph.innerHTML=`${svgIcon('result',28)}<span>Connection error. Please check your internet and try again.</span>`;}
-    }else showResult('error',{message:'Unexpected error occurred. Please retry.'});
+      if(ph){ph.style.display='flex';ph.innerHTML=`${svgIcon('result',28)}<span>Connection failed. Please check your internet and try again.</span>`;}
+    }else showResult('error',{message:'Something went wrong. Please try again.'});
+  }finally{
+    clearInterval(tick);
+    tick=null;
+    cancelBtn.classList.remove('show');
+    btn.disabled=!selFiles.length;
+    btn.style.display='flex';
   }
-  abortCtrl=null;
-  btn.disabled=!selFiles.length;
-  btn.innerHTML=`${svgIcon('play',14)} Process file`;
+}
+
+/* Cancel processing */
+function cancelProcessing(){
+  if(abortCtrl){abortCtrl.abort();abortCtrl=null;}
+  const prog=document.getElementById('tpProgress'),
+        cancelBtn=document.getElementById('tpBtnCancel'),
+        btn=document.getElementById('tpBtnProcess'),
+        ph=document.getElementById('tpResultPlaceholder');
+  prog.classList.remove('show');
+  cancelBtn.classList.remove('show');
+  btn.disabled=false;btn.style.display='flex';
+  document.getElementById('tpProgressFill').style.width='0';
+  if(ph){ph.style.display='flex';ph.innerHTML=`${svgIcon('result',28)}<span>Your processed file will appear here</span>`;}
+  toast('Processing cancelled','error');
 }
 
 function showResult(type,data){
@@ -1611,18 +1782,18 @@ function showResult(type,data){
   prog.classList.remove('show');if(ph)ph.style.display='none';
   res.classList.add('show');inner.className='tp-result-inner '+type;
 
-  // Humanized messages
   let msg=data.message||data.error||'';
   if(type==='success'){
-    if(!msg||/completed/i.test(msg))msg='Done. Your file is ready';
-    else if(/repaired/i.test(msg))msg='PDF successfully repaired';
+    if(curTool==='info')msg='Document details ready';
+    else if(!msg||/completed/i.test(msg))msg='Your file is ready to download';
+    else if(/repaired/i.test(msg))msg='File repaired successfully';
     else if(/compressed/i.test(msg))msg='File compressed successfully';
-    else msg='Done. Your file is ready';
+    else msg='Your file is ready to download';
   }else{
-    if(!msg||/processing failed/i.test(msg))msg="We couldn't process your file. Please try again.";
-    else if(/invalid request/i.test(msg))msg='Invalid input. Please check your file and try again.';
-    else if(/server error/i.test(msg))msg='Unexpected error occurred. Please retry.';
-    else if(/backend/i.test(msg))msg='Connection error. Please check your internet and try again.';
+    if(!msg||/processing failed/i.test(msg))msg="We couldn't process that file. Please try again.";
+    else if(/invalid request/i.test(msg))msg='Something looks off with your input. Please check and retry.';
+    else if(/server error/i.test(msg))msg='Our server hit a snag. Please try again.';
+    else if(/backend/i.test(msg))msg='Connection error. Check your internet and retry.';
   }
 
   const ic=type==='success'?svgIcon('check',14):svgIcon('x',14);
@@ -1635,11 +1806,15 @@ function showResult(type,data){
   pills.innerHTML=pa.map(p=>`<span class="tp-result-pill">${p}</span>`).join('');
 
   if(type==='success'){
-    const url=data.download_url||(data.filename?API+'/download/'+data.filename:null);
+    let url=data.download_url;
+    if(!url&&data.filename){
+      const fn=(data.filename||'').replace(/^\/pdfwala/,'');
+      url=fn.startsWith('/')?API+fn:API+'/download/'+fn;
+    }
     if(url){
       lastFn=data.filename||'pdfwala_output';lastUrl=url;
       procBtn.style.display='none';dlBtn.style.display='flex';
-      toast('Your file is ready. Download now.','success');
+      toast('File ready — click download!','success');
     }else toast(msg,'success');
     again.classList.add('show');
     document.getElementById('step3Num').className='tp-step-num done';
@@ -1660,6 +1835,7 @@ function resetToolPage(){
   ['tpProgress','tpResult','tpSetupBox'].forEach(x=>document.getElementById(x).classList.remove('show'));
   document.getElementById('tpBtnDownload').style.display='none';
   document.getElementById('tpBtnAgain').classList.remove('show');
+  document.getElementById('tpBtnCancel').classList.remove('show');
   document.getElementById('tpBtnProcess').style.display='flex';
   document.getElementById('tpBtnProcess').disabled=true;
   document.getElementById('tpProgressFill').style.width='0';
@@ -1673,19 +1849,35 @@ function resetToolPage(){
   resetPlaceholder();window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function tpRadio(el,fid,val){el.closest('.tp-radio-group').querySelectorAll('.tp-radio-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');const h=document.getElementById(fid);if(h)h.value=val;}
-function toggleSplitRange(val){const rg=document.getElementById('rangeGroup');if(rg)rg.style.display=val==='range'?'block':'none';}
+function tpRadio(el,fid,val){
+  el.closest('.tp-radio-group').querySelectorAll('.tp-radio-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  const h=document.getElementById(fid);
+  if(h)h.value=val;
+  if(fid==='mode'){
+    const rg=document.getElementById('rangeGroup');
+    if(rg)rg.style.display=val==='range'?'block':'none';
+  }
+  if(fid==='action'){
+    const orderInput=document.getElementById('order');
+    if(orderInput){
+      const placeholders={'reorder':'e.g. 3,1,2,4 to reorder','extract':'e.g. 1,3,5-8 to extract','delete':'e.g. 1,3,5-8 to remove'};
+      orderInput.placeholder=placeholders[val]||'Enter page numbers';
+    }
+  }
+}
 
 /* META */
 function updateMeta(id){
   const t=TOOLS[id];document.title=t.title+' — PDFWala';
   setMeta('description',t.desc);setCanon('https://npkpadala.com/pdfwala/'+(SLUG_MAP[id]||id)+'/');
 }
-function updateMetaHome(){document.title='PDFWala — All-in-One Document Automation Platform';setMeta('description','Convert, compress, edit, and automate files in seconds. 50+ powerful tools.');setCanon('https://npkpadala.com/pdfwala/');}
+function updateMetaHome(){document.title='PDFWala — Every Document Tool You\'ll Ever Need';setMeta('description','Merge, compress, convert, and secure any file. Fast, free, and private.');setCanon('https://npkpadala.com/pdfwala/');}
 function setMeta(n,c){let el=document.querySelector(`meta[name="${n}"]`);if(!el){el=document.createElement('meta');el.name=n;document.head.appendChild(el);}el.content=c;}
 function setCanon(u){let el=document.querySelector('link[rel="canonical"]');if(!el){el=document.createElement('link');el.rel='canonical';document.head.appendChild(el);}el.href=u;}
 
 window.addEventListener('popstate',()=>{
+  if(abortCtrl){abortCtrl.abort();abortCtrl=null;}
   const id=getToolFromURL();
   if(id&&TOOLS[id]){updateMeta(id);renderTool(id);}else{updateMetaHome();showHome();}
 });
@@ -1715,6 +1907,7 @@ function toggleMob(){
 }
 function closeMob(){
   const n=document.getElementById('mobNav'),b=document.getElementById('mobBtn'),ic=document.getElementById('mobIcon');
+  if(!n)return;
   n.classList.remove('open');document.body.style.overflow='';
   if(b){if(ic)ic.innerHTML='<use href="#ic-menu"/>';b.setAttribute('aria-expanded','false');}
 }
@@ -1752,14 +1945,17 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(id&&TOOLS[id]){updateMeta(id);renderTool(id);}else{updateMetaHome();showHome();}
 
   initSearch();
+  attachSuggestGridListener();  // ✅ ADDED HERE
 
-  new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');} });},{threshold:0.1}).observe(document.querySelector('.reveal')||document.body);
-  document.querySelectorAll('.reveal').forEach(el=>{new IntersectionObserver(([e])=>{if(e.isIntersecting){el.classList.add('visible');}},{threshold:0.1}).observe(el);});
+  revealObserver=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});
+  },{threshold:0.1});
+  document.querySelectorAll('.reveal').forEach(el=>revealObserver.observe(el));
 
   renderRecent();
   window.addEventListener('scroll',()=>{document.getElementById('scrollTopBtn').classList.toggle('show',window.scrollY>300);});
   document.getElementById('statusDot').className='status-dot';
-  document.getElementById('statusText').textContent='All systems operational';
+  document.getElementById('statusText').textContent='All systems online';
 });
 </script>
 </body>
