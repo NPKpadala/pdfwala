@@ -1,4 +1,3 @@
-# PDFWala V10.0.1 — 24 bugs patched (audit 2026-04-19)
 """PDFWala Enterprise V10.0 — Modular Production Backend"""
 __version__ = "10.0.0"
 import os, sys, io, re, csv, json, uuid, time, shutil, signal, zipfile
