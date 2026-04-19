@@ -618,14 +618,45 @@ def compress_pdf():
                         extra_flags=["-dColorImageDownsampleType=/Bicubic",
                                      f"-dColorImageResolution={cfg['dpi']}",
                                      f"-dGrayImageResolution={cfg['dpi']}"])
+            
+            # Validate Ghostscript output before using
+            gs_valid = False
+            if gs_ok and os.path.exists(gs_out) and os.path.getsize(gs_out) > 0:
+                try:
+                    test_doc = fitz.open(gs_out)
+                    if len(test_doc) > 0:
+                        gs_valid = True
+                    test_doc.close()
+                except:
+                    gs_valid = False
+            
             chosen = None
-            if gs_ok and os.path.exists(gs_out) and os.path.getsize(gs_out) < stage1_size:
+            if gs_valid and os.path.getsize(gs_out) < stage1_size:
                 chosen = gs_out
-            if not chosen and os.path.exists(stage1) and stage1_size < orig:
-                chosen = stage1
+            elif os.path.exists(stage1) and stage1_size < orig:
+                try:
+                    test_doc = fitz.open(stage1)
+                    if len(test_doc) > 0:
+                        chosen = stage1
+                    test_doc.close()
+                except:
+                    pass
+            
             if not chosen:
                 chosen = path
-            shutil.copy(chosen, out)
+            
+            shutil.copy2(chosen, out)
+            
+            # Final validation - if output is corrupted, return original
+            try:
+                test_doc = fitz.open(out)
+                if len(test_doc) == 0:
+                    shutil.copy2(path, out)
+                test_doc.close()
+            except:
+                # Output is corrupted, return original file
+                shutil.copy2(path, out)
+            
             new_size = os.path.getsize(out)
             reduction = round((1 - new_size / orig) * 100, 1) if orig else 0
         return ok(f"Compressed — {reduction}% smaller", out,
