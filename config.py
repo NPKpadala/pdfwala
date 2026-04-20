@@ -8,12 +8,11 @@ import secrets
 
 
 class Config:
-    """Centralised configuration with environment overrides."""
-
-    VERSION        = "10.0.0"
-    SECRET_KEY     = os.environ.get("SECRET_KEY",      secrets.token_hex(32))
-    API_KEY        = os.environ.get("API_KEY",         "")
-    SIGNED_URL_SECRET = os.environ.get("SIGNED_URL_SECRET", SECRET_KEY)
+    VERSION = "10.0.0"
+    SECRET_KEY = os.environ.get("SECRET_KEY")
+    if not SECRET_KEY or len(SECRET_KEY) < 32:
+        raise RuntimeError("...")  # ← 8 spaces (one level in from class, one from if)
+    API_KEY = os.environ.get("API_KEY", "")
 
     # ── Paths (UPDATED FOR ORACLE VM) ─────────────────────────────────────────
     BASE_DIR       = os.environ.get("BASE_DIR",        "/home/opc/pdfwala")
@@ -52,7 +51,7 @@ class Config:
 
     # ── Security ───────────────────────────────────────────────────────────────
     ZIP_BOMB_RATIO    = int(os.environ.get("ZIP_BOMB_RATIO",    100))
-    CORS_ORIGINS      = os.environ.get("CORS_ORIGINS",          "*")
+    CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "")  
     SIGNED_URL_EXPIRY = int(os.environ.get("SIGNED_URL_EXPIRY", 3600))
 
     # ── MIME / Extension allowlists ────────────────────────────────────────────
