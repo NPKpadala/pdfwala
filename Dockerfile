@@ -2,7 +2,7 @@ FROM python:3.11-slim AS base
 
 # Install system dependencies
 # NOTE: wkhtmltopdf removed - not available in Debian Trixie
-# HTML to PDF will fallback to weasyprint
+# HTML to PDF will fallback to weasyprint (requires libs below)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice \
     ghostscript \
@@ -15,6 +15,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     curl \
     wget \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libcairo2 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    shared-mime-info \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
