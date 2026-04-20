@@ -4,6 +4,8 @@ __version__ = "10.0.0"
 import os, sys, io, re, csv, json, uuid, time, shutil, signal, zipfile
 import logging, unicodedata, threading, subprocess, tempfile
 import uuid
+import hashlib
+from openpyxl.styles import PatternFill
 from datetime import datetime
 from pathlib import Path
 from contextlib import contextmanager
@@ -1557,70 +1559,156 @@ def pdf_to_word():
 @require_auth
 @require_rate_limit
 def pdf_to_excel():
-    if not OPENPYXL_AVAILABLE: return err("PDF to Excel requires openpyxl.", 501)
-    f = request.files.get("file")
-    e = validate_file(f, Config.ALLOWED_PDF)
-    if e: return err(e)
+    if not OPENPYXL_AVAILABLE:
+        return err("PDF to Excel requires openpyxl.", 501)
+
+    uploaded_file = request.files.get("file")
+    validation_error = validate_file(uploaded_file, Config.ALLOWED_PDF)
+    if validation_error:
+        return err(validation_error)
+
     try:
-        with FileService.temp_upload(f) as path:
-            # Change 7: Empty PDF guard for pdf_to_excel
-            doc = fitz.open(path)
-            if len(doc) == 0:
-                doc.close()
-                return err("Input PDF has no pages", 400)
-            doc.close()
-            wb = Workbook(); wb.remove(wb.active)
-            tables_extracted = 0; method_used = None
+        with FileService.temp_upload(uploaded_file) as temp_path:
+            wb = Workbook()
+            wb.remove(wb.active)
+            
+            all_tables = []
+            seen_signatures = set()
+            method_used = None
+            confidence = "low"
+            
+            # ===== STAGE 1: pdfplumber (best for bordered tables) =====
             if PDFPLUMBER_AVAILABLE:
                 try:
-                    with pdfplumber.open(path) as pdf:
-                        for page in pdf.pages:
-                            for table in page.extract_tables({"vertical_strategy":"lines",
-                                                               "horizontal_strategy":"lines","snap_tolerance":3}):
-                                if table and any(any(c for c in row if c) for row in table):
-                                    tables_extracted += 1
-                                    ws = wb.create_sheet(f"Table_{tables_extracted}")
-                                    for row in table:
-                                        ws.append([str(c).strip() if c else "" for c in row])
-                                    if ws.max_row > 0:
-                                        for cell in ws[1]: cell.font = Font(bold=True)
-                    if tables_extracted > 0: method_used = "pdfplumber"
+                    import pdfplumber
+                    with pdfplumber.open(temp_path) as pdf:
+                        for page_num, page in enumerate(pdf.pages):
+                            tables = page.extract_tables({
+                                "vertical_strategy": "lines",
+                                "horizontal_strategy": "lines",
+                                "snap_tolerance": 4,
+                                "intersection_tolerance": 4
+                            })
+                            
+                            if not tables:
+                                tables = page.extract_tables({
+                                    "vertical_strategy": "text",
+                                    "horizontal_strategy": "text",
+                                    "snap_tolerance": 6,
+                                    "join_tolerance": 6
+                                })
+                            
+                            for table in tables:
+                                if table and _is_structured_table(table):
+                                    sig = _get_table_signature(table)
+                                    if sig not in seen_signatures:
+                                        seen_signatures.add(sig)
+                                        all_tables.append(table)
+                    
+                    if all_tables:
+                        method_used = "pdfplumber"
+                        confidence = "high" if len(all_tables) > 1 else "medium"
+                        
                 except Exception as ex:
-                    log.warning(f"pdfplumber: {ex}")
-            if tables_extracted == 0 and TABULA_AVAILABLE:
+                    log.warning(f"pdfplumber extraction failed: {ex}")
+
+            # ===== STAGE 2: tabula-py (fallback) =====
+            if not all_tables and TABULA_AVAILABLE:
                 try:
-                    dfs = tabula.read_pdf(path, pages="all", multiple_tables=True, lattice=True)
-                    for i, df in enumerate(dfs):
+                    import tabula
+                    dfs = tabula.read_pdf(temp_path, pages="all", multiple_tables=True,
+                                          lattice=True, silent=True)
+                    
+                    if not dfs:
+                        dfs = tabula.read_pdf(temp_path, pages="all", multiple_tables=True,
+                                              stream=True, silent=True)
+                    
+                    for df in dfs:
                         if not df.empty:
-                            tables_extracted += 1
-                            ws = wb.create_sheet(f"Table_{i+1}")
-                            ws.append(list(df.columns))
-                            for row in df.itertuples(index=False):
-                                ws.append([str(v) if v is not None else "" for v in row])
-                    method_used = "tabula"
+                            table = [df.columns.tolist()] + df.values.tolist()
+                            if _is_structured_table(table):
+                                sig = _get_table_signature(table)
+                                if sig not in seen_signatures:
+                                    seen_signatures.add(sig)
+                                    all_tables.append(table)
+                    
+                    if all_tables:
+                        method_used = "tabula"
+                        confidence = "medium"
+                        
                 except Exception as ex:
-                    log.warning(f"tabula: {ex}")
+                    log.warning(f"tabula extraction failed: {ex}")
+
+            # ===== STAGE 3: Merge multi-page continuations =====
+            merged_tables = []
+            for table in all_tables:
+                if merged_tables and _normalize_header(merged_tables[-1][0]) == _normalize_header(table[0]):
+                    merged_tables[-1] = _merge_tables(merged_tables[-1], table)
+                else:
+                    merged_tables.append(table)
+
+            # ===== STAGE 4: Write tables to sheets =====
+            if merged_tables:
+                for idx, table in enumerate(merged_tables, 1):
+                    ws = wb.create_sheet(f"Table_{idx}")
+                    _write_optimized_sheet(ws, table, method_used or "unknown")
+                tables_extracted = len(merged_tables)
+            else:
+                tables_extracted = 0
+
+            # ===== STAGE 5: Raw text fallback =====
             if tables_extracted == 0:
-                ws = wb.create_sheet("Extracted_Text")
-                ws["A1"] = "No tables detected — full text:"
+                ws = wb.create_sheet("Raw_Text")
+                ws["A1"] = "No structured tables detected — raw text below:"
                 ws["A1"].font = Font(bold=True, size=12)
-                doc = fitz.open(path); row_idx = 3
-                for page_num, pg in enumerate(doc):
-                    ws[f"A{row_idx}"] = f"--- Page {page_num+1} ---"
+                
+                doc = fitz.open(temp_path)
+                row_idx = 3
+                for page_num, page in enumerate(doc):
+                    ws[f"A{row_idx}"] = f"=== Page {page_num + 1} ==="
                     ws[f"A{row_idx}"].font = Font(bold=True)
                     row_idx += 1
-                    for line in pg.get_text("text").split("\n"):
+                    
+                    page_text = page.get_text("text")
+                    for line in page_text.split('\n'):
                         if line.strip():
-                            ws[f"A{row_idx}"] = line.strip(); row_idx += 1
-                doc.close(); method_used = "raw_text"
-            fname = generate_output_filename(f.filename, "to_excel")
-            fname = re.sub(r'\.pdf$','.xlsx',fname,flags=re.IGNORECASE)
-            out = os.path.join(Config.OUTPUT_FOLDER, fname)
-            wb.save(out)
-        return ok(f"Extracted {tables_extracted} table(s) (method: {method_used})", out,
-                  tables_found=tables_extracted, extraction_method=method_used)
+                            ws[f"A{row_idx}"] = line.strip()
+                            row_idx += 1
+                doc.close()
+                method_used = "raw_text"
+                confidence = "none"
+
+            # ===== VALIDATION =====
+            if not wb.worksheets:
+                return err("No content could be extracted from this PDF", 500)
+
+            output_filename = generate_output_filename(uploaded_file.filename, "to_excel")
+            output_filename = re.sub(r'\.pdf$', '.xlsx', output_filename, flags=re.IGNORECASE)
+            output_path = os.path.join(Config.OUTPUT_FOLDER, output_filename)
+            
+            tmp_out = output_path + ".tmp"
+            wb.save(tmp_out)
+            os.replace(tmp_out, output_path)
+
+            warning_msg = None
+            if tables_extracted == 0:
+                warning_msg = "No tables found — raw text extracted instead"
+            elif confidence == "medium":
+                warning_msg = "Tables extracted with basic method — verify alignment"
+
+            return ok(
+                f"Extracted {tables_extracted} table(s) using {method_used}",
+                output_path,
+                tables_found=tables_extracted,
+                extraction_method=method_used,
+                confidence=confidence,
+                warning=warning_msg
+            )
+
     except Exception:
-        log.exception("pdf_to_excel"); return err("PDF to Excel failed", 500)
+        log.exception("pdf_to_excel")
+        return err("PDF to Excel conversion failed", 500)
+
 @app.route("/api/v1/pdf-to-ppt", methods=["POST"])
 @app.route("/api/pdf-to-ppt", methods=["POST"])
 @require_auth
