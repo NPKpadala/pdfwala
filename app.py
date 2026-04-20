@@ -3,6 +3,7 @@
 __version__ = "10.0.0"
 import os, sys, io, re, csv, json, uuid, time, shutil, signal, zipfile
 import logging, unicodedata, threading, subprocess, tempfile
+import uuid
 from datetime import datetime
 from pathlib import Path
 from contextlib import contextmanager
@@ -1831,21 +1832,98 @@ def word_to_pdf():
 @require_auth
 @require_rate_limit
 def excel_to_pdf():
-    f = request.files.get("file")
-    e = validate_file(f, Config.ALLOWED_XLS)
-    if e: return err(e)
+    uploaded_file = request.files.get("file")
+    validation_error = validate_file(uploaded_file, Config.ALLOWED_XLS)
+    if validation_error:
+        return err(validation_error)
+
+    temp_prepared_path = None
+    
     try:
-        with FileService.temp_upload(f) as path:
-            fname = generate_output_filename(f.filename, "to_pdf")
-            fname = re.sub(r'\.(xls|xlsx)$','.pdf',fname,flags=re.IGNORECASE)
-            out = libre(path, "pdf", output_filename=fname)
-            # Change 8: LibreOffice output validation for excel_to_pdf
-            if not out or not os.path.exists(out) or os.path.getsize(out) == 0:
-                return err("LibreOffice conversion produced no output", 500)
-        return ok("Excel converted to PDF", out)
+        with FileService.temp_upload(uploaded_file) as temp_path:
+
+    
+            try:
+                from utils.office_utils import prepare_excel_for_pdf
+                temp_prepared_path = prepare_excel_for_pdf(temp_path)
+                conversion_path = temp_prepared_path if temp_prepared_path else temp_path
+            except Exception as prep_error:
+                log.warning(f"Excel pre-processing skipped: {prep_error}")
+                conversion_path = temp_path
+
+            output_filename = generate_output_filename(uploaded_file.filename, "to_pdf")
+            output_filename = re.sub(r'\.(xls|xlsx)$', '.pdf', output_filename, flags=re.IGNORECASE)
+            output_path = os.path.join(Config.OUTPUT_FOLDER, output_filename)
+
+            # Dedicated LibreOffice profile
+            lo_profile = f"/tmp/lo_profile_{uuid.uuid4().hex}"
+            os.makedirs(lo_profile, exist_ok=True)
+
+            try:
+                result = subprocess.run(
+                    [
+                        Config.LIBREOFFICE,
+                        "--headless",
+                        "--nologo",
+                        "--nolockcheck",
+                        "--nodefault",
+                        "--nofirststartwizard",
+                        f"-env:UserInstallation=file://{lo_profile}",
+                        "--convert-to",
+                        "pdf:calc_pdf_Export:"
+                        "SelectPdfVersion=1,"
+                        "UseLosslessCompression=true,"
+                        "Quality=100,"
+                        "ReduceImageResolution=false",
+                        "--outdir", Config.OUTPUT_FOLDER,
+                        conversion_path
+                    ],
+                    env={
+                        **os.environ,
+                        "SAL_DEFAULT_PAPER": "A4",
+                        "OOO_FORCE_DESKTOP": "true",
+                    },
+                    capture_output=True,
+                    timeout=Config.SUBPROCESS_TIMEOUT
+                )
+
+                if result.returncode != 0:
+                    stderr_msg = result.stderr.decode('utf-8', errors='ignore')[:500]
+                    log.error(f"LibreOffice failed (code {result.returncode}): {stderr_msg}")
+                    return err("Excel to PDF conversion failed", 500)
+
+                base_name = os.path.splitext(os.path.basename(conversion_path))[0]
+                converted_path = os.path.join(Config.OUTPUT_FOLDER, f"{base_name}.pdf")
+
+                if not os.path.exists(converted_path) or os.path.getsize(converted_path) == 0:
+                    return err("LibreOffice produced no output", 500)
+
+                os.replace(converted_path, output_path)
+
+                valid, error_msg = is_valid_pdf(output_path, min_pages=1)
+                if not valid:
+                    os.remove(output_path)
+                    return err(f"Output validation failed: {error_msg}", 500)
+
+                return ok("Excel converted to PDF", output_path)
+
+            finally:
+                shutil.rmtree(lo_profile, ignore_errors=True)
+
+    except subprocess.TimeoutExpired:
+        return err("Excel to PDF conversion timed out", 500)
+
     except Exception:
-        log.exception("excel_to_pdf"); return err("Excel to PDF failed", 500)
-@app.route("/api/v1/html-to-pdf", methods=["POST"])
+        log.exception("excel_to_pdf")
+        return err("Excel to PDF conversion failed", 500)
+
+    finally:
+        # Clean up prepared temp file
+        if temp_prepared_path and os.path.exists(temp_prepared_path):
+            try:
+                os.remove(temp_prepared_path)
+            except OSError:
+                pass@app.route("/api/v1/html-to-pdf", methods=["POST"])
 @app.route("/api/html-to-pdf", methods=["POST"])
 @require_auth
 @require_rate_limit
