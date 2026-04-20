@@ -90,3 +90,240 @@ def clean_excel_data(rows: List[tuple]) -> List[tuple]:
             if v is not None and v != "":
                 max_col = max(max_col, i)
     return [row[: max_col + 1] for row in filtered]
+
+
+def prepare_excel_for_pdf(input_path: str, output_path: str = None) -> str:
+    """
+    Pre-process Excel file for optimal PDF conversion.
+    - Auto-fits all columns
+    - Sets print area to used range
+    - Scales to fit page width
+    - Sets landscape orientation
+    
+    Args:
+        input_path: Path to the original Excel file
+        output_path: Optional output path for the prepared file
+    
+    Returns:
+        Path to the prepared Excel file
+    """
+    try:
+        from openpyxl import load_workbook
+        from openpyxl.utils import get_column_letter
+        from openpyxl.worksheet.page import PageMargins
+    except ImportError:
+        # Fallback: return original if openpyxl not available
+        return input_path
+
+    if output_path is None:
+        output_path = input_path.replace('.xlsx', '_prepared.xlsx').replace('.xls', '_prepared.xlsx')
+
+    wb = load_workbook(input_path)
+    
+    for sheet in wb.worksheets:
+        # 1. Auto-fit all columns
+        for col in sheet.columns:
+            max_length = 0
+            try:
+                col_letter = get_column_letter(col[0].column)
+            except (IndexError, AttributeError):
+                continue
+            
+            for cell in col:
+                if cell.value:
+                    cell_length = len(str(cell.value))
+                    if cell_length > max_length:
+                        max_length = min(cell_length, 50)  # Cap at 50 chars
+            
+            adjusted_width = max_length + 2
+            if adjusted_width > 0:
+                sheet.column_dimensions[col_letter].width = adjusted_width
+
+        # 2. Set print area to used range
+        if sheet.max_row > 0 and sheet.max_column > 0:
+            print_area = f"A1:{get_column_letter(sheet.max_column)}{sheet.max_row}"
+            sheet.print_area = print_area
+
+        # 3. Page setup for PDF
+        sheet.page_setup.orientation = sheet.ORIENTATION_LANDSCAPE
+        sheet.page_setup.paperSize = sheet.PAPERSIZE_A4
+        sheet.page_setup.fitToPage = True
+        sheet.page_setup.fitToWidth = 1
+        sheet.page_setup.fitToHeight = 0  # Auto-calculate pages
+        
+        # 4. Set margins (inches)
+        sheet.page_margins = PageMargins(
+            left=0.25, right=0.25,
+            top=0.5, bottom=0.5,
+            header=0.3, footer=0.3
+        )
+
+    wb.save(output_path)
+    wb.close()
+    
+    return output_path
+
+
+# ============================================================================
+# PDF TO EXCEL HELPER FUNCTIONS (10/10 UPGRADE)
+# ============================================================================
+
+def _is_structured_table(table: list) -> bool:
+    """Smart table detection - checks row consistency and header presence."""
+    if not table or len(table) < 2:
+        return False
+    
+    # Filter empty rows
+    clean_table = [_clean_row(row) for row in table if not _is_noise_row(row)]
+    if len(clean_table) < 2:
+        return False
+    
+    # Check column consistency (max 1 column variation allowed)
+    col_lengths = [len(row) for row in clean_table if row]
+    if not col_lengths:
+        return False
+    
+    if max(col_lengths) - min(col_lengths) > 1:
+        return False
+    
+    # Detect header row (must contain some alphabetic content)
+    header = clean_table[0]
+    if not any(str(c).strip().isalpha() for c in header if c):
+        return False
+    
+    return True
+
+
+def _clean_row(row: list) -> list:
+    """Remove None and empty string noise from row."""
+    if not row:
+        return []
+    return [c for c in row if c is not None and str(c).strip()]
+
+
+def _is_noise_row(row: list) -> bool:
+    """Check if row is just empty cells or noise."""
+    if not row:
+        return True
+    return not any(str(c).strip() for c in row if c is not None)
+
+
+def _smart_cast(value: any) -> any:
+    """Convert string numbers to actual int/float for Excel."""
+    if value is None:
+        return ""
+    
+    str_val = str(value).strip()
+    if not str_val:
+        return ""
+    
+    # Try integer
+    try:
+        if '.' not in str_val:
+            return int(str_val)
+    except ValueError:
+        pass
+    
+    # Try float
+    try:
+        return float(str_val)
+    except ValueError:
+        pass
+    
+    return str_val
+
+
+def _normalize_header(header: list) -> list:
+    """Clean and standardize header names."""
+    normalized = []
+    seen = {}
+    
+    for col in header:
+        name = str(col).strip().title() if col else "Column"
+        if not name:
+            name = "Column"
+        
+        # Handle duplicates
+        if name in seen:
+            seen[name] += 1
+            name = f"{name}_{seen[name]}"
+        else:
+            seen[name] = 0
+        
+        normalized.append(name)
+    
+    return normalized
+
+
+def _get_table_signature(table: list) -> str:
+    """Generate unique signature for table deduplication."""
+    import hashlib
+    
+    if not table or len(table) < 2:
+        return ""
+    
+    # Use first two rows as signature
+    sig_rows = table[:2]
+    sig_str = str([[str(c)[:20] if c else "" for c in row] for row in sig_rows])
+    return hashlib.md5(sig_str.encode()).hexdigest()
+
+
+def _merge_tables(existing_table: list, new_table: list) -> list:
+    """Merge continuation of multi-page table."""
+    if not existing_table or not new_table:
+        return existing_table or new_table
+    
+    # If headers match, append data rows only
+    existing_header = _normalize_header(existing_table[0])
+    new_header = _normalize_header(new_table[0])
+    
+    if existing_header == new_header:
+        # Append data rows (skip header)
+        return existing_table + new_table[1:]
+    
+    return existing_table + new_table
+
+
+def _write_optimized_sheet(ws, table: list, method: str = "auto"):
+    """Write table to worksheet with smart formatting and type detection."""
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils import get_column_letter
+    
+    if not table:
+        return
+    
+    # Normalize header
+    header = _normalize_header(table[0])
+    data_rows = table[1:] if len(table) > 1 else []
+    
+    # Write header
+    for col_idx, col_name in enumerate(header, 1):
+        cell = ws.cell(row=1, column=col_idx, value=col_name)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+    
+    # Write data with smart type casting
+    for row_idx, row in enumerate(data_rows, 2):
+        clean_row = _clean_row(row)
+        for col_idx, value in enumerate(clean_row, 1):
+            if col_idx > len(header):
+                break
+            cast_value = _smart_cast(value)
+            cell = ws.cell(row=row_idx, column=col_idx, value=cast_value)
+            cell.alignment = Alignment(horizontal='left', vertical='center')
+    
+    # Auto-fit columns (capped at 50 chars)
+    for col in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            if cell.value:
+                cell_len = len(str(cell.value))
+                if cell_len > max_length:
+                    max_length = min(cell_len, 50)
+        adjusted_width = max_length + 2
+        ws.column_dimensions[col_letter].width = adjusted_width
+    
+    # Freeze header row
+    ws.freeze_panes = 'A2'
