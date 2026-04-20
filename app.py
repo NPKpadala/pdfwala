@@ -806,7 +806,7 @@ def ocr_pdf():
     dpi = safe_int(request.form.get("dpi","300"), 300, 72, 400)
     psm = safe_int(request.form.get("psm","3"), 3, 1, 13)
     oem = safe_int(request.form.get("oem","3"), 3, 0, 3)
-    skip = request.form.get("skip_existing","true").lower() in ("true","1","yes")
+    skip = False  # Always OCR, even if text exists
     f.seek(0,2); file_size = f.tell(); f.seek(0)
     if file_size > 5*1024*1024 and celery_app and ocr_pdf_task:
         ext = f.filename.rsplit(".",1)[-1].lower() if "." in f.filename else "pdf"
