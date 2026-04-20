@@ -28,9 +28,9 @@ from utils.pdf_utils import (
     parse_page_ranges, create_watermark_pdf, create_page_number_pdf,
     get_pdf_page_count, compress_pdf_images
 )
-# FIX 2 — Import all required helpers from office_utils (was missing _is_structured_table etc.)
 from utils.office_utils import (
     coerce_cell_value, coerce_cell_for_csv,
+    # FIX-2: import helpers used in pdf_to_excel — were called but never imported
     _is_structured_table, _get_table_signature, _normalize_header,
     _merge_tables, _write_optimized_sheet,
 )
@@ -56,11 +56,10 @@ try:
     DOCX_AVAILABLE = True
 except ImportError:
     DOCX_AVAILABLE = False
-# FIX 1 — PatternFill moved inside the openpyxl try/except block (was bare import at top level)
 try:
     from openpyxl import load_workbook, Workbook
     from openpyxl.drawing.image import Image as XlImage
-    from openpyxl.styles import Font, Alignment, PatternFill  # PatternFill now safely here
+    from openpyxl.styles import Font, Alignment, PatternFill  # FIX-1: PatternFill moved here from bare top-level
     from openpyxl.utils import get_column_letter
     OPENPYXL_AVAILABLE = True
 except ImportError:
@@ -171,19 +170,19 @@ def ok(msg, path=None, **extras):
     if path and os.path.exists(path):
         size = os.path.getsize(path)
         payload.update({
-            "download_url": f"/download/{os.path.basename(path)}",
+            "download_url": f"/pdfwala/download/{os.path.basename(path)}",  # FIX: restored /pdfwala/ prefix
             "signed_url": generate_signed_url(path),
             "filename": os.path.basename(path),
             "size_human": format_file_size(size),
             "expires_in": f"{Config.FILE_TTL_SEC // 60} minutes",
         })
     return jsonify(payload)
-
-# FIX 3 — is_valid_pdf was called in repair_pdf and excel_to_pdf but never defined
+# ── PDF validation helper ─────────────────────────────────────────────────────
 def is_valid_pdf(path: str, min_pages: int = 1):
     """
     Validate a PDF file. Returns (True, None) if valid, (False, reason) if not.
-    Never raises exceptions.
+    Never raises exceptions — safe to call anywhere.
+    Checks: file exists, size > 0, openable by PyMuPDF, page count >= min_pages.
     """
     try:
         if not path or not os.path.exists(path):
@@ -1955,21 +1954,21 @@ def excel_to_pdf():
     try:
         with FileService.temp_upload(uploaded_file) as temp_path:
 
-            # FIX 5 — Guard prepare_excel_for_pdf against .xls files (openpyxl only supports .xlsx)
-            # Also use an explicit output path to prevent the path no-op / overwrite bug
             try:
-                ext_check = os.path.splitext(temp_path)[1].lower()
-                if ext_check == '.xlsx':
+                # FIX: openpyxl cannot open legacy .xls — only pre-process .xlsx files
+                _ext = os.path.splitext(temp_path)[1].lower()
+                if _ext == ".xlsx":
                     from utils.office_utils import prepare_excel_for_pdf
-                    prepared_out = os.path.join(
+                    # FIX: use an explicit unique output path — the old single-arg call used
+                    # str.replace() which silently returned the same path when UUID had no extension
+                    _prepared_out = os.path.join(
                         Config.TEMP_FOLDER,
                         f"{uuid.uuid4().hex}_prepared.xlsx"
                     )
-                    temp_prepared_path = prepare_excel_for_pdf(temp_path, prepared_out)
+                    temp_prepared_path = prepare_excel_for_pdf(temp_path, _prepared_out)
                     conversion_path = temp_prepared_path if temp_prepared_path else temp_path
                 else:
-                    # .xls or other legacy format — pass directly to LibreOffice
-                    conversion_path = temp_path
+                    conversion_path = temp_path  # .xls — skip preprocessing, let LibreOffice handle it
             except Exception as prep_error:
                 log.warning(f"Excel pre-processing skipped: {prep_error}")
                 conversion_path = temp_path
@@ -3087,8 +3086,7 @@ def word_to_html():
         with FileService.temp_upload(f) as path:
             fname = generate_output_filename(f.filename, "to_html")
             fname = re.sub(r'\.(doc|docx)$', '.html', fname, flags=re.IGNORECASE)
-            # FIX 4 — "xhtml" is not in LIBRE_ALLOWED_FMTS; use "html" instead
-            out = libre(path, "html", output_filename=fname)
+            out = libre(path, "html", output_filename=fname)  # FIX: "xhtml" not in LIBRE_ALLOWED_FMTS → was silently returning None
             if not out: return err("LibreOffice conversion failed", 500)
         return ok("Word converted to HTML", out)
     except Exception:
@@ -3163,8 +3161,7 @@ def excel_to_html():
         with FileService.temp_upload(f) as path:
             fname = generate_output_filename(f.filename, "to_html")
             fname = re.sub(r'\.(xls|xlsx)$', '.html', fname, flags=re.IGNORECASE)
-            # FIX 4 — "xhtml" is not in LIBRE_ALLOWED_FMTS; use "html" instead
-            out = libre(path, "html", output_filename=fname)
+            out = libre(path, "html", output_filename=fname)  # FIX: "xhtml" not in LIBRE_ALLOWED_FMTS → was silently returning None
             if not out: return err("LibreOffice conversion failed", 500)
         return ok("Excel converted to HTML", out)
     except Exception:
