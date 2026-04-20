@@ -164,7 +164,7 @@ def ok(msg, path=None, **extras):
     if path and os.path.exists(path):
         size = os.path.getsize(path)
         payload.update({
-            "download_url": f"/pdfwala/download/{os.path.basename(path)}",
+            "download_url": f"/download/{os.path.basename(path)}",
             "signed_url": generate_signed_url(path),
             "filename": os.path.basename(path),
             "size_human": format_file_size(size),
