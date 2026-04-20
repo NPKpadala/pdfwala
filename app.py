@@ -3,7 +3,6 @@
 __version__ = "10.0.0"
 import os, sys, io, re, csv, json, uuid, time, shutil, signal, zipfile
 import logging, unicodedata, threading, subprocess, tempfile
-import uuid
 import hashlib
 from openpyxl.styles import PatternFill
 from datetime import datetime
@@ -1930,7 +1929,6 @@ def excel_to_pdf():
     try:
         with FileService.temp_upload(uploaded_file) as temp_path:
 
-    
             try:
                 from utils.office_utils import prepare_excel_for_pdf
                 temp_prepared_path = prepare_excel_for_pdf(temp_path)
@@ -2011,7 +2009,10 @@ def excel_to_pdf():
             try:
                 os.remove(temp_prepared_path)
             except OSError:
-                pass@app.route("/api/v1/html-to-pdf", methods=["POST"])
+                pass
+
+
+@app.route("/api/v1/html-to-pdf", methods=["POST"])
 @app.route("/api/html-to-pdf", methods=["POST"])
 @require_auth
 @require_rate_limit
@@ -2022,26 +2023,37 @@ def html_to_pdf():
     try:
         with FileService.temp_upload(f) as path:
             fname = generate_output_filename(f.filename, "to_pdf")
-            fname = re.sub(r'\.(html|htm)$','.pdf',fname,flags=re.IGNORECASE)
+            fname = re.sub(r'\.(html|htm)$', '.pdf', fname, flags=re.IGNORECASE)
             out_path = os.path.join(Config.OUTPUT_FOLDER, fname)
-            # Change 4: Add --disable-local-file-access to wkhtmltopdf
-            result = subprocess.run([Config.WKHTMLTOPDF, "--quiet",
-                                     "--disable-local-file-access", path, out_path],
-                                     capture_output=True, timeout=60)
-            if result.returncode == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 0:
-                return ok("HTML converted to PDF", out_path)
+            # Try wkhtmltopdf first
+            try:
+                result = subprocess.run([Config.WKHTMLTOPDF, "--quiet",
+                                         "--disable-local-file-access", path, out_path],
+                                         capture_output=True, timeout=60)
+                if result.returncode == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+                    return ok("HTML converted to PDF", out_path)
+            except FileNotFoundError:
+                log.warning("wkhtmltopdf not found, falling back to WeasyPrint")
+            except subprocess.TimeoutExpired:
+                return err("HTML to PDF timed out", 500)
+            
+            # Fallback to WeasyPrint
             try:
                 from weasyprint import HTML
                 HTML(filename=path).write_pdf(out_path)
                 if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
                     return ok("HTML converted to PDF (WeasyPrint)", out_path)
-            except ImportError: pass
-            except Exception as we: log.warning(f"WeasyPrint: {we}")
+            except ImportError:
+                pass
+            except Exception as we:
+                log.warning(f"WeasyPrint failed: {we}")
+            
             return err("HTML to PDF failed — install wkhtmltopdf or weasyprint", 500)
     except subprocess.TimeoutExpired:
         return err("HTML to PDF timed out", 500)
     except Exception:
-        log.exception("html_to_pdf"); return err("HTML to PDF failed", 500)
+        log.exception("html_to_pdf")
+        return err("HTML to PDF failed", 500)
 # ============================================================================
 # IMAGE TOOLS
 # ============================================================================
