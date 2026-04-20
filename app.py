@@ -537,38 +537,77 @@ def split_pdf():
 @require_auth
 @require_rate_limit
 def organize_pdf():
-    f = request.files.get("file")
-    e = validate_file(f, Config.ALLOWED_PDF)
-    if e: return err(e)
+    uploaded_file = request.files.get("file")
+    validation_error = validate_file(uploaded_file, Config.ALLOWED_PDF)
+    if validation_error:
+        return err(validation_error)
+
     action = request.form.get("action", "reorder").lower()
-    order = request.form.get("order", "").strip()
-    if not order: return err("order parameter required")
+    page_order_input = request.form.get("order", "").strip()
+
+    if not page_order_input:
+        return err("order parameter required")
+
     try:
-        with FileService.temp_upload(f) as path:
-            reader = PdfReader(path)
-            # Change 7: Empty PDF guard for organize
-            doc = fitz.open(path)
-            if len(doc) == 0:
-                doc.close()
+        with FileService.temp_upload(uploaded_file) as temp_path:
+            pdf_reader = PdfReader(temp_path)
+            total_pages = len(pdf_reader.pages)
+
+            # Reject empty PDFs
+            if total_pages == 0:
                 return err("Input PDF has no pages", 400)
-            doc.close()
-            total = len(reader.pages)
-            specified = parse_page_ranges(order, total)
-            if not specified: return err("No valid pages specified")
+
+            # Parse user input (returns 1-based page numbers)
+            one_based_indices = parse_page_ranges(page_order_input, total_pages)
+
+            if not one_based_indices:
+                return err("No valid pages specified")
+
+            # Convert to 0-based for PdfReader
+            zero_based_indices = [page_num - 1 for page_num in one_based_indices]
+
+            # Apply the requested action
             if action == "delete":
-                final = [i for i in range(total) if i not in set(specified)]
-                if not final: return err("Cannot delete all pages", 400)
-            else:
-                final = specified
-            w = PdfWriter()
-            for idx in final: w.add_page(reader.pages[idx])
-            fname = generate_output_filename(f.filename, "organized")
-            out = os.path.join(Config.OUTPUT_FOLDER, fname)
-            with open(out, "wb") as fh: w.write(fh)
-        labels = {"reorder":"Reordered","extract":"Extracted","delete":"Deleted pages from"}
-        return ok(f"{labels.get(action,'Organized')} PDF", out)
+                # Keep all pages EXCEPT those specified
+                pages_to_keep = [i for i in range(total_pages) if i not in set(zero_based_indices)]
+                if not pages_to_keep:
+                    return err("Cannot delete all pages", 400)
+
+            elif action == "extract":
+                # Keep only the specified pages
+                pages_to_keep = zero_based_indices
+
+            else:  # reorder (default)
+                # Keep specified pages in the given order
+                pages_to_keep = zero_based_indices
+
+            # Build the output PDF
+            output_writer = PdfWriter()
+            for page_index in pages_to_keep:
+                if page_index < 0 or page_index >= total_pages:
+                    return err(f"Invalid page index: {page_index + 1}")
+                output_writer.add_page(pdf_reader.pages[page_index])
+
+            output_filename = generate_output_filename(uploaded_file.filename, "organized")
+            output_path = os.path.join(Config.OUTPUT_FOLDER, output_filename)
+
+            # Write atomically to prevent corruption
+            temp_output = output_path + ".tmp"
+            with open(temp_output, "wb") as file_handle:
+                output_writer.write(file_handle)
+            os.replace(temp_output, output_path)
+
+        action_labels = {
+            "reorder": "Reordered",
+            "extract": "Extracted",
+            "delete": "Deleted pages from"
+        }
+
+        return ok(f"{action_labels.get(action, 'Organized')} PDF", output_path)
+
     except Exception:
-        log.exception("organize"); return err("Organize failed", 500)
+        log.exception("organize")
+        return err("Organize failed", 500)
 @app.route("/api/v1/remove-pages", methods=["POST"])
 @app.route("/api/remove-pages", methods=["POST"])
 @require_auth
@@ -716,6 +755,7 @@ def compress_pdf():
             if tmp:
                 try: os.remove(tmp)
                 except OSError: pass
+
 @app.route("/api/v1/repair-pdf", methods=["POST"])
 @app.route("/api/repair-pdf", methods=["POST"])
 @require_auth
@@ -723,40 +763,106 @@ def compress_pdf():
 def repair_pdf():
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_PDF)
-    if e: return err(e)
+    if e:
+        return err(e)
+
     try:
         with FileService.temp_upload(f) as path:
             orig_size = os.path.getsize(path)
+
+            # Validate input first
+            input_valid, _ = is_valid_pdf(path)
+
             fname = generate_output_filename(f.filename, "repaired")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
+
+            # =========================
+            # STAGE 1: PyMuPDF Repair
+            # =========================
             try:
                 doc = fitz.open(path)
-                # Change 7: Empty PDF guard for repair_pdf
-                if len(doc) == 0:
+                input_pages = len(doc)
+
+                if input_pages == 0:
                     doc.close()
                     return err("Input PDF has no pages", 400)
-                input_pages = len(doc)
-                doc.save(out, garbage=3, deflate=True, clean=False)
+
+                tmp_out = out + ".tmp"
+                doc.save(tmp_out, garbage=4, deflate=True, clean=True)
                 doc.close()
-                doc2 = fitz.open(out)
-                out_pages = len(doc2); doc2.close()
-                if out_pages == input_pages and os.path.getsize(out) > 0:
-                    return ok("PDF repaired (PyMuPDF)", out,
-                              pages=out_pages, original_size_bytes=orig_size)
+
+                os.replace(tmp_out, out)
+
+                valid, reason = is_valid_pdf(out, min_pages=1)
+                if valid:
+                    if os.path.getsize(out) == orig_size:
+                        log.info("PyMuPDF: no size improvement, but valid")
+
+                    return ok(
+                        "PDF repaired (PyMuPDF)",
+                        out,
+                        pages=input_pages,
+                        original_size_bytes=orig_size
+                    )
+                else:
+                    log.warning(f"PyMuPDF output invalid: {reason}")
+                    try:
+                        os.remove(out)
+                    except OSError:
+                        pass
+
             except Exception as ex1:
-                log.warning(f"PyMuPDF repair: {ex1}")
+                log.warning(f"PyMuPDF repair failed: {ex1}")
+
+            # =========================
+            # STAGE 2: Ghostscript Repair
+            # =========================
             gs_tmp = out + "_gs.pdf"
-            gs_ok = ghostscript_compress(path, gs_tmp, "/printer",
-                        extra_flags=["-dPDFSTOPONERROR=false","-dPDFSTOPONWARNING=false"])
+
+            gs_ok = ghostscript_compress(
+                path,
+                gs_tmp,
+                "/printer",
+                extra_flags=[
+                    "-dPDFSTOPONERROR=false",
+                    "-dPDFSTOPONWARNING=false"
+                ]
+            )
+
+            if not gs_ok:
+                log.warning("Ghostscript execution failed")
+
             if gs_ok and os.path.exists(gs_tmp) and os.path.getsize(gs_tmp) > 0:
-                shutil.move(gs_tmp, out)
-                return ok("PDF repaired (Ghostscript)", out)
-            try: os.remove(gs_tmp)
-            except OSError: pass
-            shutil.copy(path, out)
-            return ok("PDF returned as-is", out)
+                valid, reason = is_valid_pdf(gs_tmp, min_pages=1)
+
+                if valid:
+                    os.replace(gs_tmp, out)
+                    return ok(
+                        "PDF repaired (Ghostscript)",
+                        out,
+                        original_size_bytes=orig_size
+                    )
+                else:
+                    log.warning(f"Ghostscript output invalid: {reason}")
+
+            try:
+                os.remove(gs_tmp)
+            except OSError:
+                pass
+
+            # =========================
+            # FINAL DECISION
+            # =========================
+
+            if input_valid:
+                shutil.copy(path, out)
+                return ok("PDF is already valid (no repair needed)", out)
+
+            return err("Repair failed: unable to produce valid PDF", 500)
+
     except Exception:
-        log.exception("repair_pdf"); return err("Repair failed", 500)
+        log.exception("repair_pdf")
+        return err("Repair failed", 500)
 @app.route("/api/v1/linearize-pdf", methods=["POST"])
 @app.route("/api/linearize-pdf", methods=["POST"])
 @require_auth
