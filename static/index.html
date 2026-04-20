@@ -1796,30 +1796,6 @@ function showResult(type,data){
     else if(/backend/i.test(msg))msg='Connection error. Check your internet and retry.';
   }
 
-function showResult(type,data){
-  const res=document.getElementById('tpResult'),inner=document.getElementById('tpResultInner'),
-        titleEl=document.getElementById('tpResultTitle'),pills=document.getElementById('tpResultPills'),
-        dlBtn=document.getElementById('tpBtnDownload'),procBtn=document.getElementById('tpBtnProcess'),
-        again=document.getElementById('tpBtnAgain'),prog=document.getElementById('tpProgress'),
-        ph=document.getElementById('tpResultPlaceholder');
-
-  prog.classList.remove('show');if(ph)ph.style.display='none';
-  res.classList.add('show');inner.className='tp-result-inner '+type;
-
-  let msg=data.message||data.error||'';
-  if(type==='success'){
-    if(curTool==='info')msg='Document details ready';
-    else if(!msg||/completed/i.test(msg))msg='Your file is ready to download';
-    else if(/repaired/i.test(msg))msg='File repaired successfully';
-    else if(/compressed/i.test(msg))msg='File compressed successfully';
-    else msg='Your file is ready to download';
-  }else{
-    if(!msg||/processing failed/i.test(msg))msg="We couldn't process that file. Please try again.";
-    else if(/invalid request/i.test(msg))msg='Something looks off with your input. Please check and retry.';
-    else if(/server error/i.test(msg))msg='Our server hit a snag. Please try again.';
-    else if(/backend/i.test(msg))msg='Connection error. Check your internet and retry.';
-  }
-
   const ic=type==='success'?svgIcon('check',14):svgIcon('x',14);
   titleEl.innerHTML=ic+' '+msg;
 
