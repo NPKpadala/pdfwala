@@ -198,7 +198,6 @@ def is_valid_pdf(file_path: str, min_pages: int = 1) -> Tuple[bool, Optional[str
         return False, "PyMuPDF (fitz) is not available"
     
     try:
-        # Basic filesystem checks
         if not os.path.exists(file_path):
             return False, "File does not exist"
         
@@ -206,27 +205,23 @@ def is_valid_pdf(file_path: str, min_pages: int = 1) -> Tuple[bool, Optional[str
         if file_size == 0:
             return False, "File is empty (0 bytes)"
         
-        if file_size < 100:  # Absolute minimum for a valid PDF
+        if file_size < 100:
             return False, f"File too small to be a valid PDF ({file_size} bytes)"
         
-        # Check PDF header
         with open(file_path, 'rb') as f:
             header = f.read(8)
             if not header.startswith(b'%PDF-'):
                 return False, "File does not have valid PDF header"
         
-        # Open with PyMuPDF
         doc = fitz.open(file_path)
         page_count = len(doc)
         
-        # Verify cross-reference table is intact
         try:
             doc.xref_get_keys(1)
         except Exception as xref_error:
             doc.close()
             return False, f"Corrupted cross-reference table: {xref_error}"
         
-        # Try to read first page metadata (catches truncated files)
         if page_count > 0:
             try:
                 _ = doc[0].rect
