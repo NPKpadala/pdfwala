@@ -11,7 +11,7 @@ from werkzeug.utils import secure_filename
 from config import Config
 from services.redis_service import redis_service
 from services.file_service import FileService
-#from services.storage_service import get_storaage
+from services.storage_service import get_storaage
 from services.queue_service import (
     backpressure, cb_libreoffice, cb_ghostscript, cb_tesseract,
     queue_service, CircuitBreaker
@@ -115,6 +115,15 @@ for _d in [Config.UPLOAD_FOLDER, Config.OUTPUT_FOLDER, Config.TEMP_FOLDER]:
     os.makedirs(_d, exist_ok=True)
 _APP_START = time.time()
 log = logging.getLogger("pdfwala")
+
+# ── Module-level constants ─────────────────────────────────────────────────────
+# Change 11: Health check cache
+_HEALTH_CACHE = {}
+_HEALTH_CACHE_TTL = 30  # seconds
+
+# Change 13: OCR concurrency semaphore
+_ocr_semaphore = threading.Semaphore(2)
+
 # ── Flask app ──────────────────────────────────────────────────────────────────
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = Config.MAX_FILE_SIZE
@@ -198,7 +207,12 @@ def libre(input_path, fmt, output_filename=None, temp=False):
             final = os.path.join(Config.OUTPUT_FOLDER, output_filename)
         else:
             final = os.path.join(Config.OUTPUT_FOLDER, f"{uuid.uuid4()}_output.{fmt}")
-        shutil.move(converted, final)
+        # Change 10: Atomic LibreOffice move
+        try:
+            os.replace(converted, final)
+        except OSError:
+            shutil.copy2(converted, final)
+            os.remove(converted)
         cb_libreoffice.record_success()
         return final
     except subprocess.TimeoutExpired:
@@ -215,9 +229,10 @@ def ghostscript_compress(input_path, output_path, gs_setting="/ebook",
                           extra_flags=None, timeout=300):
     if not cb_ghostscript.can_execute():
         return False
+    # Change 1: -dNOSAFER → -dSAFER
     cmd = [Config.GHOSTSCRIPT, "-sDEVICE=pdfwrite", "-dCompatibilityLevel=1.5",
            f"-dPDFSETTINGS={gs_setting}", "-dNOPAUSE", "-dBATCH", "-dQUIET",
-           "-dNOSAFER", "-dDetectDuplicateImages=true", "-dCompressFonts=true",
+           "-dSAFER", "-dDetectDuplicateImages=true", "-dCompressFonts=true",
            "-dSubsetFonts=true", "-dAutoRotatePages=/None",
            f"-sOutputFile={output_path}"]
     if extra_flags:
@@ -259,15 +274,22 @@ def _cleanup_worker():
     while True:
         try:
             now = time.time()
+            # Change 14: Replace os.walk with os.scandir
             for folder in [Config.OUTPUT_FOLDER, Config.UPLOAD_FOLDER, Config.TEMP_FOLDER]:
-                for root, _, files in os.walk(folder):
-                    for fname in files:
-                        fpath = os.path.join(root, fname)
-                        try:
-                            if now - os.path.getmtime(fpath) > Config.FILE_TTL_SEC:
-                                os.remove(fpath)
-                        except OSError:
-                            pass
+                try:
+                    with os.scandir(folder) as it:
+                        for entry in it:
+                            if entry.is_file(follow_symlinks=False):
+                                try:
+                                    if now - entry.stat().st_mtime > Config.FILE_TTL_SEC:
+                                        # Change 9: Atomic rename before delete
+                                        tomb = entry.path + ".deleting"
+                                        os.rename(entry.path, tomb)
+                                        os.remove(tomb)
+                                except OSError:
+                                    pass
+                except OSError:
+                    pass
         except Exception as ex:
             log.error(f"Cleanup worker: {ex}")
         time.sleep(60)
@@ -278,6 +300,13 @@ threading.Thread(target=_cleanup_worker, daemon=True, name="cleanup").start()
 @app.route("/health")
 @app.route("/api/v1/health")
 def health():
+    # Change 11: Health check caching with 30s TTL
+    now = time.time()
+    cached = _HEALTH_CACHE.get("result")
+    cached_at = _HEALTH_CACHE.get("at", 0)
+    if cached and (now - cached_at) < _HEALTH_CACHE_TTL:
+        return jsonify(cached)
+
     tools = {}
     for name, cmd in [("libreoffice",[Config.LIBREOFFICE,"--version"]),
                        ("ghostscript",[Config.GHOSTSCRIPT,"--version"]),
@@ -300,7 +329,7 @@ def health():
             celery_status = "ok"
         except Exception:
             celery_status = "degraded"
-    return jsonify({
+    result = {
         "success": True, "status": "ok", "version": Config.VERSION,
         "uptime_seconds": round(time.time() - _APP_START, 1),
         "redis": redis_status, "celery": celery_status, "tools": tools,
@@ -315,7 +344,10 @@ def health():
             "ghostscript": cb_ghostscript.state,
             "tesseract": cb_tesseract.state,
         },
-    })
+    }
+    _HEALTH_CACHE["result"] = result
+    _HEALTH_CACHE["at"] = now
+    return jsonify(result)
 @app.route("/api/v1/ready")
 def readiness():
     rc = redis_service.client
@@ -338,6 +370,9 @@ def download(filename):
     safe = secure_filename(filename)
     if not safe or "/" in safe or ".." in safe:
         return err("Invalid filename", 400)
+    # Change 2: Additional path traversal protection
+    if os.sep in safe or safe != os.path.basename(safe):
+        return err("Invalid filename", 400)
     expires = request.args.get("expires", "")
     signature = request.args.get("sig", "")
     if expires and signature:
@@ -348,7 +383,8 @@ def download(filename):
     if not safe.lower().endswith(ALLOWED_EXTS):
         return err("Invalid file type for download", 400)
     path = os.path.realpath(os.path.join(Config.OUTPUT_FOLDER, safe))
-    if not path.startswith(os.path.realpath(Config.OUTPUT_FOLDER)):
+    # Change 2: Tightened startswith check with trailing separator
+    if not path.startswith(os.path.realpath(Config.OUTPUT_FOLDER) + os.sep):
         return err("Access denied", 403)
     if not os.path.exists(path):
         return err("File not found or expired", 404)
@@ -359,6 +395,9 @@ def download(filename):
 @app.route("/api/v1/jobs/<job_id>", methods=["GET"])
 @require_auth
 def api_job_status(job_id):
+    # Change 6: Job ID length guard
+    if len(job_id) > 64:
+        return err("Invalid job ID", 400)
     safe_id = re.sub(r"[^a-f0-9\-]", "", job_id)
     if safe_id != job_id:
         return err("Invalid job ID", 400)
@@ -430,6 +469,14 @@ def merge_pdf():
             page_sizes = set()
             for p in paths:
                 doc = fitz.open(p)
+                # Change 7: Empty PDF guard for merge
+                if len(doc) == 0:
+                    doc.close()
+                    return err("Input PDF has no pages", 400)
+                # Change 17: Merge encrypted PDF guard
+                if doc.is_encrypted and not doc.authenticate(""):
+                    doc.close()
+                    return err("PDF is password-protected. Please unlock first.", 400)
                 for pg in doc:
                     page_sizes.add((round(pg.rect.width,0), round(pg.rect.height,0)))
                 doc.close()
@@ -457,6 +504,12 @@ def split_pdf():
     try:
         with FileService.temp_upload(f) as path:
             reader = PdfReader(path)
+            # Change 7: Empty PDF guard for split (via fitz)
+            doc = fitz.open(path)
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
+            doc.close()
             total = len(reader.pages)
             indices = list(range(total)) if mode == "all" else parse_page_ranges(ranges, total)
             if not indices: return err("No valid pages in range")
@@ -487,6 +540,12 @@ def organize_pdf():
     try:
         with FileService.temp_upload(f) as path:
             reader = PdfReader(path)
+            # Change 7: Empty PDF guard for organize
+            doc = fitz.open(path)
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
+            doc.close()
             total = len(reader.pages)
             specified = parse_page_ranges(order, total)
             if not specified: return err("No valid pages specified")
@@ -517,6 +576,12 @@ def remove_pages():
     try:
         with FileService.temp_upload(f) as path:
             reader = PdfReader(path)
+            # Change 7: Empty PDF guard for remove_pages
+            doc = fitz.open(path)
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
+            doc.close()
             total = len(reader.pages)
             remove = set(parse_page_ranges(order, total))
             if len(remove) >= total: return err("Cannot remove all pages", 400)
@@ -542,6 +607,12 @@ def extract_pages():
     try:
         with FileService.temp_upload(f) as path:
             reader = PdfReader(path)
+            # Change 7: Empty PDF guard for extract_pages
+            doc = fitz.open(path)
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
+            doc.close()
             total = len(reader.pages)
             indices = parse_page_ranges(order, total)
             w = PdfWriter()
@@ -577,7 +648,10 @@ def compress_pdf():
                 except Exception: pass
             try:
                 doc = fitz.open(path)
-                if len(doc) == 0: doc.close(); return err("Input PDF has no pages", 400)
+                # Change 7: Empty PDF guard for compress
+                if len(doc) == 0:
+                    doc.close()
+                    return err("Input PDF has no pages", 400)
                 doc.close()
             except Exception:
                 return err("Input PDF is corrupted or unreadable", 400)
@@ -651,6 +725,10 @@ def repair_pdf():
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
             try:
                 doc = fitz.open(path)
+                # Change 7: Empty PDF guard for repair_pdf
+                if len(doc) == 0:
+                    doc.close()
+                    return err("Input PDF has no pages", 400)
                 input_pages = len(doc)
                 doc.save(out, garbage=3, deflate=True, clean=False)
                 doc.close()
@@ -683,6 +761,12 @@ def linearize_pdf():
     if e: return err(e)
     try:
         with FileService.temp_upload(f) as path:
+            # Change 7: Empty PDF guard for linearize_pdf
+            doc = fitz.open(path)
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
+            doc.close()
             orig_size = os.path.getsize(path)
             fname = generate_output_filename(f.filename, "linearized")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
@@ -710,6 +794,9 @@ def ocr_pdf():
     if e: return err(e)
     raw_lang = request.form.get("lang", "eng")
     lang = re.sub(r'[^a-zA-Z0-9+\-]', '', raw_lang)[:50] or "eng"
+    # Change 3: Strict OCR language validation
+    if not re.fullmatch(r'[a-zA-Z]{3}(\+[a-zA-Z]{3})*', lang):
+        lang = "eng"
     dpi = safe_int(request.form.get("dpi","300"), 300, 72, 400)
     psm = safe_int(request.form.get("psm","3"), 3, 1, 13)
     oem = safe_int(request.form.get("oem","3"), 3, 0, 3)
@@ -733,6 +820,10 @@ def ocr_pdf():
     try:
         with FileService.temp_upload(f) as path:
             src_doc = fitz.open(path)
+            # Change 7: Empty PDF guard for ocr_pdf
+            if len(src_doc) == 0:
+                src_doc.close()
+                return err("Input PDF has no pages", 400)
             out_doc = fitz.open()
             pages_processed = pages_skipped = 0
             try:
@@ -748,9 +839,11 @@ def ocr_pdf():
                     hocr_data = None
                     try:
                         pil_img = Image.open(io.BytesIO(pix.tobytes("png")))
-                        hocr_data = pytesseract.image_to_data(
-                            pil_img, lang=lang, output_type=TesseractOutput.DICT,
-                            config=f"--psm {psm} --oem {oem}")
+                        # Change 13: OCR semaphore to limit concurrency
+                        with _ocr_semaphore:
+                            hocr_data = pytesseract.image_to_data(
+                                pil_img, lang=lang, output_type=TesseractOutput.DICT,
+                                config=f"--psm {psm} --oem {oem}")
                     except Exception as ocr_ex:
                         log.warning(f"OCR page {page_num+1}: {ocr_ex}")
                     new_page = out_doc.new_page(width=pw, height=ph)
@@ -767,6 +860,9 @@ def ocr_pdf():
                                                   fontname="helv", color=(0,0,0),
                                                   render_mode=3, overlay=True)
                     pages_processed += 1
+                # Change 18: OCR zero output guard
+                if pages_processed == 0 and pages_skipped == 0:
+                    return err("OCR produced no output — all pages failed", 500)
                 fname = generate_output_filename(f.filename, "ocr")
                 out = os.path.join(Config.OUTPUT_FOLDER, fname)
                 out_doc.save(out, deflate=True, garbage=2)
@@ -795,8 +891,16 @@ def rotate_pdf():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
+            # Change 7: Empty PDF guard for rotate
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
             total = len(doc)
             idxs = list(range(total)) if pages_spec.lower()=="all" else parse_page_ranges(pages_spec, total)
+            # Change 15: Rotate empty range guard
+            if not idxs:
+                doc.close()
+                return err("No valid pages matched the specified range", 400)
             for i in idxs: doc[i].set_rotation(angle)
             fname = generate_output_filename(f.filename, "rotated")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
@@ -832,16 +936,25 @@ def watermark_pdf():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
+            # Change 7: Empty PDF guard for watermark
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
             try:
+                # Change 12: Pre-decode watermark image outside page loop
+                pre_decoded_img = None
+                if image_data:
+                    pre_decoded_img = Image.open(io.BytesIO(image_data)).convert("RGBA")
+                    if rotation != 0:
+                        pre_decoded_img = pre_decoded_img.rotate(rotation, expand=True, resample=Image.BICUBIC)
+
                 for page in doc:
                     r = page.rect
-                    if image_data:
-                        img = Image.open(io.BytesIO(image_data)).convert("RGBA")
+                    if image_data and pre_decoded_img is not None:
+                        img = pre_decoded_img.copy()
                         r_ch,g_ch,b_ch,a_ch = img.split()
                         a_ch = a_ch.point(lambda x: int(x*opacity))
                         img.putalpha(a_ch)
-                        if rotation != 0:
-                            img = img.rotate(rotation, expand=True, resample=Image.BICUBIC)
                         img_buf = io.BytesIO(); img.save(img_buf, format="PNG")
                         img_w = r.width * scale
                         img_h = img_w * img.height / img.width
@@ -881,6 +994,10 @@ def page_numbers():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
+            # Change 7: Empty PDF guard for page_numbers
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
             try:
                 for i, page in enumerate(doc):
                     r = page.rect
@@ -914,6 +1031,10 @@ def crop_pdf():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
+            # Change 7: Empty PDF guard for crop
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
             try:
                 for page in doc:
                     r = page.rect
@@ -941,6 +1062,10 @@ def pdf_info():
         with FileService.temp_upload(f) as path:
             file_size = os.path.getsize(path)
             doc = fitz.open(path)
+            # Change 7: Empty PDF guard for pdf_info
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
             try:
                 meta = doc.metadata
                 size_counts = {}
@@ -973,6 +1098,8 @@ def pdf_info():
                     "has_forms": has_forms, "has_toc": has_toc,
                     "image_count": image_count,
                     "fonts_used": sorted(font_names)[:20],
+                    # Change 20: Add total_fonts_found
+                    "total_fonts_found": len(font_names),
                     "is_linearized": is_lin,
                     "page_sizes": {"unique_sizes":unique_sizes,"all_same":len(unique_sizes)==1},
                 }
@@ -1001,14 +1128,23 @@ def protect_pdf():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
+            # Change 7: Empty PDF guard for protect
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
             try:
                 permissions = int(fitz.PDF_PERM_ACCESSIBILITY)
                 if allow_print: permissions |= int(fitz.PDF_PERM_PRINT)
                 if allow_copy: permissions |= int(fitz.PDF_PERM_COPY)
                 fname = generate_output_filename(f.filename, "protected")
                 out = os.path.join(Config.OUTPUT_FOLDER, fname)
-                doc.save(out, encryption=fitz.PDF_ENCRYPT_AES_256,
-                         owner_pw=pw, user_pw=pw, permissions=permissions)
+                # Change 5: Wrap doc.save() to avoid leaking password in logs
+                try:
+                    doc.save(out, encryption=fitz.PDF_ENCRYPT_AES_256,
+                             owner_pw=pw, user_pw=pw, permissions=permissions)
+                except Exception as save_ex:
+                    log.error(f"protect_pdf save error: {type(save_ex).__name__}")
+                    raise
             finally:
                 doc.close()
         return ok("PDF password-protected with AES-256", out)
@@ -1027,6 +1163,10 @@ def unlock_pdf():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
+            # Change 7: Empty PDF guard for unlock
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
             if doc.is_encrypted:
                 if not doc.authenticate(pw):
                     doc.close(); return err("Wrong password", 401)
@@ -1073,6 +1213,10 @@ def sign_pdf():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
+            # Change 7: Empty PDF guard for sign_pdf
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
             total = len(doc)
             try:
                 if page_target == "all": page_indices = list(range(total))
@@ -1084,8 +1228,9 @@ def sign_pdf():
                         if pg_num < 1 or pg_num > total:
                             return err(f"Page {pg_num} out of range (1-{total})", 400)
                         page_indices = [pg_num-1]
+                    # Change 16: Return error on invalid page target instead of silent fallback
                     except ValueError:
-                        page_indices = [total-1]
+                        return err(f"Invalid page target: '{page_target}'", 400)
                 for pg_idx in page_indices:
                     page = doc[pg_idx]; rect = page.rect
                     sig_x, sig_y = _sig_pos(rect, position)
@@ -1140,6 +1285,10 @@ def redact_pdf():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
+            # Change 7: Empty PDF guard for redact
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
             try:
                 count = 0
                 for page in doc:
@@ -1156,7 +1305,10 @@ def redact_pdf():
                 doc.save(out)
             finally:
                 doc.close()
-        return ok(f"Redacted {count} occurrence(s) (mode={mode})", out, redaction_count=count)
+        # Change 19: Warn on zero redaction matches
+        msg = f"Redacted {count} occurrence(s) (mode={mode})"
+        warn = "No matches found — document unchanged" if count == 0 else None
+        return ok(msg, out, redaction_count=count, warning=warn)
     except Exception:
         log.exception("redact"); return err("Redact failed", 500)
 # ============================================================================
@@ -1176,6 +1328,10 @@ def pdf_to_image():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
+            # Change 7: Empty PDF guard for pdf_to_image
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
             try:
                 count = len(doc)
                 buf = io.BytesIO()
@@ -1211,6 +1367,16 @@ def pdf_to_word():
     e = validate_file(f, Config.ALLOWED_PDF)
     if e: return err(e)
     f.seek(0,2); file_size = f.tell(); f.seek(0)
+    # Change 7: Empty PDF guard for pdf_to_word
+    try:
+        _chk = fitz.open(stream=f.read(), filetype="pdf")
+        if len(_chk) == 0:
+            _chk.close()
+            return err("Input PDF has no pages", 400)
+        _chk.close()
+        f.seek(0)
+    except Exception:
+        f.seek(0)
     ext = f.filename.rsplit(".",1)[-1].lower() if "." in f.filename else "pdf"
     upload_path = os.path.join(Config.UPLOAD_FOLDER, f"{uuid.uuid4()}.{ext}")
     f.seek(0)
@@ -1284,6 +1450,12 @@ def pdf_to_excel():
     if e: return err(e)
     try:
         with FileService.temp_upload(f) as path:
+            # Change 7: Empty PDF guard for pdf_to_excel
+            doc = fitz.open(path)
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
+            doc.close()
             wb = Workbook(); wb.remove(wb.active)
             tables_extracted = 0; method_used = None
             if PDFPLUMBER_AVAILABLE:
@@ -1348,6 +1520,10 @@ def pdf_to_ppt():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
+            # Change 7: Empty PDF guard for pdf_to_ppt
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
             try:
                 prs = Presentation()
                 prs.slide_width = PptxInches(10); prs.slide_height = PptxInches(7.5)
@@ -1423,6 +1599,13 @@ def compare_pdf():
     try:
         with FileService.temp_uploads(files) as paths:
             doc1 = fitz.open(paths[0]); doc2 = fitz.open(paths[1])
+            # Change 7: Empty PDF guard for compare_pdf
+            if len(doc1) == 0:
+                doc1.close(); doc2.close()
+                return err("First PDF has no pages", 400)
+            if len(doc2) == 0:
+                doc1.close(); doc2.close()
+                return err("Second PDF has no pages", 400)
             try:
                 pages = min(len(doc1), len(doc2))
                 buf = io.BytesIO()
@@ -1525,7 +1708,9 @@ def word_to_pdf():
             fname = generate_output_filename(f.filename, "to_pdf")
             fname = re.sub(r'\.(doc|docx)$','.pdf',fname,flags=re.IGNORECASE)
             out = libre(path, "pdf", output_filename=fname)
-            if not out: return err("LibreOffice conversion failed.", 500)
+            # Change 8: LibreOffice output validation for word_to_pdf
+            if not out or not os.path.exists(out) or os.path.getsize(out) == 0:
+                return err("LibreOffice conversion produced no output", 500)
         return ok("Word converted to PDF", out)
     except Exception:
         log.exception("word_to_pdf"); return err("Word to PDF failed", 500)
@@ -1542,7 +1727,9 @@ def excel_to_pdf():
             fname = generate_output_filename(f.filename, "to_pdf")
             fname = re.sub(r'\.(xls|xlsx)$','.pdf',fname,flags=re.IGNORECASE)
             out = libre(path, "pdf", output_filename=fname)
-            if not out: return err("LibreOffice conversion failed.", 500)
+            # Change 8: LibreOffice output validation for excel_to_pdf
+            if not out or not os.path.exists(out) or os.path.getsize(out) == 0:
+                return err("LibreOffice conversion produced no output", 500)
         return ok("Excel converted to PDF", out)
     except Exception:
         log.exception("excel_to_pdf"); return err("Excel to PDF failed", 500)
@@ -1559,7 +1746,9 @@ def html_to_pdf():
             fname = generate_output_filename(f.filename, "to_pdf")
             fname = re.sub(r'\.(html|htm)$','.pdf',fname,flags=re.IGNORECASE)
             out_path = os.path.join(Config.OUTPUT_FOLDER, fname)
-            result = subprocess.run([Config.WKHTMLTOPDF, "--quiet", path, out_path],
+            # Change 4: Add --disable-local-file-access to wkhtmltopdf
+            result = subprocess.run([Config.WKHTMLTOPDF, "--quiet",
+                                     "--disable-local-file-access", path, out_path],
                                      capture_output=True, timeout=60)
             if result.returncode == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 0:
                 return ok("HTML converted to PDF", out_path)
@@ -2437,6 +2626,10 @@ def pdf_to_jpg():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
+            # Change 7: Empty PDF guard for pdf_to_jpg
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
             count = len(doc)
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -2469,6 +2662,10 @@ def pdf_to_png():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
+            # Change 7: Empty PDF guard for pdf_to_png
+            if len(doc) == 0:
+                doc.close()
+                return err("Input PDF has no pages", 400)
             count = len(doc)
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
