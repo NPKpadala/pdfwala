@@ -300,6 +300,10 @@ threading.Thread(target=_cleanup_worker, daemon=True, name="cleanup").start()
 @app.route("/health")
 @app.route("/api/v1/health")
 def health():
+    # Issue #3: Return minimal info in production
+    if os.environ.get("FLASK_ENV") == "production":
+        return jsonify({"status": "ok", "version": Config.VERSION})
+    
     # Change 11: Health check caching with 30s TTL
     now = time.time()
     cached = _HEALTH_CACHE.get("result")
@@ -365,6 +369,8 @@ def metrics():
         return jsonify({"error": "prometheus_client not installed"}), 404
     return Response(generate_latest(REGISTRY), mimetype="text/plain")
 @app.route("/download/<filename>")
+@require_auth
+@require_rate_limit  # Issue #4: Prevent download abuse
 def download(filename):
     filename = unicodedata.normalize("NFC", filename)
     safe = secure_filename(filename)
