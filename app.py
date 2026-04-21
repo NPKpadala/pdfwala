@@ -105,17 +105,36 @@ try:
                                  ['method', 'endpoint'])
     _prom_file_size = Histogram('pdfwala_file_size_bytes', 'Upload size', ['operation'],
                                  buckets=[1024,10240,102400,1048576,10485760,104857600])
+    # FIX LOW-12: Add download size metric
+    _prom_download_size = Histogram('pdfwala_download_size_bytes', 'Download size',
+                                     buckets=[1024,10240,102400,1048576,10485760,104857600])
 except ImportError:
     METRICS_ENABLED = False
+
+# FIX LOW-9: Detect wkhtmltopdf availability at startup
+_WKHTMLTOPDF_AVAILABLE = False
+try:
+    _wk_result = subprocess.run(
+        [getattr(Config, 'WKHTMLTOPDF', 'wkhtmltopdf'), '--version'],
+        capture_output=True, timeout=5
+    )
+    _WKHTMLTOPDF_AVAILABLE = (_wk_result.returncode == 0)
+except Exception:
+    _WKHTMLTOPDF_AVAILABLE = False
+
+# FIX MEDIUM-8: Unified large-file async threshold (10 MB)
+_ASYNC_FILE_THRESHOLD = 10 * 1024 * 1024  # 10 MB
+
 # ── Celery tasks ───────────────────────────────────────────────────────────────
 from workers.celery_app import celery_app
 try:
     from tasks.pdf_tasks import compress_pdf_task, merge_pdf_task, split_pdf_task, watermark_pdf_task
     from tasks.ocr_tasks import ocr_pdf_task
-    from tasks.office_tasks import pdf_to_word_task, pdf_to_excel_task
+    from tasks.office_tasks import pdf_to_word_task, pdf_to_excel_task, excel_to_word_task
 except Exception:
     compress_pdf_task = merge_pdf_task = split_pdf_task = watermark_pdf_task = None
-    ocr_pdf_task = pdf_to_word_task = pdf_to_excel_task = None
+    ocr_pdf_task = pdf_to_word_task = pdf_to_excel_task = excel_to_word_task = None
+
 # ── Ensure directories exist ───────────────────────────────────────────────────
 for _d in [Config.UPLOAD_FOLDER, Config.OUTPUT_FOLDER, Config.TEMP_FOLDER]:
     os.makedirs(_d, exist_ok=True)
@@ -202,7 +221,9 @@ def is_valid_pdf(path: str, min_pages: int = 1):
 def libre(input_path, fmt, output_filename=None, temp=False):
     if fmt not in Config.LIBRE_ALLOWED_FMTS:
         return None
+    # FIX MEDIUM-7: Check circuit breaker before calling subprocess
     if not cb_libreoffice.can_execute():
+        log.warning(f"LibreOffice circuit breaker open — skipping conversion to {fmt}")
         return None
     if output_filename:
         output_filename = secure_filename(output_filename)
@@ -216,6 +237,8 @@ def libre(input_path, fmt, output_filename=None, temp=False):
             capture_output=True, timeout=Config.SUBPROCESS_TIMEOUT)
         if result.returncode != 0:
             cb_libreoffice.record_failure()
+            # FIX LOW-10: Clear health cache when circuit breaker trips
+            _HEALTH_CACHE.clear()
             return None
         base = os.path.splitext(os.path.basename(input_path))[0]
         converted = os.path.join(out_dir, f"{base}.{fmt}")
@@ -223,10 +246,12 @@ def libre(input_path, fmt, output_filename=None, temp=False):
             matches = list(Path(out_dir).glob(f"*.{fmt}"))
             if not matches:
                 cb_libreoffice.record_failure()
+                _HEALTH_CACHE.clear()
                 return None
             converted = str(matches[0])
         if os.path.getsize(converted) == 0:
             cb_libreoffice.record_failure()
+            _HEALTH_CACHE.clear()
             return None
         if temp:
             final = os.path.join(Config.TEMP_FOLDER, f"{uuid.uuid4()}.{fmt}")
@@ -244,9 +269,12 @@ def libre(input_path, fmt, output_filename=None, temp=False):
         return final
     except subprocess.TimeoutExpired:
         cb_libreoffice.record_failure()
+        # FIX LOW-10: Clear health cache when circuit breaker trips
+        _HEALTH_CACHE.clear()
         return None
     except Exception as ex:
         cb_libreoffice.record_failure()
+        _HEALTH_CACHE.clear()
         log.error(f"LibreOffice: {ex}")
         return None
     finally:
@@ -269,9 +297,12 @@ def ghostscript_compress(input_path, output_path, gs_setting="/ebook",
         result = subprocess.run(cmd, capture_output=True, timeout=timeout)
         if result.returncode != 0:
             cb_ghostscript.record_failure()
+            # FIX LOW-10: Clear health cache when circuit breaker trips
+            _HEALTH_CACHE.clear()
             return False
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
             cb_ghostscript.record_failure()
+            _HEALTH_CACHE.clear()
             return False
         try:
             doc = fitz.open(output_path)
@@ -289,11 +320,13 @@ def ghostscript_compress(input_path, output_path, gs_setting="/ebook",
         return True
     except subprocess.TimeoutExpired:
         cb_ghostscript.record_failure()
+        _HEALTH_CACHE.clear()
         try: os.remove(output_path)
         except OSError: pass
         return False
     except Exception as ex:
         cb_ghostscript.record_failure()
+        _HEALTH_CACHE.clear()
         log.error(f"Ghostscript: {ex}")
         return False
 # ── Background cleanup ─────────────────────────────────────────────────────────
@@ -309,10 +342,19 @@ def _cleanup_worker():
                             if entry.is_file(follow_symlinks=False):
                                 try:
                                     if now - entry.stat().st_mtime > Config.FILE_TTL_SEC:
-                                        # Change 9: Atomic rename before delete
-                                        tomb = entry.path + ".deleting"
-                                        os.rename(entry.path, tomb)
-                                        os.remove(tomb)
+                                        # FIX LOW-11: Improved atomic rename before delete
+                                        tomb = entry.path + f".deleting_{uuid.uuid4().hex}"
+                                        try:
+                                            os.rename(entry.path, tomb)
+                                            os.remove(tomb)
+                                        except FileNotFoundError:
+                                            pass  # Already deleted by another worker
+                                        except OSError as tomb_err:
+                                            log.debug(f"Cleanup rename failed: {tomb_err}")
+                                            try:
+                                                os.remove(entry.path)
+                                            except OSError:
+                                                pass
                                 except OSError:
                                     pass
                 except OSError:
@@ -347,6 +389,10 @@ def health():
             tools[name] = "ok"
         except Exception:
             tools[name] = "unavailable"
+
+    # FIX MEDIUM-4: Include wkhtmltopdf in health check
+    tools["wkhtmltopdf"] = "ok" if _WKHTMLTOPDF_AVAILABLE else "unavailable"
+
     rc = redis_service.client
     redis_status = "ok" if rc else "unavailable"
     try:
@@ -421,6 +467,12 @@ def download(filename):
         return err("Access denied", 403)
     if not os.path.exists(path):
         return err("File not found or expired", 404)
+    # FIX LOW-12: Track download size in metrics
+    if METRICS_ENABLED:
+        try:
+            _prom_download_size.observe(os.path.getsize(path))
+        except Exception:
+            pass
     response = send_file(path, as_attachment=True, conditional=True)
     response.headers["X-Accel-Buffering"] = "no"
     response.headers["Cache-Control"] = "no-cache"
@@ -482,6 +534,22 @@ def list_endpoints():
         endpoints.append({"path": rule.rule,
                            "methods": sorted(m for m in rule.methods if m not in ("HEAD","OPTIONS"))})
     return jsonify({"success": True, "endpoints": sorted(endpoints, key=lambda x: x["path"])})
+
+# ============================================================================
+# LOW-9: /remove-bg stub
+# ============================================================================
+@app.route("/api/v1/remove-bg", methods=["POST"])
+@app.route("/api/remove-bg", methods=["POST"])
+@require_auth
+@require_rate_limit
+def remove_bg():
+    # FIX LOW-9: Background removal stub — returns 501 until implemented
+    return err(
+        "Background removal is not yet implemented. "
+        "Consider integrating rembg (pip install rembg) or an external API.",
+        501
+    )
+
 # ============================================================================
 # PDF ORGANIZE
 # ============================================================================
@@ -546,6 +614,18 @@ def split_pdf():
             total = len(reader.pages)
             indices = list(range(total)) if mode == "all" else parse_page_ranges(ranges, total)
             if not indices: return err("No valid pages in range")
+
+            # FIX MEDIUM-5: Return single PDF when range is exactly 1 page, not ZIP
+            if len(indices) == 1:
+                w = PdfWriter()
+                w.add_page(reader.pages[indices[0]])
+                fname = generate_output_filename(f.filename, f"page_{indices[0]+1}")
+                fname = re.sub(r'\.pdf$', '', fname, flags=re.IGNORECASE) + ".pdf"
+                out = os.path.join(Config.OUTPUT_FOLDER, fname)
+                with open(out, "wb") as fh:
+                    w.write(fh)
+                return ok(f"Extracted page {indices[0]+1}", out)
+
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                 for idx in indices:
@@ -585,10 +665,27 @@ def organize_pdf():
                 return err("Input PDF has no pages", 400)
 
             # Parse user input (returns 1-based page numbers)
-            one_based_indices = parse_page_ranges(page_order_input, total_pages)
+            try:
+                one_based_indices = parse_page_ranges(page_order_input, total_pages)
+            except Exception:
+                one_based_indices = []
 
+            # FIX MEDIUM-6: Improved error message for invalid page numbers (show 1-based range)
             if not one_based_indices:
-                return err("No valid pages specified")
+                return err(
+                    f"No valid pages specified. "
+                    f"This PDF has {total_pages} page(s); valid range is 1–{total_pages}.",
+                    400
+                )
+
+            # Validate each index is in range — report 1-based to user
+            for pg_num in one_based_indices:
+                if pg_num < 1 or pg_num > total_pages:
+                    return err(
+                        f"Page {pg_num} is out of range. "
+                        f"This PDF has {total_pages} page(s); valid range is 1–{total_pages}.",
+                        400
+                    )
 
             # Convert to 0-based for PdfReader
             zero_based_indices = [page_num - 1 for page_num in one_based_indices]
@@ -612,7 +709,9 @@ def organize_pdf():
             output_writer = PdfWriter()
             for page_index in pages_to_keep:
                 if page_index < 0 or page_index >= total_pages:
-                    return err(f"Invalid page index: {page_index + 1}")
+                    return err(
+                        f"Page index {page_index + 1} is out of range (1–{total_pages})", 400
+                    )
                 output_writer.add_page(pdf_reader.pages[page_index])
 
             output_filename = generate_output_filename(uploaded_file.filename, "organized")
@@ -727,7 +826,8 @@ def compress_pdf():
                 doc.close()
             except Exception:
                 return err("Input PDF is corrupted or unreadable", 400)
-            if orig > 50*1024*1024 and celery_app and compress_pdf_task:
+            # FIX MEDIUM-8: Unified async threshold at 10 MB
+            if orig > _ASYNC_FILE_THRESHOLD and celery_app and compress_pdf_task:
                 ext = path.rsplit(".",1)[-1].lower()
                 bg_input = os.path.join(Config.UPLOAD_FOLDER, f"{uuid.uuid4()}.{ext}")
                 shutil.copy(path, bg_input)
@@ -941,7 +1041,8 @@ def ocr_pdf():
     oem = safe_int(request.form.get("oem","3"), 3, 0, 3)
     skip = False  # Always OCR, even if text exists
     f.seek(0,2); file_size = f.tell(); f.seek(0)
-    if file_size > 5*1024*1024 and celery_app and ocr_pdf_task:
+    # FIX MEDIUM-8: Unified async threshold at 10 MB
+    if file_size > _ASYNC_FILE_THRESHOLD and celery_app and ocr_pdf_task:
         ext = f.filename.rsplit(".",1)[-1].lower() if "." in f.filename else "pdf"
         bg_input = os.path.join(Config.UPLOAD_FOLDER, f"{uuid.uuid4()}.{ext}")
         f.seek(0)
@@ -1524,8 +1625,8 @@ def pdf_to_word():
     fname = re.sub(r'\.pdf$','.docx',fname,flags=re.IGNORECASE)
     if not fname.endswith(".docx"): fname = Path(fname).stem + ".docx"
     out = os.path.join(Config.OUTPUT_FOLDER, fname)
-    PDF2WORD_SYNC_LIMIT = getattr(Config, 'PDF2WORD_SYNC_LIMIT', 10*1024*1024)
-    if file_size <= PDF2WORD_SYNC_LIMIT:
+    # FIX MEDIUM-8: Unified async threshold at 10 MB
+    if file_size <= _ASYNC_FILE_THRESHOLD:
         try:
             cv = Pdf2DocxConverter(upload_path)
             cv.convert(out, start=0, end=None)
@@ -1903,7 +2004,10 @@ def _images_to_pdf(paths, page_size_str, output_filename):
 @require_auth
 @require_rate_limit
 def image_to_pdf():
-    files = request.files.getlist("files")
+    # FIX CRITICAL-3: Accept both "files" and format-specific field names
+    files = (request.files.getlist("files") or
+             request.files.getlist("images") or
+             request.files.getlist("image"))
     if not files or all(f.filename=="" for f in files):
         return err("At least one image file required")
     for f in files:
@@ -2053,6 +2157,21 @@ def excel_to_pdf():
 @require_auth
 @require_rate_limit
 def html_to_pdf():
+    # FIX MEDIUM-4: Return clear 501 if neither wkhtmltopdf nor WeasyPrint available
+    _weasyprint_available = False
+    try:
+        import weasyprint  # noqa
+        _weasyprint_available = True
+    except ImportError:
+        pass
+
+    if not _WKHTMLTOPDF_AVAILABLE and not _weasyprint_available:
+        return err(
+            "HTML to PDF requires wkhtmltopdf or weasyprint. "
+            "Install wkhtmltopdf (https://wkhtmltopdf.org) or run: pip install weasyprint",
+            501
+        )
+
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_HTML)
     if e: return err(e)
@@ -2062,29 +2181,29 @@ def html_to_pdf():
             fname = re.sub(r'\.(html|htm)$', '.pdf', fname, flags=re.IGNORECASE)
             out_path = os.path.join(Config.OUTPUT_FOLDER, fname)
             # Try wkhtmltopdf first
-            try:
-                result = subprocess.run([Config.WKHTMLTOPDF, "--quiet",
-                                         "--disable-local-file-access", path, out_path],
-                                         capture_output=True, timeout=60)
-                if result.returncode == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 0:
-                    return ok("HTML converted to PDF", out_path)
-            except FileNotFoundError:
-                log.warning("wkhtmltopdf not found, falling back to WeasyPrint")
-            except subprocess.TimeoutExpired:
-                return err("HTML to PDF timed out", 500)
+            if _WKHTMLTOPDF_AVAILABLE:
+                try:
+                    result = subprocess.run([Config.WKHTMLTOPDF, "--quiet",
+                                             "--disable-local-file-access", path, out_path],
+                                             capture_output=True, timeout=60)
+                    if result.returncode == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+                        return ok("HTML converted to PDF", out_path)
+                except subprocess.TimeoutExpired:
+                    return err("HTML to PDF timed out", 500)
+                except Exception as wk_ex:
+                    log.warning(f"wkhtmltopdf failed: {wk_ex}")
             
             # Fallback to WeasyPrint
-            try:
-                from weasyprint import HTML
-                HTML(filename=path).write_pdf(out_path)
-                if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
-                    return ok("HTML converted to PDF (WeasyPrint)", out_path)
-            except ImportError:
-                pass
-            except Exception as we:
-                log.warning(f"WeasyPrint failed: {we}")
+            if _weasyprint_available:
+                try:
+                    from weasyprint import HTML
+                    HTML(filename=path).write_pdf(out_path)
+                    if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+                        return ok("HTML converted to PDF (WeasyPrint)", out_path)
+                except Exception as we:
+                    log.warning(f"WeasyPrint failed: {we}")
             
-            return err("HTML to PDF failed — install wkhtmltopdf or weasyprint", 500)
+            return err("HTML to PDF failed — both wkhtmltopdf and weasyprint encountered errors", 500)
     except subprocess.TimeoutExpired:
         return err("HTML to PDF timed out", 500)
     except Exception:
@@ -2181,7 +2300,9 @@ def resize_image():
 @require_auth
 @require_rate_limit
 def webp_to_jpg():
-    files = request.files.getlist("files")
+    # FIX CRITICAL-3: Accept both "files" and "webp" field name
+    files = (request.files.getlist("files") or
+             request.files.getlist("webp"))
     if not files or all(f.filename=="" for f in files):
         return err("At least one WebP file required")
     for f in files:
@@ -2213,7 +2334,9 @@ def webp_to_jpg():
 @require_auth
 @require_rate_limit
 def png_to_jpg():
-    files = request.files.getlist("files")
+    # FIX CRITICAL-3: Accept both "files" and "png" field name
+    files = (request.files.getlist("files") or
+             request.files.getlist("png"))
     if not files or all(f.filename=="" for f in files):
         return err("At least one PNG file required")
     for f in files:
@@ -2555,12 +2678,13 @@ def unlock_word():
         return ok("Word document unlocked", out)
     except Exception:
         log.exception("unlock_word"); return err("Unlock failed — check password", 500)
-@app.route("/api/v1/protect-word", methods=["POST"])
+
 @app.route("/api/protect-word", methods=["POST"])
 @require_auth
 @require_rate_limit
 def protect_word():
-    if not MSOFFCRYPTO_AVAILABLE: return err("Requires msoffcrypto-tool.", 501)
+    if not MSOFFCRYPTO_AVAILABLE:
+        return err("Requires msoffcrypto-tool.", 501)
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_DOC)
     if e: return err(e)
@@ -2568,17 +2692,55 @@ def protect_word():
     pw2 = sanitize_string(request.form.get("password2",""))
     ep = validate_password(pw, pw2)
     if ep: return err(ep)
+    
     try:
         with FileService.temp_upload(f) as path:
-            fname = generate_output_filename(f.filename,"protected")
+            work_path = path
+            converted_temp = None
+            
+            # If .doc (old format), convert to .docx first
+            if path.lower().endswith(".doc") and not path.lower().endswith(".docx"):
+                log.info(f"Converting .doc to .docx for protection: {path}")
+                converted_temp = libre(path, "docx", temp=True)
+                if not converted_temp or not os.path.exists(converted_temp):
+                    return err("Could not convert .doc to .docx format", 500)
+                work_path = converted_temp
+            
+            fname = generate_output_filename(f.filename, "protected")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
-            with open(path,"rb") as fp:
+            
+            # Try msoffcrypto encryption
+            with open(work_path, "rb") as fp:
                 of = msoffcrypto.OfficeFile(fp)
-                try: of.encrypt(pw, out, cipher_algorithm="AES")
-                except TypeError: of.encrypt(pw, out)
-        return ok("Word document protected (AES)", out)
+                encrypted = False
+                try:
+                    of.encrypt(pw, out, cipher_algorithm="AES")
+                    encrypted = True
+                except TypeError:
+                    pass
+                except Exception as aes_ex:
+                    log.warning(f"protect_word AES encrypt failed: {type(aes_ex).__name__}")
+                
+                if not encrypted:
+                    try:
+                        of.encrypt(pw, out)
+                        encrypted = True
+                    except Exception as fallback_ex:
+                        log.error(f"protect_word fallback failed: {type(fallback_ex).__name__}")
+                        raise fallback_ex
+            
+            # Clean up temp converted file
+            if converted_temp:
+                try: os.remove(converted_temp)
+                except OSError: pass
+            
+            if not encrypted or not os.path.exists(out) or os.path.getsize(out) == 0:
+                return err("Word protection failed — could not encrypt document", 500)
+                
+        return ok("Word document protected", out)
     except Exception:
-        log.exception("protect_word"); return err("Protect Word failed", 500)
+        log.exception("protect_word")
+        return err("Protect Word failed", 500)
 # ============================================================================
 # EXCEL TOOLS
 # ============================================================================
@@ -2637,6 +2799,10 @@ def excel_to_word():
     preserve_formulas = request.form.get("preserve_formulas","true").lower() in ("true","1","yes")
     row_limit = safe_int(request.form.get("row_limit", Config.EXCEL_ROW_LIMIT),
                           Config.EXCEL_ROW_LIMIT, 1, 100000)
+
+    # FIX CRITICAL-2: Queue large Excel files (>10 MB) async to avoid 490s timeout
+    f.seek(0, 2); file_size = f.tell(); f.seek(0)
+
     if not OPENPYXL_AVAILABLE or not DOCX_AVAILABLE:
         try:
             with FileService.temp_upload(f) as path:
@@ -2646,6 +2812,32 @@ def excel_to_word():
                 if not out: return err("Excel to Word requires openpyxl+python-docx or LibreOffice.",500)
             return ok("Excel converted to Word (LibreOffice)", out)
         except Exception: log.exception("excel_to_word_libre"); return err("Excel to Word failed", 500)
+
+    # FIX CRITICAL-2: Async path for large files
+    if file_size > _ASYNC_FILE_THRESHOLD and celery_app and excel_to_word_task:
+        ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else "xlsx"
+        bg_input = os.path.join(Config.UPLOAD_FOLDER, f"{uuid.uuid4()}.{ext}")
+        f.seek(0)
+        with open(bg_input, "wb") as fh: fh.write(f.read())
+        fname = generate_output_filename(f.filename, "to_word")
+        fname = re.sub(r'\.(xls|xlsx)$', '.docx', fname, flags=re.IGNORECASE)
+        bg_out = os.path.join(Config.OUTPUT_FOLDER, fname)
+        job_id = str(uuid.uuid4())
+        redis_service.job_set(job_id, {
+            "status": "pending", "progress": "0", "operation": "excel_to_word",
+            "created_at": get_timestamp(), "user_id": getattr(g, "user_id", "default")
+        })
+        task = excel_to_word_task.delay(bg_input, bg_out, job_id,
+                                         preserve_formulas, row_limit)
+        redis_service.job_update(job_id, {"task_id": task.id})
+        return jsonify({
+            "success": True,
+            "message": "Large file — conversion queued. Check status_url.",
+            "job_id": job_id,
+            "status_url": f"/api/v1/jobs/{job_id}",
+            "poll_interval_ms": 2000
+        })
+
     try:
         with FileService.temp_upload(f) as path:
             wb = load_workbook(path, data_only=not preserve_formulas)
@@ -2792,12 +2984,13 @@ def unlock_excel():
         return ok("Excel workbook unlocked", out)
     except Exception:
         log.exception("unlock_excel"); return err("Unlock failed — check password", 500)
-@app.route("/api/v1/protect-excel", methods=["POST"])
+
 @app.route("/api/protect-excel", methods=["POST"])
 @require_auth
 @require_rate_limit
 def protect_excel():
-    if not MSOFFCRYPTO_AVAILABLE: return err("Requires msoffcrypto-tool.", 501)
+    if not MSOFFCRYPTO_AVAILABLE:
+        return err("Requires msoffcrypto-tool.", 501)
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_XLS)
     if e: return err(e)
@@ -2805,17 +2998,56 @@ def protect_excel():
     pw2 = sanitize_string(request.form.get("password2",""))
     ep = validate_password(pw, pw2)
     if ep: return err(ep)
+    
     try:
         with FileService.temp_upload(f) as path:
-            fname = generate_output_filename(f.filename,"protected")
+            work_path = path
+            converted_temp = None
+            
+            # If .xls (old format), convert to .xlsx first
+            if path.lower().endswith(".xls") and not path.lower().endswith(".xlsx"):
+                log.info(f"Converting .xls to .xlsx for protection: {path}")
+                converted_temp = libre(path, "xlsx", temp=True)
+                if not converted_temp or not os.path.exists(converted_temp):
+                    return err("Could not convert .xls to .xlsx format", 500)
+                work_path = converted_temp
+            
+            fname = generate_output_filename(f.filename, "protected")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
-            with open(path,"rb") as fp:
+            
+            # Try msoffcrypto encryption
+            with open(work_path, "rb") as fp:
                 of = msoffcrypto.OfficeFile(fp)
-                try: of.encrypt(pw, out, cipher_algorithm="AES")
-                except TypeError: of.encrypt(pw, out)
-        return ok("Excel workbook protected (AES)", out)
+                encrypted = False
+                try:
+                    of.encrypt(pw, out, cipher_algorithm="AES")
+                    encrypted = True
+                except TypeError:
+                    pass
+                except Exception as aes_ex:
+                    log.warning(f"protect_excel AES encrypt failed: {type(aes_ex).__name__}")
+                
+                if not encrypted:
+                    try:
+                        of.encrypt(pw, out)
+                        encrypted = True
+                    except Exception as fallback_ex:
+                        log.error(f"protect_excel fallback failed: {type(fallback_ex).__name__}")
+                        raise fallback_ex
+            
+            # Clean up temp converted file
+            if converted_temp:
+                try: os.remove(converted_temp)
+                except OSError: pass
+            
+            if not encrypted or not os.path.exists(out) or os.path.getsize(out) == 0:
+                return err("Excel protection failed — could not encrypt workbook", 500)
+                
+        return ok("Excel workbook protected", out)
     except Exception:
-        log.exception("protect_excel"); return err("Protect Excel failed", 500)
+        log.exception("protect_excel")
+        return err("Protect Excel failed", 500)
+
 @app.route("/api/v1/repair-excel", methods=["POST"])
 @app.route("/api/repair-excel", methods=["POST"])
 @require_auth
@@ -2922,7 +3154,10 @@ def excel_to_ppt():
 @require_rate_limit
 def jpg_to_pdf():
     """Convert JPG images to PDF"""
-    files = request.files.getlist("files")
+    # FIX CRITICAL-3: Accept both "files" and "jpg" field name
+    files = (request.files.getlist("files") or
+             request.files.getlist("jpg") or
+             request.files.getlist("jpeg"))
     if not files or all(f.filename == "" for f in files):
         return err("At least one JPG file required")
     for f in files:
