@@ -320,3 +320,64 @@ def _write_optimized_sheet(ws, table: list, method: str = "auto"):
         ws.column_dimensions[col_letter].width = adjusted_width
     
     ws.freeze_panes = 'A2'
+
+# ============================================================
+# EXCEL TO WORD TASK (FIXED)
+# ============================================================
+@celery_app.task(name="pdfwala.tasks.office_tasks.excel_to_word_task", bind=True, max_retries=2)
+def excel_to_word_task(self, input_path, output_path, job_id, preserve_formulas=True, row_limit=1000):
+    """Convert Excel to Word asynchronously for large files."""
+    import os
+    from services.redis_service import redis_service
+    from openpyxl import load_workbook
+    from docx import Document
+    
+    try:
+        redis_service.job_update(job_id, {"status": "processing", "progress": "10"})
+        
+        wb = load_workbook(input_path, data_only=not preserve_formulas)
+        doc = Document()
+        sheet_count = len(wb.sheetnames)
+        
+        for idx, sheet_name in enumerate(wb.sheetnames):
+            ws = wb[sheet_name]
+            doc.add_heading(sheet_name, level=1)
+            
+            rows = list(ws.iter_rows(values_only=True, max_row=row_limit + 1))
+            rows_write = rows[:row_limit]
+            
+            if not rows_write:
+                doc.add_paragraph("(empty sheet)")
+                continue
+            
+            n_cols = max((len(r) for r in rows_write), default=1)
+            table = doc.add_table(rows=len(rows_write), cols=n_cols)
+            table.style = "Light Grid Accent 1"
+            
+            for r_idx, row_data in enumerate(rows_write):
+                for c_idx in range(n_cols):
+                    val = row_data[c_idx] if c_idx < len(row_data) else ""
+                    cell = table.cell(r_idx, c_idx)
+                    cell.text = str(val) if val is not None else ""
+                    if r_idx == 0:
+                        for para in cell.paragraphs:
+                            for run in para.runs:
+                                run.bold = True
+            doc.add_paragraph()
+            
+            redis_service.job_update(job_id, {"progress": str(30 + int((idx + 1) / sheet_count * 60))})
+        
+        wb.close()
+        doc.save(output_path)
+        os.remove(input_path)
+        
+        redis_service.job_update(job_id, {"status": "completed", "progress": "100", "output_path": output_path})
+        return {"success": True, "output": output_path}
+        
+    except Exception as e:
+        redis_service.job_update(job_id, {"status": "failed", "error": str(e)})
+        try:
+            os.remove(input_path)
+        except OSError:
+            pass
+        raise
