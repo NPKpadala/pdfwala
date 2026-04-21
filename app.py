@@ -2150,8 +2150,6 @@ def excel_to_pdf():
                 os.remove(temp_prepared_path)
             except OSError:
                 pass
-
-
 @app.route("/api/v1/html-to-pdf", methods=["POST"])
 @app.route("/api/html-to-pdf", methods=["POST"])
 @require_auth
@@ -2175,11 +2173,13 @@ def html_to_pdf():
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_HTML)
     if e: return err(e)
+    
     try:
         with FileService.temp_upload(f) as path:
             fname = generate_output_filename(f.filename, "to_pdf")
             fname = re.sub(r'\.(html|htm)$', '.pdf', fname, flags=re.IGNORECASE)
             out_path = os.path.join(Config.OUTPUT_FOLDER, fname)
+            
             # Try wkhtmltopdf first
             if _WKHTMLTOPDF_AVAILABLE:
                 try:
@@ -2203,12 +2203,16 @@ def html_to_pdf():
                 except Exception as we:
                     log.warning(f"WeasyPrint failed: {we}")
             
+            # If we get here, both methods failed
             return err("HTML to PDF failed — both wkhtmltopdf and weasyprint encountered errors", 500)
+            
     except subprocess.TimeoutExpired:
         return err("HTML to PDF timed out", 500)
     except Exception:
         log.exception("html_to_pdf")
         return err("HTML to PDF failed", 500)
+
+
 # ============================================================================
 # IMAGE TOOLS
 # ============================================================================
