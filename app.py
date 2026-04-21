@@ -2710,24 +2710,26 @@ def protect_word():
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
             
             # Try msoffcrypto encryption
-            with open(work_path, "rb") as fp:
-                of = msoffcrypto.OfficeFile(fp)
-                encrypted = False
-                try:
-                    of.encrypt(pw, out, cipher_algorithm="AES")
-                    encrypted = True
-                except TypeError:
-                    pass
-                except Exception as aes_ex:
-                    log.warning(f"protect_word AES encrypt failed: {type(aes_ex).__name__}")
-                
-                if not encrypted:
-                    try:
-                        of.encrypt(pw, out)
-                        encrypted = True
-                    except Exception as fallback_ex:
-                        log.error(f"protect_word fallback failed: {type(fallback_ex).__name__}")
-                        raise fallback_ex
+           with open(work_path, "rb") as fp:
+    of = msoffcrypto.OfficeFile(fp)
+    encrypted = False
+    try:
+        with open(out, "wb") as fout:
+            of.encrypt(pw, fout, cipher_algorithm="AES")
+        encrypted = True
+    except TypeError:
+        pass
+    except Exception:
+        pass
+    
+    if not encrypted:
+        try:
+            with open(out, "wb") as fout:
+                of.encrypt(pw, fout)
+            encrypted = True
+        except Exception as fallback_ex:
+            log.error(f"protect_word fallback failed: {type(fallback_ex).__name__}")
+            raise fallback_ex
             
             # Clean up temp converted file
             if converted_temp:
@@ -3016,25 +3018,26 @@ def protect_excel():
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
             
             # Try msoffcrypto encryption
-            with open(work_path, "rb") as fp:
-                of = msoffcrypto.OfficeFile(fp)
-                encrypted = False
-                try:
-                    of.encrypt(pw, out, cipher_algorithm="AES")
-                    encrypted = True
-                except TypeError:
-                    pass
-                except Exception as aes_ex:
-                    log.warning(f"protect_excel AES encrypt failed: {type(aes_ex).__name__}")
-                
-                if not encrypted:
-                    try:
-                        of.encrypt(pw, out)
-                        encrypted = True
-                    except Exception as fallback_ex:
-                        log.error(f"protect_excel fallback failed: {type(fallback_ex).__name__}")
-                        raise fallback_ex
-            
+           with open(work_path, "rb") as fp:
+    of = msoffcrypto.OfficeFile(fp)
+    encrypted = False
+    try:
+        with open(out, "wb") as fout:
+            of.encrypt(pw, fout, cipher_algorithm="AES")
+        encrypted = True
+    except TypeError:
+        pass
+    except Exception:
+        pass
+    
+    if not encrypted:
+        try:
+            with open(out, "wb") as fout:
+                of.encrypt(pw, fout)
+            encrypted = True
+        except Exception as fallback_ex:
+            log.error(f"protect_excel fallback failed: {type(fallback_ex).__name__}")
+            raise fallback_ex
             # Clean up temp converted file
             if converted_temp:
                 try: os.remove(converted_temp)
