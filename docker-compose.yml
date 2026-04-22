@@ -1,9 +1,12 @@
+# ============================================================================
+# PDFWala Enterprise V11.0.0 — Docker Compose
+# ============================================================================
 
 # ============================================================================
 # SHARED ENVIRONMENT
 # ============================================================================
 x-app-env: &app-env
-  SECRET_KEY: ${SECRET_KEY:-changeme-in-production}
+  SECRET_KEY: ${SECRET_KEY:-changeme-in-production-min-32-chars}
   SIGNED_URL_SECRET: ${SIGNED_URL_SECRET:-changeme-in-production}
   API_KEY: ${API_KEY:-}
   REDIS_URL: redis://redis:6379/0
@@ -18,13 +21,22 @@ x-app-env: &app-env
   CELERY_OFFICE_QUEUE_MAX: ${CELERY_OFFICE_QUEUE_MAX:-200}
   CELERY_SLOW_QUEUE_MAX: ${CELERY_SLOW_QUEUE_MAX:-100}
   PYTHONUNBUFFERED: "1"
+  # ── V11.0.0 additions ──────────────────────────────────────────────────────
+  JOB_TTL_SEC: ${JOB_TTL_SEC:-7200}
+  CLEANUP_MAX_DELETES: ${CLEANUP_MAX_DELETES:-500}
+  MAX_SLIDES_PPT: ${MAX_SLIDES_PPT:-200}
+  SHUTDOWN_TIMEOUT: ${SHUTDOWN_TIMEOUT:-30}
+  MAX_OCR_THREADS: ${MAX_OCR_THREADS:-2}
+  GUNICORN_WORKERS: ${GUNICORN_WORKERS:-4}
+  GUNICORN_THREADS: ${GUNICORN_THREADS:-8}
 
 # ============================================================================
 # SERVICES
 # ============================================================================
 services:
+
   # --------------------------------------------------------------------------
-  # Redis - Message Broker & Cache
+  # Redis — Message Broker & Cache
   # --------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
@@ -68,7 +80,7 @@ services:
       - pdfwala-network
 
   # --------------------------------------------------------------------------
-  # Celery Worker - Fast Queue (Compression, Merge, Split)
+  # Celery Worker — Fast Queue (Compression, Merge, Split, Watermark)
   # --------------------------------------------------------------------------
   worker-fast:
     build: .
@@ -92,11 +104,18 @@ services:
         condition: service_healthy
       app:
         condition: service_healthy
+    # FIX: Added missing healthcheck — required for dependent service stability
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A workers.celery_app inspect ping -d celery@$$HOSTNAME 2>/dev/null | grep -q OK || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - pdfwala-network
 
   # --------------------------------------------------------------------------
-  # Celery Worker - Office Queue (Word, Excel, PPT conversions)
+  # Celery Worker — Office Queue (Word, Excel, PPT conversions)
   # --------------------------------------------------------------------------
   worker-office:
     build: .
@@ -120,11 +139,18 @@ services:
         condition: service_healthy
       app:
         condition: service_healthy
+    # FIX: Added missing healthcheck
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A workers.celery_app inspect ping -d celery@$$HOSTNAME 2>/dev/null | grep -q OK || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - pdfwala-network
 
   # --------------------------------------------------------------------------
-  # Celery Worker - Slow Queue (OCR, PDF/A, heavy processing)
+  # Celery Worker — Slow Queue (OCR, PDF/A, heavy processing)
   # --------------------------------------------------------------------------
   worker-slow:
     build: .
@@ -148,11 +174,18 @@ services:
         condition: service_healthy
       app:
         condition: service_healthy
+    # FIX: Added missing healthcheck
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A workers.celery_app inspect ping -d celery@$$HOSTNAME 2>/dev/null | grep -q OK || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - pdfwala-network
 
   # --------------------------------------------------------------------------
-  # Nginx - Reverse Proxy & Static Files
+  # Nginx — Reverse Proxy & Static Files
   # --------------------------------------------------------------------------
   nginx:
     image: nginx:alpine
