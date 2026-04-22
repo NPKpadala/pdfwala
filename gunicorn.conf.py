@@ -5,8 +5,7 @@ gunicorn.conf.py — Production WSGI server configuration.
 Key changes from V10:
   - timeout / graceful_timeout raised to 900s (15 min) for large-file sync fallback
   - workers and threads driven from environment variables
-  - VERSION updated to 11.0.0 in startup messages
-  - Fixed access_log_format syntax error (missing closing parenthesis)
+  - Fixed access_log_format syntax error (double parenthesis bug)
 """
 
 import os
@@ -20,8 +19,7 @@ workers      = int(os.environ.get("GUNICORN_WORKERS", 4))
 worker_class = "gthread"
 threads      = int(os.environ.get("GUNICORN_THREADS", 8))
 
-# CRITICAL: 900 s = 15 minutes — required for large-file synchronous fallback
-# when Celery is unavailable. Lowering this will cause 502 on big conversions.
+# CRITICAL: 900s = 15 minutes — required for large-file synchronous fallback
 timeout          = 900
 graceful_timeout = 900
 keepalive        = 5
