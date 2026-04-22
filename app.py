@@ -605,7 +605,6 @@ def download(filename):
     response.headers["Cache-Control"] = "no-cache"
     return response
 
-
 @app.route("/api/v1/jobs/<job_id>", methods=["GET"])
 @require_auth
 def api_job_status(job_id):
@@ -634,6 +633,10 @@ def api_job_status(job_id):
                     if out and os.path.exists(out):
                         resp["download_url"] = generate_signed_url(out)
                         resp["filename"] = os.path.basename(out)
+                    elif out:
+                        # File exists in Redis but not visible yet - send path for frontend fallback
+                        resp["output_path"] = out
+                        resp["filename"] = os.path.basename(out)
                     return jsonify(resp)
                 elif task.state == "FAILURE":
                     return jsonify({"success": False, "status": "failed",
@@ -656,10 +659,13 @@ def api_job_status(job_id):
             resp["download_url"] = generate_signed_url(out)
             resp["filename"] = os.path.basename(out)
             resp["size_human"] = format_file_size(os.path.getsize(out))
+        elif out:
+            # V11 FIX: File exists in Redis but not visible yet - send path for frontend fallback
+            resp["output_path"] = out
+            resp["filename"] = os.path.basename(out)
     if status == "failed":
         resp["error"] = job.get("error", "Unknown error")
     return jsonify(resp)
-
 
 @app.route("/api/v1/endpoints", methods=["GET"])
 def list_endpoints():
