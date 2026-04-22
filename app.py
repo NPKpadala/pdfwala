@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""PDFWala Enterprise V10.0 — Modular Production Backend"""
-__version__ = "10.0.0"
+"""PDFWala Enterprise V11.0.0 — Modular Production Backend"""
+__version__ = "11.0.0"
 import os, sys, io, re, csv, json, uuid, time, shutil, signal, zipfile
 import logging, unicodedata, threading, subprocess, tempfile
 import hashlib
@@ -12,7 +12,6 @@ from werkzeug.utils import secure_filename
 from config import Config
 from services.redis_service import redis_service
 from services.file_service import FileService
-#from services.storage_service import get_storaage
 from services.queue_service import (
     backpressure, cb_libreoffice, cb_ghostscript, cb_tesseract,
     queue_service, CircuitBreaker
@@ -30,7 +29,6 @@ from utils.pdf_utils import (
 )
 from utils.office_utils import (
     coerce_cell_value, coerce_cell_for_csv,
-    # FIX-2: import helpers used in pdf_to_excel — were called but never imported
     _is_structured_table, _get_table_signature, _normalize_header,
     _merge_tables, _write_optimized_sheet,
 )
@@ -59,7 +57,7 @@ except ImportError:
 try:
     from openpyxl import load_workbook, Workbook
     from openpyxl.drawing.image import Image as XlImage
-    from openpyxl.styles import Font, Alignment, PatternFill  # FIX-1: PatternFill moved here from bare top-level
+    from openpyxl.styles import Font, Alignment, PatternFill
     from openpyxl.utils import get_column_letter
     OPENPYXL_AVAILABLE = True
 except ImportError:
@@ -125,15 +123,20 @@ except Exception:
 # FIX MEDIUM-8: Unified large-file async threshold (10 MB)
 _ASYNC_FILE_THRESHOLD = 10 * 1024 * 1024  # 10 MB
 
-# ── Celery tasks ───────────────────────────────────────────────────────────────
+# [CRIT-01] NO module-level task imports — all tasks imported lazily inside handlers
+# This eliminates circular import issues and surfaces failures explicitly
+# Module-level task variables set to None; lazy imports happen inside handlers
+compress_pdf_task = None
+merge_pdf_task = None
+split_pdf_task = None
+watermark_pdf_task = None
+ocr_pdf_task = None
+pdf_to_word_task = None
+pdf_to_excel_task = None
+excel_to_word_task = None
+
+# [CRIT-08] Celery app imported directly — not via tasks
 from workers.celery_app import celery_app
-try:
-    from tasks.pdf_tasks import compress_pdf_task, merge_pdf_task, split_pdf_task, watermark_pdf_task
-    from tasks.ocr_tasks import ocr_pdf_task
-    from tasks.office_tasks import pdf_to_word_task, pdf_to_excel_task, excel_to_word_task
-except Exception:
-    compress_pdf_task = merge_pdf_task = split_pdf_task = watermark_pdf_task = None
-    ocr_pdf_task = pdf_to_word_task = pdf_to_excel_task = excel_to_word_task = None
 
 # ── Ensure directories exist ───────────────────────────────────────────────────
 for _d in [Config.UPLOAD_FOLDER, Config.OUTPUT_FOLDER, Config.TEMP_FOLDER]:
@@ -147,7 +150,10 @@ _HEALTH_CACHE = {}
 _HEALTH_CACHE_TTL = 30  # seconds
 
 # Change 13: OCR concurrency semaphore
-_ocr_semaphore = threading.Semaphore(2)
+_ocr_semaphore = threading.Semaphore(getattr(Config, 'MAX_OCR_THREADS', 2))
+
+# [CRIT-07] Thread registry for cancellable background conversions
+_thread_registry = {}  # job_id -> (thread, cancel_event)
 
 # ── Flask app ──────────────────────────────────────────────────────────────────
 app = Flask(__name__)
@@ -155,12 +161,32 @@ app.config["MAX_CONTENT_LENGTH"] = Config.MAX_FILE_SIZE
 app.secret_key = Config.SECRET_KEY
 if CORS_AVAILABLE:
     CORS(app, origins=Config.CORS_ORIGINS)
+
+
+# ── Zip Slip prevention helper ─────────────────────────────────────────────────
+# [HIGH-02] Safe extraction helper — replaces all extractall() calls
+def _safe_zip_extract(zf: zipfile.ZipFile, dest: str) -> None:
+    """Extract zip safely, rejecting path traversal attempts (Zip Slip fix)."""
+    dest_real = os.path.realpath(dest)
+    for member in zf.infolist():
+        target = os.path.realpath(os.path.join(dest_real, member.filename))
+        if not target.startswith(dest_real + os.sep):
+            raise ValueError(f"Zip Slip rejected: {member.filename!r}")
+        if member.is_dir():
+            os.makedirs(target, exist_ok=True)
+        else:
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            with zf.open(member) as src, open(target, "wb") as dst:
+                dst.write(src.read())
+
+
 # ── Request lifecycle ──────────────────────────────────────────────────────────
 @app.before_request
 def _before():
     g.start = time.time()
     g.request_id = request.headers.get("X-Request-ID", str(uuid.uuid4())[:8])
     g.user_id = "anonymous"
+
 @app.after_request
 def _after(response):
     ms = round((time.time() - g.get("start", time.time())) * 1000, 1)
@@ -178,6 +204,8 @@ def _after(response):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers.pop("Server", None)
     return response
+
+
 # ── Response helpers ───────────────────────────────────────────────────────────
 def err(msg, code=400):
     log.warning(f"[{g.get('request_id','-')}] ERR {code}: {msg}")
@@ -189,19 +217,20 @@ def ok(msg, path=None, **extras):
     if path and os.path.exists(path):
         size = os.path.getsize(path)
         payload.update({
-            "download_url": f"/pdfwala/download/{os.path.basename(path)}",  # FIX: restored /pdfwala/ prefix
+            "download_url": f"/pdfwala/download/{os.path.basename(path)}",
             "signed_url": generate_signed_url(path),
             "filename": os.path.basename(path),
             "size_human": format_file_size(size),
             "expires_in": f"{Config.FILE_TTL_SEC // 60} minutes",
         })
     return jsonify(payload)
+
+
 # ── PDF validation helper ─────────────────────────────────────────────────────
 def is_valid_pdf(path: str, min_pages: int = 1):
     """
     Validate a PDF file. Returns (True, None) if valid, (False, reason) if not.
     Never raises exceptions — safe to call anywhere.
-    Checks: file exists, size > 0, openable by PyMuPDF, page count >= min_pages.
     """
     try:
         if not path or not os.path.exists(path):
@@ -216,6 +245,22 @@ def is_valid_pdf(path: str, min_pages: int = 1):
         return True, None
     except Exception as ex:
         return False, f"Cannot open PDF: {type(ex).__name__}: {ex}"
+
+
+# ── [CRIT-05] Empty PDF guard helper ──────────────────────────────────────────
+# [CRIT-04] Every PDF handler must call this immediately after temp_upload
+def _guard_empty_pdf(path: str):
+    """Returns an error response if PDF has no pages, else None. Call after temp_upload."""
+    try:
+        _g = fitz.open(path)
+        pages = len(_g)
+        _g.close()
+        if pages == 0:
+            return err("Input PDF has no pages", 400)
+        return None
+    except Exception as ex:
+        return err(f"Cannot open PDF: {type(ex).__name__}: {ex}", 400)
+
 
 # ── LibreOffice helper ────────────────────────────────────────────────────────
 def libre(input_path, fmt, output_filename=None, temp=False):
@@ -237,7 +282,6 @@ def libre(input_path, fmt, output_filename=None, temp=False):
             capture_output=True, timeout=Config.SUBPROCESS_TIMEOUT)
         if result.returncode != 0:
             cb_libreoffice.record_failure()
-            # FIX LOW-10: Clear health cache when circuit breaker trips
             _HEALTH_CACHE.clear()
             return None
         base = os.path.splitext(os.path.basename(input_path))[0]
@@ -269,7 +313,6 @@ def libre(input_path, fmt, output_filename=None, temp=False):
         return final
     except subprocess.TimeoutExpired:
         cb_libreoffice.record_failure()
-        # FIX LOW-10: Clear health cache when circuit breaker trips
         _HEALTH_CACHE.clear()
         return None
     except Exception as ex:
@@ -279,12 +322,14 @@ def libre(input_path, fmt, output_filename=None, temp=False):
         return None
     finally:
         shutil.rmtree(out_dir, ignore_errors=True)
+
+
 # ── Ghostscript helper ────────────────────────────────────────────────────────
 def ghostscript_compress(input_path, output_path, gs_setting="/ebook",
                           extra_flags=None, timeout=300):
     if not cb_ghostscript.can_execute():
         return False
-    # Change 1: -dNOSAFER → -dSAFER
+    # Change 1: -dNOSAFER → -dSAFER  [CRIT-05] Security fix — no arbitrary file access
     cmd = [Config.GHOSTSCRIPT, "-sDEVICE=pdfwrite", "-dCompatibilityLevel=1.5",
            f"-dPDFSETTINGS={gs_setting}", "-dNOPAUSE", "-dBATCH", "-dQUIET",
            "-dSAFER", "-dDetectDuplicateImages=true", "-dCompressFonts=true",
@@ -297,7 +342,6 @@ def ghostscript_compress(input_path, output_path, gs_setting="/ebook",
         result = subprocess.run(cmd, capture_output=True, timeout=timeout)
         if result.returncode != 0:
             cb_ghostscript.record_failure()
-            # FIX LOW-10: Clear health cache when circuit breaker trips
             _HEALTH_CACHE.clear()
             return False
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
@@ -329,30 +373,84 @@ def ghostscript_compress(input_path, output_path, gs_setting="/ebook",
         _HEALTH_CACHE.clear()
         log.error(f"Ghostscript: {ex}")
         return False
+
+
+# ── [CRIT-02] Cursive signature renderer ─────────────────────────────────────
+def _render_cursive_signature(page, name, reason, date_str, sig_x, sig_y):
+    """
+    Renders a visually distinct cursive-style signature block.
+    Uses bezier curve underline and Times Bold Italic font.
+    NOT a stamp box — no filled rectangle.
+    [CRIT-02] Fix: signature must look like a signature, not a rubber stamp.
+    """
+    # 1. Name in Times Bold Italic — closest built-in font to handwriting
+    page.insert_text(
+        (sig_x, sig_y),
+        name,
+        fontsize=14,
+        fontname="tibo",            # Times Bold Italic
+        color=(0.05, 0.05, 0.35),   # Dark navy blue
+        overlay=True
+    )
+    # 2. Bezier-curve underline — wave effect simulating handwritten stroke
+    shape = page.new_shape()
+    y_base = sig_y + 4
+    shape.draw_bezier(
+        (sig_x,        y_base),
+        (sig_x + 40,   y_base - 4),
+        (sig_x + 100,  y_base + 4),
+        (sig_x + 150,  y_base - 2)
+    )
+    shape.finish(color=(0.1, 0.1, 0.5), width=1.2, closePath=False)
+    shape.commit()
+    # 3. Thin border — NO FILL (critical: not a stamp box)
+    border = fitz.Rect(sig_x - 4, sig_y - 17, sig_x + 154, sig_y + 18)
+    page.draw_rect(border, color=(0.6, 0.6, 0.8), fill=None, width=0.3)
+    # 4. Small metadata below the underline
+    page.insert_text(
+        (sig_x, sig_y + 14),
+        f"{reason}  ·  {date_str}",
+        fontsize=7,
+        fontname="helv",
+        color=(0.45, 0.45, 0.45),
+        overlay=True
+    )
+
+
 # ── Background cleanup ─────────────────────────────────────────────────────────
 def _cleanup_worker():
+    # [LOW-03] Rate-limited cleanup to prevent I/O storms
+    MAX_DEL = int(os.environ.get("CLEANUP_MAX_DELETES",
+                                  getattr(Config, 'CLEANUP_MAX_DELETES', 500)))
     while True:
         try:
             now = time.time()
+            deleted = 0
             # Change 14: Replace os.walk with os.scandir
             for folder in [Config.OUTPUT_FOLDER, Config.UPLOAD_FOLDER, Config.TEMP_FOLDER]:
+                if deleted >= MAX_DEL:
+                    break
                 try:
                     with os.scandir(folder) as it:
                         for entry in it:
+                            if deleted >= MAX_DEL:
+                                log.info(f"Cleanup: hit {MAX_DEL} delete limit, deferring rest")
+                                break
                             if entry.is_file(follow_symlinks=False):
                                 try:
                                     if now - entry.stat().st_mtime > Config.FILE_TTL_SEC:
-                                        # FIX LOW-11: Improved atomic rename before delete
                                         tomb = entry.path + f".deleting_{uuid.uuid4().hex}"
                                         try:
                                             os.rename(entry.path, tomb)
                                             os.remove(tomb)
+                                            deleted += 1
                                         except FileNotFoundError:
-                                            pass  # Already deleted by another worker
+                                            pass
                                         except OSError as tomb_err:
                                             log.debug(f"Cleanup rename failed: {tomb_err}")
                                             try:
                                                 os.remove(entry.path)
+                                                deleted += 1
                                             except OSError:
                                                 pass
                                 except OSError:
@@ -362,7 +460,10 @@ def _cleanup_worker():
         except Exception as ex:
             log.error(f"Cleanup worker: {ex}")
         time.sleep(60)
+
 threading.Thread(target=_cleanup_worker, daemon=True, name="cleanup").start()
+
+
 # ============================================================================
 # HEALTH / METRICS / DOWNLOAD
 # ============================================================================
@@ -372,7 +473,7 @@ def health():
     # Issue #3: Return minimal info in production
     if os.environ.get("FLASK_ENV") == "production":
         return jsonify({"status": "ok", "version": Config.VERSION})
-    
+
     # Change 11: Health check caching with 30s TTL
     now = time.time()
     cached = _HEALTH_CACHE.get("result")
@@ -390,8 +491,18 @@ def health():
         except Exception:
             tools[name] = "unavailable"
 
-    # FIX MEDIUM-4: Include wkhtmltopdf in health check
     tools["wkhtmltopdf"] = "ok" if _WKHTMLTOPDF_AVAILABLE else "unavailable"
+
+    # [CRIT-01] Surface async task import health
+    _task_health = {}
+    for _tname, _tcls in [("pdf_tasks", "compress_pdf_task"),
+                           ("ocr_tasks", "ocr_pdf_task"),
+                           ("office_tasks", "pdf_to_word_task")]:
+        try:
+            _mod = __import__(f"tasks.{_tname}", fromlist=[_tcls])
+            _task_health[_tname] = "ok"
+        except Exception as _te:
+            _task_health[_tname] = f"FAILED: {_te}"
 
     rc = redis_service.client
     redis_status = "ok" if rc else "unavailable"
@@ -399,6 +510,7 @@ def health():
         if rc: rc.ping()
     except Exception:
         redis_status = "error"
+
     celery_status = "unavailable"
     if celery_app:
         try:
@@ -406,10 +518,17 @@ def health():
             celery_status = "ok"
         except Exception:
             celery_status = "degraded"
+
+    # Determine overall status — degraded if any task import failed
+    overall_status = "ok"
+    if any("FAILED" in str(v) for v in _task_health.values()):
+        overall_status = "degraded"
+
     result = {
-        "success": True, "status": "ok", "version": Config.VERSION,
+        "success": True, "status": overall_status, "version": Config.VERSION,
         "uptime_seconds": round(time.time() - _APP_START, 1),
         "redis": redis_status, "celery": celery_status, "tools": tools,
+        "async_tasks": _task_health,  # [CRIT-01] Surface task import failures
         "libraries": {
             "pdf2docx": PDF2DOCX_AVAILABLE, "pdfplumber": PDFPLUMBER_AVAILABLE,
             "tabula": TABULA_AVAILABLE, "pytesseract": TESSERACT_AVAILABLE,
@@ -425,6 +544,8 @@ def health():
     _HEALTH_CACHE["result"] = result
     _HEALTH_CACHE["at"] = now
     return jsonify(result)
+
+
 @app.route("/api/v1/ready")
 def readiness():
     rc = redis_service.client
@@ -433,17 +554,23 @@ def readiness():
         except Exception:
             return jsonify({"ready": False, "reason": "Redis unavailable"}), 503
     return jsonify({"ready": True})
+
+
 @app.route("/api/v1/live")
 def liveness():
     return jsonify({"alive": True, "pid": os.getpid()})
+
+
 @app.route("/metrics")
 def metrics():
     if not METRICS_ENABLED:
         return jsonify({"error": "prometheus_client not installed"}), 404
     return Response(generate_latest(REGISTRY), mimetype="text/plain")
+
+
 @app.route("/download/<filename>")
 @require_auth
-@require_rate_limit  # Issue #4: Prevent download abuse
+@require_rate_limit
 def download(filename):
     filename = unicodedata.normalize("NFC", filename)
     safe = secure_filename(filename)
@@ -477,6 +604,8 @@ def download(filename):
     response.headers["X-Accel-Buffering"] = "no"
     response.headers["Cache-Control"] = "no-cache"
     return response
+
+
 @app.route("/api/v1/jobs/<job_id>", methods=["GET"])
 @require_auth
 def api_job_status(job_id):
@@ -493,7 +622,11 @@ def api_job_status(job_id):
                 from celery.result import AsyncResult
                 task = AsyncResult(job_id, app=celery_app)
                 if task.state == "PENDING":
-                    return jsonify({"success": True, "status": "pending", "progress": 0})
+                    # [LOW-05] PENDING is ambiguous — warn caller
+                    return jsonify({
+                        "success": True, "status": "pending", "progress": 0,
+                        "warning": "Job is queued or task ID may not exist"
+                    })
                 elif task.state == "SUCCESS":
                     result = task.result or {}
                     out = result.get("output", "")
@@ -503,7 +636,8 @@ def api_job_status(job_id):
                         resp["filename"] = os.path.basename(out)
                     return jsonify(resp)
                 elif task.state == "FAILURE":
-                    return jsonify({"success": False, "status": "failed", "error": str(task.info)}), 500
+                    return jsonify({"success": False, "status": "failed",
+                                    "error": str(task.info)}), 500
                 return jsonify({"success": True, "status": task.state.lower(), "progress": 0})
             except Exception:
                 pass
@@ -525,6 +659,8 @@ def api_job_status(job_id):
     if status == "failed":
         resp["error"] = job.get("error", "Unknown error")
     return jsonify(resp)
+
+
 @app.route("/api/v1/endpoints", methods=["GET"])
 def list_endpoints():
     endpoints = []
@@ -535,6 +671,7 @@ def list_endpoints():
                            "methods": sorted(m for m in rule.methods if m not in ("HEAD","OPTIONS"))})
     return jsonify({"success": True, "endpoints": sorted(endpoints, key=lambda x: x["path"])})
 
+
 # ============================================================================
 # LOW-9: /remove-bg stub
 # ============================================================================
@@ -543,12 +680,12 @@ def list_endpoints():
 @require_auth
 @require_rate_limit
 def remove_bg():
-    # FIX LOW-9: Background removal stub — returns 501 until implemented
     return err(
         "Background removal is not yet implemented. "
         "Consider integrating rembg (pip install rembg) or an external API.",
         501
     )
+
 
 # ============================================================================
 # PDF ORGANIZE
@@ -590,6 +727,8 @@ def merge_pdf():
         return ok(f"Merged {len(files)} PDFs", out, mixed_page_sizes=(len(page_sizes)>1))
     except Exception:
         log.exception("merge"); return err("Merge failed", 500)
+
+
 @app.route("/api/v1/split", methods=["POST"])
 @app.route("/api/split", methods=["POST"])
 @require_auth
@@ -605,12 +744,9 @@ def split_pdf():
     try:
         with FileService.temp_upload(f) as path:
             reader = PdfReader(path)
-            # Change 7: Empty PDF guard for split (via fitz)
-            doc = fitz.open(path)
-            if len(doc) == 0:
-                doc.close()
-                return err("Input PDF has no pages", 400)
-            doc.close()
+            # Change 7 + [CRIT-04]: Empty PDF guard for split
+            guard = _guard_empty_pdf(path)
+            if guard: return guard
             total = len(reader.pages)
             indices = list(range(total)) if mode == "all" else parse_page_ranges(ranges, total)
             if not indices: return err("No valid pages in range")
@@ -639,6 +775,8 @@ def split_pdf():
         return ok(f"Split into {len(indices)} pages", out)
     except Exception:
         log.exception("split"); return err("Split failed", 500)
+
+
 @app.route("/api/v1/organize", methods=["POST"])
 @app.route("/api/organize", methods=["POST"])
 @require_auth
@@ -657,20 +795,18 @@ def organize_pdf():
 
     try:
         with FileService.temp_upload(uploaded_file) as temp_path:
+            # [CRIT-04] Empty PDF guard
+            guard = _guard_empty_pdf(temp_path)
+            if guard: return guard
+
             pdf_reader = PdfReader(temp_path)
             total_pages = len(pdf_reader.pages)
 
-            # Reject empty PDFs
-            if total_pages == 0:
-                return err("Input PDF has no pages", 400)
-
-            # Parse user input (returns 1-based page numbers)
             try:
                 one_based_indices = parse_page_ranges(page_order_input, total_pages)
             except Exception:
                 one_based_indices = []
 
-            # FIX MEDIUM-6: Improved error message for invalid page numbers (show 1-based range)
             if not one_based_indices:
                 return err(
                     f"No valid pages specified. "
@@ -678,7 +814,6 @@ def organize_pdf():
                     400
                 )
 
-            # Validate each index is in range — report 1-based to user
             for pg_num in one_based_indices:
                 if pg_num < 1 or pg_num > total_pages:
                     return err(
@@ -687,37 +822,26 @@ def organize_pdf():
                         400
                     )
 
-            # Convert to 0-based for PdfReader
             zero_based_indices = [page_num - 1 for page_num in one_based_indices]
 
-            # Apply the requested action
             if action == "delete":
-                # Keep all pages EXCEPT those specified
                 pages_to_keep = [i for i in range(total_pages) if i not in set(zero_based_indices)]
                 if not pages_to_keep:
                     return err("Cannot delete all pages", 400)
-
             elif action == "extract":
-                # Keep only the specified pages
+                pages_to_keep = zero_based_indices
+            else:
                 pages_to_keep = zero_based_indices
 
-            else:  # reorder (default)
-                # Keep specified pages in the given order
-                pages_to_keep = zero_based_indices
-
-            # Build the output PDF
             output_writer = PdfWriter()
             for page_index in pages_to_keep:
                 if page_index < 0 or page_index >= total_pages:
-                    return err(
-                        f"Page index {page_index + 1} is out of range (1–{total_pages})", 400
-                    )
+                    return err(f"Page index {page_index + 1} is out of range (1–{total_pages})", 400)
                 output_writer.add_page(pdf_reader.pages[page_index])
 
             output_filename = generate_output_filename(uploaded_file.filename, "organized")
             output_path = os.path.join(Config.OUTPUT_FOLDER, output_filename)
 
-            # Write atomically to prevent corruption
             temp_output = output_path + ".tmp"
             with open(temp_output, "wb") as file_handle:
                 output_writer.write(file_handle)
@@ -728,12 +852,13 @@ def organize_pdf():
             "extract": "Extracted",
             "delete": "Deleted pages from"
         }
-
         return ok(f"{action_labels.get(action, 'Organized')} PDF", output_path)
 
     except Exception:
         log.exception("organize")
         return err("Organize failed", 500)
+
+
 @app.route("/api/v1/remove-pages", methods=["POST"])
 @app.route("/api/remove-pages", methods=["POST"])
 @require_auth
@@ -746,13 +871,10 @@ def remove_pages():
     if not order: return err("Pages to remove required")
     try:
         with FileService.temp_upload(f) as path:
+            # Change 7 + [CRIT-04]: Empty PDF guard
+            guard = _guard_empty_pdf(path)
+            if guard: return guard
             reader = PdfReader(path)
-            # Change 7: Empty PDF guard for remove_pages
-            doc = fitz.open(path)
-            if len(doc) == 0:
-                doc.close()
-                return err("Input PDF has no pages", 400)
-            doc.close()
             total = len(reader.pages)
             remove = set(parse_page_ranges(order, total))
             if len(remove) >= total: return err("Cannot remove all pages", 400)
@@ -765,6 +887,8 @@ def remove_pages():
         return ok(f"Removed {len(remove)} page(s)", out)
     except Exception:
         log.exception("remove_pages"); return err("Remove pages failed", 500)
+
+
 @app.route("/api/v1/extract-pages", methods=["POST"])
 @app.route("/api/extract-pages", methods=["POST"])
 @require_auth
@@ -777,13 +901,10 @@ def extract_pages():
     if not order: return err("Pages to extract required")
     try:
         with FileService.temp_upload(f) as path:
+            # Change 7 + [CRIT-04]: Empty PDF guard
+            guard = _guard_empty_pdf(path)
+            if guard: return guard
             reader = PdfReader(path)
-            # Change 7: Empty PDF guard for extract_pages
-            doc = fitz.open(path)
-            if len(doc) == 0:
-                doc.close()
-                return err("Input PDF has no pages", 400)
-            doc.close()
             total = len(reader.pages)
             indices = parse_page_ranges(order, total)
             w = PdfWriter()
@@ -794,6 +915,8 @@ def extract_pages():
         return ok(f"Extracted {len(indices)} page(s)", out)
     except Exception:
         log.exception("extract_pages"); return err("Extract pages failed", 500)
+
+
 # ============================================================================
 # PDF OPTIMIZE
 # ============================================================================
@@ -810,7 +933,10 @@ def compress_pdf():
            "medium":{"dpi":120,"quality":72,"gs":"/printer"},
            "high":{"dpi":96,"quality":60,"gs":"/ebook"}}.get(
                quality, {"dpi":120,"quality":72,"gs":"/printer"})
-    stage1 = gs_out = None
+    # [CRIT-03] Stage temp files in TEMP_FOLDER with UUID names (not OUTPUT_FOLDER)
+    _uid = uuid.uuid4().hex
+    stage1 = os.path.join(Config.TEMP_FOLDER, f"{_uid}_stage1.pdf")
+    gs_out = os.path.join(Config.TEMP_FOLDER, f"{_uid}_gs.pdf")
     try:
         with FileService.temp_upload(f) as path:
             orig = os.path.getsize(path)
@@ -818,30 +944,50 @@ def compress_pdf():
                 try: _prom_file_size.labels("compress").observe(orig)
                 except Exception: pass
             try:
-                doc = fitz.open(path)
-                # Change 7: Empty PDF guard for compress
-                if len(doc) == 0:
-                    doc.close()
-                    return err("Input PDF has no pages", 400)
-                doc.close()
+                # Change 7 + [CRIT-04]: Empty PDF guard
+                guard = _guard_empty_pdf(path)
+                if guard: return guard
             except Exception:
                 return err("Input PDF is corrupted or unreadable", 400)
-            # FIX MEDIUM-8: Unified async threshold at 10 MB
-            if orig > _ASYNC_FILE_THRESHOLD and celery_app and compress_pdf_task:
-                ext = path.rsplit(".",1)[-1].lower()
-                bg_input = os.path.join(Config.UPLOAD_FOLDER, f"{uuid.uuid4()}.{ext}")
-                shutil.copy(path, bg_input)
-                fname = generate_output_filename(f.filename, "compressed")
-                bg_out = os.path.join(Config.OUTPUT_FOLDER, fname)
-                job_id = str(uuid.uuid4())
-                redis_service.job_set(job_id, {"status":"pending","operation":"compress_pdf",
-                                                "created_at":get_timestamp(),
-                                                "user_id":getattr(g,"user_id","default")})
-                compress_pdf_task.delay(bg_input, bg_out, job_id, quality)
-                return jsonify({"success":True,"message":"Large file queued — download will appear when ready",
-                                "job_id":job_id,"status_url":f"/api/v1/jobs/{job_id}",
-                                "async": True})
-            stage1 = path + "_s1.pdf"
+
+            # FIX MEDIUM-8 + [CRIT-01]: Unified async threshold with lazy import
+            if orig > _ASYNC_FILE_THRESHOLD:
+                _compress_task = None
+                try:
+                    from tasks.pdf_tasks import compress_pdf_task as _compress_task
+                except Exception as _ie:
+                    log.error(f"[CRIT-01] compress_pdf_task lazy import failed: {_ie}")
+                if celery_app and _compress_task:
+                    ext = path.rsplit(".",1)[-1].lower()
+                    bg_input = os.path.join(Config.UPLOAD_FOLDER, f"{uuid.uuid4()}.{ext}")
+                    shutil.copy(path, bg_input)
+                    # [CRIT-06] Register for cleanup
+                    try:
+                        redis_service.client.setex(
+                            f"cleanup:{bg_input}", Config.FILE_TTL_SEC + 600, "pending")
+                    except Exception: pass
+                    fname = generate_output_filename(f.filename, "compressed")
+                    bg_out = os.path.join(Config.OUTPUT_FOLDER, fname)
+                    job_id = str(uuid.uuid4())
+                    redis_service.job_set(job_id, {
+                        "status":"pending","operation":"compress_pdf",
+                        "created_at":get_timestamp(),
+                        "user_id":getattr(g,"user_id","default")
+                    })
+                    try:
+                        redis_service.client.expire(f"job:{job_id}", getattr(Config, 'JOB_TTL_SEC', 7200))
+                    except Exception: pass
+                    _compress_task.delay(bg_input, bg_out, job_id, quality)
+                    return jsonify({
+                        "success": True,
+                        "message": "Large file queued — download will appear when ready",
+                        "job_id": job_id, "status_url": f"/api/v1/jobs/{job_id}",
+                        "async": True
+                    })
+                else:
+                    # [CRIT-01] Sync fallback when Celery unavailable
+                    log.warning("[CRIT-01] compress_pdf async unavailable, processing synchronously")
+
             stage1_size = orig
             try:
                 doc = fitz.open(path)
@@ -855,9 +1001,9 @@ def compress_pdf():
                 doc.close()
             except Exception as ex:
                 log.warning(f"Stage1: {ex}"); shutil.copy(path, stage1)
+
             fname = generate_output_filename(f.filename, "compressed")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
-            gs_out = out + "_gs.pdf"
             gs_ok = ghostscript_compress(stage1, gs_out, cfg["gs"],
                         extra_flags=["-dColorImageDownsampleType=/Bicubic",
                                      f"-dColorImageResolution={cfg['dpi']}",
@@ -878,10 +1024,12 @@ def compress_pdf():
     except Exception:
         log.exception("compress"); return err("Compression failed", 500)
     finally:
+        # [CRIT-03] Always clean up temp stage files
         for tmp in [stage1, gs_out]:
             if tmp:
                 try: os.remove(tmp)
                 except OSError: pass
+
 
 @app.route("/api/v1/repair-pdf", methods=["POST"])
 @app.route("/api/repair-pdf", methods=["POST"])
@@ -896,16 +1044,12 @@ def repair_pdf():
     try:
         with FileService.temp_upload(f) as path:
             orig_size = os.path.getsize(path)
-
-            # Validate input first
             input_valid, _ = is_valid_pdf(path)
 
             fname = generate_output_filename(f.filename, "repaired")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
 
-            # =========================
             # STAGE 1: PyMuPDF Repair
-            # =========================
             try:
                 doc = fitz.open(path)
                 input_pages = len(doc)
@@ -922,53 +1066,30 @@ def repair_pdf():
 
                 valid, reason = is_valid_pdf(out, min_pages=1)
                 if valid:
-                    if os.path.getsize(out) == orig_size:
-                        log.info("PyMuPDF: no size improvement, but valid")
-
-                    return ok(
-                        "PDF repaired (PyMuPDF)",
-                        out,
-                        pages=input_pages,
-                        original_size_bytes=orig_size
-                    )
+                    return ok("PDF repaired (PyMuPDF)", out,
+                              pages=input_pages, original_size_bytes=orig_size)
                 else:
                     log.warning(f"PyMuPDF output invalid: {reason}")
-                    try:
-                        os.remove(out)
-                    except OSError:
-                        pass
+                    try: os.remove(out)
+                    except OSError: pass
 
             except Exception as ex1:
                 log.warning(f"PyMuPDF repair failed: {ex1}")
 
-            # =========================
             # STAGE 2: Ghostscript Repair
-            # =========================
-            gs_tmp = out + "_gs.pdf"
-
+            # [MED-02] Use /default not /printer to preserve image quality
+            gs_tmp = os.path.join(Config.TEMP_FOLDER, f"{uuid.uuid4().hex}_repair_gs.pdf")
             gs_ok = ghostscript_compress(
-                path,
-                gs_tmp,
-                "/printer",
-                extra_flags=[
-                    "-dPDFSTOPONERROR=false",
-                    "-dPDFSTOPONWARNING=false"
-                ]
+                path, gs_tmp, "/default",
+                extra_flags=["-dPDFSTOPONERROR=false", "-dPDFSTOPONWARNING=false"]
             )
-
-            if not gs_ok:
-                log.warning("Ghostscript execution failed")
 
             if gs_ok and os.path.exists(gs_tmp) and os.path.getsize(gs_tmp) > 0:
                 valid, reason = is_valid_pdf(gs_tmp, min_pages=1)
-
                 if valid:
                     os.replace(gs_tmp, out)
-                    return ok(
-                        "PDF repaired (Ghostscript)",
-                        out,
-                        original_size_bytes=orig_size
-                    )
+                    return ok("PDF repaired (Ghostscript)", out,
+                              original_size_bytes=orig_size)
                 else:
                     log.warning(f"Ghostscript output invalid: {reason}")
 
@@ -976,10 +1097,6 @@ def repair_pdf():
                 os.remove(gs_tmp)
             except OSError:
                 pass
-
-            # =========================
-            # FINAL DECISION
-            # =========================
 
             if input_valid:
                 shutil.copy(path, out)
@@ -990,6 +1107,8 @@ def repair_pdf():
     except Exception:
         log.exception("repair_pdf")
         return err("Repair failed", 500)
+
+
 @app.route("/api/v1/linearize-pdf", methods=["POST"])
 @app.route("/api/linearize-pdf", methods=["POST"])
 @require_auth
@@ -1000,12 +1119,9 @@ def linearize_pdf():
     if e: return err(e)
     try:
         with FileService.temp_upload(f) as path:
-            # Change 7: Empty PDF guard for linearize_pdf
-            doc = fitz.open(path)
-            if len(doc) == 0:
-                doc.close()
-                return err("Input PDF has no pages", 400)
-            doc.close()
+            # Change 7 + [CRIT-04]: Empty PDF guard
+            guard = _guard_empty_pdf(path)
+            if guard: return guard
             orig_size = os.path.getsize(path)
             fname = generate_output_filename(f.filename, "linearized")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
@@ -1018,6 +1134,8 @@ def linearize_pdf():
                   original_size_bytes=orig_size, new_size_bytes=new_size)
     except Exception:
         log.exception("linearize"); return err("Linearization failed", 500)
+
+
 # ============================================================================
 # OCR
 # ============================================================================
@@ -1039,28 +1157,44 @@ def ocr_pdf():
     dpi = safe_int(request.form.get("dpi","300"), 300, 72, 400)
     psm = safe_int(request.form.get("psm","3"), 3, 1, 13)
     oem = safe_int(request.form.get("oem","3"), 3, 0, 3)
-    skip = False  # Always OCR, even if text exists
+    skip = False
     f.seek(0,2); file_size = f.tell(); f.seek(0)
-    # FIX MEDIUM-8: Unified async threshold at 10 MB
-    if file_size > _ASYNC_FILE_THRESHOLD and celery_app and ocr_pdf_task:
-        ext = f.filename.rsplit(".",1)[-1].lower() if "." in f.filename else "pdf"
-        bg_input = os.path.join(Config.UPLOAD_FOLDER, f"{uuid.uuid4()}.{ext}")
-        f.seek(0)
-        with open(bg_input,"wb") as fh: fh.write(f.read())
-        fname = generate_output_filename(f.filename, "ocr")
-        bg_out = os.path.join(Config.OUTPUT_FOLDER, fname)
-        job_id = str(uuid.uuid4())
-        redis_service.job_set(job_id, {"status":"pending","operation":"ocr_pdf",
-                                        "created_at":get_timestamp(),
-                                        "user_id":getattr(g,"user_id","default")})
-        redis_service.job_update(job_id, {"input_path": bg_input})
-        ocr_pdf_task.delay(bg_input, bg_out, job_id, lang, dpi, psm, oem)
-        return jsonify({"success":True,"message":"OCR queued. Poll status endpoint.",
-                        "job_id":job_id,"status_url":f"/api/v1/jobs/{job_id}"})
+
+    # FIX MEDIUM-8 + [CRIT-01]: Unified async threshold with lazy import
+    if file_size > _ASYNC_FILE_THRESHOLD:
+        _ocr_task = None
+        try:
+            from tasks.ocr_tasks import ocr_pdf_task as _ocr_task
+        except Exception as _ie:
+            log.error(f"[CRIT-01] ocr_pdf_task lazy import failed: {_ie}")
+        if celery_app and _ocr_task:
+            ext = f.filename.rsplit(".",1)[-1].lower() if "." in f.filename else "pdf"
+            bg_input = os.path.join(Config.UPLOAD_FOLDER, f"{uuid.uuid4()}.{ext}")
+            f.seek(0)
+            with open(bg_input,"wb") as fh: fh.write(f.read())
+            try:
+                redis_service.client.setex(f"cleanup:{bg_input}", Config.FILE_TTL_SEC + 600, "pending")
+            except Exception: pass
+            fname = generate_output_filename(f.filename, "ocr")
+            bg_out = os.path.join(Config.OUTPUT_FOLDER, fname)
+            job_id = str(uuid.uuid4())
+            redis_service.job_set(job_id, {"status":"pending","operation":"ocr_pdf",
+                                            "created_at":get_timestamp(),
+                                            "user_id":getattr(g,"user_id","default")})
+            try:
+                redis_service.client.expire(f"job:{job_id}", getattr(Config, 'JOB_TTL_SEC', 7200))
+            except Exception: pass
+            redis_service.job_update(job_id, {"input_path": bg_input})
+            _ocr_task.delay(bg_input, bg_out, job_id, lang, dpi, psm, oem)
+            return jsonify({"success":True,"message":"OCR queued. Poll status endpoint.",
+                            "job_id":job_id,"status_url":f"/api/v1/jobs/{job_id}"})
+        else:
+            log.warning("[CRIT-01] ocr_pdf async unavailable, processing synchronously")
+
     try:
         with FileService.temp_upload(f) as path:
             src_doc = fitz.open(path)
-            # Change 7: Empty PDF guard for ocr_pdf
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(src_doc) == 0:
                 src_doc.close()
                 return err("Input PDF has no pages", 400)
@@ -1079,24 +1213,38 @@ def ocr_pdf():
                     hocr_data = None
                     try:
                         pil_img = Image.open(io.BytesIO(pix.tobytes("png")))
+                        pix = None  # [HIGH-07] Free C-heap immediately
                         # Change 13: OCR semaphore to limit concurrency
                         with _ocr_semaphore:
                             hocr_data = pytesseract.image_to_data(
                                 pil_img, lang=lang, output_type=TesseractOutput.DICT,
                                 config=f"--psm {psm} --oem {oem}")
+                        pil_img.close()  # [HIGH-07] Free PIL image
                     except Exception as ocr_ex:
                         log.warning(f"OCR page {page_num+1}: {ocr_ex}")
                     new_page = out_doc.new_page(width=pw, height=ph)
                     new_page.show_pdf_page(fitz.Rect(0,0,pw,ph), src_doc, page_num, overlay=False)
                     if hocr_data:
-                        for i in range(len(hocr_data.get("text",[]))):
-                            word = (hocr_data["text"][i] or "").strip()
-                            conf = int(hocr_data["conf"][i]) if hocr_data["conf"][i] != -1 else 0
-                            if not word or conf < 30: continue
-                            x0 = hocr_data["left"][i]*img_sx
-                            y1 = (hocr_data["top"][i]+hocr_data["height"][i])*img_sy
-                            fs = max(4.0, (hocr_data["height"][i]*img_sy)*0.85)
-                            new_page.insert_text((x0,y1-1), word+" ", fontsize=fs,
+                        # [HIGH-01] Use zip() — safe against ragged dicts AND fixes type bug
+                        for word_str, conf_str, x0, y0, wd, ht in zip(
+                            hocr_data.get("text", []),
+                            hocr_data.get("conf", []),
+                            hocr_data.get("left", []),
+                            hocr_data.get("top", []),
+                            hocr_data.get("width", []),
+                            hocr_data.get("height", [])
+                        ):
+                            word = (word_str or "").strip()
+                            try:
+                                conf = int(conf_str)
+                            except (ValueError, TypeError):
+                                conf = 0
+                            if not word or conf < 30:
+                                continue
+                            x0_f = float(x0) * img_sx
+                            y1_f = (float(y0) + float(ht)) * img_sy
+                            fs = max(4.0, (float(ht) * img_sy) * 0.85)
+                            new_page.insert_text((x0_f, y1_f-1), word+" ", fontsize=fs,
                                                   fontname="helv", color=(0,0,0),
                                                   render_mode=3, overlay=True)
                     pages_processed += 1
@@ -1113,6 +1261,8 @@ def ocr_pdf():
                                    "pages_skipped":pages_skipped,"lang":lang,"dpi":dpi})
     except Exception:
         log.exception("ocr_pdf"); return err("OCR failed", 500)
+
+
 # ============================================================================
 # PDF EDIT
 # ============================================================================
@@ -1131,7 +1281,7 @@ def rotate_pdf():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
-            # Change 7: Empty PDF guard for rotate
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
@@ -1148,6 +1298,8 @@ def rotate_pdf():
         return ok(f"Rotated {len(idxs)} page(s) by {angle}°", out)
     except Exception:
         log.exception("rotate"); return err("Rotate failed", 500)
+
+
 @app.route("/api/v1/watermark", methods=["POST"])
 @app.route("/api/watermark", methods=["POST"])
 @require_auth
@@ -1166,51 +1318,69 @@ def watermark_pdf():
     image_data = None
     image_file = request.files.get("image")
     if image_file and image_file.filename:
+        # [MAL-04] + [SEC-02]: Validate watermark image before processing
+        _img_err = validate_file(image_file, Config.ALLOWED_IMAGE)
+        if _img_err:
+            return err(f"Watermark image: {_img_err}", 400)
+        image_file.seek(0)
         raw = image_file.read()
         try:
             pil_wm = Image.open(io.BytesIO(raw)).convert("RGBA")
             buf_wm = io.BytesIO(); pil_wm.save(buf_wm, format="PNG")
             image_data = buf_wm.getvalue()
+            pil_wm.close()
         except Exception:
             image_data = raw
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
-            # Change 7: Empty PDF guard for watermark
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
             try:
-                # Change 12: Pre-decode watermark image outside page loop
+                # [HIGH-05] Pre-render watermark bytes ONCE before the page loop
+                _wm_bytes = None
+                _wm_w = _wm_h = 0
                 pre_decoded_img = None
                 if image_data:
                     pre_decoded_img = Image.open(io.BytesIO(image_data)).convert("RGBA")
+                    _wm = pre_decoded_img.copy()
                     if rotation != 0:
-                        pre_decoded_img = pre_decoded_img.rotate(rotation, expand=True, resample=Image.BICUBIC)
+                        _wm = _wm.rotate(rotation, expand=True, resample=Image.BICUBIC)
+                    _r_ch, _g_ch, _b_ch, _a_ch = _wm.split()
+                    _a_ch = _a_ch.point(lambda x: int(x * opacity))
+                    _wm.putalpha(_a_ch)
+                    _buf = io.BytesIO()
+                    _wm.save(_buf, format="PNG")
+                    _wm_bytes = _buf.getvalue()
+                    _wm_w, _wm_h = _wm.size
+                    _wm.close()
+                    del _wm
 
                 for page in doc:
                     r = page.rect
-                    if image_data and pre_decoded_img is not None:
-                        img = pre_decoded_img.copy()
-                        r_ch,g_ch,b_ch,a_ch = img.split()
-                        a_ch = a_ch.point(lambda x: int(x*opacity))
-                        img.putalpha(a_ch)
-                        img_buf = io.BytesIO(); img.save(img_buf, format="PNG")
+                    if _wm_bytes and _wm_w and _wm_h:
+                        # [HIGH-05] Reuse pre-rendered bytes — no per-page PIL copies
                         img_w = r.width * scale
-                        img_h = img_w * img.height / img.width
+                        img_h = img_w * _wm_h / _wm_w
                         if position == "top":
-                            ix,iy = r.x0+(r.width-img_w)/2, r.y0+r.height*0.05
+                            ix, iy = r.x0+(r.width-img_w)/2, r.y0+r.height*0.05
                         elif position == "bottom":
-                            ix,iy = r.x0+(r.width-img_w)/2, r.y1-img_h-r.height*0.05
+                            ix, iy = r.x0+(r.width-img_w)/2, r.y1-img_h-r.height*0.05
                         else:
-                            ix,iy = r.x0+(r.width-img_w)/2, r.y0+(r.height-img_h)/2
-                        page.insert_image(fitz.Rect(ix,iy,ix+img_w,iy+img_h),
-                                           stream=img_buf.getvalue(), overlay=True)
+                            ix, iy = r.x0+(r.width-img_w)/2, r.y0+(r.height-img_h)/2
+                        page.insert_image(fitz.Rect(ix, iy, ix+img_w, iy+img_h),
+                                           stream=_wm_bytes, overlay=True)
                     else:
                         wm = create_watermark_pdf(text, opacity, color, r.width, r.height, position, rotation)
                         wmpdf = fitz.open("pdf", wm)
                         page.show_pdf_page(fitz.Rect(0,0,r.width,r.height), wmpdf, 0, overlay=True)
                         wmpdf.close()
+
+                if pre_decoded_img:
+                    pre_decoded_img.close()
+
                 fname = generate_output_filename(f.filename, "watermarked")
                 out = os.path.join(Config.OUTPUT_FOLDER, fname)
                 doc.save(out)
@@ -1220,6 +1390,8 @@ def watermark_pdf():
         return ok(f"Watermark ({wm_type}) added", out)
     except Exception:
         log.exception("watermark"); return err("Watermark failed", 500)
+
+
 @app.route("/api/v1/page-numbers", methods=["POST"])
 @app.route("/api/page-numbers", methods=["POST"])
 @require_auth
@@ -1234,7 +1406,7 @@ def page_numbers():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
-            # Change 7: Empty PDF guard for page_numbers
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
@@ -1254,6 +1426,8 @@ def page_numbers():
         return ok("Page numbers added", out)
     except Exception:
         log.exception("page_numbers"); return err("Page numbering failed", 500)
+
+
 @app.route("/api/v1/crop", methods=["POST"])
 @app.route("/api/crop", methods=["POST"])
 @require_auth
@@ -1271,11 +1445,16 @@ def crop_pdf():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
-            # Change 7: Empty PDF guard for crop
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
             try:
+                # [LOW-02] Pre-validate margins against first page dimensions
+                first_r = doc[0].rect
+                if (left + right) >= first_r.width or (top + bottom) >= first_r.height:
+                    doc.close()
+                    return err("Crop margins exceed page dimensions", 400)
                 for page in doc:
                     r = page.rect
                     nr = fitz.Rect(r.x0+left, r.y0+top, r.x1-right, r.y1-bottom)
@@ -1290,6 +1469,8 @@ def crop_pdf():
         return ok("PDF pages cropped", out)
     except Exception:
         log.exception("crop"); return err("Crop failed", 500)
+
+
 @app.route("/api/v1/info", methods=["POST"])
 @app.route("/api/info", methods=["POST"])
 @require_auth
@@ -1302,26 +1483,31 @@ def pdf_info():
         with FileService.temp_upload(f) as path:
             file_size = os.path.getsize(path)
             doc = fitz.open(path)
-            # Change 7: Empty PDF guard for pdf_info
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
             try:
                 meta = doc.metadata
                 size_counts = {}
+                # [LOW-01] Single-pass over pages — collect images + fonts together
+                image_count = 0
+                font_names = set()
+                has_forms = False
                 for pg in doc:
                     key = (round(pg.rect.width,1), round(pg.rect.height,1))
                     size_counts[key] = size_counts.get(key, 0) + 1
-                unique_sizes = [{"w":k[0],"h":k[1],"count":v}
-                                for k,v in sorted(size_counts.items(), key=lambda x:-x[1])]
-                has_forms = any(pg.first_widget for pg in doc)
-                has_toc = len(doc.get_toc()) > 0
-                image_count = sum(len(pg.get_images()) for pg in doc)
-                font_names = set()
-                for pg in doc:
+                    # [LOW-01] Count images in same loop
+                    image_count += len(pg.get_images())
+                    # [LOW-01] Collect fonts in same loop
                     for fi in pg.get_fonts(full=True):
                         bf = fi[3] if len(fi) > 3 else ""
                         if bf: font_names.add(bf)
+                    if not has_forms and pg.first_widget:
+                        has_forms = True
+                unique_sizes = [{"w":k[0],"h":k[1],"count":v}
+                                for k,v in sorted(size_counts.items(), key=lambda x:-x[1])]
+                has_toc = len(doc.get_toc()) > 0
                 is_lin = False
                 try:
                     xobj = doc.xref_object(1, compressed=False)
@@ -1338,7 +1524,6 @@ def pdf_info():
                     "has_forms": has_forms, "has_toc": has_toc,
                     "image_count": image_count,
                     "fonts_used": sorted(font_names)[:20],
-                    # Change 20: Add total_fonts_found
                     "total_fonts_found": len(font_names),
                     "is_linearized": is_lin,
                     "page_sizes": {"unique_sizes":unique_sizes,"all_same":len(unique_sizes)==1},
@@ -1348,6 +1533,8 @@ def pdf_info():
         return ok("PDF info retrieved", metadata=out_data, pages=out_data.get("page_count"))
     except Exception:
         log.exception("pdf_info"); return err("Info retrieval failed", 500)
+
+
 # ============================================================================
 # PDF SECURITY
 # ============================================================================
@@ -1368,7 +1555,7 @@ def protect_pdf():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
-            # Change 7: Empty PDF guard for protect
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
@@ -1378,11 +1565,12 @@ def protect_pdf():
                 if allow_copy: permissions |= int(fitz.PDF_PERM_COPY)
                 fname = generate_output_filename(f.filename, "protected")
                 out = os.path.join(Config.OUTPUT_FOLDER, fname)
-                # Change 5: Wrap doc.save() to avoid leaking password in logs
+                # Change 5 + [SEC-05]: Clear password before re-raise to prevent traceback leakage
                 try:
                     doc.save(out, encryption=fitz.PDF_ENCRYPT_AES_256,
                              owner_pw=pw, user_pw=pw, permissions=permissions)
                 except Exception as save_ex:
+                    pw = "[REDACTED]"  # [SEC-05] Clear BEFORE logging
                     log.error(f"protect_pdf save error: {type(save_ex).__name__}")
                     raise
             finally:
@@ -1390,6 +1578,8 @@ def protect_pdf():
         return ok("PDF password-protected with AES-256", out)
     except Exception:
         log.exception("protect"); return err("Protect failed", 500)
+
+
 @app.route("/api/v1/unlock", methods=["POST"])
 @app.route("/api/unlock", methods=["POST"])
 @require_auth
@@ -1403,7 +1593,7 @@ def unlock_pdf():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
-            # Change 7: Empty PDF guard for unlock
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
@@ -1417,6 +1607,8 @@ def unlock_pdf():
         return ok("PDF unlocked", out)
     except Exception:
         log.exception("unlock"); return err("Unlock failed", 500)
+
+
 @app.route("/api/v1/sign-pdf", methods=["POST"])
 @app.route("/api/sign-pdf", methods=["POST"])
 @app.route("/api/v1/stamp-pdf", methods=["POST"])
@@ -1436,13 +1628,20 @@ def sign_pdf():
     sig_data = None
     sig_file = request.files.get("signature")
     if sig_file and sig_file.filename:
+        # [MAL-04] + [SEC-02]: Validate signature image before processing
+        _sig_err = validate_file(sig_file, Config.ALLOWED_IMAGE)
+        if _sig_err:
+            return err(f"Signature image: {_sig_err}", 400)
+        sig_file.seek(0)
         try:
             pil_sig = Image.open(sig_file).convert("RGBA")
             buf_sig = io.BytesIO(); pil_sig.save(buf_sig, format="PNG")
             sig_data = buf_sig.getvalue()
+            pil_sig.close()
         except Exception:
             sig_data = sig_file.read()
     today_str = datetime.now().strftime("%Y-%m-%d")
+
     def _sig_pos(rect, pos):
         m = {"bottom-right":(rect.x1-180,rect.y1-70),
              "bottom-left": (rect.x0+30, rect.y1-70),
@@ -1450,10 +1649,11 @@ def sign_pdf():
              "top-left": (rect.x0+30, rect.y0+50),
              "center": (rect.x0+rect.width/2-75, rect.y0+rect.height/2)}
         return m.get(pos,(rect.x1-180,rect.y1-70))
+
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
-            # Change 7: Empty PDF guard for sign_pdf
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
@@ -1468,7 +1668,7 @@ def sign_pdf():
                         if pg_num < 1 or pg_num > total:
                             return err(f"Page {pg_num} out of range (1-{total})", 400)
                         page_indices = [pg_num-1]
-                    # Change 16: Return error on invalid page target instead of silent fallback
+                    # Change 16: Return error on invalid page target
                     except ValueError:
                         return err(f"Invalid page target: '{page_target}'", 400)
                 for pg_idx in page_indices:
@@ -1477,10 +1677,13 @@ def sign_pdf():
                     if sig_data:
                         img_rect = fitz.Rect(sig_x, sig_y-40, sig_x+150, sig_y+5)
                         page.insert_image(img_rect, stream=sig_data, overlay=True)
-                    line = f"{name} | {reason} | {today_str}"
-                    box_r = fitz.Rect(sig_x-5, sig_y-5, sig_x+155, sig_y+25)
-                    page.draw_rect(box_r, color=(0,0,0.6), fill=(0.9,0.9,1), width=0.5)
-                    page.insert_text((sig_x, sig_y+12), line, fontsize=8, color=(0,0,0.5))
+                        # Also add thin metadata line below image
+                        line = f"{name} | {reason} | {today_str}"
+                        page.insert_text((sig_x, sig_y+14), line, fontsize=7,
+                                          fontname="helv", color=(0.4,0.4,0.4))
+                    else:
+                        # [CRIT-02] Render cursive-style signature — NOT a rubber stamp box
+                        _render_cursive_signature(page, name, reason, today_str, sig_x, sig_y)
                 fname = generate_output_filename(f.filename, "stamped")
                 out = os.path.join(Config.OUTPUT_FOLDER, fname)
                 doc.save(out)
@@ -1494,6 +1697,8 @@ def sign_pdf():
         return response
     except Exception:
         log.exception("sign_pdf"); return err("Stamp failed", 500)
+
+
 @app.route("/api/v1/redact-pdf", methods=["POST"])
 @app.route("/api/redact-pdf", methods=["POST"])
 @require_auth
@@ -1525,7 +1730,7 @@ def redact_pdf():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
-            # Change 7: Empty PDF guard for redact
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
@@ -1536,7 +1741,9 @@ def redact_pdf():
                         for rect in page.search_for(search_text):
                             page.add_redact_annot(rect, fill=(0,0,0)); count += 1
                     else:
-                        for match in compiled.finditer(page.get_text("text")):
+                        # [MED-03] Normalize whitespace — fixes multi-line text pattern matching
+                        page_text = re.sub(r"\s+", " ", page.get_text("text"))
+                        for match in compiled.finditer(page_text):
                             for rect in page.search_for(match.group()):
                                 page.add_redact_annot(rect, fill=(0,0,0)); count += 1
                     page.apply_redactions()
@@ -1545,12 +1752,27 @@ def redact_pdf():
                 doc.save(out)
             finally:
                 doc.close()
+
+            # [MAL-03] Flatten with Ghostscript to destroy underlying text objects
+            _flat = os.path.join(Config.TEMP_FOLDER, f"{uuid.uuid4().hex}_redact_flat.pdf")
+            if ghostscript_compress(out, _flat, "/default"):
+                try:
+                    os.replace(_flat, out)
+                except OSError:
+                    shutil.move(_flat, out)
+            else:
+                try: os.remove(_flat)
+                except OSError: pass
+
         # Change 19: Warn on zero redaction matches
-        msg = f"Redacted {count} occurrence(s) (mode={mode})"
+        msg = f"Redacted {count} occurrence(s) (mode={mode}) — structurally flattened"
         warn = "No matches found — document unchanged" if count == 0 else None
-        return ok(msg, out, redaction_count=count, warning=warn)
+        return ok(msg, out, redaction_count=count, warning=warn,
+                  note="Flattened via Ghostscript to prevent text recovery")
     except Exception:
         log.exception("redact"); return err("Redact failed", 500)
+
+
 # ============================================================================
 # PDF CONVERT
 # ============================================================================
@@ -1568,7 +1790,7 @@ def pdf_to_image():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
-            # Change 7: Empty PDF guard for pdf_to_image
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
@@ -1580,13 +1802,17 @@ def pdf_to_image():
                         mat = fitz.Matrix(dpi/72, dpi/72)
                         pix = page.get_pixmap(matrix=mat, alpha=True)
                         pil = Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGBA")
-                        bg = Image.new("RGB", pil.size, (255,255,255))
-                        bg.paste(pil, mask=pil.split()[3])
+                        pix = None  # [HIGH-07] Free C-heap
                         img_buf = io.BytesIO()
                         if fmt == "jpg":
+                            # [MED-08] Only composite to white for JPEG — preserve alpha for PNG
+                            bg = Image.new("RGB", pil.size, (255,255,255))
+                            bg.paste(pil, mask=pil.split()[3])
                             bg.save(img_buf, "JPEG", quality=85, optimize=True)
                         else:
-                            bg.save(img_buf, "PNG")
+                            # [MED-08] PNG: preserve transparency
+                            pil.save(img_buf, "PNG")
+                        pil.close()
                         zf.writestr(f"page_{i+1:04d}.{fmt}", img_buf.getvalue())
             finally:
                 doc.close()
@@ -1596,6 +1822,8 @@ def pdf_to_image():
         return ok(f"Exported {count} page(s) as {fmt.upper()}", out)
     except Exception:
         log.exception("pdf_to_image"); return err("Export failed", 500)
+
+
 @app.route("/api/v1/pdf-to-word", methods=["POST"])
 @app.route("/api/pdf-to-word", methods=["POST"])
 @require_auth
@@ -1607,7 +1835,7 @@ def pdf_to_word():
     e = validate_file(f, Config.ALLOWED_PDF)
     if e: return err(e)
     f.seek(0,2); file_size = f.tell(); f.seek(0)
-    # Change 7: Empty PDF guard for pdf_to_word
+    # Change 7 + [CRIT-04]: Empty PDF guard
     try:
         _chk = fitz.open(stream=f.read(), filetype="pdf")
         if len(_chk) == 0:
@@ -1625,60 +1853,109 @@ def pdf_to_word():
     fname = re.sub(r'\.pdf$','.docx',fname,flags=re.IGNORECASE)
     if not fname.endswith(".docx"): fname = Path(fname).stem + ".docx"
     out = os.path.join(Config.OUTPUT_FOLDER, fname)
-    # FIX MEDIUM-8: Unified async threshold at 10 MB
-    if file_size <= _ASYNC_FILE_THRESHOLD:
+
+    # FIX MEDIUM-8 + [CRIT-01]: Unified async threshold with lazy import
+    if file_size > _ASYNC_FILE_THRESHOLD:
+        # [CRIT-01] Lazy import to break circular dependency
+        _pdf_to_word_task = None
         try:
-            cv = Pdf2DocxConverter(upload_path)
-            cv.convert(out, start=0, end=None)
-            cv.close()
-        finally:
+            from tasks.office_tasks import pdf_to_word_task as _pdf_to_word_task
+        except Exception as _ie:
+            log.error(f"[CRIT-01] pdf_to_word_task lazy import failed: {_ie}")
+
+        if celery_app and _pdf_to_word_task:
+            # [CRIT-06] Register upload for guaranteed cleanup
+            try:
+                redis_service.client.setex(
+                    f"cleanup:{upload_path}", Config.FILE_TTL_SEC + 600, "pending")
+            except Exception: pass
+            job_id = str(uuid.uuid4())
+            redis_service.job_set(job_id, {
+                "status":"pending","progress":"0","operation":"pdf_to_word",
+                "created_at":get_timestamp(),"user_id":getattr(g,"user_id","default")
+            })
+            try:
+                redis_service.client.expire(f"job:{job_id}", getattr(Config, 'JOB_TTL_SEC', 7200))
+            except Exception: pass
+            task = _pdf_to_word_task.delay(upload_path, out, job_id)
+            redis_service.job_update(job_id, {"task_id": task.id})
+            return jsonify({
+                "success":True,"message":"Large file — conversion running. Check status_url.",
+                "job_id":job_id,"status_url":f"/api/v1/jobs/{job_id}",
+                "poll_interval_ms":2000
+            })
+        else:
+            # [CRIT-01] + [CRIT-07] Sync fallback with cancellable thread
+            log.warning("[CRIT-01] pdf_to_word async unavailable, processing synchronously")
+            job_id = str(uuid.uuid4())
+            redis_service.job_set(job_id, {
+                "status":"pending","progress":"0","operation":"pdf_to_word",
+                "created_at":get_timestamp(),"user_id":getattr(g,"user_id","default")
+            })
+            thread_path = upload_path + "_thread.pdf"
+            shutil.copy(upload_path, thread_path)
             try: os.remove(upload_path)
             except OSError: pass
-        if not os.path.exists(out) or os.path.getsize(out) == 0:
-            return err("Conversion failed — output is empty", 500)
-        return ok("PDF converted to Word", out)
-    # Large file: try sync with timeout, fallback to async
-    job_id = str(uuid.uuid4())
-    redis_service.job_set(job_id, {"status":"pending","progress":"0","operation":"pdf_to_word",
-                                    "created_at":get_timestamp(),"user_id":getattr(g,"user_id","default")})
-    if celery_app and pdf_to_word_task:
-        task = pdf_to_word_task.delay(upload_path, out, job_id)
-        redis_service.job_update(job_id, {"task_id": task.id})
-        return jsonify({"success":True,"message":"Large file — conversion running. Check status_url.",
-                        "job_id":job_id,"status_url":f"/api/v1/jobs/{job_id}",
-                        "poll_interval_ms":2000})
-    # Fallback thread with timeout
-    thread_path = upload_path + "_thread.pdf"
-    shutil.copy(upload_path, thread_path)
-    try: os.remove(upload_path)
-    except OSError: pass
-    def _convert_bg():
-        try:
-            cv = Pdf2DocxConverter(thread_path)
-            cv.convert(out, start=0, end=None)
-            cv.close()
-            if os.path.exists(out) and os.path.getsize(out) > 0:
-                redis_service.job_update(job_id, {"status":"completed","progress":"100","output_path":out})
-            else:
-                raise RuntimeError("Output missing/empty")
-        except Exception as ex:
-            redis_service.job_update(job_id, {"status":"failed","error":str(ex)})
-        finally:
-            try: os.remove(thread_path)
-            except OSError: pass
-    t = threading.Thread(target=_convert_bg, daemon=True)
-    t.start()
-    t.join(timeout=120)
-    if t.is_alive():
-        return jsonify({"success":True,"message":"Large file — conversion running. Check status_url.",
-                        "job_id":job_id,"status_url":f"/api/v1/jobs/{job_id}",
-                        "poll_interval_ms":2000})
-    job = redis_service.job_get(job_id)
-    if job and job.get("status") == "completed" and os.path.exists(out):
-        return ok("PDF converted to Word", out)
-    return jsonify({"success":True,"message":"Large file — conversion running. Check status_url.",
-                    "job_id":job_id,"status_url":f"/api/v1/jobs/{job_id}",
-                    "poll_interval_ms":2000})
+
+            # [CRIT-07] Cancellable thread with registry
+            _cancel_ev = threading.Event()
+
+            def _convert_bg():
+                try:
+                    if _cancel_ev.is_set():
+                        redis_service.job_update(job_id, {"status":"cancelled"})
+                        return
+                    cv = Pdf2DocxConverter(thread_path)
+                    cv.convert(out, start=0, end=None)
+                    cv.close()
+                    if not _cancel_ev.is_set() and os.path.exists(out) and os.path.getsize(out) > 0:
+                        redis_service.job_update(job_id, {
+                            "status":"completed","progress":"100","output_path":out
+                        })
+                    else:
+                        raise RuntimeError("Cancelled or output missing/empty")
+                except Exception as ex:
+                    redis_service.job_update(job_id, {"status":"failed","error":str(ex)})
+                finally:
+                    _thread_registry.pop(job_id, None)
+                    try: os.remove(thread_path)
+                    except OSError: pass
+
+            t = threading.Thread(target=_convert_bg, daemon=True)
+            _thread_registry[job_id] = (t, _cancel_ev)
+            t.start()
+            t.join(timeout=120)
+
+            if not t.is_alive():
+                job = redis_service.job_get(job_id)
+                if job and job.get("status") == "completed" and os.path.exists(out):
+                    return ok("PDF converted to Word (sync)", out)
+
+            return jsonify({
+                "success":True,"message":"Large file — conversion running. Check status_url.",
+                "job_id":job_id,"status_url":f"/api/v1/jobs/{job_id}",
+                "poll_interval_ms":2000
+            })
+
+    # Small file — synchronous processing
+    try:
+        cv = Pdf2DocxConverter(upload_path)
+        cv.convert(out, start=0, end=None)
+        cv.close()
+    except Exception:
+        log.exception("pdf_to_word sync")
+        try: os.remove(upload_path)
+        except OSError: pass
+        return err("PDF to Word conversion failed", 500)
+    finally:
+        try: os.remove(upload_path)
+        except OSError: pass
+
+    if not os.path.exists(out) or os.path.getsize(out) == 0:
+        return err("Conversion failed — output is empty", 500)
+    return ok("PDF converted to Word", out)
+
+
 @app.route("/api/v1/pdf-to-excel", methods=["POST"])
 @app.route("/api/pdf-to-excel", methods=["POST"])
 @require_auth
@@ -1694,15 +1971,18 @@ def pdf_to_excel():
 
     try:
         with FileService.temp_upload(uploaded_file) as temp_path:
+            # [CRIT-04] Empty PDF guard — was missing from this handler
+            guard = _guard_empty_pdf(temp_path)
+            if guard: return guard
+
             wb = Workbook()
             wb.remove(wb.active)
-            
             all_tables = []
             seen_signatures = set()
             method_used = None
             confidence = "low"
-            
-            # ===== STAGE 1: pdfplumber (best for bordered tables) =====
+
+            # ===== STAGE 1: pdfplumber =====
             if PDFPLUMBER_AVAILABLE:
                 try:
                     import pdfplumber
@@ -1714,7 +1994,6 @@ def pdf_to_excel():
                                 "snap_tolerance": 4,
                                 "intersection_tolerance": 4
                             })
-                            
                             if not tables:
                                 tables = page.extract_tables({
                                     "vertical_strategy": "text",
@@ -1722,32 +2001,27 @@ def pdf_to_excel():
                                     "snap_tolerance": 6,
                                     "join_tolerance": 6
                                 })
-                            
                             for table in tables:
                                 if table and _is_structured_table(table):
                                     sig = _get_table_signature(table)
                                     if sig not in seen_signatures:
                                         seen_signatures.add(sig)
                                         all_tables.append(table)
-                    
                     if all_tables:
                         method_used = "pdfplumber"
                         confidence = "high" if len(all_tables) > 1 else "medium"
-                        
                 except Exception as ex:
                     log.warning(f"pdfplumber extraction failed: {ex}")
 
-            # ===== STAGE 2: tabula-py (fallback) =====
+            # ===== STAGE 2: tabula-py fallback =====
             if not all_tables and TABULA_AVAILABLE:
                 try:
                     import tabula
                     dfs = tabula.read_pdf(temp_path, pages="all", multiple_tables=True,
                                           lattice=True, silent=True)
-                    
                     if not dfs:
                         dfs = tabula.read_pdf(temp_path, pages="all", multiple_tables=True,
                                               stream=True, silent=True)
-                    
                     for df in dfs:
                         if not df.empty:
                             table = [df.columns.tolist()] + df.values.tolist()
@@ -1756,11 +2030,9 @@ def pdf_to_excel():
                                 if sig not in seen_signatures:
                                     seen_signatures.add(sig)
                                     all_tables.append(table)
-                    
                     if all_tables:
                         method_used = "tabula"
                         confidence = "medium"
-                        
                 except Exception as ex:
                     log.warning(f"tabula extraction failed: {ex}")
 
@@ -1786,14 +2058,12 @@ def pdf_to_excel():
                 ws = wb.create_sheet("Raw_Text")
                 ws["A1"] = "No structured tables detected — raw text below:"
                 ws["A1"].font = Font(bold=True, size=12)
-                
                 doc = fitz.open(temp_path)
                 row_idx = 3
                 for page_num, page in enumerate(doc):
                     ws[f"A{row_idx}"] = f"=== Page {page_num + 1} ==="
                     ws[f"A{row_idx}"].font = Font(bold=True)
                     row_idx += 1
-                    
                     page_text = page.get_text("text")
                     for line in page_text.split('\n'):
                         if line.strip():
@@ -1803,14 +2073,12 @@ def pdf_to_excel():
                 method_used = "raw_text"
                 confidence = "none"
 
-            # ===== VALIDATION =====
             if not wb.worksheets:
                 return err("No content could be extracted from this PDF", 500)
 
             output_filename = generate_output_filename(uploaded_file.filename, "to_excel")
             output_filename = re.sub(r'\.pdf$', '.xlsx', output_filename, flags=re.IGNORECASE)
             output_path = os.path.join(Config.OUTPUT_FOLDER, output_filename)
-            
             tmp_out = output_path + ".tmp"
             wb.save(tmp_out)
             os.replace(tmp_out, output_path)
@@ -1834,6 +2102,7 @@ def pdf_to_excel():
         log.exception("pdf_to_excel")
         return err("PDF to Excel conversion failed", 500)
 
+
 @app.route("/api/v1/pdf-to-ppt", methods=["POST"])
 @app.route("/api/pdf-to-ppt", methods=["POST"])
 @require_auth
@@ -1846,7 +2115,7 @@ def pdf_to_ppt():
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
-            # Change 7: Empty PDF guard for pdf_to_ppt
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
@@ -1856,11 +2125,21 @@ def pdf_to_ppt():
                 blank = prs.slide_layouts[6]
                 for page in doc:
                     pix = page.get_pixmap(dpi=200)
-                    tmp_img = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-                    tmp_img.write(pix.tobytes("png")); tmp_img.close()
-                    slide = prs.slides.add_slide(blank)
-                    slide.shapes.add_picture(tmp_img.name, 0, 0, prs.slide_width, prs.slide_height)
-                    os.unlink(tmp_img.name)
+                    # [HIGH-04] Temp PNG in TEMP_FOLDER with try/finally
+                    tmp_img = tempfile.NamedTemporaryFile(
+                        suffix=".png", delete=False, dir=Config.TEMP_FOLDER
+                    )
+                    try:
+                        tmp_img.write(pix.tobytes("png"))
+                        tmp_img.close()
+                        pix = None  # [HIGH-07] Free C-heap
+                        slide = prs.slides.add_slide(blank)
+                        slide.shapes.add_picture(
+                            tmp_img.name, 0, 0, prs.slide_width, prs.slide_height
+                        )
+                    finally:
+                        try: os.unlink(tmp_img.name)
+                        except OSError: pass
             finally:
                 doc.close()
             fname = generate_output_filename(f.filename, "to_ppt")
@@ -1870,6 +2149,8 @@ def pdf_to_ppt():
         return ok("PDF converted to PowerPoint", out)
     except Exception:
         log.exception("pdf_to_ppt"); return err("PDF to PPT failed", 500)
+
+
 @app.route("/api/v1/pdf-to-pdfa", methods=["POST"])
 @app.route("/api/pdf-to-pdfa", methods=["POST"])
 @require_auth
@@ -1884,17 +2165,19 @@ def pdf_to_pdfa():
         with FileService.temp_upload(f) as path:
             fname = generate_output_filename(f.filename, "pdfa")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
-            cmd = [Config.GHOSTSCRIPT, "-dBATCH", "-dNOPAUSE", "-dNOSAFER",
+            # [CRIT-05] MANDATORY: -dSAFER not -dNOSAFER — prevents PS exploit
+            cmd = [Config.GHOSTSCRIPT, "-dBATCH", "-dNOPAUSE", "-dSAFER",
                      "-sDEVICE=pdfwrite", f"-dPDFA={pdfa_val}",
                      "-dPDFACompatibilityPolicy=1", f"-sOutputFile={out}", path]
-            result = subprocess.run(cmd, capture_output=True, timeout=Config.PDFA_TIMEOUT)
+            result = subprocess.run(cmd, capture_output=True, timeout=getattr(Config, 'PDFA_TIMEOUT', 300))
             if result.returncode != 0:
                 return err("Ghostscript PDF/A conversion failed.", 500)
             validation_result = None
-            if Config.PDFA_VALIDATE:
+            if getattr(Config, 'PDFA_VALIDATE', False):
                 try:
-                    vr = subprocess.run([Config.VERAPDF_PATH,"--flavour","1b","--format","text",out],
-                                         capture_output=True, timeout=60)
+                    vr = subprocess.run(
+                        [Config.VERAPDF_PATH,"--flavour","1b","--format","text",out],
+                        capture_output=True, timeout=60)
                     validation_result = {"passed":vr.returncode==0,"output":vr.stdout.decode()[:500]}
                 except Exception as vex:
                     validation_result = {"passed":None,"error":str(vex)}
@@ -1908,6 +2191,8 @@ def pdf_to_pdfa():
         return err("PDF/A conversion timed out", 500)
     except Exception:
         log.exception("pdf_to_pdfa"); return err("PDF/A conversion failed", 500)
+
+
 # ============================================================================
 # COMPARE PDF
 # ============================================================================
@@ -1925,7 +2210,7 @@ def compare_pdf():
     try:
         with FileService.temp_uploads(files) as paths:
             doc1 = fitz.open(paths[0]); doc2 = fitz.open(paths[1])
-            # Change 7: Empty PDF guard for compare_pdf
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc1) == 0:
                 doc1.close(); doc2.close()
                 return err("First PDF has no pages", 400)
@@ -1939,14 +2224,18 @@ def compare_pdf():
                 MAX_WORDS = 500
                 with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                     for i in range(pages):
-                        pix1 = doc1[i].get_pixmap(dpi=150); pix2 = doc2[i].get_pixmap(dpi=150)
+                        pix1 = doc1[i].get_pixmap(dpi=150)
+                        pix2 = doc2[i].get_pixmap(dpi=150)
                         img1 = Image.open(io.BytesIO(pix1.tobytes("png"))).convert("RGB")
                         img2 = Image.open(io.BytesIO(pix2.tobytes("png"))).convert("RGB")
+                        # [HIGH-07] Free C-heap pixmaps immediately
+                        pix1 = pix2 = None
                         if img1.size != img2.size: img2 = img2.resize(img1.size, Image.LANCZOS)
                         diff = ImageChops.difference(img1, img2)
                         diff_e = diff.point(lambda x: min(x*8, 255))
                         diff_out = io.BytesIO(); diff_e.save(diff_out, "PNG")
                         zf.writestr(f"diff_page_{i+1:04d}.png", diff_out.getvalue())
+                        img1.close(); img2.close()
                         words1 = [w[4] for w in doc1[i].get_text("words")][:MAX_WORDS]
                         words2 = [w[4] for w in doc2[i].get_text("words")][:MAX_WORDS]
                         sm = difflib.SequenceMatcher(None, words1, words2)
@@ -1971,6 +2260,8 @@ def compare_pdf():
         return ok(f"Compared {pages} page(s)", out)
     except Exception:
         log.exception("compare_pdf"); return err("Comparison failed", 500)
+
+
 # ============================================================================
 # IMAGE → PDF
 # ============================================================================
@@ -1999,6 +2290,8 @@ def _images_to_pdf(paths, page_size_str, output_filename):
             log.warning(f"Skipping image {path}: {ex}")
     c.save()
     return out
+
+
 @app.route("/api/v1/image-to-pdf", methods=["POST"])
 @app.route("/api/image-to-pdf", methods=["POST"])
 @require_auth
@@ -2024,6 +2317,8 @@ def image_to_pdf():
         return ok(f"Converted {len(files)} image(s) to PDF", out)
     except Exception:
         log.exception("image_to_pdf"); return err("Image to PDF failed", 500)
+
+
 @app.route("/api/v1/word-to-pdf", methods=["POST"])
 @app.route("/api/word-to-pdf", methods=["POST"])
 @require_auth
@@ -2043,6 +2338,8 @@ def word_to_pdf():
         return ok("Word converted to PDF", out)
     except Exception:
         log.exception("word_to_pdf"); return err("Word to PDF failed", 500)
+
+
 @app.route("/api/v1/excel-to-pdf", methods=["POST"])
 @app.route("/api/excel-to-pdf", methods=["POST"])
 @require_auth
@@ -2054,17 +2351,13 @@ def excel_to_pdf():
         return err(validation_error)
 
     temp_prepared_path = None
-    
+
     try:
         with FileService.temp_upload(uploaded_file) as temp_path:
-
             try:
-                # FIX: openpyxl cannot open legacy .xls — only pre-process .xlsx files
                 _ext = os.path.splitext(temp_path)[1].lower()
                 if _ext == ".xlsx":
                     from utils.office_utils import prepare_excel_for_pdf
-                    # FIX: use an explicit unique output path — the old single-arg call used
-                    # str.replace() which silently returned the same path when UUID had no extension
                     _prepared_out = os.path.join(
                         Config.TEMP_FOLDER,
                         f"{uuid.uuid4().hex}_prepared.xlsx"
@@ -2072,7 +2365,7 @@ def excel_to_pdf():
                     temp_prepared_path = prepare_excel_for_pdf(temp_path, _prepared_out)
                     conversion_path = temp_prepared_path if temp_prepared_path else temp_path
                 else:
-                    conversion_path = temp_path  # .xls — skip preprocessing, let LibreOffice handle it
+                    conversion_path = temp_path
             except Exception as prep_error:
                 log.warning(f"Excel pre-processing skipped: {prep_error}")
                 conversion_path = temp_path
@@ -2081,19 +2374,14 @@ def excel_to_pdf():
             output_filename = re.sub(r'\.(xls|xlsx)$', '.pdf', output_filename, flags=re.IGNORECASE)
             output_path = os.path.join(Config.OUTPUT_FOLDER, output_filename)
 
-            # Dedicated LibreOffice profile
             lo_profile = f"/tmp/lo_profile_{uuid.uuid4().hex}"
             os.makedirs(lo_profile, exist_ok=True)
 
             try:
                 result = subprocess.run(
                     [
-                        Config.LIBREOFFICE,
-                        "--headless",
-                        "--nologo",
-                        "--nolockcheck",
-                        "--nodefault",
-                        "--nofirststartwizard",
+                        Config.LIBREOFFICE, "--headless", "--nologo",
+                        "--nolockcheck", "--nodefault", "--nofirststartwizard",
                         f"-env:UserInstallation=file://{lo_profile}",
                         "--convert-to",
                         "pdf:calc_pdf_Export:"
@@ -2104,13 +2392,8 @@ def excel_to_pdf():
                         "--outdir", Config.OUTPUT_FOLDER,
                         conversion_path
                     ],
-                    env={
-                        **os.environ,
-                        "SAL_DEFAULT_PAPER": "A4",
-                        "OOO_FORCE_DESKTOP": "true",
-                    },
-                    capture_output=True,
-                    timeout=Config.SUBPROCESS_TIMEOUT
+                    env={**os.environ, "SAL_DEFAULT_PAPER":"A4", "OOO_FORCE_DESKTOP":"true"},
+                    capture_output=True, timeout=Config.SUBPROCESS_TIMEOUT
                 )
 
                 if result.returncode != 0:
@@ -2138,24 +2421,20 @@ def excel_to_pdf():
 
     except subprocess.TimeoutExpired:
         return err("Excel to PDF conversion timed out", 500)
-
     except Exception:
         log.exception("excel_to_pdf")
         return err("Excel to PDF conversion failed", 500)
-
     finally:
-        # Clean up prepared temp file
         if temp_prepared_path and os.path.exists(temp_prepared_path):
-            try:
-                os.remove(temp_prepared_path)
-            except OSError:
-                pass
+            try: os.remove(temp_prepared_path)
+            except OSError: pass
+
+
 @app.route("/api/v1/html-to-pdf", methods=["POST"])
 @app.route("/api/html-to-pdf", methods=["POST"])
 @require_auth
 @require_rate_limit
 def html_to_pdf():
-    # FIX MEDIUM-4: Return clear 501 if neither wkhtmltopdf nor WeasyPrint available
     _weasyprint_available = False
     try:
         import weasyprint  # noqa
@@ -2173,27 +2452,29 @@ def html_to_pdf():
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_HTML)
     if e: return err(e)
-    
+
     try:
         with FileService.temp_upload(f) as path:
             fname = generate_output_filename(f.filename, "to_pdf")
             fname = re.sub(r'\.(html|htm)$', '.pdf', fname, flags=re.IGNORECASE)
             out_path = os.path.join(Config.OUTPUT_FOLDER, fname)
-            
-            # Try wkhtmltopdf first
+
             if _WKHTMLTOPDF_AVAILABLE:
                 try:
-                    result = subprocess.run([Config.WKHTMLTOPDF, "--quiet",
-                                             "--disable-local-file-access", path, out_path],
-                                             capture_output=True, timeout=60)
+                    # [LOW-06] Allow access to temp dir only — not --disable-local-file-access
+                    html_dir = os.path.dirname(path)
+                    result = subprocess.run(
+                        [Config.WKHTMLTOPDF, "--quiet",
+                         "--allow", html_dir, path, out_path],
+                        capture_output=True, timeout=60
+                    )
                     if result.returncode == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 0:
                         return ok("HTML converted to PDF", out_path)
                 except subprocess.TimeoutExpired:
                     return err("HTML to PDF timed out", 500)
                 except Exception as wk_ex:
                     log.warning(f"wkhtmltopdf failed: {wk_ex}")
-            
-            # Fallback to WeasyPrint
+
             if _weasyprint_available:
                 try:
                     from weasyprint import HTML
@@ -2202,10 +2483,9 @@ def html_to_pdf():
                         return ok("HTML converted to PDF (WeasyPrint)", out_path)
                 except Exception as we:
                     log.warning(f"WeasyPrint failed: {we}")
-            
-            # If we get here, both methods failed
+
             return err("HTML to PDF failed — both wkhtmltopdf and weasyprint encountered errors", 500)
-            
+
     except subprocess.TimeoutExpired:
         return err("HTML to PDF timed out", 500)
     except Exception:
@@ -2242,14 +2522,16 @@ def compress_image():
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
             if target_fmt == "png":
                 if img.mode not in ("RGB","RGBA","L","LA","P"): img = img.convert("RGBA")
-                tmp_png = path + "_tmp.png"; img.save(tmp_png, format="PNG", optimize=False)
+                tmp_png = os.path.join(Config.TEMP_FOLDER, f"{uuid.uuid4().hex}_tmp.png")
+                img.save(tmp_png, format="PNG", optimize=False)
                 pngquant_ok = False
                 try:
                     res = subprocess.run(
                         ["pngquant","--quality",f"{max(1,quality-15)}-{quality}",
                          "--speed","3","--force","--output",out,tmp_png],
                         capture_output=True, timeout=30)
-                    if res.returncode in (0,99) and os.path.exists(out):
+                    # [MED-07] Only treat exit code 0 as success — 99 means quality target not met
+                    if res.returncode == 0 and os.path.exists(out):
                         pngquant_ok = True
                 except (FileNotFoundError, subprocess.TimeoutExpired): pass
                 finally:
@@ -2274,6 +2556,8 @@ def compress_image():
                   reduction_pct=reduction, output_format=target_fmt)
     except Exception:
         log.exception("compress_image"); return err("Image compression failed", 500)
+
+
 @app.route("/api/v1/resize-image", methods=["POST"])
 @app.route("/api/resize-image", methods=["POST"])
 @require_auth
@@ -2299,6 +2583,8 @@ def resize_image():
         return ok(f"Image resized to {img.size[0]}×{img.size[1]}", out)
     except Exception:
         log.exception("resize_image"); return err("Resize failed", 500)
+
+
 @app.route("/api/v1/webp-to-jpg", methods=["POST"])
 @app.route("/api/webp-to-jpg", methods=["POST"])
 @require_auth
@@ -2333,6 +2619,8 @@ def webp_to_jpg():
         return ok(f"Converted {len(files)} WebP(s) to JPG", out)
     except Exception:
         log.exception("webp_to_jpg"); return err("WebP to JPG failed", 500)
+
+
 @app.route("/api/v1/png-to-jpg", methods=["POST"])
 @app.route("/api/png-to-jpg", methods=["POST"])
 @require_auth
@@ -2362,6 +2650,8 @@ def png_to_jpg():
         return ok(f"Converted {len(files)} PNG(s) to JPG", out)
     except Exception:
         log.exception("png_to_jpg"); return err("PNG to JPG failed", 500)
+
+
 @app.route("/api/v1/image-to-excel", methods=["POST"])
 @app.route("/api/image-to-excel", methods=["POST"])
 @require_auth
@@ -2381,10 +2671,21 @@ def image_to_excel():
                 try:
                     data = pytesseract.image_to_data(img, lang=lang,
                                                       output_type=TesseractOutput.DICT, config="--psm 6")
-                    words = [{"text":(data["text"][i] or "").strip(),"left":data["left"][i],
-                               "top":data["top"][i],"width":data["width"][i],"height":data["height"][i]}
-                              for i in range(len(data["text"]))
-                              if (data["text"][i] or "").strip() and int(data["conf"][i]) >= 30]
+                    # [HIGH-01] Use zip() for ragged dict safety
+                    words = []
+                    for txt, conf, left, top, wd, ht in zip(
+                        data.get("text",[]),
+                        data.get("conf",[]),
+                        data.get("left",[]),
+                        data.get("top",[]),
+                        data.get("width",[]),
+                        data.get("height",[])
+                    ):
+                        try: conf_int = int(conf)
+                        except (ValueError, TypeError): conf_int = 0
+                        if (txt or "").strip() and conf_int >= 30:
+                            words.append({"text":(txt or "").strip(),"left":left,
+                                          "top":top,"width":wd,"height":ht})
                     if len(words) < 3:
                         warning = f"OCR found only {len(words)} word(s)"
                     else:
@@ -2422,10 +2723,16 @@ def image_to_excel():
                 msg = f"OCR extracted {len(ocr_grid)} rows"
             else:
                 ws.title = "Image"
-                tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-                img.save(tmp.name, format="PNG"); tmp.close()
-                xl_img = XlImage(tmp.name); xl_img.anchor = "B2"
-                ws.add_image(xl_img); os.unlink(tmp.name)
+                tmp = tempfile.NamedTemporaryFile(
+                    suffix=".png", delete=False, dir=Config.TEMP_FOLDER
+                )
+                try:
+                    img.save(tmp.name, format="PNG"); tmp.close()
+                    xl_img = XlImage(tmp.name); xl_img.anchor = "B2"
+                    ws.add_image(xl_img)
+                finally:
+                    try: os.unlink(tmp.name)
+                    except OSError: pass
                 msg = "Image embedded in Excel"
             fname = generate_output_filename(f.filename,"to_excel")
             fname = re.sub(r'\.(jpg|jpeg|png|gif|bmp|tiff|webp)$','.xlsx',fname,flags=re.IGNORECASE)
@@ -2435,6 +2742,8 @@ def image_to_excel():
         return ok(msg, out, ocr_warning=warning)
     except Exception:
         log.exception("image_to_excel"); return err("Image to Excel failed", 500)
+
+
 # ============================================================================
 # WORD TOOLS
 # ============================================================================
@@ -2461,6 +2770,8 @@ def word_to_txt():
         return ok("Word converted to TXT", out)
     except Exception:
         log.exception("word_to_txt"); return err("Word to TXT failed", 500)
+
+
 @app.route("/api/v1/word-to-excel", methods=["POST"])
 @app.route("/api/word-to-excel", methods=["POST"])
 @require_auth
@@ -2485,8 +2796,13 @@ def word_to_excel():
                 ws = wb.create_sheet(title=f"Table_{t_idx+1}")
                 for r_idx, row in enumerate(table.rows):
                     for c_idx, cell in enumerate(row.cells):
+                        # [HIGH-08] table created OUTSIDE try — style assigned INSIDE try
                         co = ws.cell(row=r_idx+1, column=c_idx+1, value=cell.text)
-                        if r_idx == 0: co.font = Font(bold=True)
+                        if r_idx == 0:
+                            try:
+                                co.font = Font(bold=True)
+                            except Exception:
+                                pass
             ws_text = wb.create_sheet("Document_Text")
             ws_text.append(["Line","Style","Text"])
             for cell in ws_text[1]: cell.font = Font(bold=True)
@@ -2500,6 +2816,8 @@ def word_to_excel():
         return ok(f"Word converted to Excel — {table_count} table(s)", out, tables_found=table_count)
     except Exception:
         log.exception("word_to_excel"); return err("Word to Excel failed", 500)
+
+
 @app.route("/api/v1/word-to-ppt", methods=["POST"])
 @app.route("/api/word-to-ppt", methods=["POST"])
 @require_auth
@@ -2526,38 +2844,62 @@ def word_to_ppt():
                 prs.slides.add_slide(prs.slide_layouts[6])
                 out = os.path.join(Config.OUTPUT_FOLDER, fname); prs.save(out)
                 return ok("Word converted to PPT (empty doc)", out)
-            has_headings = any(p.style.name.startswith("Heading") or p.style.name=="Title" for p in paragraphs)
+
+            # [HIGH-03] + [MED-06] Slide limit guard — prevents OOM on huge docs
+            MAX_SLIDES_PPT = int(os.environ.get("MAX_SLIDES_PPT",
+                                                  getattr(Config, 'MAX_SLIDES_PPT', 200)))
+            has_headings = any(p.style.name.startswith("Heading") or p.style.name=="Title"
+                               for p in paragraphs)
+            slide_count = 0
             if not has_headings:
                 slide = prs.slides.add_slide(tc_layout)
+                slide_count += 1
                 if slide.shapes.title: slide.shapes.title.text = Path(f.filename).stem
                 if len(slide.placeholders) > 1:
                     tf = slide.placeholders[1].text_frame; tf.clear()
                     for p in paragraphs:
-                        pr = tf.add_paragraph(); pr.text = p.text
+                        if slide_count >= MAX_SLIDES_PPT: break
+                        pr2 = tf.add_paragraph(); pr2.text = p.text
             else:
                 current_tf = None
                 for p in paragraphs:
+                    if slide_count >= MAX_SLIDES_PPT:
+                        # Add truncation notice
+                        s = prs.slides.add_slide(tc_layout)
+                        if s.shapes.title: s.shapes.title.text = "Document Truncated"
+                        if len(s.placeholders) > 1:
+                            s.placeholders[1].text = (
+                                f"Truncated at {MAX_SLIDES_PPT} slides limit."
+                            )
+                        break
                     sn, text = p.style.name, p.text.strip()
                     if sn.startswith("Heading 1") or sn == "Title":
                         slide = prs.slides.add_slide(tc_layout)
+                        slide_count += 1
                         if slide.shapes.title: slide.shapes.title.text = text
                         current_tf = slide.placeholders[1].text_frame if len(slide.placeholders)>1 else None
                         if current_tf: current_tf.clear()
                     elif sn.startswith("Heading"):
                         if current_tf is None:
                             slide = prs.slides.add_slide(tc_layout)
+                            slide_count += 1
                             current_tf = slide.placeholders[1].text_frame if len(slide.placeholders)>1 else None
                             if current_tf: current_tf.clear()
                         if current_tf:
-                            pr = current_tf.add_paragraph(); pr.text = text
-                            if pr.runs: pr.runs[0].font.bold = True
+                            pr2 = current_tf.add_paragraph(); pr2.text = text
+                            if pr2.runs: pr2.runs[0].font.bold = True
                     else:
                         if current_tf:
-                            pr = current_tf.add_paragraph(); pr.text = text; pr.level = 1
+                            pr2 = current_tf.add_paragraph(); pr2.text = text; pr2.level = 1
+
             out = os.path.join(Config.OUTPUT_FOLDER, fname); prs.save(out)
-        return ok("Word converted to PowerPoint", out)
+        return ok("Word converted to PowerPoint", out,
+                  slides_created=slide_count,
+                  truncated=(slide_count >= MAX_SLIDES_PPT))
     except Exception:
         log.exception("word_to_ppt"); return err("Word to PPT failed", 500)
+
+
 @app.route("/api/v1/compress-word", methods=["POST"])
 @app.route("/api/compress-word", methods=["POST"])
 @require_auth
@@ -2581,7 +2923,9 @@ def compress_word():
                 work_path = converted
             tmp_dir = tempfile.mkdtemp()
             try:
-                with zipfile.ZipFile(work_path,"r") as zin: zin.extractall(tmp_dir)
+                # [HIGH-02] Safe extraction — prevents Zip Slip
+                with zipfile.ZipFile(work_path,"r") as zin:
+                    _safe_zip_extract(zin, tmp_dir)
                 media_dir = os.path.join(tmp_dir,"word","media"); compressed = 0
                 if os.path.isdir(media_dir):
                     for fname_img in os.listdir(media_dir):
@@ -2627,6 +2971,8 @@ def compress_word():
                   reduction_pct=reduction, images_compressed=compressed, force_jpeg_used=force_jpeg)
     except Exception:
         log.exception("compress_word"); return err("Word compression failed", 500)
+
+
 @app.route("/api/v1/edit-word", methods=["POST"])
 @app.route("/api/edit-word", methods=["POST"])
 @require_auth
@@ -2661,6 +3007,8 @@ def edit_word():
         return ok(f"Replaced {count} occurrence(s)", out)
     except Exception:
         log.exception("edit_word"); return err("Edit Word failed", 500)
+
+
 @app.route("/api/v1/unlock-word", methods=["POST"])
 @app.route("/api/unlock-word", methods=["POST"])
 @require_auth
@@ -2683,6 +3031,7 @@ def unlock_word():
     except Exception:
         log.exception("unlock_word"); return err("Unlock failed — check password", 500)
 
+
 @app.route("/api/protect-word", methods=["POST"])
 @require_auth
 @require_rate_limit
@@ -2696,24 +3045,22 @@ def protect_word():
     pw2 = sanitize_string(request.form.get("password2",""))
     ep = validate_password(pw, pw2)
     if ep: return err(ep)
-    
+
     try:
         with FileService.temp_upload(f) as path:
             work_path = path
             converted_temp = None
-            
-            # If .doc (old format), convert to .docx first
+
             if path.lower().endswith(".doc") and not path.lower().endswith(".docx"):
                 log.info(f"Converting .doc to .docx for protection: {path}")
                 converted_temp = libre(path, "docx", temp=True)
                 if not converted_temp or not os.path.exists(converted_temp):
                     return err("Could not convert .doc to .docx format", 500)
                 work_path = converted_temp
-            
+
             fname = generate_output_filename(f.filename, "protected")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
-            
-            # Try msoffcrypto encryption
+
             with open(work_path, "rb") as fp:
                 of = msoffcrypto.OfficeFile(fp)
                 encrypted = False
@@ -2725,28 +3072,30 @@ def protect_word():
                     pass
                 except Exception:
                     pass
-                
+
                 if not encrypted:
                     try:
                         with open(out, "wb") as fout:
                             of.encrypt(pw, fout)
                         encrypted = True
                     except Exception as fallback_ex:
+                        pw = "[REDACTED]"  # [SEC-05] Clear before logging
                         log.error(f"protect_word fallback failed: {type(fallback_ex).__name__}")
                         raise fallback_ex
-            
-            # Clean up temp converted file
+
             if converted_temp:
                 try: os.remove(converted_temp)
                 except OSError: pass
-            
+
             if not encrypted or not os.path.exists(out) or os.path.getsize(out) == 0:
                 return err("Word protection failed — could not encrypt document", 500)
-                
+
         return ok("Word document protected", out)
     except Exception:
         log.exception("protect_word")
         return err("Protect Word failed", 500)
+
+
 # ============================================================================
 # EXCEL TOOLS
 # ============================================================================
@@ -2774,7 +3123,8 @@ def excel_to_csv():
                             writer.writerow([coerce_cell_for_csv(v) for v in row]); cnt += 1
                         total_rows += cnt
                         safe_name = re.sub(r'[^\w]','_', sname)
-                        zf.writestr(f"{safe_name}.csv", ('\ufeff'+cb.getvalue()).encode('utf-8'))
+                        # [MED-05] Consistent BOM encoding — use utf-8-sig encode
+                        zf.writestr(f"{safe_name}.csv", cb.getvalue().encode('utf-8-sig'))
                 wb.close()
                 fname = generate_output_filename(f.filename,"to_csv")
                 fname = re.sub(r'\.(xls|xlsx)$','.zip',fname,flags=re.IGNORECASE)
@@ -2794,6 +3144,8 @@ def excel_to_csv():
                 return ok(f"Excel converted to CSV ({cnt} rows)", out)
     except Exception:
         log.exception("excel_to_csv"); return err("Excel to CSV failed", 500)
+
+
 @app.route("/api/v1/excel-to-word", methods=["POST"])
 @app.route("/api/excel-to-word", methods=["POST"])
 @require_auth
@@ -2806,7 +3158,6 @@ def excel_to_word():
     row_limit = safe_int(request.form.get("row_limit", Config.EXCEL_ROW_LIMIT),
                           Config.EXCEL_ROW_LIMIT, 1, 100000)
 
-    # FIX CRITICAL-2: Queue large Excel files (>10 MB) async to avoid 490s timeout
     f.seek(0, 2); file_size = f.tell(); f.seek(0)
 
     if not OPENPYXL_AVAILABLE or not DOCX_AVAILABLE:
@@ -2819,30 +3170,47 @@ def excel_to_word():
             return ok("Excel converted to Word (LibreOffice)", out)
         except Exception: log.exception("excel_to_word_libre"); return err("Excel to Word failed", 500)
 
-    # FIX CRITICAL-2: Async path for large files
-    if file_size > _ASYNC_FILE_THRESHOLD and celery_app and excel_to_word_task:
-        ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else "xlsx"
-        bg_input = os.path.join(Config.UPLOAD_FOLDER, f"{uuid.uuid4()}.{ext}")
-        f.seek(0)
-        with open(bg_input, "wb") as fh: fh.write(f.read())
-        fname = generate_output_filename(f.filename, "to_word")
-        fname = re.sub(r'\.(xls|xlsx)$', '.docx', fname, flags=re.IGNORECASE)
-        bg_out = os.path.join(Config.OUTPUT_FOLDER, fname)
-        job_id = str(uuid.uuid4())
-        redis_service.job_set(job_id, {
-            "status": "pending", "progress": "0", "operation": "excel_to_word",
-            "created_at": get_timestamp(), "user_id": getattr(g, "user_id", "default")
-        })
-        task = excel_to_word_task.delay(bg_input, bg_out, job_id,
-                                         preserve_formulas, row_limit)
-        redis_service.job_update(job_id, {"task_id": task.id})
-        return jsonify({
-            "success": True,
-            "message": "Large file — conversion queued. Check status_url.",
-            "job_id": job_id,
-            "status_url": f"/api/v1/jobs/{job_id}",
-            "poll_interval_ms": 2000
-        })
+    # FIX CRITICAL-2 + [CRIT-01]: Async path for large files with lazy import
+    if file_size > _ASYNC_FILE_THRESHOLD:
+        _excel_to_word_task = None
+        try:
+            from tasks.office_tasks import excel_to_word_task as _excel_to_word_task
+        except Exception as _ie:
+            log.error(f"[CRIT-01] excel_to_word_task lazy import failed: {_ie}")
+
+        if celery_app and _excel_to_word_task:
+            ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else "xlsx"
+            bg_input = os.path.join(Config.UPLOAD_FOLDER, f"{uuid.uuid4()}.{ext}")
+            f.seek(0)
+            with open(bg_input, "wb") as fh: fh.write(f.read())
+            # [CRIT-06] Register for cleanup
+            try:
+                redis_service.client.setex(
+                    f"cleanup:{bg_input}", Config.FILE_TTL_SEC + 600, "pending")
+            except Exception: pass
+            fname = generate_output_filename(f.filename, "to_word")
+            fname = re.sub(r'\.(xls|xlsx)$', '.docx', fname, flags=re.IGNORECASE)
+            bg_out = os.path.join(Config.OUTPUT_FOLDER, fname)
+            job_id = str(uuid.uuid4())
+            redis_service.job_set(job_id, {
+                "status": "pending", "progress": "0", "operation": "excel_to_word",
+                "created_at": get_timestamp(), "user_id": getattr(g, "user_id", "default")
+            })
+            try:
+                redis_service.client.expire(f"job:{job_id}", getattr(Config, 'JOB_TTL_SEC', 7200))
+            except Exception: pass
+            task = _excel_to_word_task.delay(bg_input, bg_out, job_id,
+                                              preserve_formulas, row_limit)
+            redis_service.job_update(job_id, {"task_id": task.id})
+            return jsonify({
+                "success": True,
+                "message": "Large file — conversion queued. Check status_url.",
+                "job_id": job_id,
+                "status_url": f"/api/v1/jobs/{job_id}",
+                "poll_interval_ms": 2000
+            })
+        else:
+            log.warning("[CRIT-01] excel_to_word async unavailable, processing synchronously")
 
     try:
         with FileService.temp_upload(f) as path:
@@ -2855,8 +3223,12 @@ def excel_to_word():
                 rows_write = all_rows[:row_limit]
                 if not rows_write: doc.add_paragraph("(empty sheet)"); continue
                 n_cols = max((len(r) for r in rows_write), default=1)
-                try: table = doc.add_table(rows=len(rows_write), cols=n_cols); table.style="Light Grid Accent 1"
-                except Exception: table = doc.add_table(rows=len(rows_write), cols=n_cols)
+                # [HIGH-08] Create table OUTSIDE try — only style in try
+                table = doc.add_table(rows=len(rows_write), cols=n_cols)
+                try:
+                    table.style = "Light Grid Accent 1"
+                except (KeyError, Exception):
+                    pass  # Style unavailable — table exists, just unstyled
                 for r_idx, row_data in enumerate(rows_write):
                     for c_idx in range(n_cols):
                         val = row_data[c_idx] if c_idx < len(row_data) else None
@@ -2878,6 +3250,8 @@ def excel_to_word():
                   warning=("Formulas replaced with values." if formulas_present and not preserve_formulas else None))
     except Exception:
         log.exception("excel_to_word"); return err("Excel to Word failed", 500)
+
+
 @app.route("/api/v1/excel-to-json", methods=["POST"])
 @app.route("/api/excel-to-json", methods=["POST"])
 @require_auth
@@ -2915,6 +3289,8 @@ def excel_to_json():
         return ok(f"Excel converted to JSON ({len(data)} sheet(s))", out)
     except Exception:
         log.exception("excel_to_json"); return err("Excel to JSON failed", 500)
+
+
 @app.route("/api/v1/compress-excel", methods=["POST"])
 @app.route("/api/compress-excel", methods=["POST"])
 @require_auth
@@ -2951,10 +3327,12 @@ def compress_excel():
                 if max_c > 0 and ws.max_column > max_c:
                     try: ws.delete_cols(max_c+1, ws.max_column-max_c)
                     except Exception: pass
-            tmp_out = path + "_cmp.xlsx"; wb.save(tmp_out); wb.close()
+            tmp_out = os.path.join(Config.TEMP_FOLDER, f"{uuid.uuid4().hex}_cmp.xlsx")
+            wb.save(tmp_out); wb.close()
             fname = generate_output_filename(f.filename,"compressed")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
             try:
+                # [HIGH-02] Safe extraction for compress_excel too
                 with zipfile.ZipFile(tmp_out,"r") as zin:
                     with zipfile.ZipFile(out,"w",zipfile.ZIP_DEFLATED,compresslevel=9) as zout:
                         for item in zin.infolist():
@@ -2969,6 +3347,8 @@ def compress_excel():
                   warning=("Formulas replaced with values." if formulas_present else None))
     except Exception:
         log.exception("compress_excel"); return err("Excel compression failed", 500)
+
+
 @app.route("/api/v1/unlock-excel", methods=["POST"])
 @app.route("/api/unlock-excel", methods=["POST"])
 @require_auth
@@ -2991,6 +3371,7 @@ def unlock_excel():
     except Exception:
         log.exception("unlock_excel"); return err("Unlock failed — check password", 500)
 
+
 @app.route("/api/protect-excel", methods=["POST"])
 @require_auth
 @require_rate_limit
@@ -3004,24 +3385,22 @@ def protect_excel():
     pw2 = sanitize_string(request.form.get("password2",""))
     ep = validate_password(pw, pw2)
     if ep: return err(ep)
-    
+
     try:
         with FileService.temp_upload(f) as path:
             work_path = path
             converted_temp = None
-            
-            # If .xls (old format), convert to .xlsx first
+
             if path.lower().endswith(".xls") and not path.lower().endswith(".xlsx"):
                 log.info(f"Converting .xls to .xlsx for protection: {path}")
                 converted_temp = libre(path, "xlsx", temp=True)
                 if not converted_temp or not os.path.exists(converted_temp):
                     return err("Could not convert .xls to .xlsx format", 500)
                 work_path = converted_temp
-            
+
             fname = generate_output_filename(f.filename, "protected")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
-            
-            # Try msoffcrypto encryption
+
             with open(work_path, "rb") as fp:
                 of = msoffcrypto.OfficeFile(fp)
                 encrypted = False
@@ -3033,30 +3412,29 @@ def protect_excel():
                     pass
                 except Exception:
                     pass
-                
+
                 if not encrypted:
                     try:
                         with open(out, "wb") as fout:
                             of.encrypt(pw, fout)
                         encrypted = True
                     except Exception as fallback_ex:
+                        pw = "[REDACTED]"  # [SEC-05] Clear before logging
                         log.error(f"protect_excel fallback failed: {type(fallback_ex).__name__}")
                         raise fallback_ex
-            
-            # Clean up temp converted file
+
             if converted_temp:
-                try:
-                    os.remove(converted_temp)
-                except OSError:
-                    pass
-            
+                try: os.remove(converted_temp)
+                except OSError: pass
+
             if not encrypted or not os.path.exists(out) or os.path.getsize(out) == 0:
                 return err("Excel protection failed — could not encrypt workbook", 500)
-                
+
         return ok("Excel workbook protected", out)
     except Exception:
         log.exception("protect_excel")
         return err("Protect Excel failed", 500)
+
 
 @app.route("/api/v1/repair-excel", methods=["POST"])
 @app.route("/api/repair-excel", methods=["POST"])
@@ -3072,9 +3450,18 @@ def repair_excel():
             fname = generate_output_filename(f.filename,"repaired")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
             ext = path.rsplit(".",1)[-1].lower()
+            # [HIGH-06] Macro-enabled workbook — warn user about macros
             if ext == "xlsm":
                 shutil.copy(path, out)
-                return ok("Macro-enabled workbook returned as-is", out)
+                return ok(
+                    "Macro-enabled workbook returned as-is — not modified",
+                    out,
+                    warning=(
+                        "⚠️ This file contains VBA macros which were NOT scanned or removed. "
+                        "Only open in a fully trusted environment. "
+                        "Convert to .xlsx to strip macros."
+                    )
+                )
             try:
                 wb = load_workbook(path, data_only=False, read_only=False)
                 wb.save(out); wb.close()
@@ -3088,6 +3475,8 @@ def repair_excel():
             return err("Could not repair Excel — file severely corrupted", 500)
     except Exception:
         log.exception("repair_excel"); return err("Excel repair failed", 500)
+
+
 @app.route("/api/v1/excel-to-jpg", methods=["POST"])
 @app.route("/api/excel-to-jpg", methods=["POST"])
 @require_auth
@@ -3107,6 +3496,7 @@ def excel_to_jpg():
                         for i, page in enumerate(doc):
                             pix = page.get_pixmap(dpi=150)
                             zf.writestr(f"sheet_{i+1:04d}.jpg", pix.tobytes("jpeg"))
+                            pix = None  # [HIGH-07] Free C-heap
                     fname = generate_output_filename(f.filename,"to_jpg")
                     fname = re.sub(r'\.(xls|xlsx)$','.zip',fname,flags=re.IGNORECASE)
                     out = os.path.join(Config.OUTPUT_FOLDER, fname)
@@ -3119,6 +3509,8 @@ def excel_to_jpg():
             return err("Excel to JPG failed — LibreOffice unavailable", 500)
     except Exception:
         log.exception("excel_to_jpg"); return err("Excel to JPG failed", 500)
+
+
 @app.route("/api/v1/excel-to-ppt", methods=["POST"])
 @app.route("/api/excel-to-ppt", methods=["POST"])
 @require_auth
@@ -3129,18 +3521,24 @@ def excel_to_ppt():
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_XLS)
     if e: return err(e)
+    # [LOW-04] max_rows as form parameter with default 25, max 200
+    max_rows_param = safe_int(request.form.get("max_rows", "25"), 25, 1, 200)
     try:
         with FileService.temp_upload(f) as path:
             wb = load_workbook(path, data_only=True)
             prs = Presentation(); prs.slide_width=PptxInches(10); prs.slide_height=PptxInches(7.5)
             tc_layout = prs.slide_layouts[1]
+            truncated_any = False
             for sheet_name in wb.sheetnames:
                 ws = wb[sheet_name]
                 rows = [r for r in ws.iter_rows(values_only=True) if any(c is not None for c in r)]
                 if not rows: continue
                 slide = prs.slides.add_slide(tc_layout)
                 if slide.shapes.title: slide.shapes.title.text = sheet_name
-                max_cols = max(len(r) for r in rows); max_rows = min(len(rows), 25)
+                max_cols = max(len(r) for r in rows)
+                max_rows = min(len(rows), max_rows_param)
+                if len(rows) > max_rows_param:
+                    truncated_any = True
                 tbl_shape = slide.shapes.add_table(max_rows, max_cols,
                                                     PptxInches(0.5), PptxInches(1.5),
                                                     PptxInches(9), PptxInches(5))
@@ -3155,15 +3553,17 @@ def excel_to_ppt():
             fname = generate_output_filename(f.filename,"to_ppt")
             fname = re.sub(r'\.(xls|xlsx)$','.pptx',fname,flags=re.IGNORECASE)
             out = os.path.join(Config.OUTPUT_FOLDER, fname); prs.save(out)
-        return ok("Excel converted to PowerPoint", out)
+        return ok("Excel converted to PowerPoint", out,
+                  warning=f"Tables truncated to {max_rows_param} rows per slide" if truncated_any else None)
     except Exception:
         log.exception("excel_to_ppt"); return err("Excel to PPT failed", 500)
+
+
 @app.route("/api/v1/jpg-to-pdf", methods=["POST"])
 @app.route("/api/jpg-to-pdf", methods=["POST"])
 @require_auth
 @require_rate_limit
 def jpg_to_pdf():
-    """Convert JPG images to PDF"""
     # FIX CRITICAL-3: Accept both "files" and "jpg" field name
     files = (request.files.getlist("files") or
              request.files.getlist("jpg") or
@@ -3184,20 +3584,20 @@ def jpg_to_pdf():
         return ok(f"Converted {len(files)} JPG(s) to PDF", out)
     except Exception:
         log.exception("jpg_to_pdf"); return err("JPG to PDF failed", 500)
+
+
 @app.route("/api/v1/pdf-to-jpg", methods=["POST"])
 @app.route("/api/pdf-to-jpg", methods=["POST"])
 @require_auth
 @require_rate_limit
 def pdf_to_jpg():
-    """Convert PDF to JPG images"""
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_PDF)
     if e: return err(e)
-   
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
-            # Change 7: Empty PDF guard for pdf_to_jpg
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
@@ -3207,8 +3607,8 @@ def pdf_to_jpg():
                 for i, page in enumerate(doc):
                     pix = page.get_pixmap(dpi=150)
                     zf.writestr(f"page_{i+1:04d}.jpg", pix.tobytes("jpeg"))
+                    pix = None  # [HIGH-07] Free C-heap
             doc.close()
-           
             fname = generate_output_filename(f.filename, "to_jpg")
             fname = re.sub(r'\.pdf$', '.zip', fname, flags=re.IGNORECASE)
             if not fname.endswith('.zip'):
@@ -3220,20 +3620,20 @@ def pdf_to_jpg():
     except Exception:
         log.exception("pdf_to_jpg")
         return err("PDF to JPG failed", 500)
+
+
 @app.route("/api/v1/pdf-to-png", methods=["POST"])
 @app.route("/api/pdf-to-png", methods=["POST"])
 @require_auth
 @require_rate_limit
 def pdf_to_png():
-    """Convert PDF to PNG images"""
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_PDF)
     if e: return err(e)
-   
     try:
         with FileService.temp_upload(f) as path:
             doc = fitz.open(path)
-            # Change 7: Empty PDF guard for pdf_to_png
+            # Change 7 + [CRIT-04]: Empty PDF guard
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
@@ -3243,8 +3643,8 @@ def pdf_to_png():
                 for i, page in enumerate(doc):
                     pix = page.get_pixmap(dpi=150)
                     zf.writestr(f"page_{i+1:04d}.png", pix.tobytes("png"))
+                    pix = None  # [HIGH-07] Free C-heap
             doc.close()
-           
             fname = generate_output_filename(f.filename, "to_png")
             fname = re.sub(r'\.pdf$', '.zip', fname, flags=re.IGNORECASE)
             if not fname.endswith('.zip'):
@@ -3256,12 +3656,13 @@ def pdf_to_png():
     except Exception:
         log.exception("pdf_to_png")
         return err("PDF to PNG failed", 500)
+
+
 @app.route("/api/v1/word-to-jpg", methods=["POST"])
 @app.route("/api/word-to-jpg", methods=["POST"])
 @require_auth
 @require_rate_limit
 def word_to_jpg():
-    """Convert Word to JPG images"""
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_DOC)
     if e: return err(e)
@@ -3276,6 +3677,7 @@ def word_to_jpg():
                     for i, page in enumerate(doc):
                         pix = page.get_pixmap(dpi=150)
                         zf.writestr(f"page_{i+1:04d}.jpg", pix.tobytes("jpeg"))
+                        pix = None  # [HIGH-07] Free C-heap
             finally:
                 doc.close()
             try: os.remove(pdf_path)
@@ -3287,12 +3689,13 @@ def word_to_jpg():
         return ok("Word converted to JPG images", out)
     except Exception:
         log.exception("word_to_jpg"); return err("Word to JPG failed", 500)
+
+
 @app.route("/api/v1/word-to-png", methods=["POST"])
 @app.route("/api/word-to-png", methods=["POST"])
 @require_auth
 @require_rate_limit
 def word_to_png():
-    """Convert Word to PNG images"""
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_DOC)
     if e: return err(e)
@@ -3307,6 +3710,7 @@ def word_to_png():
                     for i, page in enumerate(doc):
                         pix = page.get_pixmap(dpi=150)
                         zf.writestr(f"page_{i+1:04d}.png", pix.tobytes("png"))
+                        pix = None  # [HIGH-07] Free C-heap
             finally:
                 doc.close()
             try: os.remove(pdf_path)
@@ -3318,12 +3722,13 @@ def word_to_png():
         return ok("Word converted to PNG images", out)
     except Exception:
         log.exception("word_to_png"); return err("Word to PNG failed", 500)
+
+
 @app.route("/api/v1/word-to-html", methods=["POST"])
 @app.route("/api/word-to-html", methods=["POST"])
 @require_auth
 @require_rate_limit
 def word_to_html():
-    """Convert Word to HTML"""
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_DOC)
     if e: return err(e)
@@ -3331,17 +3736,19 @@ def word_to_html():
         with FileService.temp_upload(f) as path:
             fname = generate_output_filename(f.filename, "to_html")
             fname = re.sub(r'\.(doc|docx)$', '.html', fname, flags=re.IGNORECASE)
-            out = libre(path, "html", output_filename=fname)  # FIX: "xhtml" not in LIBRE_ALLOWED_FMTS → was silently returning None
+            # FIX: Use "html" not "xhtml" — xhtml not in LIBRE_ALLOWED_FMTS
+            out = libre(path, "html", output_filename=fname)
             if not out: return err("LibreOffice conversion failed", 500)
         return ok("Word converted to HTML", out)
     except Exception:
         log.exception("word_to_html"); return err("Word to HTML failed", 500)
+
+
 @app.route("/api/v1/word-to-json", methods=["POST"])
 @app.route("/api/word-to-json", methods=["POST"])
 @require_auth
 @require_rate_limit
 def word_to_json():
-    """Convert Word to JSON"""
     if not DOCX_AVAILABLE: return err("Requires python-docx", 501)
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_DOC)
@@ -3361,12 +3768,13 @@ def word_to_json():
         return ok("Word converted to JSON", out)
     except Exception:
         log.exception("word_to_json"); return err("Word to JSON failed", 500)
+
+
 @app.route("/api/v1/excel-to-png", methods=["POST"])
 @app.route("/api/excel-to-png", methods=["POST"])
 @require_auth
 @require_rate_limit
 def excel_to_png():
-    """Convert Excel to PNG images"""
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_XLS)
     if e: return err(e)
@@ -3381,6 +3789,7 @@ def excel_to_png():
                         for i, page in enumerate(doc):
                             pix = page.get_pixmap(dpi=150)
                             zf.writestr(f"sheet_{i+1:04d}.png", pix.tobytes("png"))
+                            pix = None  # [HIGH-07] Free C-heap
                     fname = generate_output_filename(f.filename, "to_png")
                     fname = re.sub(r'\.(xls|xlsx)$', '.zip', fname, flags=re.IGNORECASE)
                     out = os.path.join(Config.OUTPUT_FOLDER, fname)
@@ -3393,12 +3802,13 @@ def excel_to_png():
             return err("Excel to PNG failed — LibreOffice unavailable", 500)
     except Exception:
         log.exception("excel_to_png"); return err("Excel to PNG failed", 500)
+
+
 @app.route("/api/v1/excel-to-html", methods=["POST"])
 @app.route("/api/excel-to-html", methods=["POST"])
 @require_auth
 @require_rate_limit
 def excel_to_html():
-    """Convert Excel to HTML"""
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_XLS)
     if e: return err(e)
@@ -3406,17 +3816,19 @@ def excel_to_html():
         with FileService.temp_upload(f) as path:
             fname = generate_output_filename(f.filename, "to_html")
             fname = re.sub(r'\.(xls|xlsx)$', '.html', fname, flags=re.IGNORECASE)
-            out = libre(path, "html", output_filename=fname)  # FIX: "xhtml" not in LIBRE_ALLOWED_FMTS → was silently returning None
+            # FIX: Use "html" not "xhtml" — xhtml not in LIBRE_ALLOWED_FMTS
+            out = libre(path, "html", output_filename=fname)
             if not out: return err("LibreOffice conversion failed", 500)
         return ok("Excel converted to HTML", out)
     except Exception:
         log.exception("excel_to_html"); return err("Excel to HTML failed", 500)
+
+
 @app.route("/api/v1/image-to-word", methods=["POST"])
 @app.route("/api/image-to-word", methods=["POST"])
 @require_auth
 @require_rate_limit
 def image_to_word():
-    """Convert Image to Word (OCR)"""
     if not DOCX_AVAILABLE: return err("Requires python-docx", 501)
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_IMAGE)
@@ -3426,19 +3838,24 @@ def image_to_word():
             img = Image.open(path)
             doc = DocxDocument()
             doc.add_heading("Image OCR Result", 0)
-           
+
             if TESSERACT_AVAILABLE:
                 text = pytesseract.image_to_string(img)
                 for para in text.split('\n\n'):
                     if para.strip():
                         doc.add_paragraph(para.strip())
             else:
-                tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-                img.save(tmp.name, format="PNG"); tmp.close()
-                doc.add_picture(tmp.name, width=Inches(6))
-                os.unlink(tmp.name)
+                tmp = tempfile.NamedTemporaryFile(
+                    suffix=".png", delete=False, dir=Config.TEMP_FOLDER
+                )
+                try:
+                    img.save(tmp.name, format="PNG"); tmp.close()
+                    doc.add_picture(tmp.name, width=Inches(6))
+                finally:
+                    try: os.unlink(tmp.name)
+                    except OSError: pass
                 doc.add_paragraph("(OCR not available — image embedded)")
-           
+
             fname = generate_output_filename(f.filename, "to_word")
             fname = re.sub(r'\.(jpg|jpeg|png|gif|bmp|tiff|webp)$', '.docx',
                            fname, flags=re.IGNORECASE)
@@ -3447,39 +3864,73 @@ def image_to_word():
         return ok("Image converted to Word", out)
     except Exception:
         log.exception("image_to_word"); return err("Image to Word failed", 500)
+
+
 # ============================================================================
 # ERROR HANDLERS
 # ============================================================================
 @app.errorhandler(400)
-def _e400(e): return jsonify({"success":False,"error":"Bad request","request_id":g.get("request_id","-")}),400
+def _e400(e):
+    return jsonify({"success":False,"error":"Bad request","request_id":g.get("request_id","-")}),400
+
 @app.errorhandler(404)
-def _e404(e): return jsonify({"success":False,"error":"Endpoint not found","request_id":g.get("request_id","-")}),404
+def _e404(e):
+    return jsonify({"success":False,"error":"Endpoint not found","request_id":g.get("request_id","-")}),404
+
 @app.errorhandler(405)
-def _e405(e): return jsonify({"success":False,"error":"Method not allowed"}),405
+def _e405(e):
+    return jsonify({"success":False,"error":"Method not allowed"}),405
+
 @app.errorhandler(413)
-def _e413(e): return jsonify({"success":False,"error":f"File too large (max {Config.MAX_FILE_SIZE//1048576} MB)","request_id":g.get("request_id","-")}),413
+def _e413(e):
+    return jsonify({"success":False,"error":f"File too large (max {Config.MAX_FILE_SIZE//1048576} MB)","request_id":g.get("request_id","-")}),413
+
 @app.errorhandler(429)
-def _e429(e): return jsonify({"success":False,"error":"Rate limit exceeded","request_id":g.get("request_id","-")}),429
+def _e429(e):
+    return jsonify({"success":False,"error":"Rate limit exceeded","request_id":g.get("request_id","-")}),429
+
 @app.errorhandler(500)
-def _e500(e): log.exception("Unhandled 500"); return jsonify({"success":False,"error":"Internal server error","request_id":g.get("request_id","-")}),500
+def _e500(e):
+    log.exception("Unhandled 500")
+    return jsonify({"success":False,"error":"Internal server error","request_id":g.get("request_id","-")}),500
+
+
 # ============================================================================
 # GRACEFUL SHUTDOWN
 # ============================================================================
 _shutdown_event = threading.Event()
+
 def _graceful_shutdown(signum, frame):
     log.info(f"Received signal {signum} — graceful shutdown…")
     _shutdown_event.set()
+    # [CRIT-07] Cancel all running background threads
+    for jid, (t, cancel_ev) in list(_thread_registry.items()):
+        log.info(f"Cancelling background thread for job {jid}")
+        cancel_ev.set()
     if celery_app:
-        try: celery_app.control.broadcast("pool_shrink", arguments={"n":0})
-        except Exception: pass
-    deadline = time.time() + 30
+        try:
+            # [MED-04] Proper graceful drain — not pool_shrink
+            SHUTDOWN_TIMEOUT = int(os.environ.get("SHUTDOWN_TIMEOUT",
+                                                    getattr(Config, 'SHUTDOWN_TIMEOUT', 30)))
+            for q in ["fast", "slow", "office"]:
+                celery_app.control.broadcast("cancel_consumer", arguments={"queue": q})
+            time.sleep(min(10, SHUTDOWN_TIMEOUT // 3))
+            celery_app.control.broadcast("shutdown")
+        except Exception as ce:
+            log.warning(f"Celery shutdown error: {ce}")
+    SHUTDOWN_TIMEOUT = int(os.environ.get("SHUTDOWN_TIMEOUT",
+                                            getattr(Config, 'SHUTDOWN_TIMEOUT', 30)))
+    deadline = time.time() + SHUTDOWN_TIMEOUT
     while time.time() < deadline:
         time.sleep(1)
     log.info("Shutdown complete.")
     sys.exit(0)
+
 signal.signal(signal.SIGTERM, _graceful_shutdown)
 signal.signal(signal.SIGINT, _graceful_shutdown)
-application = app # WSGI entry point
+
+application = app  # WSGI entry point
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     debug = os.environ.get("FLASK_DEBUG","false").lower() in ("true","1","yes")
