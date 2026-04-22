@@ -1672,12 +1672,14 @@ async function processToolFile(){
   if(!curTool||!selFiles.length)return;
   const t=TOOLS[curTool];
 
+  // Password validation for protect tools
   if(curTool==='protect'||curTool==='protect-word'||curTool==='protect-excel'){
     const pw1=document.getElementById('password')?.value||'';
     const pw2=document.getElementById('password2')?.value||'';
     if(pw1!==pw2){toast('Passwords do not match','error');return;}
     if(pw1.length<4){toast('Password must be at least 4 characters','error');return;}
   }
+  
   const btn=document.getElementById('tpBtnProcess'),
         cancelBtn=document.getElementById('tpBtnCancel'),
         prog=document.getElementById('tpProgress'),
@@ -1691,6 +1693,7 @@ async function processToolFile(){
         ph=document.getElementById('tpResultPlaceholder'),
         announcer=document.getElementById('tpProgressAnnouncer');
 
+  // Setup UI for processing
   btn.disabled=true;btn.style.display='none';
   cancelBtn.classList.add('show');
   prog.classList.add('show');res.classList.remove('show');dlBtn.style.display='none';
@@ -1698,28 +1701,41 @@ async function processToolFile(){
   if(ph)ph.style.display='none';
   document.getElementById('step3Num').className='tp-step-num active';
 
-  const tb=selFiles.reduce((s,f)=>s+f.size,0);if(etaTxt)etaTxt.textContent=eta(tb);
+  // Show estimated time
+  const tb=selFiles.reduce((s,f)=>s+f.size,0);
+  if(etaTxt)etaTxt.textContent=eta(tb);
 
-  let pct=0;const msgs=['Sending your file...','Working on it...','Almost there...','Wrapping up...'];
+  // Fake progress animation (for small files)
+  let pct=0;
+  const msgs=['Sending your file...','Working on it...','Almost there...','Wrapping up...'];
   let tick=null;
   const toolAtCallTime=curTool;
 
   tick=setInterval(()=>{
-    pct=Math.min(pct+Math.random()*12,88);fill.style.width=pct+'%';fill.setAttribute('aria-valuenow',Math.round(pct));
+    pct=Math.min(pct+Math.random()*12,88);
+    fill.style.width=pct+'%';
+    fill.setAttribute('aria-valuenow',Math.round(pct));
     pTxt.textContent=msgs[Math.floor(pct/25)]||'Wrapping up...';
     if(announcer)announcer.textContent=pTxt.textContent;
   },350);
 
   abortCtrl=new AbortController();
+  
   try{
+    // Build form data
     const fd=new FormData();
-    if(t.multi)selFiles.forEach(f=>fd.append(t.field,f));else fd.append(t.field,selFiles[0]);
+    if(t.multi){
+      selFiles.forEach(f=>fd.append(t.field,f));
+    }else{
+      fd.append(t.field,selFiles[0]);
+    }
     
+    // Add tool options
     const optionsArea=document.getElementById('tpOptionsArea');
     if(optionsArea){
       const formElements=optionsArea.querySelectorAll('input, select, textarea');
       formElements.forEach(el=>{
-        if(!el.id||el.type==='hidden'&&!el.value)return;
+        if(!el.id||(el.type==='hidden'&&!el.value))return;
         if(curTool==='unlock'&&el.id==='password2')return;
         if(curTool==='unlock-word'&&el.id==='password2')return;
         if(curTool==='unlock-excel'&&el.id==='password2')return;
@@ -1729,28 +1745,114 @@ async function processToolFile(){
       });
     }
     
+    // Send request
     const signal=AbortSignal.any?AbortSignal.any([abortCtrl.signal,AbortSignal.timeout(300000)]):abortCtrl.signal;
     const r=await fetch(API+t.endpoint,{method:'POST',body:fd,signal,headers:{'X-Requested-With':'XMLHttpRequest'}});
     const d=await r.json();
+    
     if(curTool!==toolAtCallTime)return;
-    showResult(d.success?'success':'error',d);
+    
+    // ========================================================================
+    // V11 FIX: Handle async jobs with polling for large files
+    // ========================================================================
+    if(d.success && d.async && d.status_url){
+      // Stop fake progress animation
+      clearInterval(tick);
+      tick=null;
+      
+      // Show real processing status
+      fill.style.width='90%';
+      pTxt.textContent='Processing large file in background...';
+      if(announcer)announcer.textContent=pTxt.textContent;
+      prog.classList.add('show');
+      
+      let attempts=0;
+      const maxAttempts=120; // 10 minutes at 5s intervals
+      const pollUrl=API+d.status_url;
+      
+      const poll=async()=>{
+        if(curTool!==toolAtCallTime)return;
+        
+        if(++attempts>maxAttempts){
+          showResult('error',{message:'Processing timed out after 10 minutes. Try a smaller file.'});
+          return;
+        }
+        
+        try{
+          const pollResponse=await fetch(pollUrl,{headers:{'X-Requested-With':'XMLHttpRequest'}});
+          const pollData=await pollResponse.json();
+          
+          if(pollData.status==='completed'){
+            fill.style.width='100%';
+            pTxt.textContent='Complete!';
+            const filename=pollData.output_path?pollData.output_path.split('/').pop():null;
+            showResult('success',{
+              success:true,
+              message:'Your file is ready to download',
+              signed_url:pollData.download_url||(filename?API+'/download/'+filename:null),
+              filename:filename,
+              size_human:pollData.size_human||''
+            });
+          }else if(pollData.status==='failed'){
+            showResult('error',{message:pollData.error||'Processing failed on server'});
+          }else{
+            if(pollData.progress){
+              const progressValue=Math.min(89,parseInt(pollData.progress)||0);
+              fill.style.width=progressValue+'%';
+              pTxt.textContent=`Processing... ${progressValue}%`;
+              if(announcer)announcer.textContent=pTxt.textContent;
+            }
+            setTimeout(poll,5000);
+          }
+        }catch(e){
+          if(attempts<maxAttempts){
+            setTimeout(poll,5000);
+          }else{
+            showResult('error',{message:'Connection lost during processing. Please check your internet.'});
+          }
+        }
+      };
+      
+      // Start polling after 3 second initial delay
+      setTimeout(poll,3000);
+      
+      // Hide cancel button during async processing
+      cancelBtn.classList.remove('show');
+      
+    }else{
+      // Synchronous response - show immediately
+      showResult(d.success?'success':'error',d);
+    }
+    
   }catch(err){
+    // Handle errors
     if(err.name==='AbortError'){
       abortCtrl=null;
-      fill.style.width='0';prog.classList.remove('show');
+      fill.style.width='0';
+      prog.classList.remove('show');
       cancelBtn.classList.remove('show');
       btn.disabled=!selFiles.length;
       btn.style.display='flex';
-      if(ph){ph.style.display='flex';ph.innerHTML=`${svgIcon('result',28)}<span>Processing cancelled</span>`;}
+      if(ph){
+        ph.style.display='flex';
+        ph.innerHTML=`${svgIcon('result',28)}<span>Processing cancelled</span>`;
+      }
       return;
+    }else if(/fetch|NetworkError|Failed/i.test(err.message)){
+      setupBox.classList.add('show');
+      prog.classList.remove('show');
+      if(ph){
+        ph.style.display='flex';
+        ph.innerHTML=`${svgIcon('result',28)}<span>Connection failed. Please check your internet and try again.</span>`;
+      }
+    }else{
+      showResult('error',{message:'Something went wrong. Please try again.'});
     }
-    else if(/fetch|NetworkError|Failed/i.test(err.message)){
-      setupBox.classList.add('show');prog.classList.remove('show');
-      if(ph){ph.style.display='flex';ph.innerHTML=`${svgIcon('result',28)}<span>Connection failed. Please check your internet and try again.</span>`;}
-    }else showResult('error',{message:'Something went wrong. Please try again.'});
   }finally{
-    clearInterval(tick);
-    tick=null;
+    if(tick){
+      clearInterval(tick);
+      tick=null;
+    }
     cancelBtn.classList.remove('show');
     btn.disabled=!selFiles.length;
     btn.style.display='flex';
@@ -1809,7 +1911,7 @@ function showResult(type,data){
   pills.innerHTML=pa.map(p=>`<span class="tp-result-pill">${p}</span>`).join('');
 
   if(type==='success'){
-    let url=data.download_url||data.signed_url;
+    let url=data.signed_url||data.download_url;
     if(!url&&data.filename){
       const fn=(data.filename||'').replace(/^\/pdfwala/,'');
       url=fn.startsWith('/')?API+fn:API+'/download/'+fn;
