@@ -6,6 +6,7 @@ Key changes from V10:
   - timeout / graceful_timeout raised to 900s (15 min) for large-file sync fallback
   - workers and threads driven from environment variables
   - VERSION updated to 11.0.0 in startup messages
+  - Fixed access_log_format syntax error (missing closing parenthesis)
 """
 
 import os
@@ -20,10 +21,10 @@ worker_class = "gthread"
 threads      = int(os.environ.get("GUNICORN_THREADS", 8))
 
 # CRITICAL: 900 s = 15 minutes — required for large-file synchronous fallback
-# when Celery is unavailable.  Lowering this will cause 502 on big conversions.
-timeout         = 900
+# when Celery is unavailable. Lowering this will cause 502 on big conversions.
+timeout          = 900
 graceful_timeout = 900
-keepalive       = 5
+keepalive        = 5
 
 max_requests        = 1000
 max_requests_jitter = 100
@@ -31,12 +32,14 @@ max_requests_jitter = 100
 # ── Logging ────────────────────────────────────────────────────────────────────
 accesslog = "-"
 errorlog  = "-"
-loglevel  = "info"
-# JSON format for log aggregators (Loki, CloudWatch, etc.)
+loglevel  = os.environ.get("LOG_LEVEL", "info").lower()
+
+# FIXED: Correct JSON format — removed extra parenthesis that caused ValueError
+# Original broken: "%(({X-Request-ID}i)s" → Fixed: "%({X-Request-ID}i)s"
 access_log_format = (
     '{"time":"%(t)s","method":"%(m)s","path":"%(U)s",'
     '"status":"%(s)s","duration_us":%(D)s,"ip":"%(h)s",'
-    '"req_id":"%(({X-Request-ID}i)s"}'
+    '"req_id":"%({X-Request-ID}i)s"}'
 )
 
 # ── Process naming ─────────────────────────────────────────────────────────────
