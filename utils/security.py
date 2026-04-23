@@ -1,13 +1,15 @@
 """
-PDFWala V10.0
-utils/security.py — HMAC signed URLs, ReDoS-safe regex, API key helpers.
+PDFWala V11.0.0
+utils/security.py — HMAC signed URLs (FULL 256-bit), ReDoS-safe regex, API key helpers.
 """
 
+import os
 import re
 import time
 import hmac
 import secrets
 import hashlib
+import base64
 import threading
 from typing import Optional
 
@@ -25,18 +27,26 @@ REDACTION_PATTERNS = {
 
 
 def generate_signed_url(filepath: str, expiry: int = None) -> str:
-    """Generate HMAC-SHA256-signed time-limited download URL."""
-    filename  = filepath.split("/")[-1]  # os.path.basename
+    """
+    Generate HMAC-SHA256-signed time-limited download URL (FULL 256-bit).
+    Uses URL-safe base64 encoding to keep URLs compact.
+    """
+    filename  = os.path.basename(filepath)
     expiry_ts = int(time.time()) + (expiry or Config.SIGNED_URL_EXPIRY)
     msg       = f"{filename}:{expiry_ts}".encode()
-    signature = hmac.new(
+    sig_bytes = hmac.new(
         Config.SIGNED_URL_SECRET.encode(), msg, hashlib.sha256
-    ).hexdigest()[:24]
+    ).digest()
+    # URL-safe base64, strip padding
+    signature = base64.urlsafe_b64encode(sig_bytes).rstrip(b"=").decode()
     return f"/download/{filename}?expires={expiry_ts}&sig={signature}"
 
 
 def verify_signed_url(filename: str, expires: str, signature: str) -> bool:
-    """Verify a signed URL. Returns False if expired or tampered."""
+    """
+    Verify a signed URL. Returns False if expired or tampered.
+    Uses constant-time comparison.
+    """
     try:
         expiry_ts = int(expires)
         if time.time() > expiry_ts:
@@ -44,8 +54,9 @@ def verify_signed_url(filename: str, expires: str, signature: str) -> bool:
         msg      = f"{filename}:{expiry_ts}".encode()
         expected = hmac.new(
             Config.SIGNED_URL_SECRET.encode(), msg, hashlib.sha256
-        ).hexdigest()[:24]
-        return hmac.compare_digest(signature, expected)
+        ).digest()
+        expected_sig = base64.urlsafe_b64encode(expected).rstrip(b"=").decode()
+        return hmac.compare_digest(signature.encode(), expected_sig.encode())
     except Exception:
         return False
 
@@ -66,7 +77,6 @@ class SafeRegex:
     """
     ReDoS-safe regex wrapper.
     Rejects patterns with nested quantifiers and wraps match/search with timeout.
-    Formerly _safe_regex_compile().
     """
 
     _DANGEROUS = re.compile(r'(\w+[+*]\w*[+*]|\(.*[+*].*\)[+*])')
@@ -110,5 +120,5 @@ class SafeRegex:
 
     @classmethod
     def compile(cls, pattern: str, timeout_seconds: float = 1.0) -> "SafeRegex":
-        """Factory — equivalent to _safe_regex_compile()."""
+        """Factory method."""
         return cls(pattern, timeout_seconds)
