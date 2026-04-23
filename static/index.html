@@ -1922,7 +1922,7 @@ async function processToolFile(){
       prog.classList.add('show');
 
       let attempts=0;
-      const maxAttempts=120;
+      const maxAttempts=360; // 30 min timeout for large files
       const pollUrl=API+d.status_url;
       pollingActive=true;
 
@@ -1930,7 +1930,7 @@ async function processToolFile(){
         if(!pollingActive||curTool!==toolAtCallTime)return;
         if(++attempts>maxAttempts){
           processingActive=false;
-          showResult('error',{message:'Processing timed out after 10 minutes. Try a smaller file.'});
+          showResult('error',{message:'Processing timed out after 30 minutes. The server may still be working — check back later.'});
           return;
         }
         try{
@@ -1957,10 +1957,17 @@ async function processToolFile(){
             showResult('error',{message:pollData.error||'Processing failed on server'});
           }else{
             if(pollData.progress){
-              const progressValue=Math.min(89,parseInt(pollData.progress)||0);
+              const progressValue=Math.min(97,parseInt(pollData.progress)||0);
               fill.style.width=progressValue+'%';
-              pTxt.textContent=`Processing... ${progressValue}%`;
-              if(announcer)announcer.textContent=pTxt.textContent;
+              // Show real page progress if available (V11.1 chunked conversion)
+              let progressMsg='Processing... '+progressValue+'%';
+              if(pollData.current_page&&pollData.total_pages){
+                progressMsg='Page '+pollData.current_page+' of '+pollData.total_pages+' ('+progressValue+'%)';
+              }else if(pollData.status_detail){
+                progressMsg=pollData.status_detail+' ('+progressValue+'%)';
+              }
+              pTxt.textContent=progressMsg;
+              if(announcer)announcer.textContent=progressMsg;
             }
             currentPollTimeout=setTimeout(poll,5000);
           }
