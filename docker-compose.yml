@@ -27,8 +27,12 @@ x-app-env: &app-env
   MAX_SLIDES_PPT: ${MAX_SLIDES_PPT:-200}
   SHUTDOWN_TIMEOUT: ${SHUTDOWN_TIMEOUT:-30}
   MAX_OCR_THREADS: ${MAX_OCR_THREADS:-2}
+  MAX_COMPARE_PAGES: ${MAX_COMPARE_PAGES:-50}
+  MAX_OCR_PAGES_SYNC: ${MAX_OCR_PAGES_SYNC:-30}
+  MAX_IMAGE_PAGES: ${MAX_IMAGE_PAGES:-50}
   GUNICORN_WORKERS: ${GUNICORN_WORKERS:-4}
   GUNICORN_THREADS: ${GUNICORN_THREADS:-8}
+  ASYNC_FILE_THRESHOLD: ${ASYNC_FILE_THRESHOLD:-10485760}
 
 # ============================================================================
 # SERVICES
@@ -104,13 +108,12 @@ services:
         condition: service_healthy
       app:
         condition: service_healthy
-    # FIX: Added missing healthcheck — required for dependent service stability
     healthcheck:
-      test: ["CMD-SHELL", "celery -A workers.celery_app inspect ping -d celery@$$HOSTNAME 2>/dev/null | grep -q OK || exit 1"]
+      test: ["CMD-SHELL", "celery -A workers.celery_app:celery_app inspect ping -d worker-fast@$(hostname) 2>/dev/null | grep -q OK || exit 1"]
       interval: 30s
-      timeout: 10s
+      timeout: 15s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     networks:
       - pdfwala-network
 
@@ -139,13 +142,12 @@ services:
         condition: service_healthy
       app:
         condition: service_healthy
-    # FIX: Added missing healthcheck
     healthcheck:
-      test: ["CMD-SHELL", "celery -A workers.celery_app inspect ping -d celery@$$HOSTNAME 2>/dev/null | grep -q OK || exit 1"]
+      test: ["CMD-SHELL", "celery -A workers.celery_app:celery_app inspect ping -d worker-office@$(hostname) 2>/dev/null | grep -q OK || exit 1"]
       interval: 30s
-      timeout: 10s
+      timeout: 15s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     networks:
       - pdfwala-network
 
@@ -174,13 +176,12 @@ services:
         condition: service_healthy
       app:
         condition: service_healthy
-    # FIX: Added missing healthcheck
     healthcheck:
-      test: ["CMD-SHELL", "celery -A workers.celery_app inspect ping -d celery@$$HOSTNAME 2>/dev/null | grep -q OK || exit 1"]
+      test: ["CMD-SHELL", "celery -A workers.celery_app:celery_app inspect ping -d worker-slow@$(hostname) 2>/dev/null | grep -q OK || exit 1"]
       interval: 30s
-      timeout: 10s
+      timeout: 15s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     networks:
       - pdfwala-network
 
