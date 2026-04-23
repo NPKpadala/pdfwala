@@ -1,12 +1,12 @@
 #!/bin/bash
 # ============================================================================
-# PDFWala V10.0 - Production Deployment Script
+# PDFWala V11.0.0 - Production Deployment Script
 # ============================================================================
 
 set -e  # Exit on any error
 
 echo "╔══════════════════════════════════════════════════════════════════╗"
-echo "║              PDFWala V10.0 - Production Deploy                   ║"
+echo "║              PDFWala V11.0.0 - Production Deploy                 ║"
 echo "╚══════════════════════════════════════════════════════════════════╝"
 echo ""
 
