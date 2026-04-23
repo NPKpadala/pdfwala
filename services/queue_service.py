@@ -1,7 +1,7 @@
 """
-PDFWala V10.0
+PDFWala V11.0.0
 services/queue_service.py — Circuit breakers, backpressure, job management.
-FIX #4: Backpressure control to protect Celery queues from overflow.
+FIXED: Added cb_wkhtmltopdf circuit breaker.
 """
 
 import time
@@ -72,13 +72,14 @@ class CircuitBreaker:
 cb_libreoffice = CircuitBreaker("libreoffice")
 cb_ghostscript = CircuitBreaker("ghostscript")
 cb_tesseract   = CircuitBreaker("tesseract")
+cb_wkhtmltopdf = CircuitBreaker("wkhtmltopdf")  # ADDED: V11.0.0
 
 
 # ── Backpressure Controller ────────────────────────────────────────────────────
 
 class BackpressureController:
     """
-    FIX #4: Reject jobs when Celery queues are too deep.
+    Reject jobs when Celery queues are too deep.
     Prevents memory exhaustion under heavy load.
     """
 
