@@ -8,7 +8,7 @@
 x-app-env: &app-env
   SECRET_KEY: ${SECRET_KEY:-changeme-in-production-min-32-chars}
   SIGNED_URL_SECRET: ${SIGNED_URL_SECRET:-changeme-in-production}
-  API_KEY: ${API_KEY:-}
+  # API_KEY: ${API_KEY:-}
   REDIS_URL: redis://redis:6379/0
   BASE_DATA_DIR: /home/opc/pdfwala
   UPLOAD_FOLDER: /home/opc/pdfwala/uploads
