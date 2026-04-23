@@ -734,54 +734,79 @@ def merge_pdf():
     except Exception:
         log.exception("merge"); return err("Merge failed", 500)
 
-
 @app.route("/api/v1/split", methods=["POST"])
 @app.route("/api/split", methods=["POST"])
 @require_auth
 @require_rate_limit
 def split_pdf():
+    """Split a PDF file into individual pages or by specified page ranges."""
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_PDF)
-    if e: return err(e)
+    if e:
+        return err(e)
+
     mode = request.form.get("mode", "all")
     ranges = request.form.get("ranges", "")
+    
     if mode == "range" and not ranges.strip():
         return err("Page range required when mode is range", 400)
+
     try:
         with FileService.temp_upload(f) as path:
-            reader = PdfReader(path)
-            # Change 7 + [CRIT-04]: Empty PDF guard for split
+            # Validate PDF is not empty
             guard = _guard_empty_pdf(path)
-            if guard: return guard
-            total = len(reader.pages)
-            indices = list(range(total)) if mode == "all" else parse_page_ranges(ranges, total)
-            if not indices: return err("No valid pages in range")
+            if guard:
+                return guard
 
-            # FIX MEDIUM-5: Return single PDF when range is exactly 1 page, not ZIP
+            reader = PdfReader(path)
+            total = len(reader.pages)
+            
+            # Determine which pages to extract
+            if mode == "all":
+                indices = list(range(total))
+            else:
+                indices = parse_page_ranges(ranges, total)
+            
+            if not indices:
+                return err("No valid pages in range")
+
+            # Single page extraction → return PDF directly (not ZIP)
             if len(indices) == 1:
-                w = PdfWriter()
-                w.add_page(reader.pages[indices[0]])
+                writer = PdfWriter()
+                writer.add_page(reader.pages[indices[0]])
+                
                 fname = generate_output_filename(f.filename, f"page_{indices[0]+1}")
                 fname = re.sub(r'\.pdf$', '', fname, flags=re.IGNORECASE) + ".pdf"
                 out = os.path.join(Config.OUTPUT_FOLDER, fname)
+                
                 with open(out, "wb") as fh:
-                    w.write(fh)
+                    writer.write(fh)
+                    
                 return ok(f"Extracted page {indices[0]+1}", out)
 
+            # Multiple pages → return ZIP file
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                 for idx in indices:
-                    w = PdfWriter(); w.add_page(reader.pages[idx])
-                    pb = io.BytesIO(); w.write(pb)
-                    zf.writestr(f"page_{idx+1:04d}.pdf", pb.getvalue())
-            op = "split_pages" if mode == "all" else "extracted_pages"
-            fname = generate_output_filename(f.filename, op)
-            out = os.path.join(Config.OUTPUT_FOLDER, fname)
-            with open(out, "wb") as fh: fh.write(buf.getvalue())
-        return ok(f"Split into {len(indices)} pages", out)
-    except Exception:
-        log.exception("split"); return err("Split failed", 500)
+                    writer = PdfWriter()
+                    writer.add_page(reader.pages[idx])
+                    
+                    page_buf = io.BytesIO()
+                    writer.write(page_buf)
+                    zf.writestr(f"page_{idx+1:04d}.pdf", page_buf.getvalue())
 
+            operation = "split_pages" if mode == "all" else "extracted_pages"
+            fname = generate_output_filename(f.filename, operation)
+            out = os.path.join(Config.OUTPUT_FOLDER, fname)
+            
+            with open(out, "wb") as fh:
+                fh.write(buf.getvalue())
+
+        return ok(f"Split into {len(indices)} pages", out)
+
+    except Exception:
+        log.exception("split")
+        return err("Split failed", 500)
 
 @app.route("/api/v1/organize", methods=["POST"])
 @app.route("/api/organize", methods=["POST"])
@@ -1835,13 +1860,21 @@ def pdf_to_image():
 @require_auth
 @require_rate_limit
 def pdf_to_word():
+    """Convert PDF to editable Word document (DOCX)."""
     if not PDF2DOCX_AVAILABLE:
         return err("PDF to Word requires pdf2docx.", 501)
+
     f = request.files.get("file")
     e = validate_file(f, Config.ALLOWED_PDF)
-    if e: return err(e)
-    f.seek(0,2); file_size = f.tell(); f.seek(0)
-    # Change 7 + [CRIT-04]: Empty PDF guard
+    if e:
+        return err(e)
+
+    # Get file size for async threshold check
+    f.seek(0, 2)
+    file_size = f.tell()
+    f.seek(0)
+
+    # Validate PDF is not empty
     try:
         _chk = fitz.open(stream=f.read(), filetype="pdf")
         if len(_chk) == 0:
@@ -1851,18 +1884,25 @@ def pdf_to_word():
         f.seek(0)
     except Exception:
         f.seek(0)
-    ext = f.filename.rsplit(".",1)[-1].lower() if "." in f.filename else "pdf"
+
+    # Save uploaded file
+    ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else "pdf"
     upload_path = os.path.join(Config.UPLOAD_FOLDER, f"{uuid.uuid4()}.{ext}")
     f.seek(0)
-    with open(upload_path, "wb") as fh: fh.write(f.read())
+    with open(upload_path, "wb") as fh:
+        fh.write(f.read())
+
+    # Prepare output path
     fname = generate_output_filename(f.filename, "to_word")
-    fname = re.sub(r'\.pdf$','.docx',fname,flags=re.IGNORECASE)
-    if not fname.endswith(".docx"): fname = Path(fname).stem + ".docx"
+    fname = re.sub(r'\.pdf$', '.docx', fname, flags=re.IGNORECASE)
+    if not fname.endswith(".docx"):
+        fname = Path(fname).stem + ".docx"
     out = os.path.join(Config.OUTPUT_FOLDER, fname)
 
-    # FIX MEDIUM-8 + [CRIT-01]: Unified async threshold with lazy import
+    # ========================================================================
+    # LARGE FILE: Async processing via Celery
+    # ========================================================================
     if file_size > _ASYNC_FILE_THRESHOLD:
-        # [CRIT-01] Lazy import to break circular dependency
         _pdf_to_word_task = None
         try:
             from tasks.office_tasks import pdf_to_word_task as _pdf_to_word_task
@@ -1870,97 +1910,80 @@ def pdf_to_word():
             log.error(f"[CRIT-01] pdf_to_word_task lazy import failed: {_ie}")
 
         if celery_app and _pdf_to_word_task:
-            # [CRIT-06] Register upload for guaranteed cleanup
+            # Register file for cleanup in case worker never picks it up
             try:
                 redis_service.client.setex(
-                    f"cleanup:{upload_path}", Config.FILE_TTL_SEC + 600, "pending")
-            except Exception: pass
+                    f"cleanup:{upload_path}", Config.FILE_TTL_SEC + 600, "pending"
+                )
+            except Exception:
+                pass
+
             job_id = str(uuid.uuid4())
             redis_service.job_set(job_id, {
-                "status":"pending","progress":"0","operation":"pdf_to_word",
-                "created_at":get_timestamp(),"user_id":getattr(g,"user_id","default")
+                "status": "pending",
+                "progress": "0",
+                "operation": "pdf_to_word",
+                "created_at": get_timestamp(),
+                "user_id": getattr(g, "user_id", "default")
             })
+
             try:
                 redis_service.client.expire(f"job:{job_id}", getattr(Config, 'JOB_TTL_SEC', 7200))
-            except Exception: pass
+            except Exception:
+                pass
+
             task = _pdf_to_word_task.delay(upload_path, out, job_id)
             redis_service.job_update(job_id, {"task_id": task.id})
+
             return jsonify({
-                "success":True,"message":"Large file — conversion running. Check status_url.",
-                "job_id":job_id,"status_url":f"/api/v1/jobs/{job_id}",
-                "poll_interval_ms":2000
+                "success": True,
+                "message": "Large file — conversion running. Check status_url.",
+                "job_id": job_id,
+                "status_url": f"/api/v1/jobs/{job_id}",
+                "poll_interval_ms": 2000,
+                "async": True
             })
+
         else:
-            # [CRIT-01] + [CRIT-07] Sync fallback with cancellable thread
+            # Celery unavailable — fallback to synchronous processing
             log.warning("[CRIT-01] pdf_to_word async unavailable, processing synchronously")
-            job_id = str(uuid.uuid4())
-            redis_service.job_set(job_id, {
-                "status":"pending","progress":"0","operation":"pdf_to_word",
-                "created_at":get_timestamp(),"user_id":getattr(g,"user_id","default")
-            })
-            thread_path = upload_path + "_thread.pdf"
-            shutil.copy(upload_path, thread_path)
-            try: os.remove(upload_path)
-            except OSError: pass
-
-            # [CRIT-07] Cancellable thread with registry
-            _cancel_ev = threading.Event()
-
-            def _convert_bg():
-                try:
-                    if _cancel_ev.is_set():
-                        redis_service.job_update(job_id, {"status":"cancelled"})
-                        return
-                    cv = Pdf2DocxConverter(thread_path)
-                    cv.convert(out, start=0, end=None)
-                    cv.close()
-                    if not _cancel_ev.is_set() and os.path.exists(out) and os.path.getsize(out) > 0:
-                        redis_service.job_update(job_id, {
-                            "status":"completed","progress":"100","output_path":out
-                        })
-                    else:
-                        raise RuntimeError("Cancelled or output missing/empty")
-                except Exception as ex:
-                    redis_service.job_update(job_id, {"status":"failed","error":str(ex)})
-                finally:
-                    _thread_registry.pop(job_id, None)
-                    try: os.remove(thread_path)
-                    except OSError: pass
-
-            t = threading.Thread(target=_convert_bg, daemon=True)
-            _thread_registry[job_id] = (t, _cancel_ev)
-            t.start()
-            t.join(timeout=120)
-
-            if not t.is_alive():
-                job = redis_service.job_get(job_id)
-                if job and job.get("status") == "completed" and os.path.exists(out):
+            try:
+                cv = Pdf2DocxConverter(upload_path)
+                cv.convert(out, start=0, end=None)
+                cv.close()
+                if os.path.exists(out) and os.path.getsize(out) > 0:
                     return ok("PDF converted to Word (sync)", out)
+                else:
+                    return err("Conversion failed — output is empty", 500)
+            except Exception:
+                log.exception("pdf_to_word sync fallback")
+                return err("PDF to Word conversion failed", 500)
+            finally:
+                try:
+                    os.remove(upload_path)
+                except OSError:
+                    pass
 
-            return jsonify({
-                "success":True,"message":"Large file — conversion running. Check status_url.",
-                "job_id":job_id,"status_url":f"/api/v1/jobs/{job_id}",
-                "poll_interval_ms":2000
-            })
-
-    # Small file — synchronous processing
+    # ========================================================================
+    # SMALL FILE: Synchronous processing
+    # ========================================================================
     try:
         cv = Pdf2DocxConverter(upload_path)
         cv.convert(out, start=0, end=None)
         cv.close()
     except Exception:
         log.exception("pdf_to_word sync")
-        try: os.remove(upload_path)
-        except OSError: pass
         return err("PDF to Word conversion failed", 500)
     finally:
-        try: os.remove(upload_path)
-        except OSError: pass
+        try:
+            os.remove(upload_path)
+        except OSError:
+            pass
 
     if not os.path.exists(out) or os.path.getsize(out) == 0:
         return err("Conversion failed — output is empty", 500)
-    return ok("PDF converted to Word", out)
 
+    return ok("PDF converted to Word", out)
 
 @app.route("/api/v1/pdf-to-excel", methods=["POST"])
 @app.route("/api/pdf-to-excel", methods=["POST"])
