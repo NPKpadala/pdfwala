@@ -1,12 +1,13 @@
 """
-PDFWala V10.0
-services/redis_service.py — Singleton Redis client with job store, rate limiter,
-and complete in-memory fallback.
+PDFWala V11.0.0
+services/redis_service.py — Singleton Redis client with job store, rate limiter.
+FIXED: Rate limit fail-closed, correct Config attribute, removed insecure memory fallback.
 """
 
 import time
 import threading
-from typing import Any, Dict, List, Optional
+import logging
+from typing import Any, Dict, Optional
 
 from config import Config
 
@@ -17,15 +18,16 @@ except ImportError:
     REDIS_AVAILABLE = False
     redis_lib = None
 
+log = logging.getLogger("pdfwala.redis")
+
 
 class RedisService:
     """
     Singleton Redis wrapper providing:
     - job_set / job_get / job_update
-    - rate_limit_check
+    - rate_limit_check (FAIL CLOSED — no memory fallback)
     - file_reference_add / file_reference_remove
     - cache_get / cache_set
-    All methods fall back to in-memory storage when Redis is unavailable.
     """
 
     _instance = None
@@ -39,14 +41,13 @@ class RedisService:
                 obj._client_lock = threading.Lock()
                 obj._mem_jobs: Dict[str, dict] = {}
                 obj._mem_jobs_lock = threading.Lock()
-                obj._mem_rate: Dict[str, list] = {}
-                obj._mem_rate_lock = threading.Lock()
-                obj._mem_cache: Dict[str, tuple] = {}  # key → (value, expiry_ts)
+                obj._mem_cache: Dict[str, tuple] = {}
                 obj._mem_cache_lock = threading.Lock()
+                # REMOVED: _mem_rate, _mem_rate_lock, _rate_cleanup_loop references
                 cls._instance = obj
-                # Start background cleanup
+                # Start background cleanup for jobs only
                 threading.Thread(
-                    target=obj._rate_cleanup_loop, daemon=True, name="rl-cleanup"
+                    target=obj._job_cleanup_loop, daemon=True, name="job-cleanup"
                 ).start()
         return cls._instance
 
@@ -68,7 +69,8 @@ class RedisService:
                     rc = redis_lib.Redis(connection_pool=pool)
                     rc.ping()
                     self._client = rc
-                except Exception:
+                except Exception as e:
+                    log.error(f"Redis connection failed: {e}")
                     self._client = None
         return self._client
 
@@ -83,8 +85,8 @@ class RedisService:
                 rc.hset(key, mapping=str_map)
                 rc.expire(key, ttl or Config.FILE_TTL_SEC)
                 return
-            except Exception:
-                pass
+            except Exception as e:
+                log.warning(f"Redis job_set failed for {job_id}: {e}")
         with self._mem_jobs_lock:
             self._mem_jobs.setdefault(job_id, {}).update(mapping)
             self._mem_jobs[job_id]["_ttl"] = time.time() + (ttl or Config.FILE_TTL_SEC)
@@ -96,8 +98,8 @@ class RedisService:
                 raw = rc.hgetall(f"job:{job_id}")
                 if raw:
                     return {k.decode(): v.decode() for k, v in raw.items()}
-            except Exception:
-                pass
+            except Exception as e:
+                log.warning(f"Redis job_get failed for {job_id}: {e}")
         with self._mem_jobs_lock:
             job = self._mem_jobs.get(job_id)
             if job:
@@ -111,12 +113,12 @@ class RedisService:
         existing.update(mapping)
         self.job_set(job_id, existing)
 
-    # ── Rate limiting ──────────────────────────────────────────────────────────
+    # ── Rate limiting — FAIL CLOSED, NO MEMORY FALLBACK ────────────────────────
 
     def rate_limit_check(self, key: str, limit: int) -> bool:
         """
         Return True if request is ALLOWED (under limit), False if denied.
-        Redis implementation uses atomic INCR + EXPIRE.
+        FAILS CLOSED on Redis error — no insecure memory fallback.
         """
         rc = self.client
         if rc:
@@ -124,21 +126,18 @@ class RedisService:
                 redis_key = f"rl:{key}"
                 pipe      = rc.pipeline()
                 pipe.incr(redis_key)
-                pipe.expire(redis_key, Config.RATE_LIMIT_WIN)
+                pipe.expire(redis_key, Config.RATE_LIMIT_WINDOW_SEC)
                 count, _ = pipe.execute()
                 return int(count) <= limit
-            except Exception:
-                pass
-        # In-memory fallback
-        now = time.monotonic()
-        with self._mem_rate_lock:
-            hits = [t for t in self._mem_rate.get(key, [])
-                    if now - t < Config.RATE_LIMIT_WIN]
-            if len(hits) >= limit:
-                return False
-            hits.append(now)
-            self._mem_rate[key] = hits
-        return True
+            except Exception as e:
+                log.error(
+                    f"Redis rate_limit_check FAILED for key={key}: {e} — "
+                    f"rejecting request (fail-closed)"
+                )
+                return False  # FAIL CLOSED — do NOT allow request
+        # Redis unavailable — fail closed
+        log.error("Redis unavailable for rate limiting — rejecting request (fail-closed)")
+        return False
 
     # ── File reference tracking ────────────────────────────────────────────────
 
@@ -149,17 +148,8 @@ class RedisService:
             try:
                 rc.setex(f"file:{path}", ttl or Config.FILE_TTL_SEC, "1")
                 return
-            except Exception:
-                pass
-        # Memory fallback: schedule deletion via thread
-        def _del_later():
-            time.sleep(ttl or Config.FILE_TTL_SEC)
-            import os
-            try:
-                os.remove(path)
-            except OSError:
-                pass
-        threading.Thread(target=_del_later, daemon=True).start()
+            except Exception as e:
+                log.warning(f"Redis file_reference_add failed: {e}")
 
     def file_reference_remove(self, path: str):
         rc = self.client
@@ -199,22 +189,12 @@ class RedisService:
                 del self._mem_cache[key]
         return None
 
-    # ── Background cleanup ─────────────────────────────────────────────────────
+    # ── Background job cleanup ─────────────────────────────────────────────────
 
-    def _rate_cleanup_loop(self):
-        """Periodically remove stale in-memory rate-limit buckets."""
+    def _job_cleanup_loop(self):
+        """Periodically remove expired in-memory jobs."""
         while True:
             time.sleep(300)
-            now = time.monotonic()
-            with self._mem_rate_lock:
-                for ip in list(self._mem_rate.keys()):
-                    self._mem_rate[ip] = [
-                        t for t in self._mem_rate[ip]
-                        if now - t < Config.RATE_LIMIT_WIN
-                    ]
-                    if not self._mem_rate[ip]:
-                        del self._mem_rate[ip]
-            # Also purge expired in-memory jobs
             with self._mem_jobs_lock:
                 now_ts = time.time()
                 stale  = [jid for jid, j in self._mem_jobs.items()
