@@ -1,12 +1,6 @@
 """
 PDFWala Enterprise V11.0.0
 workers/celery_app.py — Celery application factory.
-
-Changes from V10:
-  - Added include= so workers discover tasks without a separate autodiscover call
-  - Added task_time_limit / task_soft_time_limit (30 min / 25 min)
-  - Added broker_connection_retry_on_startup=True (Celery 6 compat)
-  - REDIS_URL defaults to redis://redis:6379/0 (matches docker-compose)
 """
 
 import os
@@ -18,7 +12,6 @@ celery_app = Celery(
     "pdfwala",
     broker=REDIS_URL,
     backend=REDIS_URL,
-    # FIX: explicit include so workers load tasks without needing autodiscover
     include=[
         "tasks.pdf_tasks",
         "tasks.ocr_tasks",
@@ -36,14 +29,12 @@ celery_app.conf.update(
     task_acks_late=True,
     worker_prefetch_multiplier=1,
     result_expires=3600,
-    # FIX: required in Celery 6+ to suppress deprecation warning and enable
-    #      automatic reconnect on broker restart during worker startup
     broker_connection_retry_on_startup=True,
-    # FIX V11: global hard / soft time limits (task-level decorators override these)
+    broker_connection_max_retries=10,          # V11.0.0: Don't retry forever
+    task_reject_on_worker_lost=True,           # V11.0.0: Reject if worker dies
     task_time_limit=1800,        # 30 minutes hard kill
     task_soft_time_limit=1500,   # 25 minutes — raises SoftTimeLimitExceeded
     task_routes={
-        # NOTE: routes must match the registered task *name*, not the module path
         "pdfwala.tasks.pdf_tasks.*":    {"queue": "fast"},
         "pdfwala.tasks.ocr_tasks.*":    {"queue": "slow"},
         "pdfwala.tasks.office_tasks.*": {"queue": "office"},
