@@ -158,8 +158,13 @@ class Config:
     # Maximum pages to compare in compare-pdf endpoint — prevents OOM
     MAX_COMPARE_PAGES = int(os.environ.get("MAX_COMPARE_PAGES", 50))
 
+    # Maximum pages for synchronous OCR — larger files must use async endpoint
+    MAX_OCR_PAGES_SYNC = int(os.environ.get("MAX_OCR_PAGES_SYNC", 30))
+
+    # Maximum pages to convert to images — prevents OOM
+    MAX_IMAGE_PAGES = int(os.environ.get("MAX_IMAGE_PAGES", 50))
+
     # PIL/Pillow decompression bomb threshold — prevents pixel explosion attacks
-    # Default: 89.5 megapixels (half of Pillow's default 178.9MP)
     MAX_IMAGE_PIXELS = int(os.environ.get("MAX_IMAGE_PIXELS", 89_478_485))
 
     # Gunicorn worker configuration
