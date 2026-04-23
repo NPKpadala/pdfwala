@@ -127,7 +127,7 @@ if not getattr(Config, 'SIGNED_URL_SECRET', None) or len(str(Config.SIGNED_URL_S
     raise RuntimeError("SIGNED_URL_SECRET must be set and at least 32 characters")
 
 # Unified large-file async threshold (10 MB)
-_ASYNC_FILE_THRESHOLD = 10 * 1024 * 1024  # 10 MB
+_ASYNC_FILE_THRESHOLD = int(os.environ.get("ASYNC_FILE_THRESHOLD", 10 * 1024 * 1024))
 
 # FIX 1: Module-level lock for thread registry
 _registry_lock = threading.Lock()
@@ -213,9 +213,19 @@ def _after(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; "
+        "connect-src 'self'; "
+        "font-src 'self'; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'"
+    )
     response.headers.pop("Server", None)
     return response
-
 
 # ── Response helpers ───────────────────────────────────────────────────────────
 def err(msg, code=400):
