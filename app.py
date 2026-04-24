@@ -1370,15 +1370,18 @@ def rotate_pdf():
                 doc.close()
                 return err("Input PDF has no pages", 400)
             total = len(doc)
+            # V11.1: hard cap guard
+            MAX_ROTATE = getattr(Config, "MAX_ROTATE_PAGES", 1000)
+            if total > MAX_ROTATE:
+                doc.close()
+                return err(f"PDF too large for rotation (max {MAX_ROTATE} pages). Split the PDF first.", 413)
             idxs = list(range(total)) if pages_spec.lower()=="all" else parse_page_ranges(pages_spec, total)
             if not idxs:
                 doc.close()
-                # FIX 50: Clarify 1-based page numbering in error message
                 return err(f"No valid pages matched the specified range (document has {total} pages)", 400)
             for i in idxs: doc[i].set_rotation(angle)
             fname = generate_output_filename(f.filename, "rotated")
             out = os.path.join(Config.OUTPUT_FOLDER, fname)
-            # FIX 26: Atomic write for rotate_pdf
             tmp_out = out + ".tmp"
             doc.save(tmp_out)
             doc.close()
@@ -1427,6 +1430,11 @@ def watermark_pdf():
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
+            # V11.1: hard cap guard
+            MAX_WM = getattr(Config, "MAX_WATERMARK_PAGES", 1000)
+            if len(doc) > MAX_WM:
+                doc.close()
+                return err(f"PDF too large for watermarking (max {MAX_WM} pages). Split the PDF first.", 413)
             try:
                 _wm_bytes = None
                 _wm_w = _wm_h = 0
@@ -1505,6 +1513,11 @@ def page_numbers():
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
+            # V11.1: hard cap guard
+            MAX_PN = getattr(Config, "MAX_PAGE_NUMBERS_PAGES", 1000)
+            if len(doc) > MAX_PN:
+                doc.close()
+                return err(f"PDF too large for page numbering (max {MAX_PN} pages). Split the PDF first.", 413)
             try:
                 for i, page in enumerate(doc):
                     r = page.rect
@@ -1546,6 +1559,11 @@ def crop_pdf():
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
+            # V11.1: hard cap guard
+            MAX_CROP = getattr(Config, "MAX_CROP_PAGES", 1000)
+            if len(doc) > MAX_CROP:
+                doc.close()
+                return err(f"PDF too large for cropping (max {MAX_CROP} pages). Split the PDF first.", 413)
             try:
                 first_r = doc[0].rect
                 if (left + right) >= first_r.width or (top + bottom) >= first_r.height:
@@ -1826,6 +1844,11 @@ def redact_pdf():
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
+            # V11.1: hard cap guard
+            MAX_RD = getattr(Config, "MAX_REDACT_PAGES", 500)
+            if len(doc) > MAX_RD:
+                doc.close()
+                return err(f"PDF too large for redaction (max {MAX_RD} pages). Split the PDF first.", 413)
             try:
                 count = 0
                 for page in doc:
@@ -1882,34 +1905,84 @@ def pdf_to_image():
             if len(doc) == 0:
                 doc.close()
                 return err("Input PDF has no pages", 400)
-            # FIX 51: Page count guard for pdf_to_image
-            MAX_IMAGE_PAGES = getattr(Config, "MAX_IMAGE_PAGES", 50)
-            if len(doc) > MAX_IMAGE_PAGES:
-                doc.close()
-                return err(f"PDF too large for image conversion (max {MAX_IMAGE_PAGES} pages). Split the PDF first.", 413)
-            try:
-                count = len(doc)
-                # FIX 21: Stream directly to disk ZIP
-                fname = generate_output_filename(f.filename, "to_image")
-                out = os.path.join(Config.OUTPUT_FOLDER, fname)
-                with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
-                    for i, page in enumerate(doc):
-                        mat = fitz.Matrix(dpi/72, dpi/72)
-                        pix = page.get_pixmap(matrix=mat, alpha=True)
-                        pil = Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGBA")
-                        pix = None
-                        img_buf = io.BytesIO()
-                        if fmt == "jpg":
-                            bg = Image.new("RGB", pil.size, (255,255,255))
-                            bg.paste(pil, mask=pil.split()[3])
-                            bg.save(img_buf, "JPEG", quality=85, optimize=True)
-                        else:
-                            pil.save(img_buf, "PNG")
-                        pil = None
-                        zf.writestr(f"page_{i+1:04d}.{fmt}", img_buf.getvalue())
-            finally:
-                doc.close()
-        return ok(f"Exported {count} page(s) as {fmt.upper()}", out)
+            total_pages = len(doc)
+            doc.close()
+            doc = None  # closed; chunked_pdf_processor will re-open
+
+            CHUNK_THRESHOLD = getattr(Config, "PDF_TO_IMAGE_CHUNK_THRESHOLD", 50)
+            CHUNK_PAGES     = getattr(Config, "PDF_TO_IMAGE_CHUNK_PAGES",     50)
+            CHUNK_WORKERS   = getattr(Config, "PDF_TO_IMAGE_MAX_WORKERS",      4)
+            MAX_IMG_PAGES   = getattr(Config, "MAX_IMAGE_PAGES", 2000)
+
+            if total_pages > MAX_IMG_PAGES:
+                return err(f"PDF exceeds maximum ({MAX_IMG_PAGES} pages) for image export.", 413)
+
+            fname = generate_output_filename(f.filename, "to_image")
+            out   = os.path.join(Config.OUTPUT_FOLDER, fname)
+
+            def _render_pages_to_zip(
+                chunk_pdf: str, chunk_idx: int, start_page: int, end_page: int
+            ) -> str:
+                chunk_zip = chunk_pdf.replace("_in.pdf", f"_imgs_{chunk_idx}.zip")
+                src = fitz.open(chunk_pdf)
+                try:
+                    with zipfile.ZipFile(chunk_zip, "w", zipfile.ZIP_DEFLATED) as zf:
+                        for local_i, page in enumerate(src):
+                            abs_i = start_page + local_i
+                            mat   = fitz.Matrix(dpi/72, dpi/72)
+                            pix   = page.get_pixmap(matrix=mat, alpha=True)
+                            pil   = Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGBA")
+                            pix   = None
+                            buf   = io.BytesIO()
+                            if fmt == "jpg":
+                                bg = Image.new("RGB", pil.size, (255, 255, 255))
+                                bg.paste(pil, mask=pil.split()[3])
+                                bg.save(buf, "JPEG", quality=85, optimize=True)
+                            else:
+                                pil.save(buf, "PNG")
+                            pil = None
+                            zf.writestr(f"page_{abs_i+1:04d}.{fmt}", buf.getvalue())
+                finally:
+                    src.close()
+                return chunk_zip
+
+            from utils.pdf_utils import chunked_pdf_processor as _chunked_proc, merge_zip_chunks as _merge_zips
+            success = _chunked_proc(
+                input_path=path,
+                output_path=out,
+                job_id=str(uuid.uuid4()),
+                total_pages=total_pages,
+                chunk_size=CHUNK_PAGES,
+                max_workers=CHUNK_WORKERS,
+                process_chunk_func=_render_pages_to_zip,
+                merge_func=_merge_zips,
+                redis_service=None,
+                tool_name="PDF-to-Image",
+                report_progress=False,
+                chunk_retry=1,
+            )
+            if not success:
+                # single-pass fallback
+                src = fitz.open(path)
+                try:
+                    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
+                        for i, page in enumerate(src):
+                            mat = fitz.Matrix(dpi/72, dpi/72)
+                            pix = page.get_pixmap(matrix=mat, alpha=True)
+                            pil = Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGBA")
+                            pix = None
+                            buf = io.BytesIO()
+                            if fmt == "jpg":
+                                bg = Image.new("RGB", pil.size, (255,255,255))
+                                bg.paste(pil, mask=pil.split()[3])
+                                bg.save(buf, "JPEG", quality=85, optimize=True)
+                            else:
+                                pil.save(buf, "PNG")
+                            pil = None
+                            zf.writestr(f"page_{i+1:04d}.{fmt}", buf.getvalue())
+                finally:
+                    src.close()
+        return ok(f"Exported {total_pages} page(s) as {fmt.upper()}", out)
     except Exception:
         log.exception("pdf_to_image"); return err("Export failed", 500)
 
