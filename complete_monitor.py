@@ -103,7 +103,6 @@ SWAP_THRESHOLD   = _ei("SWAP_THRESHOLD",   50)
 FD_THRESHOLD     = _ei("FD_THRESHOLD",     80)   # % of system fd limit
 LOAD_MULTIPLIER  = _ef("LOAD_MULTIPLIER",  1.5)
 UPLOAD_SIZE_GB   = _ef("UPLOAD_SIZE_GB",   10.0)
-DOWNLOAD_SIZE_GB = _ef("DOWNLOAD_SIZE_GB", 20.0)
 OUTPUT_SIZE_GB   = _ef("OUTPUT_SIZE_GB",   15.0)
 TEMP_SIZE_GB     = _ef("TEMP_SIZE_GB",      5.0)
 DISK_IO_PCT      = _ei("DISK_IO_BUSY_PCT", 90)
@@ -135,7 +134,6 @@ TG_RATE_WINDOW = _ei("TG_RATE_WINDOW", 60)
 BASE_DIR       = Path(os.getenv("BASE_DIR",       "/home/opc/pdfwala"))
 LOG_FILE       = BASE_DIR / "monitor.log"
 UPLOADS_DIR    = BASE_DIR / "uploads"
-DOWNLOADS_DIR  = BASE_DIR / "downloads"
 OUTPUTS_DIR    = BASE_DIR / "outputs"
 TEMP_DIR       = BASE_DIR / "temp"
 METRICS_FILE   = BASE_DIR / "monitor_metrics.json"
@@ -143,16 +141,21 @@ HEARTBEAT_FILE = BASE_DIR / "monitor_heartbeat"
 LOG_HASH_FILE  = BASE_DIR / "monitor_log_hashes.json"
 LOG_ARCHIVE_DIR = BASE_DIR / "log_archives"
 
-# Containers
+# Containers — must match container_name in docker-compose.yml exactly
 EXPECTED_CONTAINERS = [
-    "pdfwala_app",
-    "pdfwala_worker",
-    "pdfwala_nginx",
-    "pdfwala_redis",
+    "pdfwala-app",
+    "pdfwala-worker-fast",
+    "pdfwala-worker-office",
+    "pdfwala-worker-slow",
+    "pdfwala-nginx",
+    "pdfwala-redis",
 ]
 
-# Celery queues to check depth (via Redis LLEN)
-CELERY_QUEUES = ["celery", "fast", "office", "slow"]
+# Redis container name (used for exec commands)
+REDIS_CONTAINER = "pdfwala-redis"
+
+# Celery queues — matches -Q flags in docker-compose.yml
+CELERY_QUEUES = ["fast", "office", "slow"]
 
 # Endpoints  (name, url, expected_code, is_critical)
 ENDPOINTS: List[Tuple[str, str, int, bool]] = [
@@ -405,10 +408,10 @@ class LogBundleScheduler:
                 zf.write(LOG_FILE, f"monitor/monitor.log")
                 collected += 1
 
-            # 2. Docker container logs (tail last 5000 lines per container)
+            # 2. Docker container logs — use exact container_name from docker-compose.yml
+            # tail 5000 lines each to keep zip manageable
             if self._docker_cmd:
-                for ct in ["app", "worker", "nginx", "redis"]:
-                    name = f"pdfwala_{ct}"
+                for name in EXPECTED_CONTAINERS:
                     try:
                         r = subprocess.run(
                             ["docker", "logs", "--tail=5000",
@@ -513,8 +516,7 @@ class LogBundleScheduler:
                     "500", "502", "503", "OOM", "Killed", "circuit breaker"]
 
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
-            for ct in ["app", "worker", "nginx", "redis"]:
-                name = f"pdfwala_{ct}"
+            for name in EXPECTED_CONTAINERS:
                 try:
                     r = subprocess.run(
                         ["docker", "logs", "--tail=10000", "--no-color", name],
@@ -526,7 +528,7 @@ class LogBundleScheduler:
                         if any(p.lower() in ln.lower() for p in patterns)
                     ]
                     if error_lines:
-                        content = "\n".join(error_lines[-5000:])  # last 5k error lines
+                        content = "\n".join(error_lines[-5000:])
                         zf.writestr(
                             f"errors/{name}_errors.log",
                             content.encode("utf-8", errors="replace"),
@@ -869,7 +871,7 @@ class Monitor:
         k = "redis"
         try:
             r = subprocess.run(
-                ["docker", "exec", "pdfwala_redis", "redis-cli", "ping"],
+                ["docker", "exec", REDIS_CONTAINER, "redis-cli", "ping"],
                 capture_output=True, text=True, timeout=10,
             )
             if r.stdout.strip().upper() == "PONG":
@@ -895,7 +897,7 @@ class Monitor:
             k = f"celery_q_{queue}"
             try:
                 r = subprocess.run(
-                    ["docker", "exec", "pdfwala_redis",
+                    ["docker", "exec", REDIS_CONTAINER,
                      "redis-cli", "LLEN", queue],
                     capture_output=True, text=True, timeout=10,
                 )
@@ -982,7 +984,6 @@ class Monitor:
         alerts: List[Alert] = []
         checks = [
             ("uploads",   UPLOADS_DIR,   UPLOAD_SIZE_GB),
-            ("downloads", DOWNLOADS_DIR, DOWNLOAD_SIZE_GB),
             ("outputs",   OUTPUTS_DIR,   OUTPUT_SIZE_GB),
             ("temp",      TEMP_DIR,      TEMP_SIZE_GB),
         ]
@@ -1024,11 +1025,12 @@ class Monitor:
             return []
 
         new_errors: List[str] = []
-        for ct in ["app", "worker", "nginx", "redis"]:
+        for name in EXPECTED_CONTAINERS:
+            # short label for dedup key and display
+            label = name.replace("pdfwala-", "")
             try:
                 r = subprocess.run(
-                    self.docker_cmd + ["logs", "--tail=100",
-                                       "--no-color", f"pdfwala_{ct}"],
+                    ["docker", "logs", "--tail=100", "--no-color", name],
                     capture_output=True, text=True,
                     cwd=str(BASE_DIR), timeout=20,
                 )
@@ -1036,12 +1038,12 @@ class Monitor:
                 for line in logs.splitlines():
                     ll = line.lower()
                     if any(p.lower() in ll for p in self.LOG_PATTERNS):
-                        if self.log_store.is_new(f"{ct}:{line}"):
-                            new_errors.append(f"[{ct}] {line[:180]}")
+                        if self.log_store.is_new(f"{name}:{line}"):
+                            new_errors.append(f"[{label}] {line[:180]}")
             except subprocess.TimeoutExpired:
-                log.warning("Log check %s timed out", ct)
+                log.warning("Log check %s timed out", name)
             except Exception as e:
-                log.warning("Log check '%s': %s", ct, e)
+                log.warning("Log check '%s': %s", name, e)
 
         if new_errors:
             preview = "\n".join(new_errors[:5])
@@ -1112,7 +1114,6 @@ class Monitor:
             ]
             for name, path in [
                 ("uploads",   UPLOADS_DIR),
-                ("downloads", DOWNLOADS_DIR),
                 ("outputs",   OUTPUTS_DIR),
                 ("temp",      TEMP_DIR),
             ]:
@@ -1130,7 +1131,7 @@ class Monitor:
             for queue in CELERY_QUEUES:
                 try:
                     r = subprocess.run(
-                        ["docker", "exec", "pdfwala_redis",
+                        ["docker", "exec", REDIS_CONTAINER,
                          "redis-cli", "LLEN", queue],
                         capture_output=True, text=True, timeout=5,
                     )
@@ -1159,6 +1160,9 @@ class Monitor:
         if not self.tg.test():
             log.critical("Telegram test FAILED — check TOKEN / CHAT_ID")
             sys.exit(1)
+
+        # One-time ghost container scan at startup
+        _check_ghost_containers(self.tg)
 
         self.tg.send(
             f"🟢 <b>PDFWala Monitor v4 started</b>\n"
@@ -1268,10 +1272,54 @@ def _validate_config():
         errs.append(f"CHECK_INTERVAL={CHECK_INTERVAL} too low (min 10)")
     if ALERT_COOLDOWN < 60:
         errs.append(f"ALERT_COOLDOWN={ALERT_COOLDOWN} too low (min 60)")
+    # Docker socket requires root on this server
+    if os.geteuid() != 0:
+        errs.append(
+            "Monitor must run as root (docker socket not accessible to opc user).\n"
+            "  → Run with: sudo python3 monitor.py\n"
+            "  → Or use systemd service running as root (recommended)"
+        )
     if errs:
         for e in errs:
             print(f"❌ Config: {e}", file=sys.stderr)
         sys.exit(1)
+
+
+def _check_ghost_containers(tg: Telegram):
+    """
+    Alert on containers that match our app image but aren't in EXPECTED_CONTAINERS.
+    Catches stale 'docker compose run' / 'docker run' leftovers like
+    pdfwala-app-run-b26ab58b5d3b that waste RAM silently.
+    """
+    try:
+        r = subprocess.run(
+            ["docker", "ps", "--format", "{{.Names}}\t{{.RunningFor}}"],
+            capture_output=True, text=True, timeout=10,
+        )
+        ghosts = []
+        for line in r.stdout.strip().splitlines():
+            parts = line.split("\t", 1)
+            if len(parts) != 2:
+                continue
+            name, running_for = parts
+            # Flag containers that look like ours but aren't in the expected list
+            if "pdfwala" in name and name not in EXPECTED_CONTAINERS:
+                ghosts.append(f"  {name}  (running {running_for})")
+        if ghosts:
+            ghost_list = "\n".join(ghosts)
+            msg = (
+                f"👻 <b>Ghost container(s) detected on {HOSTNAME}</b>\n\n"
+                f"These are not in the expected container list:\n"
+                f"<pre>{ghost_list}</pre>\n\n"
+                f"Likely a stale <code>docker compose run</code> or "
+                f"<code>docker run</code> leftover.\n"
+                f"Clean up with:\n"
+                f"<code>docker stop &lt;name&gt; &amp;&amp; docker rm &lt;name&gt;</code>"
+            )
+            log.warning("Ghost containers found: %s", ghosts)
+            tg.send(msg)
+    except Exception as e:
+        log.warning("Ghost container check failed: %s", e)
 
 
 # ╔══════════════════════════════════════════════════════════════
