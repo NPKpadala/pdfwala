@@ -1,19 +1,21 @@
 # ============================================================================
-# PDFWala Enterprise V11.0.0 — Docker Compose
+# PDFWala Enterprise V11.0.0 — Docker Compose (Security Hardened)
+# ============================================================================
+# FIXED: All containers now run as non-root user to prevent root-security blocks
+# Added --uid 1000 to all services that process files (workers, app)
 # ============================================================================
 
 # ============================================================================
-# SHARED ENVIRONMENT
+# SHARED ENVIRONMENT VARIABLES
 # ============================================================================
 x-app-env: &app-env
   SECRET_KEY: ${SECRET_KEY:-changeme-in-production-min-32-chars}
   SIGNED_URL_SECRET: ${SIGNED_URL_SECRET:-changeme-in-production}
-  # API_KEY: ${API_KEY:-}
   REDIS_URL: redis://redis:6379/0
-  BASE_DATA_DIR: /home/opc/pdfwala
-  UPLOAD_FOLDER: /home/opc/pdfwala/uploads
-  OUTPUT_FOLDER: /home/opc/pdfwala/outputs
-  TEMP_FOLDER: /home/opc/pdfwala/temp
+  BASE_DATA_DIR: /home/pdfwala/data
+  UPLOAD_FOLDER: /home/pdfwala/data/uploads
+  OUTPUT_FOLDER: /home/pdfwala/data/outputs
+  TEMP_FOLDER: /home/pdfwala/data/temp
   LOG_LEVEL: ${LOG_LEVEL:-INFO}
   MAX_FILE_SIZE: ${MAX_FILE_SIZE:-209715200}
   FILE_TTL_SEC: ${FILE_TTL_SEC:-3600}
@@ -21,7 +23,7 @@ x-app-env: &app-env
   CELERY_OFFICE_QUEUE_MAX: ${CELERY_OFFICE_QUEUE_MAX:-200}
   CELERY_SLOW_QUEUE_MAX: ${CELERY_SLOW_QUEUE_MAX:-100}
   PYTHONUNBUFFERED: "1"
-  # ── V11.0.0 additions ──────────────────────────────────────────────────────
+  # ── V11.0.0 additions ──────────────────────────────────────────────────
   JOB_TTL_SEC: ${JOB_TTL_SEC:-7200}
   CLEANUP_MAX_DELETES: ${CLEANUP_MAX_DELETES:-500}
   MAX_SLIDES_PPT: ${MAX_SLIDES_PPT:-200}
@@ -46,6 +48,7 @@ services:
     image: redis:7-alpine
     container_name: pdfwala-redis
     restart: unless-stopped
+    user: "999:999"  # Redis default user
     volumes:
       - redis_data:/data
     healthcheck:
@@ -57,18 +60,19 @@ services:
       - pdfwala-network
 
   # --------------------------------------------------------------------------
-  # Flask Application
+  # Flask Application (Non-Root User)
   # --------------------------------------------------------------------------
   app:
     build: .
     container_name: pdfwala-app
     restart: unless-stopped
+    user: "1000:1000"  # 🔒 FIX: Run as non-root pdfwala user
     expose:
       - "5000"
     volumes:
-      - ./uploads:/home/opc/pdfwala/uploads
-      - ./outputs:/home/opc/pdfwala/outputs
-      - ./temp:/home/opc/pdfwala/temp
+      - ./uploads:/home/pdfwala/data/uploads:rw
+      - ./outputs:/home/pdfwala/data/outputs:rw
+      - ./temp:/home/pdfwala/data/temp:rw
     environment:
       <<: *app-env
     depends_on:
@@ -90,6 +94,7 @@ services:
     build: .
     container_name: pdfwala-worker-fast
     restart: unless-stopped
+    user: "1000:1000"  # 🔒 FIX: Non-root — Ghostscript won't block PDF compression
     command: >
       celery -A workers.celery_app:celery_app worker
       -Q fast
@@ -98,9 +103,9 @@ services:
       --hostname=worker-fast@%h
       --max-tasks-per-child=50
     volumes:
-      - ./uploads:/home/opc/pdfwala/uploads
-      - ./outputs:/home/opc/pdfwala/outputs
-      - ./temp:/home/opc/pdfwala/temp
+      - ./uploads:/home/pdfwala/data/uploads:rw
+      - ./outputs:/home/pdfwala/data/outputs:rw
+      - ./temp:/home/pdfwala/data/temp:rw
     environment:
       <<: *app-env
     depends_on:
@@ -109,7 +114,7 @@ services:
       app:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "celery -A workers.celery_app:celery_app inspect ping -d worker-fast@$(hostname) 2>/dev/null | grep -q OK || exit 1"]
+      test: ["CMD-SHELL", "celery -A workers.celery_app:celery_app inspect ping -d worker-fast@$$(hostname) 2>/dev/null | grep -q OK || exit 1"]
       interval: 30s
       timeout: 15s
       retries: 3
@@ -124,6 +129,7 @@ services:
     build: .
     container_name: pdfwala-worker-office
     restart: unless-stopped
+    user: "1000:1000"  # 🔒 FIX: LibreOffice refuses to run as root
     command: >
       celery -A workers.celery_app:celery_app worker
       -Q office
@@ -132,9 +138,9 @@ services:
       --hostname=worker-office@%h
       --max-tasks-per-child=20
     volumes:
-      - ./uploads:/home/opc/pdfwala/uploads
-      - ./outputs:/home/opc/pdfwala/outputs
-      - ./temp:/home/opc/pdfwala/temp
+      - ./uploads:/home/pdfwala/data/uploads:rw
+      - ./outputs:/home/pdfwala/data/outputs:rw
+      - ./temp:/home/pdfwala/data/temp:rw
     environment:
       <<: *app-env
     depends_on:
@@ -143,7 +149,7 @@ services:
       app:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "celery -A workers.celery_app:celery_app inspect ping -d worker-office@$(hostname) 2>/dev/null | grep -q OK || exit 1"]
+      test: ["CMD-SHELL", "celery -A workers.celery_app:celery_app inspect ping -d worker-office@$$(hostname) 2>/dev/null | grep -q OK || exit 1"]
       interval: 30s
       timeout: 15s
       retries: 3
@@ -158,6 +164,7 @@ services:
     build: .
     container_name: pdfwala-worker-slow
     restart: unless-stopped
+    user: "1000:1000"  # 🔒 FIX: Tesseract OCR and heavy tools need non-root
     command: >
       celery -A workers.celery_app:celery_app worker
       -Q slow
@@ -166,9 +173,9 @@ services:
       --hostname=worker-slow@%h
       --max-tasks-per-child=10
     volumes:
-      - ./uploads:/home/opc/pdfwala/uploads
-      - ./outputs:/home/opc/pdfwala/outputs
-      - ./temp:/home/opc/pdfwala/temp
+      - ./uploads:/home/pdfwala/data/uploads:rw
+      - ./outputs:/home/pdfwala/data/outputs:rw
+      - ./temp:/home/pdfwala/data/temp:rw
     environment:
       <<: *app-env
     depends_on:
@@ -177,7 +184,7 @@ services:
       app:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "celery -A workers.celery_app:celery_app inspect ping -d worker-slow@$(hostname) 2>/dev/null | grep -q OK || exit 1"]
+      test: ["CMD-SHELL", "celery -A workers.celery_app:celery_app inspect ping -d worker-slow@$$(hostname) 2>/dev/null | grep -q OK || exit 1"]
       interval: 30s
       timeout: 15s
       retries: 3
@@ -186,7 +193,7 @@ services:
       - pdfwala-network
 
   # --------------------------------------------------------------------------
-  # Nginx — Reverse Proxy & Static Files
+  # Nginx — Reverse Proxy & Static Files (Runs on port 80/443)
   # --------------------------------------------------------------------------
   nginx:
     image: nginx:alpine
@@ -201,6 +208,11 @@ services:
       - ./static:/usr/share/nginx/html:ro
     depends_on:
       - app
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - pdfwala-network
 
