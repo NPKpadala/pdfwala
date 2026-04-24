@@ -1922,7 +1922,7 @@ async function processToolFile(){
       prog.classList.add('show');
 
       let attempts=0;
-      const maxAttempts=360; // 30 min timeout for large files
+      const maxAttempts=360;
       const pollUrl=API+d.status_url;
       pollingActive=true;
 
@@ -1930,7 +1930,7 @@ async function processToolFile(){
         if(!pollingActive||curTool!==toolAtCallTime)return;
         if(++attempts>maxAttempts){
           processingActive=false;
-          showResult('error',{message:'Processing timed out after 30 minutes. The server may still be working — check back later.'});
+          showResult('error',{message:'Processing timed out after 30 minutes. Try a smaller file or split the PDF first.'});
           return;
         }
         try{
@@ -1957,17 +1957,21 @@ async function processToolFile(){
             showResult('error',{message:pollData.error||'Processing failed on server'});
           }else{
             if(pollData.progress){
-              const progressValue=Math.min(97,parseInt(pollData.progress)||0);
+              const progressValue=Math.min(99,parseInt(pollData.progress)||0);
               fill.style.width=progressValue+'%';
-              // Show real page progress if available (V11.1 chunked conversion)
-              let progressMsg='Processing... '+progressValue+'%';
-              if(pollData.current_page&&pollData.total_pages){
-                progressMsg='Page '+pollData.current_page+' of '+pollData.total_pages+' ('+progressValue+'%)';
-              }else if(pollData.status_detail){
-                progressMsg=pollData.status_detail+' ('+progressValue+'%)';
+              // Show chunk progress if available (chunked large-file processing)
+              if(pollData.chunks_done&&pollData.chunks_total){
+                const chunksDone=parseInt(pollData.chunks_done);
+                const chunksTotal=parseInt(pollData.chunks_total);
+                const eta=chunksTotal>0?Math.ceil((chunksTotal-chunksDone)*((attempts*5)/Math.max(chunksDone,1))):0;
+                const etaStr=eta>60?`~${Math.ceil(eta/60)}m remaining`:`~${eta}s remaining`;
+                pTxt.textContent=`Processing chunk ${chunksDone}/${chunksTotal} (${progressValue}%) ${etaStr}`;
+              }else if(pollData.status==='merging'){
+                pTxt.textContent=`Merging results... (${progressValue}%)`;
+              }else{
+                pTxt.textContent=`Processing... ${progressValue}%`;
               }
-              pTxt.textContent=progressMsg;
-              if(announcer)announcer.textContent=progressMsg;
+              if(announcer)announcer.textContent=pTxt.textContent;
             }
             currentPollTimeout=setTimeout(poll,5000);
           }
