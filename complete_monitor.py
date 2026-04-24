@@ -10,6 +10,14 @@ Patches applied:
   5. Config management: dedicated Config class
   6. Memory/perf: LogHashStore TTL cleanup, GC, self-monitoring, jitter
   + CPU opts: non-blocking cpu_percent, docker stats batch, container cache
+Bug fixes (v5.1):
+  F1. heapq imported at module level (removed inline imports)
+  F2. CpuSampler first value no longer 0.0 (sleep+re-prime)
+  F3. ContainerCache TTL raised 30s → 45s
+  F4. LogHashStore _dirty flag — no disk write per is_new() call
+  F5. /perf Telegram command added
+  F6. _check_self_memory triggers gc.collect() at 120% threshold
+  F7. _timed() uses try/finally so timing is always recorded
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
@@ -19,6 +27,7 @@ import collections
 import gc
 import gzip
 import hashlib
+import heapq          # FIX 1: module-level import (was inline in Telegram)
 import json
 import logging
 import os
@@ -53,7 +62,7 @@ except ImportError:
 
 
 # ╔══════════════════════════════════════════════════════════════
-# ║  CUSTOM EXCEPTION HIERARCHY  (Prompt 2)
+# ║  CUSTOM EXCEPTION HIERARCHY
 # ╚══════════════════════════════════════════════════════════════
 
 class MonitorError(Exception):
@@ -80,14 +89,7 @@ class DockerError(MonitorError):
 
 
 # ╔══════════════════════════════════════════════════════════════
-# ║  CONFIG CLASS  (Prompt 5)
-# ║  Priority: env vars > config file > hardcoded defaults
-# ║
-# ║  Set credentials via environment variables:
-# ║    export TELEGRAM_TOKEN="your_bot_token"
-# ║    export TELEGRAM_CHAT_ID="your_chat_id"
-# ║  Or place them in a systemd EnvironmentFile, Docker env,
-# ║  or your shell's ~/.bashrc / ~/.profile.
+# ║  CONFIG CLASS
 # ╚══════════════════════════════════════════════════════════════
 
 class Config:
@@ -131,21 +133,20 @@ class Config:
         # --- Telegram rate limit ---
         "TG_RATE_MAX":    20,
         "TG_RATE_WINDOW": 60,
-        "TG_BURST_MAX":   3,      # burst allowance before enforcing rate limit
+        "TG_BURST_MAX":   3,
 
         # --- Paths ---
         "BASE_DIR": "/home/opc/pdfwala",
 
-        # --- Performance / memory tuning (Prompt 6 / CPU opts) ---
+        # --- Performance / memory tuning ---
         "LOG_TAIL_LINES":            50,
-        "CACHE_TTL":                 30,    # container status cache seconds
+        "CACHE_TTL":                 45,   # FIX 3: raised from 30 → 45s
         "MEMORY_WARN_THRESHOLD_MB":  100,
         "ENABLE_PERF_METRICS":       False,
-        "NGINX_TAIL_LINES":          1000,  # limit nginx log parsing
-        "LOG_HASH_TTL":              86400, # seconds before a log hash expires
+        "NGINX_TAIL_LINES":          1000,
+        "LOG_HASH_TTL":              86400,
     }
 
-    # Type map for validation
     _INT_KEYS = {
         "CPU_THRESHOLD","RAM_THRESHOLD","DISK_THRESHOLD","SWAP_THRESHOLD",
         "FD_THRESHOLD","DISK_IO_BUSY_PCT","SSL_WARN_DAYS","SSL_CRIT_DAYS",
@@ -167,14 +168,10 @@ class Config:
         self._data: Dict[str, object] = dict(self._DEFAULTS)
         self._change_log: List[str] = []
 
-        # Load config file (lowest non-default priority)
         if config_file and config_file.exists():
             self._load_file(config_file)
 
-        # Override with environment variables (highest priority)
         self._load_env()
-
-        # Validate
         self._validate()
 
     def _load_file(self, path: Path):
@@ -187,7 +184,6 @@ class Config:
             print(f"⚠️  Config file load failed ({path}): {e}", file=sys.stderr)
 
     def _load_env(self):
-        # Credential env vars use different names for clarity
         token = os.getenv("TELEGRAM_TOKEN") or os.getenv("TOKEN")
         chat  = os.getenv("TELEGRAM_CHAT_ID") or os.getenv("CHAT_ID")
         if token:
@@ -265,7 +261,6 @@ class Config:
             return {k: ("***" if "TOKEN" in k else v)
                     for k, v in self._data.items()}
 
-    # Convenience properties for frequently accessed values
     @property
     def TOKEN(self) -> str:
         return self._data["TELEGRAM_TOKEN"]
@@ -276,10 +271,9 @@ class Config:
 
 
 # ── Global config instance ────────────────────────────────────
-# Loaded once at startup; all module code reads from CFG.*
 CFG = Config(config_file=Path("/home/opc/pdfwala/monitor_config.json"))
 
-# ── Convenience aliases (keep existing code readable) ─────────
+# ── Convenience aliases ───────────────────────────────────────
 def _ei(k, d): return CFG.get(k, d)
 def _ef(k, d): return CFG.get(k, d)
 
@@ -386,7 +380,6 @@ class Sev:
 
 _EMOJI = {Sev.WARN: "⚠️", Sev.CRIT: "🚨"}
 
-# Priority levels for rate limiter (Prompt 4)
 class Priority:
     DEBUG     = 0
     INFO      = 1
@@ -410,7 +403,7 @@ class Alert:
 
 
 # ╔══════════════════════════════════════════════════════════════
-# ║  TELEGRAM  (Prompt 4: priority queue, burst, batching)
+# ║  TELEGRAM  (priority queue, burst, batching)
 # ╚══════════════════════════════════════════════════════════════
 
 class _PriMsg:
@@ -424,7 +417,6 @@ class _PriMsg:
         self.ts         = time.monotonic()
 
     def __lt__(self, other):
-        # Higher priority first; ties broken by earlier timestamp
         if self.priority != other.priority:
             return self.priority > other.priority
         return self.ts < other.ts
@@ -436,24 +428,20 @@ class Telegram:
         self._chat_id = chat_id
         self._lock    = threading.Lock()
 
-        # Sliding window of send timestamps (Prompt 6: bounded deque)
         self._sends: Deque[float] = deque(maxlen=TG_RATE_MAX + 10)
 
         self._url     = f"https://api.telegram.org/bot{token}/sendMessage"
         self._doc_url = f"https://api.telegram.org/bot{token}/sendDocument"
         self._upd_url = f"https://api.telegram.org/bot{token}/getUpdates"
 
-        # Prompt 4: priority message queue
-        import heapq
+        # FIX 1: heapq is now imported at module level — no inline import needed
         self._msg_queue: List[_PriMsg] = []
         self._queue_lock  = threading.Lock()
         self._rate_limit_hits = 0
         self._batched_warnings: List[str] = []
 
-        # Prompt 6: burst tracker
         self._burst_ts: Deque[float] = deque(maxlen=CFG.get("TG_BURST_MAX", 3))
 
-        # Background sender thread
         self._sender = threading.Thread(
             target=self._sender_loop, daemon=True, name="tg-sender"
         )
@@ -463,47 +451,37 @@ class Telegram:
 
     def _under_limit(self) -> bool:
         now = time.monotonic()
-        # Clean window
         while self._sends and now - self._sends[0] > TG_RATE_WINDOW:
             self._sends.popleft()
         return len(self._sends) < TG_RATE_MAX
 
     def _burst_ok(self) -> bool:
-        """Allow up to TG_BURST_MAX messages before enforcing full rate limit."""
         now = time.monotonic()
         burst_max = CFG.get("TG_BURST_MAX", 3)
-        # Purge burst entries older than 5 seconds
         while self._burst_ts and now - self._burst_ts[0] > 5.0:
             self._burst_ts.popleft()
         return len(self._burst_ts) < burst_max
 
-    # ── public send (Prompt 4: priority-aware) ────────────────
+    # ── public send ───────────────────────────────────────────
 
     def send(self, text: str, parse_mode: str = "HTML",
              chat_id: Optional[str] = None,
              priority: int = Priority.INFO) -> bool:
-        """
-        Queue a message for sending. CRITICAL/EMERGENCY bypass rate limits.
-        Returns True if queued (not necessarily delivered).
-        """
         target = chat_id or self._chat_id
         if len(text) > 4000:
             text = text[:3900] + "\n…[truncated]"
         msg = _PriMsg(priority, text, parse_mode, target)
         with self._queue_lock:
-            import heapq
+            # FIX 1: heapq already imported at module level
             heapq.heappush(self._msg_queue, msg)
         return True
 
     def _sender_loop(self):
-        """Background thread: drain priority queue respecting rate limits."""
-        import heapq
+        # FIX 1: no inline `import heapq` here anymore
         while True:
             try:
                 with self._queue_lock:
-                    if not self._msg_queue:
-                        pass
-                    else:
+                    if self._msg_queue:
                         msg = heapq.heappop(self._msg_queue)
                         self._deliver(msg)
             except Exception as e:
@@ -511,24 +489,20 @@ class Telegram:
             time.sleep(0.1)
 
     def _deliver(self, msg: _PriMsg):
-        """Actually send one message, with rate-limit and burst logic."""
         is_critical = msg.priority >= Priority.CRITICAL
         with self._lock:
             rate_ok  = self._under_limit()
             burst_ok = self._burst_ok()
 
         if not is_critical and not rate_ok and not burst_ok:
-            # Rate limited non-critical: batch it
             self._rate_limit_hits += 1
             log.warning("[NET_ERR] Telegram rate limited — batching warning")
             with self._lock:
                 self._batched_warnings.append(msg.text[:200])
-            # Flush batch if it's grown large enough
             if len(self._batched_warnings) >= 5:
                 self._flush_batch(msg.chat_id)
             return
 
-        # If there are batched warnings waiting, flush them first
         if self._batched_warnings and is_critical:
             self._flush_batch(msg.chat_id)
 
@@ -551,7 +525,6 @@ class Telegram:
 
     def _send_with_retry(self, text: str, parse_mode: str,
                          chat_id: str, max_attempts: int = 3) -> bool:
-        """Send with exponential backoff (Prompt 2)."""
         for attempt in range(max_attempts):
             try:
                 r = requests.post(
@@ -678,18 +651,18 @@ class Cooldown:
 
 
 # ╔══════════════════════════════════════════════════════════════
-# ║  LOG HASH STORE  (Prompt 6: TTL-based cleanup, LRU eviction)
+# ║  LOG HASH STORE  (FIX 4: _dirty flag — no disk I/O per is_new())
 # ╚══════════════════════════════════════════════════════════════
 
 class LogHashStore:
     MAX = 2000
-    TTL = CFG.get("LOG_HASH_TTL", 86400)   # default 24 h
+    TTL = CFG.get("LOG_HASH_TTL", 86400)
 
     def __init__(self, path: Path):
         self._path   = path
-        # {hash: expiry_unix_timestamp}
         self._hashes: Dict[str, float] = {}
         self._lock   = threading.Lock()
+        self._dirty  = False   # FIX 4: track unsaved changes
         self._load()
 
     def _load(self):
@@ -698,7 +671,6 @@ class LogHashStore:
                 d = json.loads(self._path.read_text())
                 now  = time.time()
                 raw  = d.get("hashes", [])
-                # Support both old set-format and new [[hash,expiry]] format
                 if raw and isinstance(raw[0], list):
                     self._hashes = {h: exp for h, exp in raw if exp > now}
                 else:
@@ -710,10 +682,8 @@ class LogHashStore:
     def _save(self):
         try:
             now = time.time()
-            # Evict expired
             self._hashes = {h: exp for h, exp in self._hashes.items()
                             if exp > now}
-            # LRU eviction if still over MAX
             if len(self._hashes) > self.MAX:
                 items = sorted(self._hashes.items(), key=lambda x: x[1],
                                reverse=True)
@@ -731,8 +701,15 @@ class LogHashStore:
             if h in self._hashes and self._hashes[h] > now:
                 return False
             self._hashes[h] = now + self.TTL
-            self._save()
+            self._dirty = True   # FIX 4: mark dirty instead of calling _save()
             return True
+
+    def save_if_dirty(self):
+        """FIX 4: batch save — call this once after check_logs() completes."""
+        with self._lock:
+            if self._dirty:
+                self._save()
+                self._dirty = False
 
     def cleanup(self):
         """Evict expired hashes — call periodically."""
@@ -745,23 +722,28 @@ class LogHashStore:
             if removed:
                 log.info("LogHashStore: evicted %d expired hashes", removed)
                 self._save()
+                self._dirty = False
 
 
 # ╔══════════════════════════════════════════════════════════════
-# ║  CPU SAMPLER  (non-blocking background sample — Prompt CPU opt)
+# ║  CPU SAMPLER  (FIX 2: first value no longer 0.0)
 # ╚══════════════════════════════════════════════════════════════
 
 class CpuSampler:
     """
-    Samples cpu_percent(interval=None) in a background thread every 5 s,
+    Samples cpu_percent(interval=None) in a background thread every 5s,
     making it available instantly without blocking the check cycle.
+    FIX 2: sleep(1) after priming so the first reading is not 0.0.
     """
     def __init__(self, interval: float = 5.0):
         self._interval = interval
         self._value    = 0.0
         self._lock     = threading.Lock()
-        # Prime the pump
+        # Prime the kernel counter
         psutil.cpu_percent(interval=None)
+        # FIX 2: wait 1s so the OS has a real delta to report
+        time.sleep(1)
+        self._value = psutil.cpu_percent(interval=None)
         t = threading.Thread(target=self._loop, daemon=True, name="cpu-sampler")
         t.start()
 
@@ -782,7 +764,7 @@ class CpuSampler:
 
 
 # ╔══════════════════════════════════════════════════════════════
-# ║  CONTAINER STATUS CACHE  (Prompt CPU opt)
+# ║  CONTAINER STATUS CACHE  (FIX 3: TTL now 45s via Config)
 # ╚══════════════════════════════════════════════════════════════
 
 class ContainerCache:
@@ -798,7 +780,6 @@ class ContainerCache:
         with self._lock:
             if time.monotonic() - self._ts < self._ttl:
                 return dict(self._cache)
-        # Refresh outside lock to avoid blocking
         fresh = self._fetch()
         with self._lock:
             self._cache = fresh
@@ -823,7 +804,7 @@ class ContainerCache:
 
 
 # ╔══════════════════════════════════════════════════════════════
-# ║  PERF METRICS  (Prompt 6 / benchmarking)
+# ║  PERF METRICS
 # ╚══════════════════════════════════════════════════════════════
 
 class PerfMetrics:
@@ -831,7 +812,6 @@ class PerfMetrics:
 
     def __init__(self, enabled: bool = False):
         self._enabled = enabled
-        # {check_name: deque of elapsed seconds, maxlen=20}
         self._timings: Dict[str, Deque[float]] = {}
         self._lock = threading.Lock()
 
@@ -898,7 +878,6 @@ class LogBundleScheduler:
                 priority=Priority.WARNING,
             )
         finally:
-            # Prompt 6: explicit GC after heavy zip operation
             gc.collect()
 
     def build_zip_now(self, date_str: str) -> Path:
@@ -915,7 +894,6 @@ class LogBundleScheduler:
             if self._docker_cmd:
                 for name in EXPECTED_CONTAINERS:
                     try:
-                        # Stream via subprocess pipe instead of loading all into memory
                         proc = subprocess.Popen(
                             ["docker", "logs", "--tail=5000",
                              "--no-color", "--timestamps", name],
@@ -975,7 +953,7 @@ class LogBundleScheduler:
         size_kb = zip_path.stat().st_size // 1024
         log.info("Log bundle built: %s (%d KB, %d sources)",
                  zip_path.name, size_kb, collected)
-        gc.collect()  # Prompt 6: GC after heavy operation
+        gc.collect()
         return zip_path
 
     TG_MAX_BYTES = 49 * 1024 * 1024
@@ -1131,6 +1109,7 @@ class TelegramCommandHandler:
         self._tg          = tg
         self._state       = state
         self._log_bundle  = log_bundle
+        self._perf: Optional[PerfMetrics] = None  # FIX 5: wired by Monitor
         self._offset      = 0
         self._thread: Optional[threading.Thread] = None
 
@@ -1267,7 +1246,9 @@ class TelegramCommandHandler:
             "<b>Analytics</b>\n"
             "  /stats &lt;today|week&gt;  /top_files  /slowest\n\n"
             "<b>Security</b>\n"
-            "  /auth_errors  /rate_limits  /suspicious\n"
+            "  /auth_errors  /rate_limits  /suspicious\n\n"
+            "<b>Diagnostics</b>\n"
+            "  /perf\n"
         ))
 
     def _cmd_status(self, chat_id: str, args: List[str]):
@@ -1275,7 +1256,7 @@ class TelegramCommandHandler:
         lines = [f"<b>📊 Status — {HOSTNAME}</b>",
                  f"<code>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</code>", ""]
         try:
-            cpu  = psutil.cpu_percent(interval=None)  # non-blocking
+            cpu  = psutil.cpu_percent(interval=None)
             ram  = psutil.virtual_memory()
             disk = psutil.disk_usage("/")
             swap = psutil.swap_memory()
@@ -1342,7 +1323,6 @@ class TelegramCommandHandler:
             )
             if rc not in (0, 1):
                 continue
-            # Python string ops instead of grep (Prompt CPU opt)
             for line in out.splitlines():
                 ll = line.lower()
                 if any(p.lower() in ll for p in patterns):
@@ -1429,7 +1409,6 @@ class TelegramCommandHandler:
         if not log_path:
             self._reply(chat_id, "⚠️ Nginx access log not found.")
             return
-        # Python string ops on limited tail (Prompt CPU opt)
         try:
             lines_raw = log_path.read_text(errors="replace").splitlines()
             tail      = lines_raw[-NGINX_TAIL_LINES:]
@@ -1526,7 +1505,7 @@ class TelegramCommandHandler:
         self._reply(chat_id,
             f"<b>ℹ️ Version &amp; Uptime</b>\n"
             f"  App version   : <code>{version}</code>\n"
-            f"  Monitor       : v5\n"
+            f"  Monitor       : v5.1\n"
             f"  Server uptime : {uptime_d}d {uptime_hr}h {uptime_m}m\n"
             f"  Hostname      : {HOSTNAME}"
         )
@@ -1733,6 +1712,23 @@ class TelegramCommandHandler:
             f"<b>Recent config changes:</b>{change_str}"
         )
 
+    # ── FIX 5: /perf command ──────────────────────────────────
+
+    def _cmd_perf(self, chat_id: str, args: List[str]):
+        """Show per-check timing from PerfMetrics."""
+        if self._perf is None:
+            self._reply(chat_id,
+                "ℹ️ Perf metrics not wired. "
+                "Set ENABLE_PERF_METRICS=true and restart.")
+            return
+        report = self._perf.report()
+        if report:
+            self._reply(chat_id, report)
+        else:
+            self._reply(chat_id,
+                "ℹ️ No perf data yet — either ENABLE_PERF_METRICS=false "
+                "or not enough cycles have run.")
+
     # ── analytics ─────────────────────────────────────────────
 
     def _cmd_stats(self, chat_id: str, args: List[str]):
@@ -1930,29 +1926,27 @@ class Monitor:
         self._prev_io: Optional[object] = None
         self._prev_io_ts: float = 0.0
 
-        # Perf metrics (Prompt 6)
         self._perf = PerfMetrics(enabled=bool(ENABLE_PERF_METRICS))
 
-        # CPU sampler (non-blocking — Prompt CPU opt)
         self._cpu_sampler = CpuSampler(interval=5.0)
 
-        # Container cache (Prompt CPU opt)
         self._ct_cache = ContainerCache(ttl=int(CACHE_TTL))
 
-        # Metrics sliding window — bounded deque (Prompt 6)
-        self._metrics_history: Deque[dict] = deque(maxlen=360)  # 6h at 1/min
+        self._metrics_history: Deque[dict] = deque(maxlen=360)
 
         self.state      = RuntimeState()
         self.log_bundle = LogBundleScheduler(self.tg, self.docker_cmd)
         self.cmd_handler = TelegramCommandHandler(
             self.tg, self.state, self.log_bundle
         )
+        # FIX 5: wire PerfMetrics into the command handler for /perf
+        self.cmd_handler._perf = self._perf
 
         signal.signal(signal.SIGTERM, self._on_shutdown)
         signal.signal(signal.SIGINT,  self._on_shutdown)
         signal.signal(signal.SIGHUP,  lambda s, f: log.info("SIGHUP received"))
 
-        log.info("PDFWala Monitor v5 initialised on %s", HOSTNAME)
+        log.info("PDFWala Monitor v5.1 initialised on %s", HOSTNAME)
 
     def _on_shutdown(self, sig, _):
         log.info("Signal %s — shutting down", sig)
@@ -1985,13 +1979,24 @@ class Monitor:
             pass
 
     def _check_self_memory(self):
-        """Warn if this process exceeds MEMORY_WARN_THRESHOLD_MB (Prompt 6)."""
+        """
+        Warn if this process exceeds MEMORY_WARN_THRESHOLD_MB.
+        FIX 6: also trigger gc.collect() when memory hits 120% of threshold.
+        """
         try:
-            proc    = psutil.Process(os.getpid())
-            mem_mb  = proc.memory_info().rss / (1024 * 1024)
-            k       = "monitor_mem"
+            proc      = psutil.Process(os.getpid())
+            mem_mb    = proc.memory_info().rss / (1024 * 1024)
+            k         = "monitor_mem"
             threshold = int(MEMORY_WARN_THRESHOLD_MB)
             if mem_mb > threshold:
+                # FIX 6: force GC at 120% of threshold before alerting
+                if mem_mb > threshold * 1.2:
+                    log.warning(
+                        "[MONITOR_ERR] Monitor memory %.1f MB exceeds 120%% "
+                        "of threshold (%d MB) — forcing gc.collect()",
+                        mem_mb, threshold,
+                    )
+                    gc.collect()
                 if self.cd.should_fire(k):
                     log.warning(
                         "[MONITOR_ERR] Monitor process using %.1f MB "
@@ -2007,12 +2012,15 @@ class Monitor:
         except psutil.Error:
             pass
 
-    # ── timed check wrapper ───────────────────────────────────
+    # ── timed check wrapper (FIX 7: try/finally so timing is always saved) ──
 
     def _timed(self, fn) -> List[Alert]:
-        t0     = time.monotonic()
-        result = fn()
-        self._perf.record(fn.__name__, time.monotonic() - t0)
+        t0 = time.monotonic()
+        try:
+            result = fn()
+        finally:
+            # FIX 7: record elapsed even if fn() raised an exception
+            self._perf.record(fn.__name__, time.monotonic() - t0)
         return result
 
     # ══════════════════════════════════════════════════════════
@@ -2024,7 +2032,6 @@ class Monitor:
         cpu_thr = self.state.cpu_threshold
         ram_thr = self.state.ram_threshold
         try:
-            # Non-blocking CPU read from background sampler (Prompt CPU opt)
             cpu = self._cpu_sampler.value
             k   = "cpu"
             if cpu > cpu_thr:
@@ -2211,7 +2218,6 @@ class Monitor:
                 return alerts
             self.cd.clear(k)
 
-            # Use container cache instead of fresh docker ps every cycle
             running = self._ct_cache.get()
 
             for name in EXPECTED_CONTAINERS:
@@ -2411,14 +2417,12 @@ class Monitor:
             label = name.replace("pdfwala-", "")
             try:
                 r = subprocess.run(
-                    # Prompt CPU opt: LOG_TAIL_LINES (default 50) vs old 100
                     ["docker", "logs", f"--tail={LOG_TAIL_LINES}",
                      "--no-color", name],
                     capture_output=True, text=True,
                     cwd=str(BASE_DIR), timeout=20,
                 )
                 logs = (r.stdout or "") + (r.stderr or "")
-                # Python string ops instead of grep (Prompt CPU opt)
                 for line in logs.splitlines():
                     ll = line.lower()
                     if any(p.lower() in ll for p in self.LOG_PATTERNS):
@@ -2545,7 +2549,6 @@ class Monitor:
                 f"<b>📊  TG rate-limit hits:</b> {self.tg.rate_limit_hits}",
             ]
 
-            # Add perf report if enabled
             perf_report = self._perf.report()
             if perf_report:
                 lines += ["", perf_report]
@@ -2567,7 +2570,7 @@ class Monitor:
         self.cmd_handler.start()
 
         self.tg.send(
-            f"🟢 <b>PDFWala Monitor v5 started</b>\n"
+            f"🟢 <b>PDFWala Monitor v5.1 started</b>\n"
             f"🖥️  {HOSTNAME}\n"
             f"⚙️  CPU&gt;{self.state.cpu_threshold}%  "
             f"RAM&gt;{self.state.ram_threshold}%  "
@@ -2607,6 +2610,9 @@ class Monitor:
                     log.exception("[MONITOR_ERR] Check %s failed: %s",
                                   fn.__name__, e)
 
+            # FIX 4: flush log hash store to disk once per cycle (not per line)
+            self.log_store.save_if_dirty()
+
             self._auto_restart(all_alerts)
             self._check_self_memory()
 
@@ -2635,7 +2641,6 @@ class Monitor:
                     log.info("Muted: suppressed %d alert(s)",
                              len(all_alerts))
 
-            # Metrics
             try:
                 ram  = psutil.virtual_memory()
                 disk = psutil.disk_usage("/")
@@ -2668,14 +2673,12 @@ class Monitor:
 
             self.log_bundle.tick()
 
-            # Periodic LogHashStore cleanup (Prompt 6) every ~1 hour
             cleanup_cycle += 1
             if cleanup_cycle >= 60:
                 self.log_store.cleanup()
                 cleanup_cycle = 0
 
             elapsed   = time.monotonic() - t0
-            # Jitter ±10% to avoid thundering herd (Prompt CPU opt)
             jitter    = random.uniform(-0.1, 0.1) * CHECK_INTERVAL
             sleep_for = max(0, CHECK_INTERVAL - elapsed + jitter)
             self._stop.wait(timeout=sleep_for)
