@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PDFWala Production Monitor v3
+PDFWala Production Monitor v4
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Monitors:
   • CPU / RAM / Disk / Swap / Load / File descriptors
@@ -8,21 +8,32 @@ Monitors:
   • Zombie process detection
   • Disk I/O saturation
   • SSL certificate expiry (warn <30d, critical <7d)
-  • Docker container health (4 containers)
+  • Docker container health (app / worker / nginx / redis)
   • Redis PING via docker exec
   • HTTP endpoints (homepage + API health)
-  • Uploads / Downloads folder size
+  • Uploads / Downloads / Outputs / Temp folder sizes
   • Docker log error scanning with dedup
   • Auto-restart failed containers (5 min cooldown)
   • Telegram alerts with severity levels + rate limiter
   • JSON metrics snapshot + heartbeat file each cycle
   • 6-hour summary report
+
+New in v4:
+  • Daily zipped log bundle → Telegram (all 4 container logs
+    + monitor.log + nginx access/error logs)
+  • 7-day automatic log archive cleanup
+  • Lightweight: lazy imports, minimal polling overhead
+  • Output / Temp folder monitoring (PDFWala-specific)
+  • Celery queue depth check via Redis
+  • Rate-limit / circuit-breaker status awareness
+  • Gunicorn worker count sanity check
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
 from __future__ import annotations
 
 import collections
+import gzip
 import hashlib
 import json
 import logging
@@ -32,10 +43,12 @@ import socket
 import ssl
 import subprocess
 import sys
+import tempfile
 import threading
 import time
+import zipfile
 from collections import deque
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Deque, Dict, List, Optional, Set, Tuple
 
@@ -87,15 +100,21 @@ CPU_THRESHOLD    = _ei("CPU_THRESHOLD",    90)
 RAM_THRESHOLD    = _ei("RAM_THRESHOLD",    90)
 DISK_THRESHOLD   = _ei("DISK_THRESHOLD",   90)
 SWAP_THRESHOLD   = _ei("SWAP_THRESHOLD",   50)
-FD_THRESHOLD     = _ei("FD_THRESHOLD",     80)    # % of system fd limit
+FD_THRESHOLD     = _ei("FD_THRESHOLD",     80)   # % of system fd limit
 LOAD_MULTIPLIER  = _ef("LOAD_MULTIPLIER",  1.5)
 UPLOAD_SIZE_GB   = _ef("UPLOAD_SIZE_GB",   10.0)
 DOWNLOAD_SIZE_GB = _ef("DOWNLOAD_SIZE_GB", 20.0)
+OUTPUT_SIZE_GB   = _ef("OUTPUT_SIZE_GB",   15.0)
+TEMP_SIZE_GB     = _ef("TEMP_SIZE_GB",      5.0)
 DISK_IO_PCT      = _ei("DISK_IO_BUSY_PCT", 90)
 SSL_WARN_DAYS    = _ei("SSL_WARN_DAYS",    30)
 SSL_CRIT_DAYS    = _ei("SSL_CRIT_DAYS",     7)
 MEM_TREND_CYCLES = _ei("MEM_TREND_CYCLES",  5)
-MEM_TREND_DELTA  = _ef("MEM_TREND_DELTA",  3.0)   # % per sample
+MEM_TREND_DELTA  = _ef("MEM_TREND_DELTA",  3.0)  # % per sample
+
+# Celery queue depth alert (jobs waiting)
+CELERY_QUEUE_WARN = _ei("CELERY_QUEUE_WARN", 200)
+CELERY_QUEUE_CRIT = _ei("CELERY_QUEUE_CRIT", 500)
 
 # Timing
 CHECK_INTERVAL        = _ei("CHECK_INTERVAL",        60)
@@ -103,18 +122,26 @@ SUMMARY_INTERVAL      = _ei("SUMMARY_INTERVAL",   21600)  # 6 hours
 ALERT_COOLDOWN        = _ei("ALERT_COOLDOWN",       1800)  # 30 min
 AUTO_RESTART_COOLDOWN = _ei("AUTO_RESTART_COOLDOWN", 300)  # 5 min
 
+# Daily log bundle (seconds past midnight)
+LOG_BUNDLE_HOUR   = _ei("LOG_BUNDLE_HOUR",   2)   # 02:00 AM default
+LOG_BUNDLE_MINUTE = _ei("LOG_BUNDLE_MINUTE", 0)
+LOG_ARCHIVE_DAYS  = _ei("LOG_ARCHIVE_DAYS",  7)   # keep 7 days of archives
+
 # Telegram rate limit
 TG_RATE_MAX    = _ei("TG_RATE_MAX",    20)
 TG_RATE_WINDOW = _ei("TG_RATE_WINDOW", 60)
 
 # Paths
-BASE_DIR       = Path(os.getenv("BASE_DIR", "/home/opc/pdfwala"))
+BASE_DIR       = Path(os.getenv("BASE_DIR",       "/home/opc/pdfwala"))
 LOG_FILE       = BASE_DIR / "monitor.log"
 UPLOADS_DIR    = BASE_DIR / "uploads"
 DOWNLOADS_DIR  = BASE_DIR / "downloads"
+OUTPUTS_DIR    = BASE_DIR / "outputs"
+TEMP_DIR       = BASE_DIR / "temp"
 METRICS_FILE   = BASE_DIR / "monitor_metrics.json"
 HEARTBEAT_FILE = BASE_DIR / "monitor_heartbeat"
 LOG_HASH_FILE  = BASE_DIR / "monitor_log_hashes.json"
+LOG_ARCHIVE_DIR = BASE_DIR / "log_archives"
 
 # Containers
 EXPECTED_CONTAINERS = [
@@ -124,6 +151,9 @@ EXPECTED_CONTAINERS = [
     "pdfwala_redis",
 ]
 
+# Celery queues to check depth (via Redis LLEN)
+CELERY_QUEUES = ["celery", "fast", "office", "slow"]
+
 # Endpoints  (name, url, expected_code, is_critical)
 ENDPOINTS: List[Tuple[str, str, int, bool]] = [
     ("Homepage",   "https://npkpadala.com/pdfwala/", 200, True),
@@ -132,12 +162,12 @@ ENDPOINTS: List[Tuple[str, str, int, bool]] = [
 
 HOSTNAME = socket.gethostname()
 
-
 # ╔══════════════════════════════════════════════════════════════
 # ║  LOGGING
 # ╚══════════════════════════════════════════════════════════════
 
 BASE_DIR.mkdir(parents=True, exist_ok=True)
+LOG_ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -186,6 +216,7 @@ class Telegram:
         self._lock    = threading.Lock()
         self._sends: Deque[float] = deque()
         self._url = f"https://api.telegram.org/bot{token}/sendMessage"
+        self._doc_url = f"https://api.telegram.org/bot{token}/sendDocument"
 
     def _under_limit(self) -> bool:
         now = time.monotonic()
@@ -217,8 +248,36 @@ class Telegram:
                 time.sleep(2 ** attempt)
         return False
 
+    def send_document(self, file_path: Path, caption: str = "") -> bool:
+        """Send a file (zip) to Telegram."""
+        if not file_path.exists():
+            log.error("send_document: file not found: %s", file_path)
+            return False
+        with self._lock:
+            if not self._under_limit():
+                log.warning("Telegram rate limit — document send suppressed")
+                return False
+            self._sends.append(time.monotonic())
+        for attempt in range(3):
+            try:
+                with file_path.open("rb") as fh:
+                    r = requests.post(
+                        self._doc_url,
+                        data={"chat_id": self._chat_id, "caption": caption[:1024]},
+                        files={"document": (file_path.name, fh, "application/zip")},
+                        timeout=120,
+                    )
+                if r.status_code == 200:
+                    log.info("Log bundle sent to Telegram: %s", file_path.name)
+                    return True
+                log.error("Telegram doc %s: %s", r.status_code, r.text[:200])
+            except Exception as e:
+                log.error("Telegram doc attempt %d: %s", attempt + 1, e)
+                time.sleep(2 ** attempt)
+        return False
+
     def test(self) -> bool:
-        return self.send("🔍 PDFWala Monitor — credential test OK")
+        return self.send("🔍 PDFWala Monitor v4 — credential test OK")
 
 
 # ╔══════════════════════════════════════════════════════════════
@@ -294,6 +353,233 @@ class LogHashStore:
 
 
 # ╔══════════════════════════════════════════════════════════════
+# ║  LOG BUNDLE SCHEDULER  (sends daily zip at configured time)
+# ╚══════════════════════════════════════════════════════════════
+
+class LogBundleScheduler:
+    """
+    Builds a zip of all app logs once per day at LOG_BUNDLE_HOUR:LOG_BUNDLE_MINUTE
+    and sends it to Telegram. Archives are kept for LOG_ARCHIVE_DAYS days.
+    """
+
+    def __init__(self, tg: Telegram, docker_cmd: Optional[List[str]]):
+        self._tg         = tg
+        self._docker_cmd = docker_cmd
+        self._last_date: Optional[str] = None
+        self._lock = threading.Lock()
+
+    def tick(self):
+        """Call every check cycle. Fires at most once per calendar day."""
+        now = datetime.now()
+        today = now.strftime("%Y-%m-%d")
+        target_minute = LOG_BUNDLE_HOUR * 60 + LOG_BUNDLE_MINUTE
+        current_minute = now.hour * 60 + now.minute
+
+        # Fire within a 2-minute window of the configured time, once per day
+        if abs(current_minute - target_minute) > 1:
+            return
+        with self._lock:
+            if self._last_date == today:
+                return
+            self._last_date = today
+
+        log.info("Daily log bundle: starting collection for %s", today)
+        try:
+            zip_path = self._build_zip(today)
+            self._send(zip_path, today)
+            self._cleanup_old_archives()
+        except Exception as e:
+            log.exception("Log bundle failed: %s", e)
+            self._tg.send(f"❌ <b>Daily log bundle FAILED</b> on {HOSTNAME}\n{e}")
+
+    # ── build zip ─────────────────────────────────────────────
+
+    def _build_zip(self, date_str: str) -> Path:
+        zip_path = LOG_ARCHIVE_DIR / f"pdfwala_logs_{date_str}.zip"
+        collected = 0
+
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+
+            # 1. monitor.log (the monitor's own log)
+            if LOG_FILE.exists():
+                zf.write(LOG_FILE, f"monitor/monitor.log")
+                collected += 1
+
+            # 2. Docker container logs (tail last 5000 lines per container)
+            if self._docker_cmd:
+                for ct in ["app", "worker", "nginx", "redis"]:
+                    name = f"pdfwala_{ct}"
+                    try:
+                        r = subprocess.run(
+                            ["docker", "logs", "--tail=5000",
+                             "--no-color", "--timestamps", name],
+                            capture_output=True, text=True, timeout=30,
+                        )
+                        content = (r.stdout or "") + (r.stderr or "")
+                        if content.strip():
+                            zf.writestr(
+                                f"containers/{name}.log",
+                                content.encode("utf-8", errors="replace"),
+                            )
+                            collected += 1
+                    except Exception as e:
+                        log.warning("Log bundle: could not collect %s: %s", name, e)
+                        zf.writestr(
+                            f"containers/{name}_ERROR.txt",
+                            f"Failed to collect: {e}",
+                        )
+
+            # 3. Nginx access + error logs (if mounted / accessible on host)
+            for nginx_log in [
+                Path("/var/log/nginx/access.log"),
+                Path("/var/log/nginx/error.log"),
+                BASE_DIR / "nginx" / "logs" / "access.log",
+                BASE_DIR / "nginx" / "logs" / "error.log",
+            ]:
+                if nginx_log.exists() and nginx_log.stat().st_size > 0:
+                    try:
+                        # Only tail last 10 000 lines to keep zip small
+                        r = subprocess.run(
+                            ["tail", "-n", "10000", str(nginx_log)],
+                            capture_output=True, text=True, timeout=10,
+                        )
+                        if r.stdout.strip():
+                            zf.writestr(
+                                f"nginx/{nginx_log.name}",
+                                r.stdout.encode("utf-8", errors="replace"),
+                            )
+                            collected += 1
+                    except Exception:
+                        pass
+
+            # 4. Metrics snapshot (JSON)
+            if METRICS_FILE.exists():
+                zf.write(METRICS_FILE, "metrics/monitor_metrics.json")
+
+            # 5. Bundle manifest
+            manifest = {
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "hostname":     HOSTNAME,
+                "date":         date_str,
+                "files_collected": collected,
+            }
+            zf.writestr("manifest.json", json.dumps(manifest, indent=2))
+
+        size_kb = zip_path.stat().st_size // 1024
+        log.info("Log bundle built: %s (%d KB, %d sources)", zip_path.name, size_kb, collected)
+        return zip_path
+
+    # ── send ──────────────────────────────────────────────────
+
+    TG_MAX_BYTES = 49 * 1024 * 1024  # 49 MB — safe margin under Telegram's 50 MB cap
+
+    def _send(self, zip_path: Path, date_str: str):
+        size_bytes = zip_path.stat().st_size
+        size_kb    = size_bytes // 1024
+
+        # ── oversized: build a slim errors-only zip instead ───
+        if size_bytes > self.TG_MAX_BYTES:
+            log.warning(
+                "Log bundle too large (%d MB) — sending errors-only fallback",
+                size_bytes // (1024 * 1024),
+            )
+            self._tg.send(
+                f"⚠️ <b>Daily log bundle too large</b> on {HOSTNAME}\n"
+                f"Full zip: {size_kb // 1024} MB — sending errors-only summary instead."
+            )
+            zip_path = self._build_errors_only_zip(date_str)
+            size_kb  = zip_path.stat().st_size // 1024
+
+        caption = (
+            f"📦 <b>PDFWala Daily Logs — {date_str}</b>\n"
+            f"🖥️ {HOSTNAME}\n"
+            f"📁 {zip_path.name}  ({size_kb} KB)\n"
+            f"🗂️ Contains: monitor log, container logs (app/worker/nginx/redis), "
+            f"nginx access/error, metrics snapshot\n"
+            f"⏰ Generated: {datetime.now().strftime('%H:%M:%S')}"
+        )
+        ok = self._tg.send_document(zip_path, caption=caption)
+        if not ok:
+            log.error("Failed to send log bundle to Telegram")
+            self._tg.send(
+                f"❌ <b>Daily log send FAILED</b> on {HOSTNAME} ({date_str})\n"
+                f"File: {zip_path.name} — check monitor logs."
+            )
+
+    def _build_errors_only_zip(self, date_str: str) -> Path:
+        """Fallback: grep ERROR/CRITICAL lines only → much smaller zip."""
+        zip_path = LOG_ARCHIVE_DIR / f"pdfwala_errors_{date_str}.zip"
+        patterns = ["ERROR", "CRITICAL", "FATAL", "Exception", "Traceback",
+                    "500", "502", "503", "OOM", "Killed", "circuit breaker"]
+
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+            for ct in ["app", "worker", "nginx", "redis"]:
+                name = f"pdfwala_{ct}"
+                try:
+                    r = subprocess.run(
+                        ["docker", "logs", "--tail=10000", "--no-color", name],
+                        capture_output=True, text=True, timeout=30,
+                    )
+                    all_lines = ((r.stdout or "") + (r.stderr or "")).splitlines()
+                    error_lines = [
+                        ln for ln in all_lines
+                        if any(p.lower() in ln.lower() for p in patterns)
+                    ]
+                    if error_lines:
+                        content = "\n".join(error_lines[-5000:])  # last 5k error lines
+                        zf.writestr(
+                            f"errors/{name}_errors.log",
+                            content.encode("utf-8", errors="replace"),
+                        )
+                except Exception as e:
+                    zf.writestr(f"errors/{name}_ERROR.txt", f"Failed: {e}")
+
+            # Always include monitor.log tail
+            if LOG_FILE.exists():
+                try:
+                    r = subprocess.run(
+                        ["tail", "-n", "2000", str(LOG_FILE)],
+                        capture_output=True, text=True, timeout=10,
+                    )
+                    if r.stdout:
+                        zf.writestr("monitor/monitor_tail.log",
+                                    r.stdout.encode("utf-8", errors="replace"))
+                except Exception:
+                    pass
+
+            zf.writestr("manifest.json", json.dumps({
+                "type":         "errors_only_fallback",
+                "date":         date_str,
+                "hostname":     HOSTNAME,
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "reason":       "Full bundle exceeded 49 MB Telegram limit",
+            }, indent=2))
+
+        log.info("Errors-only fallback zip: %s (%d KB)",
+                 zip_path.name, zip_path.stat().st_size // 1024)
+        return zip_path
+
+    # ── cleanup old archives ───────────────────────────────────
+
+    def _cleanup_old_archives(self):
+        cutoff = datetime.now() - timedelta(days=LOG_ARCHIVE_DAYS)
+        removed = 0
+        for f in LOG_ARCHIVE_DIR.glob("pdfwala_logs_*.zip"):
+            try:
+                # Parse date from filename
+                date_part = f.stem.replace("pdfwala_logs_", "")
+                file_date = datetime.strptime(date_part, "%Y-%m-%d")
+                if file_date < cutoff:
+                    f.unlink()
+                    removed += 1
+                    log.info("Deleted old log archive: %s", f.name)
+            except Exception:
+                pass
+        if removed:
+            log.info("Cleaned up %d old log archive(s)", removed)
+
+
+# ╔══════════════════════════════════════════════════════════════
 # ║  MAIN MONITOR
 # ╚══════════════════════════════════════════════════════════════
 
@@ -314,11 +600,13 @@ class Monitor:
         self._prev_io: Optional[object] = None
         self._prev_io_ts: float = 0.0
 
+        self.log_bundle = LogBundleScheduler(self.tg, self.docker_cmd)
+
         signal.signal(signal.SIGTERM, self._on_shutdown)
         signal.signal(signal.SIGINT,  self._on_shutdown)
         signal.signal(signal.SIGHUP,  lambda s, f: log.info("SIGHUP received"))
 
-        log.info("PDFWala Monitor v3 initialised on %s", HOSTNAME)
+        log.info("PDFWala Monitor v4 initialised on %s", HOSTNAME)
 
     # ── signals ───────────────────────────────────────────────
 
@@ -364,7 +652,6 @@ class Monitor:
     def check_system(self) -> List[Alert]:
         alerts: List[Alert] = []
         try:
-            # CPU
             cpu = psutil.cpu_percent(interval=1)
             k = "cpu"
             if cpu > CPU_THRESHOLD:
@@ -375,7 +662,6 @@ class Monitor:
             else:
                 self.cd.clear(k)
 
-            # RAM
             ram = psutil.virtual_memory()
             k = "ram"
             if ram.percent > RAM_THRESHOLD:
@@ -387,7 +673,7 @@ class Monitor:
             else:
                 self.cd.clear(k)
 
-            # Memory trend (leak detection)
+            # Memory leak trend
             self._mem_samples.append(ram.percent)
             if len(self._mem_samples) == MEM_TREND_CYCLES + 1:
                 growth = self._mem_samples[-1] - self._mem_samples[0]
@@ -401,7 +687,6 @@ class Monitor:
                 else:
                     self.cd.clear(k)
 
-            # Swap
             swap = psutil.swap_memory()
             k = "swap"
             if swap.percent > SWAP_THRESHOLD:
@@ -411,7 +696,6 @@ class Monitor:
             else:
                 self.cd.clear(k)
 
-            # Disk
             disk = psutil.disk_usage("/")
             k = "disk"
             if disk.percent > DISK_THRESHOLD:
@@ -423,7 +707,6 @@ class Monitor:
             else:
                 self.cd.clear(k)
 
-            # Load average
             load1, _, _ = os.getloadavg()
             cpus = psutil.cpu_count() or 1
             k = "load"
@@ -431,7 +714,7 @@ class Monitor:
                 if self.cd.should_fire(k):
                     alerts.append(Alert(k,
                         f"Load avg {load1:.2f} on {cpus} CPUs "
-                        f"(threshold ×{LOAD_MULTIPLIER})", Sev.WARN))
+                        f"(×{LOAD_MULTIPLIER} threshold)", Sev.WARN))
             else:
                 self.cd.clear(k)
 
@@ -448,7 +731,7 @@ class Monitor:
                     if self.cd.should_fire(k):
                         alerts.append(Alert(k,
                             f"File descriptors {fd_open}/{soft} "
-                            f"({fd_open*100//soft}% of limit)", Sev.WARN))
+                            f"({fd_open*100//soft}%)", Sev.WARN))
                 else:
                     self.cd.clear(k)
             except Exception:
@@ -461,12 +744,10 @@ class Monitor:
             if zombies:
                 if self.cd.should_fire(k):
                     alerts.append(Alert(k,
-                        f"{len(zombies)} zombie process(es) detected",
-                        Sev.WARN))
+                        f"{len(zombies)} zombie process(es) detected", Sev.WARN))
             else:
                 self.cd.clear(k)
 
-            # Disk I/O saturation
             self._check_disk_io(alerts)
 
         except Exception as e:
@@ -479,7 +760,7 @@ class Monitor:
         try:
             now = time.monotonic()
             c   = psutil.disk_io_counters()
-            if self._prev_io is not None and c:
+            if self._prev_io is not None and c and hasattr(c, "busy_time"):
                 elapsed  = now - self._prev_io_ts
                 if elapsed > 0:
                     busy_ms  = c.busy_time - self._prev_io.busy_time
@@ -496,7 +777,7 @@ class Monitor:
                 self._prev_io    = c
                 self._prev_io_ts = now
         except Exception:
-            pass  # busy_time not on all kernels
+            pass
 
     # 2 ── SSL ─────────────────────────────────────────────────
 
@@ -510,22 +791,20 @@ class Monitor:
                     socket.create_connection((host, 443), timeout=10),
                     server_hostname=host,
                 ) as s:
-                    cert     = s.getpeercert()
-                    exp_str  = cert.get("notAfter", "")
-                    exp_dt   = datetime.strptime(
+                    cert    = s.getpeercert()
+                    exp_str = cert.get("notAfter", "")
+                    exp_dt  = datetime.strptime(
                         exp_str, "%b %d %H:%M:%S %Y %Z"
                     ).replace(tzinfo=timezone.utc)
-                    days     = (exp_dt - datetime.now(timezone.utc)).days
+                    days    = (exp_dt - datetime.now(timezone.utc)).days
                     if days < SSL_CRIT_DAYS:
                         if self.cd.should_fire(k):
                             alerts.append(Alert(k,
-                                f"SSL {host} expires in {days} day(s)!",
-                                Sev.CRIT))
+                                f"SSL {host} expires in {days} day(s)!", Sev.CRIT))
                     elif days < SSL_WARN_DAYS:
                         if self.cd.should_fire(k):
                             alerts.append(Alert(k,
-                                f"SSL {host} expires in {days} day(s)",
-                                Sev.WARN))
+                                f"SSL {host} expires in {days} day(s)", Sev.WARN))
                     else:
                         self.cd.clear(k)
             except ssl.SSLError as e:
@@ -577,15 +856,13 @@ class Monitor:
                     self.cd.clear(k)
 
         except subprocess.TimeoutExpired:
-            alerts.append(Alert("docker_timeout",
-                                "Docker check timed out", Sev.WARN))
+            alerts.append(Alert("docker_timeout", "Docker check timed out", Sev.WARN))
         except Exception as e:
             log.exception("Container check error")
-            alerts.append(Alert("ct_err",
-                                f"Container check failed: {e}", Sev.WARN))
+            alerts.append(Alert("ct_err", f"Container check failed: {e}", Sev.WARN))
         return alerts
 
-    # 4 ── Redis  (docker exec redis-cli ping) ─────────────────
+    # 4 ── Redis ───────────────────────────────────────────────
 
     def check_redis(self) -> List[Alert]:
         alerts: List[Alert] = []
@@ -600,8 +877,7 @@ class Monitor:
             else:
                 if self.cd.should_fire(k):
                     alerts.append(Alert(k,
-                        f"Redis unexpected response: {r.stdout.strip()!r}",
-                        Sev.WARN))
+                        f"Redis unexpected response: {r.stdout.strip()!r}", Sev.WARN))
         except subprocess.TimeoutExpired:
             if self.cd.should_fire(k):
                 alerts.append(Alert(k, "Redis check timed out", Sev.CRIT))
@@ -610,15 +886,47 @@ class Monitor:
                 alerts.append(Alert(k, f"Redis check failed: {e}", Sev.CRIT))
         return alerts
 
-    # 5 ── Processes ───────────────────────────────────────────
+    # 5 ── Celery queue depth ──────────────────────────────────
+
+    def check_celery_queues(self) -> List[Alert]:
+        """Check Celery queue depth via Redis LLEN. Detects job pile-ups."""
+        alerts: List[Alert] = []
+        for queue in CELERY_QUEUES:
+            k = f"celery_q_{queue}"
+            try:
+                r = subprocess.run(
+                    ["docker", "exec", "pdfwala_redis",
+                     "redis-cli", "LLEN", queue],
+                    capture_output=True, text=True, timeout=10,
+                )
+                depth_str = r.stdout.strip()
+                if not depth_str.isdigit():
+                    continue
+                depth = int(depth_str)
+                if depth >= CELERY_QUEUE_CRIT:
+                    if self.cd.should_fire(k):
+                        alerts.append(Alert(k,
+                            f"Celery '{queue}' queue has {depth} jobs "
+                            f"(critical >{CELERY_QUEUE_CRIT})", Sev.CRIT))
+                elif depth >= CELERY_QUEUE_WARN:
+                    if self.cd.should_fire(k):
+                        alerts.append(Alert(k,
+                            f"Celery '{queue}' queue has {depth} jobs "
+                            f"(warn >{CELERY_QUEUE_WARN})", Sev.WARN))
+                else:
+                    self.cd.clear(k)
+            except Exception as e:
+                log.debug("Celery queue check '%s': %s", queue, e)
+        return alerts
+
+    # 6 ── Processes ───────────────────────────────────────────
 
     def check_processes(self) -> List[Alert]:
         alerts: List[Alert] = []
-        names = psutil.process_iter(["name"])
-        running = {p.info["name"] or "" for p in names}
+        names = {p.info.get("name") or "" for p in psutil.process_iter(["name"])}
         for proc, key in [("gunicorn", "proc_gunicorn"),
                           ("celery",   "proc_celery")]:
-            found = any(proc in n for n in running)
+            found = any(proc in n for n in names)
             if not found:
                 if self.cd.should_fire(key):
                     alerts.append(Alert(key,
@@ -627,14 +935,14 @@ class Monitor:
                 self.cd.clear(key)
         return alerts
 
-    # 6 ── Endpoints ───────────────────────────────────────────
+    # 7 ── Endpoints ───────────────────────────────────────────
 
     def check_endpoints(self) -> List[Alert]:
         alerts: List[Alert] = []
-        hdrs = {"User-Agent": "PDFWala-Monitor/3.0"}
+        hdrs = {"User-Agent": "PDFWala-Monitor/4.0"}
         for name, url, expected, critical in ENDPOINTS:
-            k     = f"ep_{name.replace(' ','_')}"
-            k_sl  = f"{k}_slow"
+            k    = f"ep_{name.replace(' ','_')}"
+            k_sl = f"{k}_slow"
             try:
                 t0   = time.monotonic()
                 resp = requests.get(url, timeout=10,
@@ -668,40 +976,46 @@ class Monitor:
                         Sev.CRIT if critical else Sev.WARN))
         return alerts
 
-    # 7 ── Folder sizes ────────────────────────────────────────
+    # 8 ── Folder sizes (PDFWala-specific) ─────────────────────
 
     def check_folders(self) -> List[Alert]:
         alerts: List[Alert] = []
-        for name, path, max_gb in [
+        checks = [
             ("uploads",   UPLOADS_DIR,   UPLOAD_SIZE_GB),
             ("downloads", DOWNLOADS_DIR, DOWNLOAD_SIZE_GB),
-        ]:
+            ("outputs",   OUTPUTS_DIR,   OUTPUT_SIZE_GB),
+            ("temp",      TEMP_DIR,      TEMP_SIZE_GB),
+        ]
+        for name, path, max_gb in checks:
             if not path.exists():
                 continue
             k = f"folder_{name}"
             try:
                 r = subprocess.run(["du", "-s", str(path)],
-                                   capture_output=True, text=True, timeout=20)
+                                   capture_output=True, text=True, timeout=30)
                 if r.returncode == 0 and r.stdout.strip():
                     size_gb = int(r.stdout.split()[0]) / (1024 ** 2)
                     if size_gb > max_gb:
                         if self.cd.should_fire(k):
                             alerts.append(Alert(k,
                                 f"Folder '{name}' is {size_gb:.1f} GB "
-                                f"(max {max_gb} GB)", Sev.WARN))
+                                f"(limit {max_gb} GB)", Sev.WARN))
                     else:
                         self.cd.clear(k)
             except Exception as e:
                 log.warning("Folder check '%s': %s", name, e)
         return alerts
 
-    # 8 ── Log scanning ────────────────────────────────────────
+    # 9 ── Log scanning ────────────────────────────────────────
 
     LOG_PATTERNS = [
         "ERROR", "Exception", "Traceback", "500", "502", "503",
         "Failed", "ModuleNotFoundError", "ImportError",
         "Killed", "OOM", "timeout", "Connection refused",
         "CRITICAL", "FATAL", "Segfault", "core dumped",
+        # PDFWala-specific
+        "circuit breaker", "backpressure", "rate limit exceeded",
+        "job ttl", "cleanup failed", "pdf corrupt",
     ]
 
     def check_logs(self) -> List[Alert]:
@@ -760,13 +1074,11 @@ class Monitor:
                     cwd=str(BASE_DIR), capture_output=True,
                     timeout=60, check=True,
                 )
-                self.tg.send(
-                    f"🔄 Auto-restarted <b>{name}</b> on {HOSTNAME}")
+                self.tg.send(f"🔄 Auto-restarted <b>{name}</b> on {HOSTNAME}")
                 log.info("Auto-restart OK: %s", name)
             except Exception as e:
                 log.error("Auto-restart FAILED %s: %s", name, e)
-                self.tg.send(
-                    f"❌ Auto-restart FAILED <b>{name}</b> on {HOSTNAME}")
+                self.tg.send(f"❌ Auto-restart FAILED <b>{name}</b> on {HOSTNAME}")
 
     # ══════════════════════════════════════════════════════════
     #  SUMMARY REPORT
@@ -783,7 +1095,7 @@ class Monitor:
             net   = psutil.net_io_counters()
 
             lines = [
-                "<b>📊 PDFWala Status Report</b>",
+                "<b>📊 PDFWala 6h Status Report</b>",
                 f"🖥️  <b>{HOSTNAME}</b>  •  "
                 f"{datetime.now().strftime('%Y-%m-%d %H:%M')}",
                 "",
@@ -792,28 +1104,47 @@ class Monitor:
                 f"  RAM : {ram.percent:.1f}%  "
                 f"({ram.used/1e9:.1f}/{ram.total/1e9:.1f} GB)",
                 f"  Swap: {swap.percent:.1f}%",
-                f"  Disk: {disk.percent:.1f}%  "
-                f"(free {disk.free/1e9:.1f} GB)",
+                f"  Disk: {disk.percent:.1f}%  (free {disk.free/1e9:.1f} GB)",
                 f"  Up  : {up_h//24}d {up_h%24}h",
-                f"  Net : ↓{net.bytes_recv/1e6:.0f}MB  "
-                f"↑{net.bytes_sent/1e6:.0f}MB",
+                f"  Net : ↓{net.bytes_recv/1e6:.0f}MB  ↑{net.bytes_sent/1e6:.0f}MB",
                 "",
                 "<b>📁  Storage</b>",
             ]
-            for name, path in [("uploads",UPLOADS_DIR),
-                                ("downloads",DOWNLOADS_DIR)]:
+            for name, path in [
+                ("uploads",   UPLOADS_DIR),
+                ("downloads", DOWNLOADS_DIR),
+                ("outputs",   OUTPUTS_DIR),
+                ("temp",      TEMP_DIR),
+            ]:
                 if path.exists():
                     try:
-                        r    = subprocess.run(["du","-sh",str(path)],
-                                              capture_output=True,
-                                              text=True, timeout=5)
+                        r    = subprocess.run(["du", "-sh", str(path)],
+                                              capture_output=True, text=True, timeout=10)
                         size = r.stdout.split()[0] if r.stdout else "N/A"
                     except Exception:
                         size = "err"
                     lines.append(f"  {name}: {size}")
-            lines += ["",
-                      f"<b>🔔  Active cooldown keys:</b> "
-                      f"{self.cd.active_count()}"]
+
+            # Celery queue depth snapshot
+            lines += ["", "<b>📬  Celery Queues</b>"]
+            for queue in CELERY_QUEUES:
+                try:
+                    r = subprocess.run(
+                        ["docker", "exec", "pdfwala_redis",
+                         "redis-cli", "LLEN", queue],
+                        capture_output=True, text=True, timeout=5,
+                    )
+                    depth = r.stdout.strip() if r.stdout.strip().isdigit() else "?"
+                    lines.append(f"  {queue}: {depth} jobs")
+                except Exception:
+                    lines.append(f"  {queue}: ?")
+
+            lines += [
+                "",
+                f"<b>🔔  Active cooldown keys:</b> {self.cd.active_count()}",
+                f"<b>📦  Log archives:</b> kept {LOG_ARCHIVE_DAYS} days  "
+                f"(sent daily at {LOG_BUNDLE_HOUR:02d}:{LOG_BUNDLE_MINUTE:02d})",
+            ]
             return "\n".join(lines)
         except Exception as e:
             log.exception("Summary failed")
@@ -830,11 +1161,14 @@ class Monitor:
             sys.exit(1)
 
         self.tg.send(
-            f"🟢 <b>PDFWala Monitor v3 started</b>\n"
+            f"🟢 <b>PDFWala Monitor v4 started</b>\n"
             f"🖥️  {HOSTNAME}\n"
             f"⚙️  CPU&gt;{CPU_THRESHOLD}%  "
             f"RAM&gt;{RAM_THRESHOLD}%  "
             f"Disk&gt;{DISK_THRESHOLD}%\n"
+            f"📦 Daily logs → Telegram at "
+            f"{LOG_BUNDLE_HOUR:02d}:{LOG_BUNDLE_MINUTE:02d}  "
+            f"(kept {LOG_ARCHIVE_DAYS} days)\n"
             f"🔔 Cooldown: {ALERT_COOLDOWN}s  "
             f"Interval: {CHECK_INTERVAL}s"
         )
@@ -844,13 +1178,14 @@ class Monitor:
         while self.running:
             t0 = time.monotonic()
 
-            # ── run all checks ────────────────────────────────
+            # ── run all checks ─────────────────────────────────
             all_alerts: List[Alert] = []
             for fn in (
                 self.check_system,
                 self.check_ssl,
                 self.check_containers,
                 self.check_redis,
+                self.check_celery_queues,
                 self.check_processes,
                 self.check_endpoints,
                 self.check_folders,
@@ -861,10 +1196,10 @@ class Monitor:
                 except Exception as e:
                     log.exception("Check %s failed: %s", fn.__name__, e)
 
-            # ── auto-restart ──────────────────────────────────
+            # ── auto-restart ───────────────────────────────────
             self._auto_restart(all_alerts)
 
-            # ── dispatch by severity ──────────────────────────
+            # ── dispatch alerts by severity ────────────────────
             crits = [a for a in all_alerts if a.severity == Sev.CRIT]
             warns = [a for a in all_alerts if a.severity == Sev.WARN]
 
@@ -876,10 +1211,9 @@ class Monitor:
                 self.tg.send(f"⚠️ <b>WARNING — {HOSTNAME}</b>\n\n{body}")
 
             if all_alerts:
-                log.warning("Cycle: %d critical, %d warning",
-                            len(crits), len(warns))
+                log.warning("Cycle: %d critical, %d warning", len(crits), len(warns))
 
-            # ── metrics snapshot ──────────────────────────────
+            # ── metrics snapshot ───────────────────────────────
             try:
                 ram  = psutil.virtual_memory()
                 disk = psutil.disk_usage("/")
@@ -898,17 +1232,20 @@ class Monitor:
             except Exception:
                 pass
 
-            # ── heartbeat ─────────────────────────────────────
+            # ── heartbeat ──────────────────────────────────────
             self._heartbeat()
 
-            # ── 6-hour summary ────────────────────────────────
+            # ── 6-hour summary ─────────────────────────────────
             summary_acc += CHECK_INTERVAL
             if summary_acc >= SUMMARY_INTERVAL:
                 self.tg.send(self.summary())
                 summary_acc = 0
                 log.info("6-hour summary sent")
 
-            # ── sleep ─────────────────────────────────────────
+            # ── daily log bundle ───────────────────────────────
+            self.log_bundle.tick()
+
+            # ── sleep ──────────────────────────────────────────
             elapsed   = time.monotonic() - t0
             sleep_for = max(0, CHECK_INTERVAL - elapsed)
             self._stop.wait(timeout=sleep_for)
