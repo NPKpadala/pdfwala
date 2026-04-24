@@ -5,7 +5,7 @@ PDFWala Production Monitor v4
 Monitors:
   • CPU / RAM / Disk / Swap / Load / File descriptors
   • Memory leak trend detection
-  • Zombie process detection
+  • Zombie process detectionTOKEN   = os.getenv("TELEGRAM_TOKEN",   "").strip()
   • Disk I/O saturation
   • SSL certificate expiry (warn <30d, critical <7d)
   • Docker container health (app / worker / nginx / redis)
@@ -92,8 +92,8 @@ def _ef(k, d):
     except ValueError: return d
 
 # Telegram
-TOKEN   = os.getenv("TELEGRAM_TOKEN",   "").strip()
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+TOKEN   = os.getenv("8720355273:AAHWP7xrwcGMTo04Mg3AwrgyCv_IBe8ubCs",   "").strip()
+CHAT_ID = os.getenv("988935002", "").strip()
 
 # Thresholds
 CPU_THRESHOLD    = _ei("CPU_THRESHOLD",    90)
