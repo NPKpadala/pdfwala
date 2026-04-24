@@ -10,7 +10,7 @@ from pathlib import Path
 class Config:
     """Centralised configuration with strict environment validation."""
 
-    VERSION = "11.0.0"
+    VERSION = "11.1.1"
 
     # =========================================================================
     # SECURITY (REQUIRED — WILL FAIL FAST IF MISSING)
@@ -213,10 +213,18 @@ class Config:
     MAX_OCR_PAGES_SYNC = int(os.environ.get("MAX_OCR_PAGES_SYNC", 30))
 
     # Maximum pages to convert to images — prevents OOM
-    MAX_IMAGE_PAGES = int(os.environ.get("MAX_IMAGE_PAGES", 50))
+    # NOTE: default raised from 50→2000 in V11.1 because pdf-to-image now uses
+    # chunked parallel processing and no longer needs the tight sync guard.
+    MAX_IMAGE_PAGES = int(os.environ.get("MAX_IMAGE_PAGES", 2000))
 
     # PIL/Pillow decompression bomb threshold — prevents pixel explosion attacks
     MAX_IMAGE_PIXELS = int(os.environ.get("MAX_IMAGE_PIXELS", 89_478_485))
+
+    # ── Word / Excel / PPT processing guards (prevent OOM on huge documents) ──
+    MAX_PPT_PAGES        = int(os.environ.get("MAX_PPT_PAGES",         50))
+    MAX_WORD_PARAGRAPHS  = int(os.environ.get("MAX_WORD_PARAGRAPHS", 5000))
+    MAX_WORD_TABLE_CELLS = int(os.environ.get("MAX_WORD_TABLE_CELLS", 10000))
+    MAX_EXCEL_ROWS_JSON  = int(os.environ.get("MAX_EXCEL_ROWS_JSON",  10000))
 
     # Gunicorn worker configuration
     GUNICORN_WORKERS = int(os.environ.get("GUNICORN_WORKERS", 4))
