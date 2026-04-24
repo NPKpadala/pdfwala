@@ -192,7 +192,12 @@ def chunked_pdf_processor(
             raise last_exc
 
         # 3 — Parallel processing
+        # IMPORTANT: never use 'return' inside the ThreadPoolExecutor 'with' block.
+        # Returning there calls executor.__exit__ which blocks on shutdown(wait=True)
+        # until ALL still-running threads finish — causing multi-minute stalls on
+        # failure.  Instead, set a flag + break, then return after the block exits.
         ordered_outs = [None] * n_chunks
+        chunk_failed = False
         with ThreadPoolExecutor(max_workers=max_workers) as pool:
             futures = {pool.submit(_run_chunk_with_retry, ci): ci for ci in range(n_chunks)}
             for fut in as_completed(futures):
@@ -215,8 +220,15 @@ def chunked_pdf_processor(
                         except Exception:
                             pass
                 except Exception:
-                    # already logged inside _run_chunk_with_retry
-                    return False  # triggers finally cleanup
+                    # already logged inside _run_chunk_with_retry.
+                    # Set flag and break — do NOT return here; let the 'with' block
+                    # exit cleanly so the executor can shut down without a long stall.
+                    chunk_failed = True
+                    break
+        # Now safe to return — executor has fully shut down
+        if chunk_failed:
+            log.error(f"[{tool_name}] {job_id}: chunk permanently failed — fallback to single-pass")
+            return False
 
         if any(p is None for p in ordered_outs):
             log.error(f"[{tool_name}] {job_id}: missing chunk outputs — fallback")
