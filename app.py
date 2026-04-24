@@ -25,7 +25,7 @@ from utils.helpers import (
 from utils.security import generate_signed_url, verify_signed_url, SafeRegex, REDACTION_PATTERNS
 from utils.pdf_utils import (
     parse_page_ranges, create_watermark_pdf, create_page_number_pdf,
-    get_pdf_page_count, compress_pdf_images
+    get_pdf_page_count, compress_pdf_images, is_valid_pdf
 )
 from utils.office_utils import (
     coerce_cell_value, coerce_cell_for_csv,
@@ -248,24 +248,9 @@ def ok(msg, path=None, **extras):
 
 
 # ── PDF validation helper ─────────────────────────────────────────────────────
-def is_valid_pdf(path: str, min_pages: int = 1):
-    """
-    Validate a PDF file. Returns (True, None) if valid, (False, reason) if not.
-    Never raises exceptions — safe to call anywhere.
-    """
-    try:
-        if not path or not os.path.exists(path):
-            return False, "File does not exist"
-        if os.path.getsize(path) == 0:
-            return False, "File is empty (0 bytes)"
-        doc = fitz.open(path)
-        page_count = len(doc)
-        doc.close()
-        if page_count < min_pages:
-            return False, f"PDF has {page_count} page(s), minimum required: {min_pages}"
-        return True, None
-    except Exception as ex:
-        return False, f"Cannot open PDF: {type(ex).__name__}: {ex}"
+# is_valid_pdf() is imported from utils.pdf_utils (strict version with magic-byte
+# check, xref validation and min_pages guard).  The local definition has been
+# removed in V11.1 to eliminate the weaker shadow that skipped header checks.
 
 
 # ── Empty PDF guard helper ──────────────────────────────────────────────────
