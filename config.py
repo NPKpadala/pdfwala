@@ -155,6 +155,57 @@ class Config:
     # Maximum concurrent OCR threads — prevents Tesseract resource exhaustion
     MAX_OCR_THREADS = int(os.environ.get("MAX_OCR_THREADS", 2))
 
+    # =========================================================================
+    # V11.1.0 — CHUNKED PARALLEL PROCESSING CONFIGURATION
+    # =========================================================================
+
+    # ── OCR (Tesseract: ~200 MB RAM / worker) ─────────────────────────────────
+    OCR_CHUNK_THRESHOLD = int(os.environ.get("OCR_CHUNK_THRESHOLD", 50))
+    OCR_CHUNK_PAGES     = int(os.environ.get("OCR_CHUNK_PAGES",     30))
+    OCR_MAX_WORKERS     = int(os.environ.get("OCR_MAX_WORKERS",      2))
+
+    # ── PDF → Excel (pdfplumber: moderate CPU + RAM) ──────────────────────────
+    PDF_TO_EXCEL_CHUNK_THRESHOLD = int(os.environ.get("PDF_TO_EXCEL_CHUNK_THRESHOLD", 80))
+    PDF_TO_EXCEL_CHUNK_PAGES     = int(os.environ.get("PDF_TO_EXCEL_CHUNK_PAGES",     80))
+    PDF_TO_EXCEL_MAX_WORKERS     = int(os.environ.get("PDF_TO_EXCEL_MAX_WORKERS",      2))
+
+    # ── Watermark (light stamp op) ────────────────────────────────────────────
+    WATERMARK_CHUNK_THRESHOLD    = int(os.environ.get("WATERMARK_CHUNK_THRESHOLD",    200))
+    WATERMARK_CHUNK_PAGES        = int(os.environ.get("WATERMARK_CHUNK_PAGES",        100))
+    WATERMARK_MAX_WORKERS        = int(os.environ.get("WATERMARK_MAX_WORKERS",          4))
+
+    # ── Rotate (trivial PyMuPDF op) ───────────────────────────────────────────
+    ROTATE_CHUNK_THRESHOLD       = int(os.environ.get("ROTATE_CHUNK_THRESHOLD",       200))
+    ROTATE_CHUNK_PAGES           = int(os.environ.get("ROTATE_CHUNK_PAGES",           100))
+    ROTATE_MAX_WORKERS           = int(os.environ.get("ROTATE_MAX_WORKERS",             4))
+
+    # ── Page Numbers (light overlay op) ──────────────────────────────────────
+    PAGE_NUMBERS_CHUNK_THRESHOLD = int(os.environ.get("PAGE_NUMBERS_CHUNK_THRESHOLD", 200))
+    PAGE_NUMBERS_CHUNK_PAGES     = int(os.environ.get("PAGE_NUMBERS_CHUNK_PAGES",     100))
+    PAGE_NUMBERS_MAX_WORKERS     = int(os.environ.get("PAGE_NUMBERS_MAX_WORKERS",       4))
+
+    # ── Redact (text search: moderate CPU) ────────────────────────────────────
+    REDACT_CHUNK_THRESHOLD       = int(os.environ.get("REDACT_CHUNK_THRESHOLD",        50))
+    REDACT_CHUNK_PAGES           = int(os.environ.get("REDACT_CHUNK_PAGES",            50))
+    REDACT_MAX_WORKERS           = int(os.environ.get("REDACT_MAX_WORKERS",             2))
+
+    # ── PDF → Image (rasterize: fast per-page) ────────────────────────────────
+    PDF_TO_IMAGE_CHUNK_THRESHOLD = int(os.environ.get("PDF_TO_IMAGE_CHUNK_THRESHOLD",  50))
+    PDF_TO_IMAGE_CHUNK_PAGES     = int(os.environ.get("PDF_TO_IMAGE_CHUNK_PAGES",      50))
+    PDF_TO_IMAGE_MAX_WORKERS     = int(os.environ.get("PDF_TO_IMAGE_MAX_WORKERS",       4))
+
+    # ── Crop (trivial cropbox set) ────────────────────────────────────────────
+    CROP_CHUNK_THRESHOLD         = int(os.environ.get("CROP_CHUNK_THRESHOLD",         200))
+    CROP_CHUNK_PAGES             = int(os.environ.get("CROP_CHUNK_PAGES",             100))
+    CROP_MAX_WORKERS             = int(os.environ.get("CROP_MAX_WORKERS",               4))
+
+    # ── Per-tool page guards (hard caps — return 413 over these) ─────────────
+    MAX_WATERMARK_PAGES          = int(os.environ.get("MAX_WATERMARK_PAGES",   1000))
+    MAX_ROTATE_PAGES             = int(os.environ.get("MAX_ROTATE_PAGES",      1000))
+    MAX_PAGE_NUMBERS_PAGES       = int(os.environ.get("MAX_PAGE_NUMBERS_PAGES",1000))
+    MAX_REDACT_PAGES             = int(os.environ.get("MAX_REDACT_PAGES",       500))
+    MAX_CROP_PAGES               = int(os.environ.get("MAX_CROP_PAGES",        1000))
+
     # Maximum pages to compare in compare-pdf endpoint — prevents OOM
     MAX_COMPARE_PAGES = int(os.environ.get("MAX_COMPARE_PAGES", 50))
 
