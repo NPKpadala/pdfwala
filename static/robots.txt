@@ -1,9 +1,8 @@
 User-agent: *
 Allow: /pdfwala/
-#Allow: /api/
-Allow: /download/
+Disallow: /api/
+Disallow: /download/
 Disallow: /api/*/status/
-Disallow: /download/*.tmp
 
 Sitemap: https://npkpadala.com/sitemap.xml
 
