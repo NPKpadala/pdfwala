@@ -13,6 +13,13 @@ New in V11.1:
       * Redis progress reporting after each chunk
   - check_disk_space(): standalone helper
   - merge_pdf_chunks() / merge_zip_chunks(): ready-to-use merge_func impls
+
+Optimizations in V11.1.1:
+  - compress_pdf_images(): lazy encoding (PNG → JPEG only if needed)
+  - _is_photo_image(): robust extrema handling with fallback
+  - Buffer size calculations using explicit getvalue() for safety
+  - CMYK image handling for edge cases
+  - Improved error logging for failed image extraction
 """
 
 import io
@@ -426,20 +433,23 @@ def extract_pdf_metadata(path: str) -> dict:
     doc.close()
     return meta
 
+
 def compress_pdf_images(doc, dpi: int = 120, quality: int = 72):
     """
     In-place image compression for a PyMuPDF document.
     Returns True if any images were modified.
     
-    Improvements:
+    Optimized Improvements:
     - Tracks processed xrefs to avoid duplicate work
     - Skips very small images (<15KB)
-    - Detects photo vs non-photo images
+    - Detects photo vs non-photo images with robust heuristics
     - Smart resizing: aggressive for very large (>2500px), moderate for large (>1200px)
     - Dynamic JPEG quality based on image size
-    - Uses PNG for small/non-photo images when appropriate
+    - LAZY encoding: PNG first, JPEG only if PNG is large (saves memory & CPU)
+    - Handles CMYK images explicitly
     - Only replaces if resulting file is smaller
-    - Safe error handling with no crashes
+    - Safe error handling with explicit warnings for extraction failures
+    - Uses explicit getvalue() for buffer sizing (safe & clear)
     """
     from PIL import Image
     
@@ -450,7 +460,7 @@ def compress_pdf_images(doc, dpi: int = 120, quality: int = 72):
         for img in page.get_images(full=True):
             xref = img[0]
             
-            # Skip if already processed
+            # Skip if already processed (same image on multiple pages)
             if xref in processed_xrefs:
                 continue
             processed_xrefs.add(xref)
@@ -458,12 +468,13 @@ def compress_pdf_images(doc, dpi: int = 120, quality: int = 72):
             try:
                 base = doc.extract_image(xref)
                 if not base:
+                    log.warning(f"Image extraction failed for xref {xref}")
                     continue
                 
                 orig_image_bytes = base["image"]
                 orig_size = len(orig_image_bytes)
                 
-                # Skip very small images (<15KB)
+                # Skip very small images (<15KB) — compression not worth the overhead
                 if orig_size < 15360:  # 15 * 1024
                     continue
                 
@@ -474,72 +485,75 @@ def compress_pdf_images(doc, dpi: int = 120, quality: int = 72):
                 # Determine if this is a photo or non-photo image
                 is_photo = _is_photo_image(pil, pixel_count)
                 
-                # Skip images that don't need compression
+                # Calculate base scale from DPI
                 src_dpi = max(base.get("xres", 150), base.get("yres", 150), 1)
                 base_scale = min(1.0, dpi / src_dpi)
                 
-                # Calculate aggressive/moderate scaling
+                # Apply aggressive/moderate scaling based on pixel count
                 scale = base_scale
                 if pixel_count > 2500 * 2500:  # Very large (>2500px dimension)
-                    scale = min(base_scale, 0.65)  # Aggressive
+                    scale = min(base_scale, 0.65)  # Aggressive (35% of original)
                 elif pixel_count > 1200 * 1200:  # Large (>1200px dimension)
-                    scale = min(base_scale, 0.80)  # Moderate
+                    scale = min(base_scale, 0.80)  # Moderate (20% reduction)
                 
-                # If scale is too high, skip
-                if scale >= 0.98:
+                # Skip if scale won't compress much (unless format change helps)
+                if scale >= 0.98 and pil.mode == "RGB":
                     continue
                 
-                # Resize
+                # Resize image
                 nw = max(1, int(ow * scale))
                 nh = max(1, int(oh * scale))
                 resized = pil.resize((nw, nh), Image.LANCZOS)
                 
-                # Convert to appropriate format
+                # Convert to RGB if needed for JPEG compatibility
                 if pil.mode in ("RGBA", "P", "LA"):
-                    # Has transparency/palette — convert to RGB for JPEG
+                    # Has transparency/palette — flatten with white background
                     bg = Image.new("RGB", resized.size, (255, 255, 255))
                     if pil.mode == "P":
                         resized = resized.convert("RGBA")
                     mask = resized.split()[-1] if resized.mode in ("RGBA", "LA") else None
                     bg.paste(resized, mask=mask)
                     resized = bg
+                elif pil.mode == "CMYK":
+                    # CMYK → RGB (color shift possible but necessary for PDF compat)
+                    resized = resized.convert("RGB")
                 elif resized.mode != "RGB":
                     resized = resized.convert("RGB")
                 
-                # Choose format and quality based on image characteristics
+                # Choose format and quality based on image type
                 if is_photo:
-                    # Photos: use JPEG with dynamic quality
+                    # Photos: always use JPEG with dynamic quality
                     adj_quality = _dynamic_jpeg_quality(quality, pixel_count)
                     buf_img = io.BytesIO()
                     resized.save(buf_img, "JPEG", quality=adj_quality, optimize=True, progressive=True)
                 else:
-                    # Non-photos: try PNG first, fallback to JPEG if larger
+                    # Non-photos: LAZY encoding — PNG first, JPEG only if PNG is large
                     buf_png = io.BytesIO()
                     resized.save(buf_png, "PNG", optimize=True)
+                    png_size = len(buf_png.getvalue())  # Explicit, safe buffer sizing
                     
-                    buf_jpg = io.BytesIO()
-                    adj_quality = max(80, quality + 10)  # Higher quality for non-photos as JPEG
-                    resized.save(buf_jpg, "JPEG", quality=adj_quality, optimize=True, progressive=True)
-                    
-                    # Use whichever is smaller
-                    png_size = buf_png.tell()
-                    jpg_size = buf_jpg.tell()
-                    if png_size <= jpg_size:
-                        buf_img = buf_png
+                    # Only encode JPEG if PNG is large (saves memory & CPU for small images)
+                    if png_size > 200000:  # 200KB threshold
+                        buf_jpg = io.BytesIO()
+                        adj_quality = max(80, quality + 10)  # Higher quality for non-photos as JPEG
+                        resized.save(buf_jpg, "JPEG", quality=adj_quality, optimize=True, progressive=True)
+                        jpg_size = len(buf_jpg.getvalue())  # Explicit, safe buffer sizing
+                        buf_img = buf_jpg if jpg_size < png_size else buf_png
                     else:
-                        buf_img = buf_jpg
+                        # PNG is already small, use it
+                        buf_img = buf_png
                 
                 new_image_bytes = buf_img.getvalue()
                 new_size = len(new_image_bytes)
                 
-                # Only update if smaller
+                # Only update PDF if compressed result is smaller
                 if new_size < orig_size:
                     doc.update_stream(xref, new_image_bytes)
                     modified = True
                     
-            except Exception:
-                # Silently skip any images that fail
-                pass
+            except Exception as exc:
+                # Silently skip any images that fail (avoid crashing the entire job)
+                log.debug(f"Image compression error for xref {img[0] if img else '?'}: {exc}")
     
     return modified
 
@@ -547,15 +561,21 @@ def compress_pdf_images(doc, dpi: int = 120, quality: int = 72):
 def _is_photo_image(pil_img, pixel_count: int) -> bool:
     """
     Heuristic to detect if image is likely a photo vs graphic/text.
+    
     Photos compress better with JPEG; graphics/text prefer PNG.
+    
+    Optimizations:
+    - Robust extrema handling with try-except fallback
+    - Clear threshold logic
+    - Returns quickly for edge cases
     """
-    # Convert to RGB if needed for analysis
+    # Convert to RGB if needed for consistent analysis
     if pil_img.mode in ("RGBA", "LA", "P"):
         test_img = pil_img.convert("RGB")
     elif pil_img.mode == "RGB":
         test_img = pil_img
     else:
-        # Grayscale or other — treat as potential photo if large
+        # Grayscale or other → treat as potential photo if large
         return pixel_count > 500000
     
     try:
@@ -564,35 +584,48 @@ def _is_photo_image(pil_img, pixel_count: int) -> bool:
         
         # Very limited color palette → likely graphic/text
         if extrema and len(extrema) >= 3:
-            r_range, g_range, b_range = extrema[0][1] - extrema[0][0], \
-                                        extrema[1][1] - extrema[1][0], \
-                                        extrema[2][1] - extrema[2][0]
-            color_range = (r_range + g_range + b_range) / 3
-            if color_range < 30:  # Very low color variance → graphic
-                return False
+            try:
+                # Extract color ranges safely
+                r_range = extrema[0][1] - extrema[0][0]
+                g_range = extrema[1][1] - extrema[1][0]
+                b_range = extrema[2][1] - extrema[2][0]
+                color_range = (r_range + g_range + b_range) / 3
+                
+                # Low color variance → graphic/text (prefer PNG)
+                if color_range < 30:
+                    return False
+            except (IndexError, TypeError):
+                # Malformed extrema; treat as photo (safer fallback)
+                pass
         
         # Large images with good color range → likely photo
         if pixel_count > 800000:
             return True
         
-        # Default for medium-sized images
+        # Default: medium-sized images with color data are likely photos
         return pixel_count > 400000
         
     except Exception:
-        # On any error, assume it's a photo (safer)
+        # On any error, assume it's a photo (safer default)
         return True
 
 
 def _dynamic_jpeg_quality(base_quality: int, pixel_count: int) -> int:
     """
     Adjust JPEG quality based on image size.
-    Larger images can use lower quality and still look good.
+    
+    Rationale: Larger images can use lower quality and still look good due to
+    reduced perceptual visibility of compression artifacts at smaller scale.
     """
     if pixel_count > 2500 * 2500:
-        return max(45, base_quality - 20)  # Very large: more aggressive
+        # Very large: more aggressive quality reduction (45–52)
+        return max(45, base_quality - 20)
     elif pixel_count > 1200 * 1200:
-        return max(55, base_quality - 10)  # Large: moderate
+        # Large: moderate quality reduction (55–62)
+        return max(55, base_quality - 10)
     elif pixel_count < 300000:
-        return min(90, base_quality + 5)   # Small: preserve quality
+        # Small: preserve quality (73–95)
+        return min(90, base_quality + 5)
     else:
+        # Medium: use base quality (72)
         return base_quality
