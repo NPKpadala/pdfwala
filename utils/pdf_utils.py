@@ -426,94 +426,173 @@ def extract_pdf_metadata(path: str) -> dict:
     doc.close()
     return meta
 
-
 def compress_pdf_images(doc, dpi: int = 120, quality: int = 72):
     """
     In-place image compression for a PyMuPDF document.
     Returns True if any images were modified.
+    
+    Improvements:
+    - Tracks processed xrefs to avoid duplicate work
+    - Skips very small images (<15KB)
+    - Detects photo vs non-photo images
+    - Smart resizing: aggressive for very large (>2500px), moderate for large (>1200px)
+    - Dynamic JPEG quality based on image size
+    - Uses PNG for small/non-photo images when appropriate
+    - Only replaces if resulting file is smaller
+    - Safe error handling with no crashes
     """
     from PIL import Image
+    
     modified = False
+    processed_xrefs: Set[int] = set()
+    
     for page in doc:
         for img in page.get_images(full=True):
             xref = img[0]
+            
+            # Skip if already processed
+            if xref in processed_xrefs:
+                continue
+            processed_xrefs.add(xref)
+            
             try:
                 base = doc.extract_image(xref)
                 if not base:
                     continue
-                pil = Image.open(io.BytesIO(base["image"]))
-                ow, oh = pil.size
-                src_dpi = max(base.get("xres", 150), base.get("yres", 150), 1)
-                scale   = min(1.0, dpi / src_dpi)
-                if scale >= 0.95:
+                
+                orig_image_bytes = base["image"]
+                orig_size = len(orig_image_bytes)
+                
+                # Skip very small images (<15KB)
+                if orig_size < 15360:  # 15 * 1024
                     continue
+                
+                pil = Image.open(io.BytesIO(orig_image_bytes))
+                ow, oh = pil.size
+                pixel_count = ow * oh
+                
+                # Determine if this is a photo or non-photo image
+                is_photo = _is_photo_image(pil, pixel_count)
+                
+                # Skip images that don't need compression
+                src_dpi = max(base.get("xres", 150), base.get("yres", 150), 1)
+                base_scale = min(1.0, dpi / src_dpi)
+                
+                # Calculate aggressive/moderate scaling
+                scale = base_scale
+                if pixel_count > 2500 * 2500:  # Very large (>2500px dimension)
+                    scale = min(base_scale, 0.65)  # Aggressive
+                elif pixel_count > 1200 * 1200:  # Large (>1200px dimension)
+                    scale = min(base_scale, 0.80)  # Moderate
+                
+                # If scale is too high, skip
+                if scale >= 0.98:
+                    continue
+                
+                # Resize
                 nw = max(1, int(ow * scale))
                 nh = max(1, int(oh * scale))
-                pil = pil.resize((nw, nh), Image.LANCZOS)
+                resized = pil.resize((nw, nh), Image.LANCZOS)
+                
+                # Convert to appropriate format
                 if pil.mode in ("RGBA", "P", "LA"):
-                    bg   = Image.new("RGB", pil.size, (255, 255, 255))
+                    # Has transparency/palette — convert to RGB for JPEG
+                    bg = Image.new("RGB", resized.size, (255, 255, 255))
                     if pil.mode == "P":
-                        pil = pil.convert("RGBA")
-                    mask = pil.split()[-1] if pil.mode in ("RGBA", "LA") else None
-                    bg.paste(pil, mask=mask)
-                    pil = bg
-                elif pil.mode != "RGB":
-                    pil = pil.convert("RGB")
-                buf_img = io.BytesIO()
-                pil.save(buf_img, "JPEG", quality=quality, optimize=True, progressive=True)
-                doc.update_stream(xref, buf_img.getvalue())
-                modified = True
+                        resized = resized.convert("RGBA")
+                    mask = resized.split()[-1] if resized.mode in ("RGBA", "LA") else None
+                    bg.paste(resized, mask=mask)
+                    resized = bg
+                elif resized.mode != "RGB":
+                    resized = resized.convert("RGB")
+                
+                # Choose format and quality based on image characteristics
+                if is_photo:
+                    # Photos: use JPEG with dynamic quality
+                    adj_quality = _dynamic_jpeg_quality(quality, pixel_count)
+                    buf_img = io.BytesIO()
+                    resized.save(buf_img, "JPEG", quality=adj_quality, optimize=True, progressive=True)
+                else:
+                    # Non-photos: try PNG first, fallback to JPEG if larger
+                    buf_png = io.BytesIO()
+                    resized.save(buf_png, "PNG", optimize=True)
+                    
+                    buf_jpg = io.BytesIO()
+                    adj_quality = max(80, quality + 10)  # Higher quality for non-photos as JPEG
+                    resized.save(buf_jpg, "JPEG", quality=adj_quality, optimize=True, progressive=True)
+                    
+                    # Use whichever is smaller
+                    png_size = buf_png.tell()
+                    jpg_size = buf_jpg.tell()
+                    if png_size <= jpg_size:
+                        buf_img = buf_png
+                    else:
+                        buf_img = buf_jpg
+                
+                new_image_bytes = buf_img.getvalue()
+                new_size = len(new_image_bytes)
+                
+                # Only update if smaller
+                if new_size < orig_size:
+                    doc.update_stream(xref, new_image_bytes)
+                    modified = True
+                    
             except Exception:
+                # Silently skip any images that fail
                 pass
+    
     return modified
 
 
-def is_valid_pdf(file_path: str, min_pages: int = 1) -> Tuple[bool, Optional[str]]:
+def _is_photo_image(pil_img, pixel_count: int) -> bool:
     """
-    Strict PDF validation.
-
-    Returns (is_valid, error_message).  error_message is None when valid.
+    Heuristic to detect if image is likely a photo vs graphic/text.
+    Photos compress better with JPEG; graphics/text prefer PNG.
     """
-    if not FITZ_AVAILABLE:
-        return False, "PyMuPDF (fitz) is not available"
-
+    # Convert to RGB if needed for analysis
+    if pil_img.mode in ("RGBA", "LA", "P"):
+        test_img = pil_img.convert("RGB")
+    elif pil_img.mode == "RGB":
+        test_img = pil_img
+    else:
+        # Grayscale or other — treat as potential photo if large
+        return pixel_count > 500000
+    
     try:
-        if not os.path.exists(file_path):
-            return False, "File does not exist"
+        # Sample color diversity: photos have high color entropy, graphics don't
+        extrema = test_img.getextrema()
+        
+        # Very limited color palette → likely graphic/text
+        if extrema and len(extrema) >= 3:
+            r_range, g_range, b_range = extrema[0][1] - extrema[0][0], \
+                                        extrema[1][1] - extrema[1][0], \
+                                        extrema[2][1] - extrema[2][0]
+            color_range = (r_range + g_range + b_range) / 3
+            if color_range < 30:  # Very low color variance → graphic
+                return False
+        
+        # Large images with good color range → likely photo
+        if pixel_count > 800000:
+            return True
+        
+        # Default for medium-sized images
+        return pixel_count > 400000
+        
+    except Exception:
+        # On any error, assume it's a photo (safer)
+        return True
 
-        file_size = os.path.getsize(file_path)
-        if file_size == 0:
-            return False, "File is empty (0 bytes)"
-        if file_size < 100:
-            return False, f"File too small to be a valid PDF ({file_size} bytes)"
 
-        with open(file_path, "rb") as f:
-            header = f.read(8)
-            if not header.startswith(b"%PDF-"):
-                return False, "File does not have valid PDF header"
-
-        doc = fitz.open(file_path)
-        page_count = len(doc)
-
-        try:
-            doc.xref_get_keys(1)
-        except Exception as xref_error:
-            doc.close()
-            return False, f"Corrupted cross-reference table: {xref_error}"
-
-        if page_count > 0:
-            try:
-                _ = doc[0].rect
-            except Exception as page_error:
-                doc.close()
-                return False, f"Cannot read page data: {page_error}"
-
-        doc.close()
-
-        if page_count < min_pages:
-            return False, f"PDF has {page_count} page(s), minimum required: {min_pages}"
-
-        return True, None
-
-    except Exception as e:
-        return False, f"Validation exception: {str(e)}"
+def _dynamic_jpeg_quality(base_quality: int, pixel_count: int) -> int:
+    """
+    Adjust JPEG quality based on image size.
+    Larger images can use lower quality and still look good.
+    """
+    if pixel_count > 2500 * 2500:
+        return max(45, base_quality - 20)  # Very large: more aggressive
+    elif pixel_count > 1200 * 1200:
+        return max(55, base_quality - 10)  # Large: moderate
+    elif pixel_count < 300000:
+        return min(90, base_quality + 5)   # Small: preserve quality
+    else:
+        return base_quality
