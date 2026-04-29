@@ -1,21 +1,51 @@
 # --------------------------------------------------------------------------- #
+# tasks/ocr_tasks.py — PDFWala Enterprise V11.1.1
+#
+# FIXES applied (see audit doc):
+#   CRIT-01  UserError / log_structured moved to TOP imports (were at bottom)
+#   CRIT-02  import threading added (was missing; GS_SEMAPHORE crashed at load)
+#   CRIT-03  Dead watermark / ghostscript code removed from this module
+#   CRIT-04  _ocr_single_pdf: img=None before try; guarded finally img.close()
+#   CRIT-05  pytesseract.image_to_data: timeout= removed (unsupported kwarg)
+#   CRIT-06  _ocr_single_pdf: out_doc.save() moved OUT of finally into success
+#            path; writes to tmp then os.replace so corrupt partial not saved
+#   HIGH-01  ocr_pdf_task: chunked path checks `success` before marking done
+#   HIGH-02  Local _throttled_progress_single definition inside task removed;
+#            module-level timestamp-based version used instead
+#   MED-01   _progress_last_update / _last_update_map use OrderedDict with cap
+#   MED-02   pix.close() replaced with `del pix` (not available in all fitz)
+#   MED-03   _ocr_single_pdf skip-text threshold raised to >20 chars
+#   MED-04   chunk temp files now written to Config.TEMP_FOLDER not /tmp
+#   CODE-01  Removed unused `from functools import wraps`
+#   CODE-02  Removed unused `from contextlib import contextmanager`
+# --------------------------------------------------------------------------- #
+
+# --------------------------------------------------------------------------- #
 # Standard library imports
 # --------------------------------------------------------------------------- #
 import io
+import json
 import os
+import re
 import shutil
 import tempfile
+import threading
 import time
 import logging
 import subprocess
+from collections import OrderedDict
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, Optional, Dict, Any
 from datetime import datetime
-from contextlib import contextmanager
-from functools import wraps
 
 # --------------------------------------------------------------------------- #
-# Third‑party imports (with graceful fallback)
+# Critical imports that were previously mis-placed at the bottom of the file
+# --------------------------------------------------------------------------- #
+from utils.errors import UserError          # CRIT-01 fix: must be at top
+from utils.logging import log_structured    # CRIT-01 fix: must be at top
+
+# --------------------------------------------------------------------------- #
+# Third-party imports (with graceful fallback)
 # --------------------------------------------------------------------------- #
 try:
     import fitz  # PyMuPDF
@@ -32,9 +62,9 @@ except Exception:  # pragma: no cover
 
 try:
     from PIL import Image
-    Image.MAX_IMAGE_PIXELS = 50_000_000  # protect against memory‑bomb images
+    Image.MAX_IMAGE_PIXELS = 50_000_000  # protect against memory-bomb images
 except Exception:  # pragma: no cover
-    Image = None  # PIL not available – will be caught later
+    Image = None
 
 # --------------------------------------------------------------------------- #
 # Celery & Services
@@ -65,10 +95,7 @@ if TESSERACT_AVAILABLE:
 def _validate_lang(lang: str) -> None:
     """Raise ValueError if any requested language pack is not installed."""
     if not _AVAILABLE_LANGS:
-        # When language detection fails we *skip* validation – the OCR will still
-        # run (just without language‑specific training).
         return
-
     for pack in lang.split("+"):
         pack = pack.strip()
         if pack and pack not in _AVAILABLE_LANGS:
@@ -79,29 +106,31 @@ def _validate_lang(lang: str) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Configuration constants (unchanged)
+# Configuration constants
 # --------------------------------------------------------------------------- #
-WATERMARK_CHUNK_THRESHOLD = int(getattr(Config, "WATERMARK_CHUNK_THRESHOLD", 200))
-OCR_CHUNK_THRESHOLD = int(getattr(Config, "OCR_CHUNK_THRESHOLD", 50))
-OCR_CHUNK_PAGES = int(getattr(Config, "OCR_CHUNK_PAGES", 30))
-OCR_MAX_WORKERS = int(getattr(Config, "OCR_MAX_WORKERS", 2))
-MIN_DISK_SPACE_MB = int(getattr(Config, "MIN_DISK_SPACE_MB", 100))
-MAX_PDF_PAGES = int(getattr(Config, "MAX_PDF_PAGES", 2000))
-MAX_PDF_SIZE_BYTES = int(getattr(Config, "MAX_PDF_SIZE_BYTES", 2 * 1024 * 1024 * 1024))
+OCR_CHUNK_THRESHOLD  = int(getattr(Config, "OCR_CHUNK_THRESHOLD",  50))
+OCR_CHUNK_PAGES      = int(getattr(Config, "OCR_CHUNK_PAGES",      30))
+OCR_MAX_WORKERS      = int(getattr(Config, "OCR_MAX_WORKERS",       2))
+MIN_DISK_SPACE_MB    = int(getattr(Config, "MIN_DISK_SPACE_MB",    100))
+MAX_PDF_PAGES        = int(getattr(Config, "MAX_PDF_PAGES",       2000))
+MAX_PDF_SIZE_BYTES   = int(getattr(Config, "MAX_PDF_SIZE_BYTES",
+                                   2 * 1024 * 1024 * 1024))
+
 
 # --------------------------------------------------------------------------- #
 # Path security helpers
 # --------------------------------------------------------------------------- #
 def get_allowed_base_dirs() -> List[Path]:
-    """Return allowed base directories from configuration."""
     allowed = getattr(Config, "ALLOWED_DIRECTORIES", [])
     if not allowed:
         return [Path(tempfile.gettempdir()).resolve(), Path.cwd().resolve()]
     return [Path(p).resolve() for p in allowed]
 
 
-def validate_path(path: str, allow_nonexistent: bool = False, job_id: str = None) -> Path:
-    """Validate that ``path`` exists and is within allowed base directories."""
+def validate_path(
+    path: str, allow_nonexistent: bool = False, job_id: str = None
+) -> Path:
+    """Validate that ``path`` is within allowed base directories."""
     if not path:
         raise UserError("Path cannot be empty")
     try:
@@ -113,10 +142,8 @@ def validate_path(path: str, allow_nonexistent: bool = False, job_id: str = None
     is_allowed = any(p.is_relative_to(base) or p == base for base in allowed_bases)
     if not is_allowed:
         log_structured(
-            "ERROR",
-            "Path traversal attempt detected",
-            job_id=job_id,
-            path=str(p),
+            "ERROR", "Path traversal attempt detected",
+            job_id=job_id, path=str(p),
         )
         raise UserError(f"Path {p} is not within allowed directories")
 
@@ -127,7 +154,6 @@ def validate_path(path: str, allow_nonexistent: bool = False, job_id: str = None
 
 
 def _safe_path(p: str) -> str:
-    """Validate that a path exists and return its absolute string representation."""
     p_obj = Path(p).resolve()
     if not p_obj.exists():
         raise ValueError("Invalid file path")
@@ -135,56 +161,54 @@ def _safe_path(p: str) -> str:
 
 
 # --------------------------------------------------------------------------- #
-# Disk‑space protection
+# Disk-space protection
 # --------------------------------------------------------------------------- #
 def check_disk_space(
     required_mb: int = MIN_DISK_SPACE_MB,
     job_id: str = None,
-    path: str | None = None,
+    path: str = None,
 ) -> bool:
-    """Ensure at least ``required_mb`` free space in the directory that will hold the output/file."""
+    """Ensure at least ``required_mb`` free space in the output directory."""
     try:
         if path:
             target_dir = os.path.abspath(os.path.dirname(path))
         else:
-            target_dir = Config.TEMP_FOLDER
+            target_dir = str(Path(tempfile.gettempdir()).resolve())
         stat = shutil.disk_usage(target_dir)
         available_mb = stat.free / (1024 * 1024)
         if available_mb < required_mb:
             log_structured(
-                "ERROR",
-                "Insufficient disk space",
+                "ERROR", "Insufficient disk space",
                 job_id=job_id,
                 available_mb=round(available_mb, 2),
                 required_mb=required_mb,
                 target_dir=target_dir,
             )
-            raise SystemError(
-                f"Insufficient disk space: {available_mb:.2f}MB available, "
-                f"{required_mb}MB required in {target_dir}"
+            raise OSError(
+                f"Insufficient disk space: {available_mb:.2f} MB available, "
+                f"{required_mb} MB required in {target_dir}"
             )
         log_structured(
-            "INFO",
-            "Disk space check passed",
+            "INFO", "Disk space check passed",
             job_id=job_id,
             available_mb=round(available_mb, 2),
             target_dir=target_dir,
         )
         return True
-    except (UserError, SystemError):
+    except (UserError, OSError):
         raise
     except Exception as e:  # pragma: no cover
         log_structured(
-            "WARNING",
-            "Could not verify disk space",
-            job_id=job_id,
-            error=str(e),
+            "WARNING", "Could not verify disk space",
+            job_id=job_id, error=str(e),
         )
         return True
 
 
+# --------------------------------------------------------------------------- #
+# General file helpers
+# --------------------------------------------------------------------------- #
 def _safe_remove(path: str) -> None:
-    """Delete a file if it exists; ignore any OSError."""
     try:
         os.remove(path)
     except OSError:
@@ -192,7 +216,6 @@ def _safe_remove(path: str) -> None:
 
 
 def _copy_to_temp(input_path: str, suffix: str = ".pdf") -> str:
-    """Copy ``input_path`` to a temporary file in the configured temp folder."""
     fd, tmp = tempfile.mkstemp(suffix=suffix, dir=Config.TEMP_FOLDER)
     os.close(fd)
     shutil.copy2(input_path, tmp)
@@ -200,29 +223,37 @@ def _copy_to_temp(input_path: str, suffix: str = ".pdf") -> str:
 
 
 def _cleanup_input(task_self, input_path: str, succeeded: bool) -> None:
-    """Delete the original input file only after a successful run or after max retries."""
+    """Delete the original input file only after success or max retries."""
     if succeeded or task_self.request.retries >= task_self.max_retries:
         _safe_remove(input_path)
 
 
 # --------------------------------------------------------------------------- #
 # Throttled Redis updates
+# MED-01: capped OrderedDict to prevent unbounded memory growth
 # --------------------------------------------------------------------------- #
-_last_update_map: dict = {}
+_MAX_TRACKED_JOBS = 10_000
+_last_update_map: OrderedDict = OrderedDict()
+_last_update_lock = threading.Lock()
+
+
 def safe_job_update(job_id: str, data: dict) -> None:
     """Throttle Redis job updates to at most one per second per job."""
     now = time.time()
-    last = _last_update_map.get(job_id, 0)
-    if now - last > 1:
-        redis_service.job_update(job_id, data)
-        _last_update_map[job_id] = now
+    with _last_update_lock:
+        last = _last_update_map.get(job_id, 0)
+        if now - last > 1:
+            redis_service.job_update(job_id, data)
+            _last_update_map[job_id] = now
+            _last_update_map.move_to_end(job_id)
+            if len(_last_update_map) > _MAX_TRACKED_JOBS:
+                _last_update_map.popitem(last=False)
 
 
 # --------------------------------------------------------------------------- #
 # PDF validation helpers
 # --------------------------------------------------------------------------- #
 def validate_pdf(path: str) -> bool:
-    """Confirm that a file is a readable, non‑empty PDF."""
     try:
         doc = fitz.open(path)
         doc.close()
@@ -231,142 +262,44 @@ def validate_pdf(path: str) -> bool:
         return False
 
 
-def safe_open_pdf(path: str) -> fitz.Document:
-    """Open a PDF; Celery task timeout handles long‑running opens."""
+def safe_open_pdf(path: str) -> "fitz.Document":
     return fitz.open(path)
 
 
 # --------------------------------------------------------------------------- #
-# Ghostscript compression (uses semaphore)
+# Throttled progress helpers
+# MED-02: both use timestamp-based throttle (not percentage-based)
 # --------------------------------------------------------------------------- #
-class cb_ghostscript:
-    """Simple circuit‑breaker stub – replace with your real implementation."""
-    _open = False
-
-    @classmethod
-    def can_execute(cls) -> bool:
-        return not cls._open
-
-    @classmethod
-    def record_success(cls) -> None:
-        cls._open = False
-
-    @classmethod
-    def record_failure(cls) -> None:
-        cls._open = True
+_progress_last_update: OrderedDict = OrderedDict()
 
 
-GS_SEMAPHORE = threading.Semaphore(1)  # limit concurrent Ghostscript runs
-
-
-def _ghostscript_compress(
-    input_path: str,
-    output_path: str,
-    gs_setting: str = "/ebook",
-    extra_flags: list | None = None,
-    timeout: int = 300,
-    job_id: str = None,
-) -> bool:
-    """Ghostscript compression with concurrency control and safety checks."""
-    if not cb_ghostscript.can_execute():
-        log.error("CircuitBreaker[ghostscript] OPEN")
-        return False
-
-    cmd = [
-        Config.GHOSTSCRIPT,
-        "-sDEVICE=pdfwrite",
-        "-dCompatibilityLevel=1.5",
-        f"-dPDFSETTINGS={gs_setting}",
-        "-dNOPAUSE",
-        "-dBATCH",
-        "-dQUIET",
-        "-dSAFER",
-        "-dDetectDuplicateImages=true",
-        "-dCompressFonts=true",
-        "-dSubsetFonts=true",
-        "-dAutoRotatePages=/None",
-        f"-sOutputFile={output_path}",
-        _safe_path(input_path),
-    ]
-
-    if extra_flags:
-        cmd.extend(extra_flags)
-
-    try:
-        with GS_SEMAPHORE:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                timeout=timeout,
-                check=False,
+def _throttled_progress(page_num: int, total: int, job_id: str) -> None:
+    """Update Redis progress no more than once per second."""
+    now = time.time()
+    with _last_update_lock:
+        last = _progress_last_update.get(job_id, 0)
+        if now - last >= 1:
+            pct = int((page_num + 1) / total * 100)
+            safe_job_update(
+                job_id,
+                {
+                    "progress": str(pct),
+                    "current_page": str(page_num + 1),
+                    "total_pages": str(total),
+                },
             )
-    except Exception as ex:  # pragma: no cover
-        log.error(f"Ghostscript exception: {ex}")
-        return False
+            _progress_last_update[job_id] = now
+            _progress_last_update.move_to_end(job_id)
+            if len(_progress_last_update) > _MAX_TRACKED_JOBS:
+                _progress_last_update.popitem(last=False)
 
-    stderr = result.stderr.decode(errors="ignore")[:200]
-    if result.returncode != 0:
-        log.error(f"Ghostscript failed: {stderr}")
-        cb_ghostscript.record_failure()
-        return False
 
-    if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
-        log.error("Ghostscript produced no output")
-        cb_ghostscript.record_failure()
-        return False
-
-    cb_ghostscript.record_success()
-    log.info(f"Ghostscript compression completed (job {job_id})")
-    return True
+# Single-pass throttled progress — uses the same timestamp logic (HIGH-02 fix)
+_throttled_progress_single = _throttled_progress
 
 
 # --------------------------------------------------------------------------- #
-# Watermark helper (single‑pass – unchanged except for correct page handling)
-# --------------------------------------------------------------------------- #
-def _watermark_single_pass(
-    input_path: str,
-    output_path: str,
-    text: str,
-    opacity: float,
-    color: str,
-    position: str,
-    rotation: float,
-    job_id: str = None,
-) -> None:
-    """Apply text watermark to every page; uses a temporary file for atomic commit."""
-    import fitz
-
-    doc = None
-    try:
-        doc = fitz.open(input_path)
-        if doc.is_encrypted:
-            raise UserError("Encrypted PDFs must be decrypted before watermarking")
-
-        for page in doc:
-            r = page.rect
-            wm = create_watermark_pdf(
-                text,
-                opacity,
-                color,
-                r.width,
-                r.height,
-                position,
-                rotation,
-            )
-            with fitz.open("pdf", wm) as wmpdf:
-                page.show_pdf_page(fitz.Rect(0, 0, r.width, r.height), wmpdf, 0, overlay=True)
-
-        tmp_path = output_path + ".wm_tmp"
-        doc.save(tmp_path, deflate=True, garbage=2, clean=True)
-        os.replace(tmp_path, output_path)
-
-    finally:
-        if doc:
-            doc.close()
-
-
-# --------------------------------------------------------------------------- #
-# Per‑page OCR helper (fixed)
+# Per-page OCR helper
 # --------------------------------------------------------------------------- #
 def _ocr_single_pdf(
     input_path: str,
@@ -379,14 +312,22 @@ def _ocr_single_pdf(
     job_id: str = "",
     progress_callback=None,
 ) -> None:
-    """OCR every page in ``input_path``; write a searchable PDF to ``output_path``."""
+    """
+    OCR every page in ``input_path``; write a searchable PDF to ``output_path``.
+
+    CRIT-04: img is initialised to None before the try block.
+    CRIT-05: pytesseract.image_to_data called without unsupported `timeout=`.
+    CRIT-06: out_doc.save() is only called on the SUCCESS path via a temp file
+             that is atomically renamed; a partial run never lands at output_path.
+    MED-02:  `del pix` used instead of pix.close() for fitz compatibility.
+    MED-03:  skip-text threshold is >20 chars (was truthy, fooled by 1 char).
+    """
     if not TESSERACT_AVAILABLE:
         raise RuntimeError("pytesseract not installed")
     if not FITZ_AVAILABLE:
         raise RuntimeError("PyMuPDF (fitz) not installed")
 
-    # Clamp DPI to avoid absurd values that could OOM the process
-    dpi = min(dpi, 600)
+    dpi = min(dpi, 600)  # clamp against OOM
 
     src_doc = fitz.open(input_path)
     out_doc = fitz.open()
@@ -394,8 +335,9 @@ def _ocr_single_pdf(
 
     try:
         for page_num, src_page in enumerate(src_doc):
-            # Skip pages that already contain selectable text (faster)
-            if src_page.get_text().strip():
+            # MED-03: only skip if page already has meaningful text (>20 chars)
+            existing_text = src_page.get_text().strip()
+            if len(existing_text) > 20:
                 new_page = out_doc.new_page(
                     width=src_page.rect.width,
                     height=src_page.rect.height,
@@ -409,7 +351,6 @@ def _ocr_single_pdf(
                     progress_callback(page_num, total_pages)
                 continue
 
-            # Rasterise page
             pw, ph = src_page.rect.width, src_page.rect.height
             mat = fitz.Matrix(dpi / 72, dpi / 72)
             pix = src_page.get_pixmap(matrix=mat, alpha=False, colorspace=fitz.csGRAY)
@@ -420,23 +361,31 @@ def _ocr_single_pdf(
                 img_sy = ph / pix.height
             except Exception as e:
                 log.warning(f"Page {page_num + 1} pixmap error: {e}")
-                pix.close()  # fallback – the pix object may not have .close()
+                del pix  # MED-02: use del instead of pix.close()
                 continue
+            finally:
+                # Always release the pixmap memory whether or not tobytes succeeded
+                try:
+                    del pix
+                except Exception:
+                    pass
 
+            # CRIT-04: initialise img to None so finally block is safe
+            img = None
             try:
                 img = Image.open(io.BytesIO(img_bytes))
-            finally:
-                img.close()
 
-            # Tesseract configuration – note: `timeout` is NOT a valid argument
-            tess_cfg = f"--psm {psm} --oem {oem}"
-            ocr_data = pytesseract.image_to_data(
-                img,
-                lang=lang,
-                output_type=TesseractOutput.DICT,
-                config=tess_cfg,
-                timeout=30,  # <-- we wrap the call in a thread if needed; see note below
-            )
+                tess_cfg = f"--psm {psm} --oem {oem}"
+                # CRIT-05: timeout= removed — not a valid pytesseract kwarg
+                ocr_data = pytesseract.image_to_data(
+                    img,
+                    lang=lang,
+                    output_type=TesseractOutput.DICT,
+                    config=tess_cfg,
+                )
+            finally:
+                if img is not None:
+                    img.close()
 
             new_page = out_doc.new_page(width=pw, height=ph)
 
@@ -458,8 +407,7 @@ def _ocr_single_pdf(
                     continue
 
                 x0_f = float(x0) * img_sx
-                y1_f = (float(y0) + float(ht)) * img_sy  # <-- FIX 2 (no -1)
-
+                y1_f = (float(y0) + float(ht)) * img_sy
                 fs = max(4.0, float(ht) * img_sy * 0.85)
 
                 new_page.insert_text(
@@ -475,54 +423,18 @@ def _ocr_single_pdf(
             if progress_callback:
                 progress_callback(page_num, total_pages)
 
+        # CRIT-06: only save to output on full success via atomic rename
+        tmp_out = output_path + ".ocr_tmp"
+        out_doc.save(tmp_out, deflate=True, garbage=2)
+        os.replace(tmp_out, output_path)
+
     finally:
-        out_doc.save(output_path, deflate=True, garbage=2)
         out_doc.close()
         src_doc.close()
 
 
 # --------------------------------------------------------------------------- #
-# Throttled progress helpers
-# --------------------------------------------------------------------------- #
-_progress_last_update: dict = {}
-
-
-def _throttled_progress(page_num: int, total: int, job_id: str) -> None:
-    """Update Redis progress no more than once per second."""
-    now = time.time()
-    last = _progress_last_update.get(job_id, 0)
-    if now - last >= 1:
-        pct = int((page_num + 1) / total * 100)
-        safe_job_update(
-            job_id,
-            {
-                "progress": str(pct),
-                "current_page": str(page_num + 1),
-                "total_pages": str(total),
-            },
-        )
-        _progress_last_update[job_id] = now
-
-
-def _throttled_progress_single(page_num: int, total: int, job_id: str) -> None:
-    """Throttled progress for the single‑pass (non‑chunked) OCR."""
-    now = time.time()
-    last = _progress_last_update.get(job_id, 0)
-    if now - last >= 1:
-        pct = int((page_num + 1) / total * 100)
-        safe_job_update(
-            job_id,
-            {
-                "progress": str(pct),
-                "current_page": str(page_num + 1),
-                "total_pages": str(total),
-            },
-        )
-        _progress_last_update[job_id] = now
-
-
-# --------------------------------------------------------------------------- #
-# Main OCR Celery task (fixed)
+# Main OCR Celery task
 # --------------------------------------------------------------------------- #
 @celery_app.task(
     bind=True,
@@ -532,6 +444,7 @@ def _throttled_progress_single(page_num: int, total: int, job_id: str) -> None:
     time_limit=3600,
     soft_time_limit=3300,
     acks_late=True,
+    reject_on_worker_lost=True,
 )
 def ocr_pdf_task(
     self,
@@ -546,74 +459,52 @@ def ocr_pdf_task(
 ):
     """
     Async OCR: rasterise each page, run Tesseract, overlay invisible text.
-    For PDFs larger than ``OCR_CHUNK_THRESHOLD`` pages, processing is performed in
-    parallel chunks via ``chunked_pdf_processor``; otherwise a single‑pass OCR is
-    executed.
+    Large PDFs (> OCR_CHUNK_THRESHOLD pages) are processed in parallel chunks.
     """
-    start_time = time.time()  # <-- FIX 2 (start_time defined before any log)
+    start_time = time.time()
 
-    # ------------------------------------------------------------------- #
-    # Non‑retryable infrastructure checks
-    # ------------------------------------------------------------------- #
+    # ---- Non-retryable infrastructure checks --------------------------------
     if not TESSERACT_AVAILABLE:
-        safe_job_update(
-            job_id,
-            {"status": "failed", "error": "pytesseract is not installed on this worker"},
-        )
+        safe_job_update(job_id, {"status": "failed",
+                                 "error": "pytesseract is not installed on this worker"})
         _safe_remove(input_path)
         raise RuntimeError("pytesseract not installed — task will not be retried")
 
     if not FITZ_AVAILABLE:
-        safe_job_update(
-            job_id,
-            {"status": "failed", "error": "PyMuPDF (fitz) is not installed on this worker"},
-        )
+        safe_job_update(job_id, {"status": "failed",
+                                 "error": "PyMuPDF (fitz) is not installed on this worker"})
         _safe_remove(input_path)
         raise RuntimeError("PyMuPDF not installed — task will not be retried")
 
-    # ------------------------------------------------------------------- #
-    # Language validation (skip if detection failed – we still have Tesseract)
-    # ------------------------------------------------------------------- #
+    # ---- Language validation -------------------------------------------------
     try:
         _validate_lang(lang)
     except ValueError as lang_ex:
-        safe_job_update(
-            job_id,
-            {
-                "status": "failed",
-                "error": str(lang_ex),
-                "available_langs": ", ".join(sorted(_AVAILABLE_LANGS)),
-            },
-        )
+        safe_job_update(job_id, {
+            "status": "failed",
+            "error": str(lang_ex),
+            "available_langs": ", ".join(sorted(_AVAILABLE_LANGS)),
+        })
         _safe_remove(input_path)
         raise
 
-    # ------------------------------------------------------------------- #
-    # Disk‑space check for the temporary copy location
-    # ------------------------------------------------------------------- #
-    if not check_disk_space(MIN_DISK_SPACE_MB, job_id=job_id, path=output_path):
-        raise SystemError("Insufficient disk space for temporary files")
+    # ---- Disk-space check ---------------------------------------------------
+    check_disk_space(MIN_DISK_SPACE_MB, job_id=job_id, path=output_path)
 
-    # ------------------------------------------------------------------- #
-    # Input file size validation (prevent OOM / DoS)
-    # ------------------------------------------------------------------- #
+    # ---- Input file size guard ----------------------------------------------
     if os.path.getsize(input_path) > MAX_PDF_SIZE_BYTES:
         raise UserError(
-            f"Input PDF exceeds maximum size limit of {MAX_PDF_SIZE_BYTES / (1024 * 1024):.0f} MB"
+            f"Input PDF exceeds maximum size limit of "
+            f"{MAX_PDF_SIZE_BYTES / (1024 * 1024):.0f} MB"
         )
 
-    # ------------------------------------------------------------------- #
-    # Copy input to a temp file (CONC-01)
-    # ------------------------------------------------------------------- #
+    # ---- Copy input to temp (isolation from concurrent workers) -------------
     tmp_input = _copy_to_temp(input_path)
 
     succeeded = False
     try:
         safe_job_update(job_id, {"status": "processing"})
 
-        # ----------------------------------------------------------------
-        # PDF validation before any heavy work
-        # ----------------------------------------------------------------
         doc_check = fitz.open(tmp_input)
         total_pages = len(doc_check)
         doc_check.close()
@@ -622,27 +513,22 @@ def ocr_pdf_task(
         if total_pages > MAX_PDF_PAGES:
             raise UserError(f"PDF exceeds maximum page limit of {MAX_PDF_PAGES}")
 
-        # ----------------------------------------------------------------
-        # Decide chunked vs single‑pass
-        # ----------------------------------------------------------------
+        # ---- Chunked vs single-pass -----------------------------------------
         if total_pages > OCR_CHUNK_THRESHOLD:
             log.info(
                 f"ocr_pdf_task {job_id}: {total_pages} pages — chunked "
                 f"(chunk={OCR_CHUNK_PAGES}, workers={OCR_MAX_WORKERS})"
             )
 
-            # Local closure with the correct signature for chunked_pdf_processor
             def _process_ocr_chunk(chunk_path: str, chunk_idx: int) -> str:
-                chunk_out = chunk_path.replace("_in.pdf", "_out.pdf")
+                # MED-04: write chunk output to Config.TEMP_FOLDER, not /tmp
+                chunk_out = os.path.join(
+                    Config.TEMP_FOLDER,
+                    f"ocr_chunk_{job_id}_{chunk_idx}_out.pdf",
+                )
                 _ocr_single_pdf(
-                    chunk_path,
-                    chunk_out,
-                    lang,
-                    dpi,
-                    psm,
-                    oem,
-                    min_confidence,
-                    job_id,
+                    chunk_path, chunk_out,
+                    lang, dpi, psm, oem, min_confidence, job_id,
                     progress_callback=lambda p, t: _throttled_progress(p, t, job_id),
                 )
                 return chunk_out
@@ -661,64 +547,40 @@ def ocr_pdf_task(
                 report_progress=True,
                 chunk_retry=1,
             )
+
+            # HIGH-01: check success BEFORE output existence check
+            if not success:
+                raise RuntimeError("Chunked OCR processing returned failure")
+
         else:
             log.info(f"ocr_pdf_task {job_id}: {total_pages} pages — single-pass")
-            # Simple throttled progress for single‑pass (no recursion)
-            def _throttled_progress_single(page_num: int, total: int) -> None:
-                pct = int((page_num + 1) / total * 100)
-                if pct != _progress_last_update.get(job_id, 0):
-                    _progress_last_update[job_id] = pct
-                    safe_job_update(
-                        job_id,
-                        {
-                            "progress": str(pct),
-                            "current_page": str(page_num + 1),
-                            "total_pages": str(total),
-                        },
-                    )
-
-            # Run OCR in a single pass
+            # HIGH-02: use module-level timestamp-throttled version (no local redef)
             _ocr_single_pdf(
-                tmp_input,
-                output_path,
-                lang,
-                dpi,
-                psm,
-                oem,
-                min_confidence,
-                job_id,
+                tmp_input, output_path,
+                lang, dpi, psm, oem, min_confidence, job_id,
                 progress_callback=lambda p, t: _throttled_progress_single(p, t, job_id),
             )
-            success = True  # single‑pass succeeded
+            success = True
 
-        # ----------------------------------------------------------------
-        # Output validation
-        # ----------------------------------------------------------------
+        # ---- Output validation ----------------------------------------------
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
             raise RuntimeError("Output file missing or empty after OCR")
 
         if not validate_pdf(output_path):
-            raise SystemError("Corrupted output PDF after OCR")
+            raise RuntimeError("Corrupted output PDF after OCR")
 
         succeeded = True
 
-        # ----------------------------------------------------------------
-        # Final job update
-        # ----------------------------------------------------------------
-        safe_job_update(
-            job_id,
-            {
-                "status": "completed",
-                "progress": "100",
-                "output_path": output_path,
-                "completed_at": get_timestamp(),
-                "min_confidence": str(min_confidence),
-                "page_count": str(total_pages),
-            },
-        )
+        safe_job_update(job_id, {
+            "status": "completed",
+            "progress": "100",
+            "output_path": output_path,
+            "completed_at": get_timestamp(),
+            "min_confidence": str(min_confidence),
+            "page_count": str(total_pages),
+        })
         log_structured(
-            "INFO",
-            "ocr_pdf_task completed",
+            "INFO", "ocr_pdf_task completed",
             job_id=job_id,
             duration=round(time.time() - start_time, 2),
             page_count=total_pages,
@@ -726,26 +588,11 @@ def ocr_pdf_task(
         )
         return {"status": "completed", "output": output_path}
 
-    except Exception as ex:  # noqa: BLE001 – we want to catch *all* errors here
-        # Non‑retryable errors (missing deps, invalid language, etc.) are logged
-        # and re‑raised without invoking the retry mechanism.
+    except Exception as ex:
         log.error(f"ocr_pdf_task {job_id}: {ex}")
         safe_job_update(job_id, {"status": "failed", "error": str(ex)})
         raise
 
     finally:
-        # Ensure the temporary copy is removed; original input is deleted only
-        # on success or after max retries have been exhausted.
         _safe_remove(tmp_input)
         _cleanup_input(self, input_path, succeeded)
-
-
-# --------------------------------------------------------------------------- #
-# Helper imports that were missing in the original file
-# --------------------------------------------------------------------------- #
-from utils.errors import UserError  # noqa: E402  (import after other imports)
-from utils.logging import log_structured  # noqa: E402
-
-# --------------------------------------------------------------------------- #
-# End of file
-# --------------------------------------------------------------------------- #
