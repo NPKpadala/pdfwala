@@ -141,3 +141,11 @@ def unlock_ppt():
 @office_bp.route("/ppt/protect",    methods=["POST"])
 def protect_ppt():
     return _handle("protect_ppt",   "pptx", "PowerPoint protected")
+
+@office_bp.route("/excel/to-html",   methods=["POST"])
+def excel_to_html():
+    return _handle("excel_to_html",  "html", "Excel converted to HTML")
+
+@office_bp.route("/excel/to-png",    methods=["POST"])
+def excel_to_png():
+    return _handle("excel_to_png",   "zip",  "Excel converted to PNG")

@@ -1509,3 +1509,46 @@ def protect_ppt(ctx: JobContext) -> dict:
     _validate_output(ctx.output_path, "protect_ppt", min_bytes=1000)
     log.info(f"[{ctx.job_id}] protect_ppt: encrypted {os.path.getsize(ctx.output_path)} bytes")
     return {}
+
+# ── Excel format aliases ──────────────────────────────────────────────────
+
+@register("excel_to_html")
+def excel_to_html(ctx: JobContext) -> dict:
+    """Convert Excel to HTML via LibreOffice."""
+    out_dir = tempfile.mkdtemp()
+    try:
+        result = _libre(ctx.input_path, "html", out_dir)
+        if not result:
+            raise ProcessingError("LibreOffice Excel→HTML conversion failed")
+        _validate_output(result, "excel_to_html", min_bytes=50)
+        os.replace(result, ctx.output_path)
+    finally:
+        shutil.rmtree(out_dir, ignore_errors=True)
+    return {"size_bytes": os.path.getsize(ctx.output_path)}
+
+
+@register("excel_to_png")
+def excel_to_png(ctx: JobContext) -> dict:
+    """Convert Excel sheets to PNG images."""
+    if not FITZ_OK:
+        raise UnsupportedOperation("excel_to_png", "PyMuPDF")
+    out_dir = tempfile.mkdtemp()
+    try:
+        pdf_path = _libre(ctx.input_path, "pdf", out_dir)
+        if not pdf_path:
+            raise ProcessingError("LibreOffice Excel→PDF step failed")
+        _validate_output(pdf_path, "excel_to_png (pdf step)", min_bytes=500)
+        doc = fitz.open(pdf_path)
+        count = len(doc)
+        zf, buf = _open_zip_writer(ctx.output_path, count)
+        try:
+            for i, page in enumerate(doc):
+                pix = page.get_pixmap(dpi=150)
+                zf.writestr(f"sheet_{i + 1:04d}.png", pix.tobytes("png"))
+        finally:
+            _finalise_zip(zf, buf, ctx.output_path)
+        doc.close()
+    finally:
+        shutil.rmtree(out_dir, ignore_errors=True)
+    _validate_output(ctx.output_path, "excel_to_png", min_bytes=100)
+    return {"pages": count}
