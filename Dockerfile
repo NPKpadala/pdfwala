@@ -1,34 +1,91 @@
-FROM ubuntu:22.04
+FROM python:3.11-slim AS base
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV BASE_DIR=/home/opc/pdfwala
-
-# System dependencies
-RUN apt-get update && apt-get install -y \
-    python3.11 python3.11-dev python3-pip \
+# ============================================================================
+# Install system dependencies
+# ============================================================================
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # PDF/Office tools
     libreoffice \
-    tesseract-ocr tesseract-ocr-eng tesseract-ocr-spa tesseract-ocr-fra \
     ghostscript \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    pngquant \
     poppler-utils \
-    default-jre-headless \
-    wkhtmltopdf \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
+    # Fonts for rendering
+    fonts-dejavu \
+    fonts-noto \
     fonts-liberation \
+    # System libraries
+    libgl1 \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libcairo2 \
+    libgdk-pixbuf-2.0-0 \
+    libffi-dev \
+    shared-mime-info \
+    # Utilities
+    curl \
+    wget \
+    # Clean up apt cache
     && rm -rf /var/lib/apt/lists/*
+
+# ============================================================================
+# 🔒 SECURITY: Create non-root user BEFORE copying application
+# ============================================================================
+RUN useradd -u 1000 -m -s /bin/bash pdfwala
 
 WORKDIR /app
 
+# ============================================================================
+# Install Python dependencies (still as root — pip installs system-wide)
+# ============================================================================
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py .
-COPY static/ ./static/
+# ============================================================================
+# Copy application code
+# ============================================================================
+COPY . .
 
-RUN mkdir -p /home/opc/pdfwala/uploads /home/opc/pdfwala/outputs /home/opc/pdfwala/static
+# ============================================================================
+# Create data directories with CORRECT ownership
+# ============================================================================
+RUN mkdir -p /home/pdfwala/data/uploads \
+    /home/pdfwala/data/outputs \
+    /home/pdfwala/data/temp && \
+    chown -R pdfwala:pdfwala /home/pdfwala /app
+
+# ============================================================================
+# Environment variables (updated paths to match non-root user)
+# ============================================================================
+ENV BASE_DIR=/app \
+    BASE_DATA_DIR=/home/pdfwala/data \
+    UPLOAD_FOLDER=/home/pdfwala/data/uploads \
+    OUTPUT_FOLDER=/home/pdfwala/data/outputs \
+    TEMP_FOLDER=/home/pdfwala/data/temp \
+    LOG_LEVEL=INFO \
+    PYTHONUNBUFFERED=1
+
+# ============================================================================
+# LibreOffice needs a writable home directory
+# ============================================================================
+RUN mkdir -p /home/pdfwala/.config && \
+    chown -R pdfwala:pdfwala /home/pdfwala/.config
+
+# ============================================================================
+# 🔒 Switch to non-root user
+# ============================================================================
+USER pdfwala
 
 EXPOSE 5000
 
-CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]
+# ============================================================================
+# Health check (runs as pdfwala user now)
+# ============================================================================
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
+# ============================================================================
+# Start application
+# ============================================================================
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "app:application"]
