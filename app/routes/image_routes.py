@@ -88,3 +88,11 @@ def remove_bg():
 def merge_images():
     return _handle("merge_images",    "jpg",  "Images merged",
                    multi=True, field="files")
+
+@image_bp.route("/png-to-jpg",   methods=["POST"])
+def png_to_jpg():
+    return _handle("png_to_jpg", "jpg", "PNG converted to JPG")
+
+@image_bp.route("/webp-to-jpg",  methods=["POST"])
+def webp_to_jpg():
+    return _handle("webp_to_jpg", "jpg", "WebP converted to JPG")

@@ -959,3 +959,33 @@ def merge_images(ctx: JobContext) -> dict:
     _save(out_img, ctx.output_path, ext)
     _check_output(ctx.output_path)
     return {"merged_count": len(images), "direction": direction}
+
+# ── Format aliases ────────────────────────────────────────────────────────
+
+@register("png_to_jpg")
+def png_to_jpg(ctx: JobContext) -> dict:
+    """Convert PNG to JPEG — delegates to convert_image."""
+    ctx.params["format"] = "jpg"
+    return convert_image(ctx)
+
+
+@register("webp_to_jpg")
+def webp_to_jpg(ctx: JobContext) -> dict:
+    """Convert WebP to JPEG — delegates to convert_image."""
+    ctx.params["format"] = "jpg"
+    return convert_image(ctx)
+
+# ── Format aliases ────────────────────────────────────────────────────────
+
+@register("png_to_jpg")
+def png_to_jpg(ctx: JobContext) -> dict:
+    """Convert PNG to JPEG — delegates to convert_image."""
+    ctx.params["format"] = "jpg"
+    return convert_image(ctx)
+
+
+@register("webp_to_jpg")
+def webp_to_jpg(ctx: JobContext) -> dict:
+    """Convert WebP to JPEG — delegates to convert_image."""
+    ctx.params["format"] = "jpg"
+    return convert_image(ctx)
