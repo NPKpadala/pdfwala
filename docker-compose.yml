@@ -1,0 +1,39 @@
+version: '3.9'
+
+services:
+  pdfwala:
+    build: .
+    container_name: pdfwala_app
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./static:/app/static
+      - ./uploads:/home/opc/pdfwala/uploads
+      - ./outputs:/home/opc/pdfwala/outputs
+    environment:
+      - BASE_DIR=/home/opc/pdfwala
+      - UPLOAD_FOLDER=/home/opc/pdfwala/uploads
+      - OUTPUT_FOLDER=/home/opc/pdfwala/outputs
+      - STATIC_FOLDER=/app/static
+      - FILE_TTL_SEC=3600
+      - RATE_LIMIT=30
+      - MAX_FILE_SIZE=209715200
+      - ALLOWED_ORIGINS=*
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    container_name: pdfwala_nginx_test
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./static:/usr/share/nginx/html/static:ro
+    depends_on:
+      - pdfwala
