@@ -122,3 +122,20 @@ def ready():
 @system_bp.route("/live")
 def live():
     return jsonify({"status": "live"}), 200
+
+# ── V12 backward compatibility ────────────────────────────────────────────
+@system_bp.route("/api/v1/health")
+def health_v12():
+    return health()
+
+@system_bp.route("/api/v1/ready")
+def ready_v12():
+    return ready()
+
+@system_bp.route("/api/v1/live")
+def live_v12():
+    return live()
+
+@system_bp.route("/api/v1/jobs/<job_id>")
+def job_status_v12(job_id):
+    return job_status(job_id)
