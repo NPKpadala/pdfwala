@@ -989,3 +989,66 @@ def webp_to_jpg(ctx: JobContext) -> dict:
     """Convert WebP to JPEG — delegates to convert_image."""
     ctx.params["format"] = "jpg"
     return convert_image(ctx)
+
+# ── Image to Office ───────────────────────────────────────────────────────
+
+@register("image_to_excel")
+def image_to_excel(ctx: JobContext) -> dict:
+    """Extract text from image via OCR and save to Excel."""
+    _require(PIL_OK and TESSERACT_OK, "image_to_excel", "Pillow + pytesseract")
+    
+    lang = ctx.params.get("lang", "eng")
+    img = _open_image(ctx.input_path).convert("RGB")
+    
+    try:
+        data = pytesseract.image_to_data(
+            img, lang=lang, output_type=TesseractOutput.DICT, config="--psm 6"
+        )
+    except Exception as ex:
+        raise ProcessingError(f"OCR failed: {ex}")
+    
+    if not OPENPYXL_OK:
+        raise UnsupportedOperation("image_to_excel", "openpyxl")
+    
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "OCR_Result"
+    
+    row_idx = 1
+    for i, word in enumerate(data.get("text", [])):
+        conf = int(data["conf"][i]) if data["conf"][i] != -1 else 0
+        if word.strip() and conf >= 30:
+            ws.cell(row_idx, 1, word.strip())
+            ws.cell(row_idx, 2, conf)
+            row_idx += 1
+    
+    wb.save(ctx.output_path)
+    _check_output(ctx.output_path)
+    return {"rows": row_idx - 1, "lang": lang}
+
+
+@register("image_to_word")
+def image_to_word(ctx: JobContext) -> dict:
+    """Extract text from image via OCR and save to Word."""
+    _require(PIL_OK and TESSERACT_OK, "image_to_word", "Pillow + pytesseract")
+    
+    lang = ctx.params.get("lang", "eng")
+    img = _open_image(ctx.input_path).convert("RGB")
+    
+    try:
+        text = pytesseract.image_to_string(img, lang=lang)
+    except Exception as ex:
+        raise ProcessingError(f"OCR failed: {ex}")
+    
+    if not DOCX_OK:
+        raise UnsupportedOperation("image_to_word", "python-docx")
+    
+    from docx import Document as DocxDocument
+    doc = DocxDocument()
+    doc.add_heading("OCR Result", 0)
+    for para in text.split("\n\n"):
+        if para.strip():
+            doc.add_paragraph(para.strip())
+    doc.save(ctx.output_path)
+    _check_output(ctx.output_path)
+    return {"characters": len(text)}

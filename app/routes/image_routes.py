@@ -96,3 +96,11 @@ def png_to_jpg():
 @image_bp.route("/webp-to-jpg",  methods=["POST"])
 def webp_to_jpg():
     return _handle("webp_to_jpg", "jpg", "WebP converted to JPG")
+
+@image_bp.route("/to-excel",   methods=["POST"])
+def image_to_excel():
+    return _handle("image_to_excel", "xlsx", "Image OCR → Excel")
+
+@image_bp.route("/to-word",    methods=["POST"])
+def image_to_word():
+    return _handle("image_to_word",  "docx", "Image OCR → Word")
