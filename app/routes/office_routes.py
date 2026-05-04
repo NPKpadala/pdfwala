@@ -149,3 +149,7 @@ def excel_to_html():
 @office_bp.route("/excel/to-png",    methods=["POST"])
 def excel_to_png():
     return _handle("excel_to_png",   "zip",  "Excel converted to PNG")
+
+@office_bp.route("/html/to-pdf",   methods=["POST"])
+def html_to_pdf():
+    return _handle("html_to_pdf",  "pdf",  "HTML converted to PDF")

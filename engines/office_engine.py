@@ -1552,3 +1552,23 @@ def excel_to_png(ctx: JobContext) -> dict:
         shutil.rmtree(out_dir, ignore_errors=True)
     _validate_output(ctx.output_path, "excel_to_png", min_bytes=100)
     return {"pages": count}
+
+# ── HTML tools ────────────────────────────────────────────────────────────
+
+@register("html_to_pdf")
+def html_to_pdf(ctx: JobContext) -> dict:
+    """Convert HTML file to PDF via LibreOffice."""
+    ext = os.path.splitext(ctx.input_path)[1].lower()
+    if ext not in (".html", ".htm"):
+        raise ValidationError("Input must be an HTML file (.html or .htm)")
+    
+    out_dir = tempfile.mkdtemp()
+    try:
+        result = _libre(ctx.input_path, "pdf", out_dir)
+        if not result:
+            raise ProcessingError("LibreOffice HTML→PDF conversion failed")
+        _validate_output(result, "html_to_pdf", min_bytes=500)
+        os.replace(result, ctx.output_path)
+    finally:
+        shutil.rmtree(out_dir, ignore_errors=True)
+    return {"size_bytes": os.path.getsize(ctx.output_path)}
