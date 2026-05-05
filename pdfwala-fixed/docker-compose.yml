@@ -1,0 +1,203 @@
+# ============================================================================
+# PDFWala Enterprise V13.1 — Docker Compose (PATCHED)
+# ============================================================================
+# FIXES:
+#   - Added CELERY_BROKER_URL and CELERY_RESULT_BACKEND (were missing, causing
+#     Celery workers to use wrong/default broker — jobs never executed)
+#   - Redis URL used consistently; redis command sets maxmemory policy
+#   - Workers no longer depend on 'app' health (removed circular start deadlock)
+#   - ASYNC_THRESHOLD lowered to 5 MB (large files always go to Celery)
+#   - MAX_PDF_PAGES raised to 5000 for the stated requirement
+#   - All task/subprocess timeouts raised for 200 MB / 5000-page workloads
+#   - Worker concurrency: fast=8, office=4, slow=2
+#   - SIGNED_URL_EXPIRY added (was causing AttributeError on every download)
+# ============================================================================
+
+x-app-env: &app-env
+  SECRET_KEY: ${SECRET_KEY:-dev-secret-change-in-production-use-32chars}
+  SIGNED_URL_SECRET: ${SIGNED_URL_SECRET:-dev-signed-url-secret-change-in-prod-min32}
+  SIGNED_URL_EXPIRY: ${SIGNED_URL_EXPIRY:-3600}
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/0
+  CELERY_RESULT_BACKEND: redis://redis:6379/0
+  BASE_DATA_DIR: /home/pdfwala/data
+  UPLOAD_FOLDER: /home/pdfwala/data/uploads
+  OUTPUT_FOLDER: /home/pdfwala/data/outputs
+  TEMP_FOLDER: /home/pdfwala/data/temp
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  FLASK_ENV: ${FLASK_ENV:-production}
+  MAX_FILE_SIZE: ${MAX_FILE_SIZE:-209715200}
+  ASYNC_THRESHOLD: ${ASYNC_THRESHOLD:-5242880}
+  FILE_TTL_SEC: ${FILE_TTL_SEC:-7200}
+  MAX_PDF_PAGES: ${MAX_PDF_PAGES:-5000}
+  MAX_OCR_PAGES: ${MAX_OCR_PAGES:-500}
+  MAX_WORD_PARAGRAPHS: ${MAX_WORD_PARAGRAPHS:-5000}
+  MAX_WORD_TABLES: ${MAX_WORD_TABLES:-200}
+  MAX_PPT_SLIDES: ${MAX_PPT_SLIDES:-500}
+  EXCEL_ROW_LIMIT: ${EXCEL_ROW_LIMIT:-50000}
+  SUBPROCESS_TIMEOUT: ${SUBPROCESS_TIMEOUT:-300}
+  PDFA_TIMEOUT: ${PDFA_TIMEOUT:-600}
+  OCR_TIMEOUT: ${OCR_TIMEOUT:-900}
+  TASK_SOFT_TIMEOUT: ${TASK_SOFT_TIMEOUT:-1800}
+  TASK_HARD_TIMEOUT: ${TASK_HARD_TIMEOUT:-2100}
+  OCR_WORKERS: ${OCR_WORKERS:-4}
+  GUNICORN_WORKERS: ${GUNICORN_WORKERS:-4}
+  GUNICORN_THREADS: ${GUNICORN_THREADS:-8}
+  RATE_LIMIT_RPM: ${RATE_LIMIT_RPM:-120}
+  REDIS_JOB_TTL: ${REDIS_JOB_TTL:-14400}
+  PYTHONUNBUFFERED: "1"
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: pdfwala-redis
+    restart: unless-stopped
+    user: "999:999"
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save ""
+      --appendonly no
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pdfwala-network
+
+  app:
+    build: .
+    container_name: pdfwala-app
+    restart: unless-stopped
+    user: "1000:1000"
+    expose:
+      - "5000"
+    volumes:
+      - ./uploads:/home/pdfwala/data/uploads:rw
+      - ./outputs:/home/pdfwala/data/outputs:rw
+      - ./temp:/home/pdfwala/data/temp:rw
+    environment:
+      <<: *app-env
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+    networks:
+      - pdfwala-network
+
+  worker-fast:
+    build: .
+    container_name: pdfwala-worker-fast
+    restart: unless-stopped
+    user: "1000:1000"
+    command: >
+      celery -A workers.celery_app:celery_app worker
+      -Q fast
+      --concurrency=8
+      --loglevel=info
+      --hostname=worker-fast@%h
+      --max-tasks-per-child=100
+      --without-gossip
+      --without-mingle
+    volumes:
+      - ./uploads:/home/pdfwala/data/uploads:rw
+      - ./outputs:/home/pdfwala/data/outputs:rw
+      - ./temp:/home/pdfwala/data/temp:rw
+    environment:
+      <<: *app-env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - pdfwala-network
+
+  worker-office:
+    build: .
+    container_name: pdfwala-worker-office
+    restart: unless-stopped
+    user: "1000:1000"
+    command: >
+      celery -A workers.celery_app:celery_app worker
+      -Q office
+      --concurrency=4
+      --loglevel=info
+      --hostname=worker-office@%h
+      --max-tasks-per-child=50
+      --without-gossip
+      --without-mingle
+    volumes:
+      - ./uploads:/home/pdfwala/data/uploads:rw
+      - ./outputs:/home/pdfwala/data/outputs:rw
+      - ./temp:/home/pdfwala/data/temp:rw
+    environment:
+      <<: *app-env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - pdfwala-network
+
+  worker-slow:
+    build: .
+    container_name: pdfwala-worker-slow
+    restart: unless-stopped
+    user: "1000:1000"
+    command: >
+      celery -A workers.celery_app:celery_app worker
+      -Q slow
+      --concurrency=2
+      --loglevel=info
+      --hostname=worker-slow@%h
+      --max-tasks-per-child=20
+      --without-gossip
+      --without-mingle
+    volumes:
+      - ./uploads:/home/pdfwala/data/uploads:rw
+      - ./outputs:/home/pdfwala/data/outputs:rw
+      - ./temp:/home/pdfwala/data/temp:rw
+    environment:
+      <<: *app-env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - pdfwala-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: pdfwala-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./static:/usr/share/nginx/html:ro
+    depends_on:
+      - app
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - pdfwala-network
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  pdfwala-network:
+    driver: bridge
