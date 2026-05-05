@@ -16,7 +16,7 @@ flask-cors==4.0.0
 gunicorn==21.2.0
 prometheus-client==0.20.0
 PyPDF2==3.0.1
-Werkzeug==3.0.3
+Werkzeug==3.1.6
 weasyprint==61.2
 rembg==2.0.57
 pikepdf
