@@ -18,5 +18,5 @@ prometheus-client==0.20.0
 PyPDF2==3.0.1
 Werkzeug==3.0.3
 weasyprint==61.2
-rembg==2.0.57
+rembg==2.0.75
 pikepdf
