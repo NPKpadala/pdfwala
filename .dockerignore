@@ -1,0 +1,65 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+
+# Environment
+.env
+.env.*
+!.env.example
+.venv
+venv
+env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Data directories
+uploads/
+outputs/
+temp/
+static/uploads/
+static/outputs/
+
+# Logs
+*.log
+monitor.log
+monitor_heartbeat
+monitor_metrics.json
+monitor_log_hashes.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+*.md
+
+# Deployment scripts (not needed in image)
+deploy.sh
+complete_monitor.py
+
+# Nginx (handled by separate container)
+nginx/
+
+# Certificates
+*.pem
+*.crt
+*.key
