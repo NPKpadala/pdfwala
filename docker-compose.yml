@@ -1,0 +1,243 @@
+# ============================================================================
+# PDFWala Enterprise V14.1 — Docker Compose
+# ============================================================================
+# V14.1 FIXES:
+#   - PYTHONPATH=/app added to ALL worker services (fixes ModuleNotFoundError: No module named 'tasks')
+#   - working_dir: /app set on all workers (Celery must run from /app so 'tasks' package is found)
+#   - autodiscover_tasks replaced with explicit include list in celery_app.py
+# ============================================================================
+
+x-app-env: &app-env
+  SECRET_KEY: ${SECRET_KEY:-dev-secret-change-in-production-use-32chars}
+  SIGNED_URL_SECRET: ${SIGNED_URL_SECRET:-dev-signed-url-secret-change-in-prod-min32}
+  SIGNED_URL_EXPIRY: ${SIGNED_URL_EXPIRY:-3600}
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/0
+  CELERY_RESULT_BACKEND: redis://redis:6379/0
+  REDIS_MAX_CONNECTIONS: ${REDIS_MAX_CONNECTIONS:-50}
+  CELERY_BROKER_POOL_LIMIT: ${CELERY_BROKER_POOL_LIMIT:-10}
+  BASE_DATA_DIR: /home/pdfwala/data
+  UPLOAD_FOLDER: /home/pdfwala/data/uploads
+  OUTPUT_FOLDER: /home/pdfwala/data/outputs
+  TEMP_FOLDER: /home/pdfwala/data/temp
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  FLASK_ENV: ${FLASK_ENV:-production}
+  MAX_FILE_SIZE: ${MAX_FILE_SIZE:-209715200}
+  ASYNC_THRESHOLD: ${ASYNC_THRESHOLD:-5242880}
+  FILE_TTL_SEC: ${FILE_TTL_SEC:-7200}
+  MAX_PDF_PAGES: ${MAX_PDF_PAGES:-5000}
+  MAX_OCR_PAGES: ${MAX_OCR_PAGES:-500}
+  MAX_IMAGE_PIXELS: ${MAX_IMAGE_PIXELS:-500000000}
+  MAX_WORD_PARAGRAPHS: ${MAX_WORD_PARAGRAPHS:-5000}
+  MAX_WORD_TABLES: ${MAX_WORD_TABLES:-200}
+  MAX_PPT_SLIDES: ${MAX_PPT_SLIDES:-500}
+  EXCEL_ROW_LIMIT: ${EXCEL_ROW_LIMIT:-50000}
+  SUBPROCESS_TIMEOUT: ${SUBPROCESS_TIMEOUT:-300}
+  PDFA_TIMEOUT: ${PDFA_TIMEOUT:-600}
+  OCR_TIMEOUT: ${OCR_TIMEOUT:-900}
+  TASK_SOFT_TIMEOUT: ${TASK_SOFT_TIMEOUT:-1800}
+  TASK_HARD_TIMEOUT: ${TASK_HARD_TIMEOUT:-2100}
+  OCR_WORKERS: ${OCR_WORKERS:-4}
+  GUNICORN_WORKERS: ${GUNICORN_WORKERS:-4}
+  GUNICORN_THREADS: ${GUNICORN_THREADS:-8}
+  RATE_LIMIT_RPM: ${RATE_LIMIT_RPM:-120}
+  REDIS_JOB_TTL: ${REDIS_JOB_TTL:-14400}
+  SAL_USE_VCLPLUGIN: svp
+  DISPLAY: ""
+  CLEANUP_ENABLED: ${CLEANUP_ENABLED:-true}
+  CLEANUP_INTERVAL: ${CLEANUP_INTERVAL:-3600}
+  PYTHONUNBUFFERED: "1"
+  # FIX V14.1: Ensure /app is always on PYTHONPATH so 'tasks', 'workers', etc. are importable
+  PYTHONPATH: /app
+
+x-worker-volumes: &worker-volumes
+  - pdfwala_uploads:/home/pdfwala/data/uploads:rw
+  - pdfwala_outputs:/home/pdfwala/data/outputs:rw
+  - pdfwala_temp:/home/pdfwala/data/temp:rw
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: pdfwala-redis
+    restart: unless-stopped
+    user: "999:999"
+    command: >
+      redis-server
+      --maxmemory 1gb
+      --maxmemory-policy allkeys-lru
+      --save ""
+      --appendonly no
+      --tcp-keepalive 60
+      --timeout 300
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pdfwala-network
+
+  app:
+    build: .
+    container_name: pdfwala-app
+    restart: unless-stopped
+    user: "1000:1000"
+    # FIX V14.1: Explicit working_dir so imports resolve correctly
+    working_dir: /app
+    expose:
+      - "5000"
+    volumes: *worker-volumes
+    environment:
+      <<: *app-env
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+    networks:
+      - pdfwala-network
+
+  worker-fast:
+    build: .
+    container_name: pdfwala-worker-fast
+    restart: unless-stopped
+    user: "1000:1000"
+    # FIX V14.1: working_dir MUST be /app — Celery resolves 'tasks' package relative to CWD
+    working_dir: /app
+    command: >
+      celery -A workers.celery_app:celery_app worker
+      -Q fast
+      --concurrency=8
+      --loglevel=info
+      --hostname=worker-fast@%h
+      --max-tasks-per-child=25
+      --without-gossip
+      --without-mingle
+    volumes: *worker-volumes
+    tmpfs:
+      - /dev/shm:size=512m
+    environment:
+      <<: *app-env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - pdfwala-network
+
+  worker-office:
+    build: .
+    container_name: pdfwala-worker-office
+    restart: unless-stopped
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      celery -A workers.celery_app:celery_app worker
+      -Q office
+      --concurrency=2
+      --loglevel=info
+      --hostname=worker-office@%h
+      --max-tasks-per-child=10
+      --without-gossip
+      --without-mingle
+    volumes: *worker-volumes
+    tmpfs:
+      - /dev/shm:size=1g
+    environment:
+      <<: *app-env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - pdfwala-network
+
+  worker-slow:
+    build: .
+    container_name: pdfwala-worker-slow
+    restart: unless-stopped
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      celery -A workers.celery_app:celery_app worker
+      -Q slow
+      --concurrency=2
+      --loglevel=info
+      --hostname=worker-slow@%h
+      --max-tasks-per-child=10
+      --without-gossip
+      --without-mingle
+    volumes: *worker-volumes
+    tmpfs:
+      - /dev/shm:size=1g
+    environment:
+      <<: *app-env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - pdfwala-network
+
+  # Celery Beat — scheduled output file cleanup every hour
+  worker-beat:
+    build: .
+    container_name: pdfwala-worker-beat
+    restart: unless-stopped
+    user: "1000:1000"
+    working_dir: /app
+    command: >
+      celery -A workers.celery_app:celery_app beat
+      --loglevel=info
+      --scheduler celery.beat:PersistentScheduler
+    volumes:
+      - celery_beat_data:/home/pdfwala/celerybeat:rw
+    environment:
+      <<: *app-env
+      CELERYBEAT_SCHEDULE_FILENAME: /home/pdfwala/celerybeat/celerybeat-schedule
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - pdfwala-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: pdfwala-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./static:/usr/share/nginx/html:ro
+    depends_on:
+      - app
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - pdfwala-network
+
+volumes:
+  redis_data:
+    driver: local
+  pdfwala_uploads:
+    driver: local
+  pdfwala_outputs:
+    driver: local
+  pdfwala_temp:
+    driver: local
+  celery_beat_data:
+    driver: local
+
+networks:
+  pdfwala-network:
+    driver: bridge

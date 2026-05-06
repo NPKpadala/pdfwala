@@ -1,0 +1,41 @@
+# PDFWala Enterprise V14.0 — Python dependencies
+# V14: Added python-magic for robust file type detection
+#      pikepdf pinned to stable version
+#      Pillow upgraded for better JPEG-turbo support
+
+Flask==3.0.3
+Werkzeug==3.0.3
+flask-cors==4.0.0
+gunicorn==21.2.0
+
+# Celery / Redis
+celery==5.3.6
+redis==5.0.3
+
+# PDF processing
+PyMuPDF==1.24.0
+pikepdf==8.15.1
+PyPDF2==3.0.1
+pdf2docx==0.5.8
+pdfplumber==0.11.0
+reportlab==4.1.0
+
+# Office processing
+python-docx==1.1.0
+openpyxl==3.1.2
+python-pptx==0.6.23
+msoffcrypto-tool==5.3.0
+tabula-py==2.9.0
+
+# Image processing
+Pillow==10.3.0
+rembg==2.0.57
+
+# OCR
+pytesseract==0.3.10
+
+# Metrics
+prometheus-client==0.20.0
+
+# FIX V14: python-magic for robust file type detection (libmagic wrapper)
+python-magic==0.4.27
