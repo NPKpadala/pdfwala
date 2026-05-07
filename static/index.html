@@ -1,3 +1,4 @@
+<!-- PDFWala V14.2 — Security Hardened -->
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -654,6 +655,28 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           </div>
         </div>
       </div>
+      <div class="nav-item" data-mega>
+        <button class="nav-btn" aria-haspopup="true" aria-expanded="false">Security<svg class="chv"><use href="#ic-chevron"/></svg></button>
+        <div class="mega-drop mega-mid" role="menu">
+          <div class="mega-cols c2">
+            <div>
+              <div class="mega-col-hd rose"><svg width="11" height="11"><use href="#ic-lock"/></svg>Protect & Unlock</div>
+              <a class="mm-link" onclick="openTool('protect')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-lock"/></svg></span>Protect PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('unlock')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-unlock"/></svg></span>Unlock PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('protect-word')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-lock"/></svg></span>Protect Word<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('unlock-word')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-unlock"/></svg></span>Unlock Word<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('protect-excel')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-lock"/></svg></span>Protect Excel<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('unlock-excel')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-unlock"/></svg></span>Unlock Excel<span class="mla">→</span></a>
+            </div>
+            <div>
+              <div class="mega-col-hd violet"><svg width="11" height="11"><use href="#ic-sign"/></svg>Sign & Redact</div>
+              <a class="mm-link" onclick="openTool('sign-pdf')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-sign"/></svg></span>Sign PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('redact-pdf')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-redact"/></svg></span>Redact PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('compare-pdf')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-compare"/></svg></span>Compare PDF<span class="mm-badge mb-new">New</span><span class="mla">→</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="nav-right">
       <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle theme">
@@ -693,6 +716,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   <div class="mob-section"><button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">PDF Tools<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg></button><div class="mob-sub"><div class="mob-sub-inner"><a class="mob-link" onclick="openTool('merge');closeMob()"><svg class="mob-icon"><use href="#ic-merge"/></svg>Merge PDF</a><a class="mob-link" onclick="openTool('split');closeMob()"><svg class="mob-icon"><use href="#ic-split"/></svg>Split PDF</a><a class="mob-link" onclick="openTool('compress');closeMob()"><svg class="mob-icon"><use href="#ic-compress"/></svg>Compress PDF</a><a class="mob-link" onclick="openTool('pdf-to-word');closeMob()"><svg class="mob-icon"><use href="#ic-file"/></svg>PDF to Word</a><a class="mob-link" onclick="openTool('protect');closeMob()"><svg class="mob-icon"><use href="#ic-lock"/></svg>Protect PDF</a><a class="mob-link" onclick="openTool('unlock');closeMob()"><svg class="mob-icon"><use href="#ic-unlock"/></svg>Unlock PDF</a></div></div></div>
   <div class="mob-section"><button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">Image Tools<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg></button><div class="mob-sub"><div class="mob-sub-inner"><a class="mob-link" onclick="openTool('compress-image');closeMob()"><svg class="mob-icon"><use href="#ic-compress"/></svg>Compress Image</a><a class="mob-link" onclick="openTool('resize-image');closeMob()"><svg class="mob-icon"><use href="#ic-crop"/></svg>Resize Image</a><a class="mob-link" onclick="openTool('image-to-pdf');closeMob()"><svg class="mob-icon"><use href="#ic-image"/></svg>Image to PDF</a><a class="mob-link" onclick="openTool('webp-to-jpg');closeMob()"><svg class="mob-icon"><use href="#ic-rotate"/></svg>WebP to JPG</a></div></div></div>
   <div class="mob-section"><button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">Word & Excel<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg></button><div class="mob-sub"><div class="mob-sub-inner"><a class="mob-link" onclick="openTool('word-to-pdf');closeMob()"><svg class="mob-icon"><use href="#ic-file"/></svg>Word to PDF</a><a class="mob-link" onclick="openTool('excel-to-pdf');closeMob()"><svg class="mob-icon"><use href="#ic-spreadsheet"/></svg>Excel to PDF</a><a class="mob-link" onclick="openTool('compress-word');closeMob()"><svg class="mob-icon"><use href="#ic-compress"/></svg>Compress Word</a><a class="mob-link" onclick="openTool('compress-excel');closeMob()"><svg class="mob-icon"><use href="#ic-compress"/></svg>Compress Excel</a></div></div></div>
+  <div class="mob-section"><button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">Security<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg></button><div class="mob-sub"><div class="mob-sub-inner"><a class="mob-link" onclick="openTool('protect-word');closeMob()"><svg class="mob-icon"><use href="#ic-lock"/></svg>Protect Word</a><a class="mob-link" onclick="openTool('unlock-word');closeMob()"><svg class="mob-icon"><use href="#ic-unlock"/></svg>Unlock Word</a><a class="mob-link" onclick="openTool('protect-excel');closeMob()"><svg class="mob-icon"><use href="#ic-lock"/></svg>Protect Excel</a><a class="mob-link" onclick="openTool('unlock-excel');closeMob()"><svg class="mob-icon"><use href="#ic-unlock"/></svg>Unlock Excel</a><a class="mob-link" onclick="openTool('sign-pdf');closeMob()"><svg class="mob-icon"><use href="#ic-sign"/></svg>Sign PDF</a><a class="mob-link" onclick="openTool('redact-pdf');closeMob()"><svg class="mob-icon"><use href="#ic-redact"/></svg>Redact PDF</a><a class="mob-link" onclick="openTool('compare-pdf');closeMob()"><svg class="mob-icon"><use href="#ic-compare"/></svg>Compare PDF</a></div></div></div>
 </div>
 
 <!-- HOME PAGE -->
@@ -1007,7 +1031,7 @@ const TOOLS_PDF_CORE={
     endpoint:'/api/pdf/sign',field:'file',
     form:()=>`<div class="tp-form-group"><label class="tp-form-label">Signer Name</label><input class="tp-form-input" type="text" id="name" placeholder="Full name"/></div><div class="tp-form-group"><label class="tp-form-label">Reason (optional)</label><input class="tp-form-input" type="text" id="reason" placeholder="e.g., Approved"/></div>`},
   'redact-pdf':{title:'Redact PDF',icon:'redact',desc:'Permanently remove sensitive information.',multi:false,accept:'.pdf',
-    endpoint:'/api/pdf/redact',field:'file',
+    endpoint:'/api/pdf/redact-pdf',field:'file',
     form:()=>`<div class="tp-form-group"><label class="tp-form-label">Text to Redact</label><input class="tp-form-input" type="text" id="search_text" placeholder="e.g., Social Security Number"/></div>`},
   'compare-pdf':{title:'Compare PDF',icon:'compare',desc:'Find differences between two PDFs.',multi:true,accept:'.pdf',
     endpoint:'/api/pdf/compare',field:'files',
@@ -1102,7 +1126,7 @@ const TOOLS=new Proxy({},{
 const SLUG_MAP={merge:'merge-pdf',split:'split-pdf',organize:'organize-pdf','remove-pages':'remove-pages','extract-pages':'extract-pages',info:'pdf-info',compress:'compress-pdf','repair-pdf':'repair-pdf','ocr-pdf':'ocr-pdf',rotate:'rotate-pdf',watermark:'watermark-pdf','page-numbers':'page-numbers',crop:'crop-pdf','sign-pdf':'sign-pdf',protect:'protect-pdf',unlock:'unlock-pdf','redact-pdf':'redact-pdf','compare-pdf':'compare-pdf','pdf-to-image':'pdf-to-image','pdf-to-word':'pdf-to-word','pdf-to-excel':'pdf-to-excel','pdf-to-ppt':'pdf-to-ppt','pdf-to-pdfa':'pdf-to-pdfa','image-to-pdf':'image-to-pdf','jpg-to-pdf':'jpg-to-pdf','word-to-pdf':'word-to-pdf','excel-to-pdf':'excel-to-pdf','html-to-pdf':'html-to-pdf','compress-image':'compress-image','resize-image':'resize-image','webp-to-jpg':'webp-to-jpg','png-to-jpg':'png-to-jpg','image-to-word':'image-to-word','image-to-excel':'image-to-excel','word-to-jpg':'word-to-jpg','word-to-png':'word-to-png','word-to-txt':'word-to-txt','word-to-excel':'word-to-excel','word-to-ppt':'word-to-ppt','word-to-html':'word-to-html','word-to-json':'word-to-json','compress-word':'compress-word','unlock-word':'unlock-word','protect-word':'protect-word','edit-word':'edit-word','excel-to-csv':'excel-to-csv','excel-to-jpg':'excel-to-jpg','excel-to-png':'excel-to-png','excel-to-word':'excel-to-word','excel-to-ppt':'excel-to-ppt','excel-to-html':'excel-to-html','excel-to-json':'excel-to-json','compress-excel':'compress-excel','unlock-excel':'unlock-excel','protect-excel':'protect-excel','repair-excel':'repair-excel'};
 const SLUG_TO_TOOL=Object.fromEntries(Object.entries(SLUG_MAP).map(([k,v])=>[v,k]));
 
-const FILE_SUGGEST={pdf:['compress','pdf-to-word','pdf-to-image','merge','split','protect','watermark','ocr-pdf'],image:['compress-image','image-to-pdf','resize-image','webp-to-jpg','png-to-jpg','image-to-word'],word:['word-to-pdf','word-to-jpg','compress-word','word-to-txt','protect-word','word-to-excel'],excel:['excel-to-pdf','excel-to-csv','compress-excel','excel-to-json','protect-excel','excel-to-jpg'],html:['html-to-pdf']};
+const FILE_SUGGEST={pdf:['compress','pdf-to-word','pdf-to-image','merge','split','protect','watermark','ocr-pdf'],image:['compress-image','image-to-pdf','resize-image','webp-to-jpg','png-to-jpg','image-to-word'],word:['word-to-pdf','word-to-jpg','compress-word','word-to-txt','protect-word','word-to-excel'],excel:['excel-to-pdf','excel-to-csv','compress-excel','excel-to-json','protect-excel','excel-to-jpg'],html:['html-to-pdf'],unknown:['compress','merge','split']};
 
 const API=APP_CONFIG.API_BASE;
 let curTool=null,selFiles=[],lastFn=null,lastUrl=null,abortCtrl=null,revealObserver=null;
@@ -1115,15 +1139,19 @@ function safeSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 function trackRecent(id){
   try{let r=JSON.parse(safeGet('pw-recent','[]'));r=[id,...r.filter(x=>x!==id)].slice(0,3);safeSet('pw-recent',JSON.stringify(r));renderRecent();}catch(e){}
 }
+/* RENDER RECENT */
+// Fix #6 & #18: Validate localStorage data and warn on corruption
 function renderRecent(){
   try{
-    let r=[];try{r=JSON.parse(safeGet('pw-recent','[]'));}catch(e){safeSet('pw-recent','[]');}
-    if(!Array.isArray(r)){r=[];safeSet('pw-recent','[]');}
+    let r=[];try{r=JSON.parse(safeGet('pw-recent','[]'));}catch(e){safeSet('pw-recent','[]');console.warn('renderRecent: corrupted pw-recent JSON, resetting');}
+    if(!Array.isArray(r)){r=[];safeSet('pw-recent','[]');console.warn('renderRecent: pw-recent was not an array, resetting');}
+    // Validate each ID against known tools
+    r=r.filter(id=>TOOLS[id]);
     const bar=document.getElementById('recentToolsBar'),chips=document.getElementById('recentToolsChips');
     if(!r.length||!bar||!chips){bar&&bar.classList.remove('visible');return;}
     bar.classList.add('visible');
     chips.innerHTML=r.map(id=>{const t=TOOLS[id];if(!t)return'';return`<span class="recent-chip" onclick="openTool('${id}')">${svgIcon(t.icon,12)} ${esc(t.title)}</span>`;}).join('');
-  }catch(e){}
+  }catch(e){console.warn('renderRecent: unexpected error',e);}
 }
 
 function detectType(f){
@@ -1148,9 +1176,10 @@ const ICON_MAP={merge:'ic-merge',split:'ic-split',compress:'ic-compress',image:'
 function svgIcon(name,sz=22){const id=ICON_MAP[name]||'ic-file';return`<svg width="${sz}" height="${sz}"><use href="#${id}"/></svg>`;}
 
 function openTool(id){
-  const t=TOOLS[id];if(!t){toast('Tool not found','error');return;}
+  // Fix #12: Validate tool ID against SLUG_MAP before using in pushState
+  const t=TOOLS[id];if(!t||!SLUG_MAP[id]){toast('Tool not found','error');return;}
   closeMob();
-  window.history.pushState({id},t.title+' — PDFWala','/pdfwala/'+(SLUG_MAP[id]||id)+'/');
+  window.history.pushState({id},t.title+' — PDFWala','/pdfwala/'+SLUG_MAP[id]+'/');
   updateMeta(id);renderTool(id);trackRecent(id);
 }
 function navigateHome(){
@@ -1218,7 +1247,7 @@ function toolFileSelect(e){handleFiles(Array.from(e.target.files));}
 function heroDragOver(e){e.preventDefault();document.getElementById('heroDropzone').classList.add('dragover');}
 function heroDragLeave(){document.getElementById('heroDropzone').classList.remove('dragover');}
 function heroDrop(e){e.preventDefault();document.getElementById('heroDropzone').classList.remove('dragover');handleHeroFile(e.dataTransfer.files[0]);}
-function heroFileSelect(e){if(e.target.files[0])handleHeroFile(e.target.files[0]);}
+function heroFileSelect(e){if(e.target.files[0])handleHeroFile(e.target.files[0]);e.target.value='';}
 
 function handleFiles(files){
   if(!curTool)return;
@@ -1344,9 +1373,12 @@ document.addEventListener('keydown',e=>{
 });
 
 /* CANCEL */
+// Fix #14: Store poll timeout reference for proper cancellation
+let pollTimeoutRef=null;
 function cancelProcessing(){
   if(abortCtrl){abortCtrl.abort();abortCtrl=null;}
   if(currentPollTimeout){clearTimeout(currentPollTimeout);currentPollTimeout=null;}
+  if(pollTimeoutRef){clearTimeout(pollTimeoutRef);pollTimeoutRef=null;}
   pollingActive=false;processingActive=false;
   const prog=document.getElementById('tpProgress'),cancelBtn=document.getElementById('tpBtnCancel'),btn=document.getElementById('tpBtnProcess'),ph=document.getElementById('tpResultPlaceholder');
   prog.classList.remove('show');cancelBtn.classList.remove('show');
@@ -1396,7 +1428,7 @@ async function processToolFile(){
     if(newIdx!==msgIdx){msgIdx=newIdx;pTxt.textContent=PROCESS_MSGS[msgIdx];if(announcer)announcer.textContent=PROCESS_MSGS[msgIdx];}
   },400);
   abortCtrl=new AbortController();
-  let d=null,isAsyncJob=false;
+  let d=null;
   try{
     const fd=new FormData();
     if(t.multi){selFiles.forEach(f=>fd.append(t.field,f));}else{fd.append(t.field,selFiles[0]);}
@@ -1424,6 +1456,8 @@ if(d.success && d.async && d.status_url){
 
   let attempts = 0;
   const poll = async () => {
+    // Fix #7 & #14: Check pollingActive and curTool before proceeding
+    if(!pollingActive||curTool!==toolAtCallTime)return;
     if(++attempts > 360){
       showResult('error', {message:'Taking too long. Try a smaller file.'});
       return;
@@ -1447,48 +1481,15 @@ if(d.success && d.async && d.status_url){
           fill.style.width = pd.progress + '%';
           pTxt.textContent = 'Processing... ' + pd.progress + '%';
         }
-        setTimeout(poll, 3000);
+        pollTimeoutRef=setTimeout(poll, 3000);
       }
-    } catch(e){ setTimeout(poll, 3000); }
+    } catch(e){ pollTimeoutRef=setTimeout(poll, 3000); }
   };
-  setTimeout(poll, 3000);
+  pollTimeoutRef=setTimeout(poll, 3000);
   return; // stop — do not call showResult yet
 }
     if(curTool!==toolAtCallTime)return;
-    if(d.success&&d.async&&d.status_url){
-      isAsyncJob=true;
-      if(tick){clearInterval(tick);tick=null;}
-      fill.style.width='90%';pTxt.textContent='This may take a minute… please wait';
-      if(announcer)announcer.textContent=pTxt.textContent;
-      prog.classList.add('show');
-      let attempts=0;const maxAttempts=360;const pollUrl=API+d.status_url;pollingActive=true;
-      const poll=async()=>{
-        if(!pollingActive||curTool!==toolAtCallTime)return;
-        if(++attempts>maxAttempts){processingActive=false;showResult('error',{message:'This is taking longer than expected. Try a smaller file or split the PDF first.'});return;}
-        try{
-          const pollResponse=await fetch(pollUrl,{headers:{'X-Requested-With':'XMLHttpRequest'},credentials:'same-origin'});
-          const pollData=await pollResponse.json();
-          if(pollData.status==='completed'){
-            fill.style.width='100%';pTxt.textContent='Done!';
-            const filename=pollData.output_path?pollData.output_path.split('/').pop():null;
-            processingActive=false;
-            showResult('success',{success:true,message:'Your file is ready',signed_url:(pollData.download_url?API+pollData.download_url:null)||(filename?API+'/download/'+filename:null),filename:filename,size_human:pollData.size_human||''});
-          }else if(pollData.status==='failed'){
-            processingActive=false;showResult('error',{message:pollData.error||'Something went wrong. Please try again.'});
-          }else{
-            if(pollData.progress){
-              const pv=Math.min(99,parseInt(pollData.progress)||0);
-              fill.style.width=pv+'%';
-              pTxt.textContent='This may take a minute… '+pv+'% done';
-              if(announcer)announcer.textContent=pTxt.textContent;
-            }
-            currentPollTimeout=setTimeout(poll,5000);
-          }
-        }catch(e){if(pollingActive&&attempts<maxAttempts){currentPollTimeout=setTimeout(poll,5000);}else{processingActive=false;showResult('error',{message:'Connection lost. Please check your internet and try again.'});}}
-      };
-      currentPollTimeout=setTimeout(poll,3000);
-      cancelBtn.classList.remove('show');
-    }else{processingActive=false;showResult(d.success?'success':'error',d);}
+    processingActive=false;showResult(d.success?'success':'error',d);
   }catch(err){
     if(tick){clearInterval(tick);tick=null;}
     processingActive=false;
@@ -1505,7 +1506,7 @@ if(d.success && d.async && d.status_url){
     }else{showResult('error',{message:'Something went wrong. Please try again.'});}
   }finally{
     if(tick){clearInterval(tick);tick=null;}
-    if(!isAsyncJob){cancelBtn.classList.remove('show');if(!processingActive){btn.disabled=!selFiles.length;btn.style.display='flex';}}
+    cancelBtn.classList.remove('show');if(!processingActive){btn.disabled=!selFiles.length;btn.style.display='flex';}
   }
 }
 
@@ -1551,16 +1552,21 @@ function showResult(type,data){
 function downloadToolResult(){
   if(!lastUrl)return;
   try{
+    // Fix #1: Proper URL validation - reject protocol-relative URLs and verify same-origin
+    if(lastUrl.startsWith('//')){toast('Invalid download URL','error');return;}
     const parsed=new URL(lastUrl,window.location.origin);
-    if(parsed.origin!==window.location.origin&&!lastUrl.startsWith('/')){toast('Invalid download URL','error');return;}
+    if(parsed.origin!==window.location.origin){toast('Invalid download URL','error');return;}
   }catch(e){toast('Invalid download URL','error');return;}
-  const a=document.createElement('a');a.href=lastUrl;const originalName = selFiles[0]?.name?.replace(/\.[^.]+$/, '') || 'pdfwala_output';const ext = lastFn?.split('.').pop() || 'pdf';a.download = originalName + '_' + curTool + '.' + ext;
+  const a=document.createElement('a');a.href=lastUrl;const originalName = selFiles[0]?.name?.replace(/\.[^.]+$/, '') || 'pdfwala_output';const ext = lastFn?.split('/').pop().split('.').pop() || 'pdf';a.download = originalName + '_' + curTool + '.' + ext;
   document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
 function resetToolPage(){
+  // Fix #15: Revoke blob URLs to prevent memory leaks
+  if(lastUrl&&lastUrl.startsWith('blob:')){URL.revokeObjectURL(lastUrl);}
   selFiles=[];lastFn=null;lastUrl=null;processingActive=false;
   if(currentPollTimeout){clearTimeout(currentPollTimeout);currentPollTimeout=null;}
+  if(pollTimeoutRef){clearTimeout(pollTimeoutRef);pollTimeoutRef=null;}
   pollingActive=false;
   document.getElementById('tpFileList').innerHTML='';
   ['tpProgress','tpResult','tpSetupBox'].forEach(x=>document.getElementById(x).classList.remove('show'));
@@ -1577,7 +1583,8 @@ function resetToolPage(){
 }
 
 function tpRadio(el,fid,val){
-  el.closest('.tp-radio-group').querySelectorAll('.tp-radio-chip').forEach(c=>c.classList.remove('active'));
+  // Fix #16: Use optional chaining for parent structure
+  el.closest('.tp-radio-group')?.querySelectorAll('.tp-radio-chip').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');
   const h=document.getElementById(fid);if(h)h.value=val;
   if(fid==='mode'){const rg=document.getElementById('rangeGroup');if(rg)rg.style.display=val==='range'?'block':'none';}
@@ -1614,15 +1621,21 @@ function getToolFromURL(){
 
 /* MOBILE NAV */
 function toggleMob(){const n=document.getElementById('mobNav'),b=document.getElementById('mobBtn'),ic=document.getElementById('mobIcon');n.classList.toggle('open');document.body.style.overflow=n.classList.contains('open')?'hidden':'';ic.innerHTML=n.classList.contains('open')?'<use href="#ic-x"/>':'<use href="#ic-menu"/>';b.setAttribute('aria-expanded',String(n.classList.contains('open')));}
-function closeMob(){const n=document.getElementById('mobNav'),b=document.getElementById('mobBtn'),ic=document.getElementById('mobIcon');if(!n)return;n.classList.remove('open');document.body.style.overflow='';if(b){if(ic)ic.innerHTML='<use href="#ic-menu"/>';b.setAttribute('aria-expanded','false');}}
+// Fix #21: Mobile nav scroll lock cleanup - always reset overflow
+function closeMob(){const n=document.getElementById('mobNav'),b=document.getElementById('mobBtn'),ic=document.getElementById('mobIcon');document.body.style.overflow='';if(!n)return;n.classList.remove('open');if(b){if(ic)ic.innerHTML='<use href=\"#ic-menu\"/>';b.setAttribute('aria-expanded','false');}}
 function toggleMobSec(btn){const sub=btn.nextElementSibling;if(!sub||!sub.classList.contains('mob-sub'))return;const open=sub.classList.contains('open');if(open){sub.classList.remove('open');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');}else{sub.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-expanded','true');}}
 
 /* THEME */
 function toggleTheme(){const h=document.documentElement,next=h.getAttribute('data-theme')==='dark'?'light':'dark';h.setAttribute('data-theme',next);const ic=document.getElementById('themeIcon');if(ic)ic.innerHTML=next==='dark'?'<use href="#ic-moon"/>':'<use href="#ic-sun"/>';safeSet('pw-theme',next);}
 
 /* UTILS */
-function fmt(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB';}
-function toast(msg,type='success'){const t=document.getElementById('toast'),ms=document.getElementById('toastMsg');if(!t||!ms)return;ms.textContent=msg;t.className='toast '+type+' show';clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3500);}
+// Fix #2: HTML sanitization function to prevent XSS
+function sanitizeHTML(str){
+  if(typeof str!=='string')return'';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+function fmt(b){if(b===0)return'0 B';if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB';}
+function toast(msg,type='success'){const t=document.getElementById('toast'),ms=document.getElementById('toastMsg');if(!t||!ms)return;ms.textContent=sanitizeHTML(msg);t.className='toast '+type+' show';clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3500);}
 
 /* INIT */
 document.addEventListener('DOMContentLoaded',()=>{
