@@ -1434,7 +1434,7 @@ async function processToolFile(){
             fill.style.width='100%';pTxt.textContent='Done!';
             const filename=pollData.output_path?pollData.output_path.split('/').pop():null;
             processingActive=false;
-            showResult('success',{success:true,message:'Your file is ready',signed_url:pollData.download_url||(filename?API+'/download/'+filename:null),filename:filename,size_human:pollData.size_human||''});
+            showResult('success',{success:true,message:'Your file is ready',signed_url:(pollData.download_url?API+pollData.download_url:null)||(filename?API+'/download/'+filename:null),filename:filename,size_human:pollData.size_human||''});
           }else if(pollData.status==='failed'){
             processingActive=false;showResult('error',{message:pollData.error||'Something went wrong. Please try again.'});
           }else{
