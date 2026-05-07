@@ -1,3 +1,4 @@
+<!-- PDFWala V14.2 — Security Hardened -->
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -1125,7 +1126,7 @@ const TOOLS=new Proxy({},{
 const SLUG_MAP={merge:'merge-pdf',split:'split-pdf',organize:'organize-pdf','remove-pages':'remove-pages','extract-pages':'extract-pages',info:'pdf-info',compress:'compress-pdf','repair-pdf':'repair-pdf','ocr-pdf':'ocr-pdf',rotate:'rotate-pdf',watermark:'watermark-pdf','page-numbers':'page-numbers',crop:'crop-pdf','sign-pdf':'sign-pdf',protect:'protect-pdf',unlock:'unlock-pdf','redact-pdf':'redact-pdf','compare-pdf':'compare-pdf','pdf-to-image':'pdf-to-image','pdf-to-word':'pdf-to-word','pdf-to-excel':'pdf-to-excel','pdf-to-ppt':'pdf-to-ppt','pdf-to-pdfa':'pdf-to-pdfa','image-to-pdf':'image-to-pdf','jpg-to-pdf':'jpg-to-pdf','word-to-pdf':'word-to-pdf','excel-to-pdf':'excel-to-pdf','html-to-pdf':'html-to-pdf','compress-image':'compress-image','resize-image':'resize-image','webp-to-jpg':'webp-to-jpg','png-to-jpg':'png-to-jpg','image-to-word':'image-to-word','image-to-excel':'image-to-excel','word-to-jpg':'word-to-jpg','word-to-png':'word-to-png','word-to-txt':'word-to-txt','word-to-excel':'word-to-excel','word-to-ppt':'word-to-ppt','word-to-html':'word-to-html','word-to-json':'word-to-json','compress-word':'compress-word','unlock-word':'unlock-word','protect-word':'protect-word','edit-word':'edit-word','excel-to-csv':'excel-to-csv','excel-to-jpg':'excel-to-jpg','excel-to-png':'excel-to-png','excel-to-word':'excel-to-word','excel-to-ppt':'excel-to-ppt','excel-to-html':'excel-to-html','excel-to-json':'excel-to-json','compress-excel':'compress-excel','unlock-excel':'unlock-excel','protect-excel':'protect-excel','repair-excel':'repair-excel'};
 const SLUG_TO_TOOL=Object.fromEntries(Object.entries(SLUG_MAP).map(([k,v])=>[v,k]));
 
-const FILE_SUGGEST={pdf:['compress','pdf-to-word','pdf-to-image','merge','split','protect','watermark','ocr-pdf'],image:['compress-image','image-to-pdf','resize-image','webp-to-jpg','png-to-jpg','image-to-word'],word:['word-to-pdf','word-to-jpg','compress-word','word-to-txt','protect-word','word-to-excel'],excel:['excel-to-pdf','excel-to-csv','compress-excel','excel-to-json','protect-excel','excel-to-jpg'],html:['html-to-pdf']};
+const FILE_SUGGEST={pdf:['compress','pdf-to-word','pdf-to-image','merge','split','protect','watermark','ocr-pdf'],image:['compress-image','image-to-pdf','resize-image','webp-to-jpg','png-to-jpg','image-to-word'],word:['word-to-pdf','word-to-jpg','compress-word','word-to-txt','protect-word','word-to-excel'],excel:['excel-to-pdf','excel-to-csv','compress-excel','excel-to-json','protect-excel','excel-to-jpg'],html:['html-to-pdf'],unknown:['compress','merge','split']};
 
 const API=APP_CONFIG.API_BASE;
 let curTool=null,selFiles=[],lastFn=null,lastUrl=null,abortCtrl=null,revealObserver=null;
@@ -1138,15 +1139,19 @@ function safeSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 function trackRecent(id){
   try{let r=JSON.parse(safeGet('pw-recent','[]'));r=[id,...r.filter(x=>x!==id)].slice(0,3);safeSet('pw-recent',JSON.stringify(r));renderRecent();}catch(e){}
 }
+/* RENDER RECENT */
+// Fix #6 & #18: Validate localStorage data and warn on corruption
 function renderRecent(){
   try{
-    let r=[];try{r=JSON.parse(safeGet('pw-recent','[]'));}catch(e){safeSet('pw-recent','[]');}
-    if(!Array.isArray(r)){r=[];safeSet('pw-recent','[]');}
+    let r=[];try{r=JSON.parse(safeGet('pw-recent','[]'));}catch(e){safeSet('pw-recent','[]');console.warn('renderRecent: corrupted pw-recent JSON, resetting');}
+    if(!Array.isArray(r)){r=[];safeSet('pw-recent','[]');console.warn('renderRecent: pw-recent was not an array, resetting');}
+    // Validate each ID against known tools
+    r=r.filter(id=>TOOLS[id]);
     const bar=document.getElementById('recentToolsBar'),chips=document.getElementById('recentToolsChips');
     if(!r.length||!bar||!chips){bar&&bar.classList.remove('visible');return;}
     bar.classList.add('visible');
     chips.innerHTML=r.map(id=>{const t=TOOLS[id];if(!t)return'';return`<span class="recent-chip" onclick="openTool('${id}')">${svgIcon(t.icon,12)} ${esc(t.title)}</span>`;}).join('');
-  }catch(e){}
+  }catch(e){console.warn('renderRecent: unexpected error',e);}
 }
 
 function detectType(f){
@@ -1171,9 +1176,10 @@ const ICON_MAP={merge:'ic-merge',split:'ic-split',compress:'ic-compress',image:'
 function svgIcon(name,sz=22){const id=ICON_MAP[name]||'ic-file';return`<svg width="${sz}" height="${sz}"><use href="#${id}"/></svg>`;}
 
 function openTool(id){
-  const t=TOOLS[id];if(!t){toast('Tool not found','error');return;}
+  // Fix #12: Validate tool ID against SLUG_MAP before using in pushState
+  const t=TOOLS[id];if(!t||!SLUG_MAP[id]){toast('Tool not found','error');return;}
   closeMob();
-  window.history.pushState({id},t.title+' — PDFWala','/pdfwala/'+(SLUG_MAP[id]||id)+'/');
+  window.history.pushState({id},t.title+' — PDFWala','/pdfwala/'+SLUG_MAP[id]+'/');
   updateMeta(id);renderTool(id);trackRecent(id);
 }
 function navigateHome(){
@@ -1241,7 +1247,7 @@ function toolFileSelect(e){handleFiles(Array.from(e.target.files));}
 function heroDragOver(e){e.preventDefault();document.getElementById('heroDropzone').classList.add('dragover');}
 function heroDragLeave(){document.getElementById('heroDropzone').classList.remove('dragover');}
 function heroDrop(e){e.preventDefault();document.getElementById('heroDropzone').classList.remove('dragover');handleHeroFile(e.dataTransfer.files[0]);}
-function heroFileSelect(e){if(e.target.files[0])handleHeroFile(e.target.files[0]);}
+function heroFileSelect(e){if(e.target.files[0])handleHeroFile(e.target.files[0]);e.target.value='';}
 
 function handleFiles(files){
   if(!curTool)return;
@@ -1367,9 +1373,12 @@ document.addEventListener('keydown',e=>{
 });
 
 /* CANCEL */
+// Fix #14: Store poll timeout reference for proper cancellation
+let pollTimeoutRef=null;
 function cancelProcessing(){
   if(abortCtrl){abortCtrl.abort();abortCtrl=null;}
   if(currentPollTimeout){clearTimeout(currentPollTimeout);currentPollTimeout=null;}
+  if(pollTimeoutRef){clearTimeout(pollTimeoutRef);pollTimeoutRef=null;}
   pollingActive=false;processingActive=false;
   const prog=document.getElementById('tpProgress'),cancelBtn=document.getElementById('tpBtnCancel'),btn=document.getElementById('tpBtnProcess'),ph=document.getElementById('tpResultPlaceholder');
   prog.classList.remove('show');cancelBtn.classList.remove('show');
@@ -1447,6 +1456,8 @@ if(d.success && d.async && d.status_url){
 
   let attempts = 0;
   const poll = async () => {
+    // Fix #7 & #14: Check pollingActive and curTool before proceeding
+    if(!pollingActive||curTool!==toolAtCallTime)return;
     if(++attempts > 360){
       showResult('error', {message:'Taking too long. Try a smaller file.'});
       return;
@@ -1470,11 +1481,11 @@ if(d.success && d.async && d.status_url){
           fill.style.width = pd.progress + '%';
           pTxt.textContent = 'Processing... ' + pd.progress + '%';
         }
-        setTimeout(poll, 3000);
+        pollTimeoutRef=setTimeout(poll, 3000);
       }
-    } catch(e){ setTimeout(poll, 3000); }
+    } catch(e){ pollTimeoutRef=setTimeout(poll, 3000); }
   };
-  setTimeout(poll, 3000);
+  pollTimeoutRef=setTimeout(poll, 3000);
   return; // stop — do not call showResult yet
 }
     if(curTool!==toolAtCallTime)return;
@@ -1541,16 +1552,21 @@ function showResult(type,data){
 function downloadToolResult(){
   if(!lastUrl)return;
   try{
+    // Fix #1: Proper URL validation - reject protocol-relative URLs and verify same-origin
+    if(lastUrl.startsWith('//')){toast('Invalid download URL','error');return;}
     const parsed=new URL(lastUrl,window.location.origin);
-    if(parsed.origin!==window.location.origin&&!lastUrl.startsWith('/')){toast('Invalid download URL','error');return;}
+    if(parsed.origin!==window.location.origin){toast('Invalid download URL','error');return;}
   }catch(e){toast('Invalid download URL','error');return;}
-  const a=document.createElement('a');a.href=lastUrl;const originalName = selFiles[0]?.name?.replace(/\.[^.]+$/, '') || 'pdfwala_output';const ext = lastFn?.split('.').pop() || 'pdf';a.download = originalName + '_' + curTool + '.' + ext;
+  const a=document.createElement('a');a.href=lastUrl;const originalName = selFiles[0]?.name?.replace(/\.[^.]+$/, '') || 'pdfwala_output';const ext = lastFn?.split('/').pop().split('.').pop() || 'pdf';a.download = originalName + '_' + curTool + '.' + ext;
   document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
 function resetToolPage(){
+  // Fix #15: Revoke blob URLs to prevent memory leaks
+  if(lastUrl&&lastUrl.startsWith('blob:')){URL.revokeObjectURL(lastUrl);}
   selFiles=[];lastFn=null;lastUrl=null;processingActive=false;
   if(currentPollTimeout){clearTimeout(currentPollTimeout);currentPollTimeout=null;}
+  if(pollTimeoutRef){clearTimeout(pollTimeoutRef);pollTimeoutRef=null;}
   pollingActive=false;
   document.getElementById('tpFileList').innerHTML='';
   ['tpProgress','tpResult','tpSetupBox'].forEach(x=>document.getElementById(x).classList.remove('show'));
@@ -1567,7 +1583,8 @@ function resetToolPage(){
 }
 
 function tpRadio(el,fid,val){
-  el.closest('.tp-radio-group').querySelectorAll('.tp-radio-chip').forEach(c=>c.classList.remove('active'));
+  // Fix #16: Use optional chaining for parent structure
+  el.closest('.tp-radio-group')?.querySelectorAll('.tp-radio-chip').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');
   const h=document.getElementById(fid);if(h)h.value=val;
   if(fid==='mode'){const rg=document.getElementById('rangeGroup');if(rg)rg.style.display=val==='range'?'block':'none';}
@@ -1604,15 +1621,21 @@ function getToolFromURL(){
 
 /* MOBILE NAV */
 function toggleMob(){const n=document.getElementById('mobNav'),b=document.getElementById('mobBtn'),ic=document.getElementById('mobIcon');n.classList.toggle('open');document.body.style.overflow=n.classList.contains('open')?'hidden':'';ic.innerHTML=n.classList.contains('open')?'<use href="#ic-x"/>':'<use href="#ic-menu"/>';b.setAttribute('aria-expanded',String(n.classList.contains('open')));}
-function closeMob(){const n=document.getElementById('mobNav'),b=document.getElementById('mobBtn'),ic=document.getElementById('mobIcon');if(!n)return;n.classList.remove('open');document.body.style.overflow='';if(b){if(ic)ic.innerHTML='<use href="#ic-menu"/>';b.setAttribute('aria-expanded','false');}}
+// Fix #21: Mobile nav scroll lock cleanup - always reset overflow
+function closeMob(){const n=document.getElementById('mobNav'),b=document.getElementById('mobBtn'),ic=document.getElementById('mobIcon');document.body.style.overflow='';if(!n)return;n.classList.remove('open');if(b){if(ic)ic.innerHTML='<use href=\"#ic-menu\"/>';b.setAttribute('aria-expanded','false');}}
 function toggleMobSec(btn){const sub=btn.nextElementSibling;if(!sub||!sub.classList.contains('mob-sub'))return;const open=sub.classList.contains('open');if(open){sub.classList.remove('open');btn.classList.remove('active');btn.setAttribute('aria-expanded','false');}else{sub.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-expanded','true');}}
 
 /* THEME */
 function toggleTheme(){const h=document.documentElement,next=h.getAttribute('data-theme')==='dark'?'light':'dark';h.setAttribute('data-theme',next);const ic=document.getElementById('themeIcon');if(ic)ic.innerHTML=next==='dark'?'<use href="#ic-moon"/>':'<use href="#ic-sun"/>';safeSet('pw-theme',next);}
 
 /* UTILS */
-function fmt(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB';}
-function toast(msg,type='success'){const t=document.getElementById('toast'),ms=document.getElementById('toastMsg');if(!t||!ms)return;ms.textContent=msg;t.className='toast '+type+' show';clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3500);}
+// Fix #2: HTML sanitization function to prevent XSS
+function sanitizeHTML(str){
+  if(typeof str!=='string')return'';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+function fmt(b){if(b===0)return'0 B';if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(1)+' MB';}
+function toast(msg,type='success'){const t=document.getElementById('toast'),ms=document.getElementById('toastMsg');if(!t||!ms)return;ms.textContent=sanitizeHTML(msg);t.className='toast '+type+' show';clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3500);}
 
 /* INIT */
 document.addEventListener('DOMContentLoaded',()=>{
