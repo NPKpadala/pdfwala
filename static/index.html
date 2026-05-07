@@ -1416,6 +1416,44 @@ async function processToolFile(){
     if(r.status===502||r.status===503){throw new Error('SERVER_UNAVAILABLE');}
     if(!r.ok&&r.status>=500){throw new Error('SERVER_ERROR_'+r.status);}
     d=await r.json();
+if(d.success && d.async && d.status_url){
+  const fill = document.getElementById('tpProgressFill');
+  const pTxt = document.getElementById('tpProgressText');
+  fill.style.width = '10%';
+  pTxt.textContent = 'Processing in background...';
+
+  let attempts = 0;
+  const poll = async () => {
+    if(++attempts > 360){
+      showResult('error', {message:'Taking too long. Try a smaller file.'});
+      return;
+    }
+    try{
+      const pr = await fetch(API + d.status_url);
+      const pd = await pr.json();
+      if(pd.status === 'completed'){
+        fill.style.width = '100%';
+        pTxt.textContent = 'Done!';
+        const fn = pd.output_path ? pd.output_path.split('/').pop() : null;
+        showResult('success', {
+          filename: fn || pd.filename,
+          size_human: pd.size_human || '',
+          reduction_pct: pd.reduction_pct || pd.result?.reduction_pct || ''
+        });
+      } else if(pd.status === 'failed'){
+        showResult('error', {message: pd.error || 'Processing failed'});
+      } else {
+        if(pd.progress){
+          fill.style.width = pd.progress + '%';
+          pTxt.textContent = 'Processing... ' + pd.progress + '%';
+        }
+        setTimeout(poll, 3000);
+      }
+    } catch(e){ setTimeout(poll, 3000); }
+  };
+  setTimeout(poll, 3000);
+  return; // stop — do not call showResult yet
+}
     if(curTool!==toolAtCallTime)return;
     if(d.success&&d.async&&d.status_url){
       isAsyncJob=true;
@@ -1516,7 +1554,7 @@ function downloadToolResult(){
     const parsed=new URL(lastUrl,window.location.origin);
     if(parsed.origin!==window.location.origin&&!lastUrl.startsWith('/')){toast('Invalid download URL','error');return;}
   }catch(e){toast('Invalid download URL','error');return;}
-  const a=document.createElement('a');a.href=lastUrl;a.download=lastFn||'pdfwala_output';
+  const a=document.createElement('a');a.href=lastUrl;const originalName = selFiles[0]?.name?.replace(/\.[^.]+$/, '') || 'pdfwala_output';const ext = lastFn?.split('.').pop() || 'pdf';a.download = originalName + '_' + curTool + '.' + ext;
   document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
