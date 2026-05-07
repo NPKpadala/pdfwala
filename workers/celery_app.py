@@ -1,3 +1,8 @@
+# Register all engines for Celery workers
+import engines.pdf_engine      # noqa: F401
+import engines.office_engine   # noqa: F401
+import engines.image_engine    # noqa: F401
+
 """
 workers/celery_app.py — PDFWala Enterprise V14.0
 
