@@ -654,6 +654,28 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
           </div>
         </div>
       </div>
+      <div class="nav-item" data-mega>
+        <button class="nav-btn" aria-haspopup="true" aria-expanded="false">Security<svg class="chv"><use href="#ic-chevron"/></svg></button>
+        <div class="mega-drop mega-mid" role="menu">
+          <div class="mega-cols c2">
+            <div>
+              <div class="mega-col-hd rose"><svg width="11" height="11"><use href="#ic-lock"/></svg>Protect & Unlock</div>
+              <a class="mm-link" onclick="openTool('protect')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-lock"/></svg></span>Protect PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('unlock')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-unlock"/></svg></span>Unlock PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('protect-word')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-lock"/></svg></span>Protect Word<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('unlock-word')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-unlock"/></svg></span>Unlock Word<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('protect-excel')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-lock"/></svg></span>Protect Excel<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('unlock-excel')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-unlock"/></svg></span>Unlock Excel<span class="mla">→</span></a>
+            </div>
+            <div>
+              <div class="mega-col-hd violet"><svg width="11" height="11"><use href="#ic-sign"/></svg>Sign & Redact</div>
+              <a class="mm-link" onclick="openTool('sign-pdf')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-sign"/></svg></span>Sign PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('redact-pdf')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-redact"/></svg></span>Redact PDF<span class="mla">→</span></a>
+              <a class="mm-link" onclick="openTool('compare-pdf')" role="menuitem"><span class="mli"><svg width="14" height="14"><use href="#ic-compare"/></svg></span>Compare PDF<span class="mm-badge mb-new">New</span><span class="mla">→</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="nav-right">
       <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle theme">
@@ -693,6 +715,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   <div class="mob-section"><button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">PDF Tools<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg></button><div class="mob-sub"><div class="mob-sub-inner"><a class="mob-link" onclick="openTool('merge');closeMob()"><svg class="mob-icon"><use href="#ic-merge"/></svg>Merge PDF</a><a class="mob-link" onclick="openTool('split');closeMob()"><svg class="mob-icon"><use href="#ic-split"/></svg>Split PDF</a><a class="mob-link" onclick="openTool('compress');closeMob()"><svg class="mob-icon"><use href="#ic-compress"/></svg>Compress PDF</a><a class="mob-link" onclick="openTool('pdf-to-word');closeMob()"><svg class="mob-icon"><use href="#ic-file"/></svg>PDF to Word</a><a class="mob-link" onclick="openTool('protect');closeMob()"><svg class="mob-icon"><use href="#ic-lock"/></svg>Protect PDF</a><a class="mob-link" onclick="openTool('unlock');closeMob()"><svg class="mob-icon"><use href="#ic-unlock"/></svg>Unlock PDF</a></div></div></div>
   <div class="mob-section"><button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">Image Tools<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg></button><div class="mob-sub"><div class="mob-sub-inner"><a class="mob-link" onclick="openTool('compress-image');closeMob()"><svg class="mob-icon"><use href="#ic-compress"/></svg>Compress Image</a><a class="mob-link" onclick="openTool('resize-image');closeMob()"><svg class="mob-icon"><use href="#ic-crop"/></svg>Resize Image</a><a class="mob-link" onclick="openTool('image-to-pdf');closeMob()"><svg class="mob-icon"><use href="#ic-image"/></svg>Image to PDF</a><a class="mob-link" onclick="openTool('webp-to-jpg');closeMob()"><svg class="mob-icon"><use href="#ic-rotate"/></svg>WebP to JPG</a></div></div></div>
   <div class="mob-section"><button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">Word & Excel<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg></button><div class="mob-sub"><div class="mob-sub-inner"><a class="mob-link" onclick="openTool('word-to-pdf');closeMob()"><svg class="mob-icon"><use href="#ic-file"/></svg>Word to PDF</a><a class="mob-link" onclick="openTool('excel-to-pdf');closeMob()"><svg class="mob-icon"><use href="#ic-spreadsheet"/></svg>Excel to PDF</a><a class="mob-link" onclick="openTool('compress-word');closeMob()"><svg class="mob-icon"><use href="#ic-compress"/></svg>Compress Word</a><a class="mob-link" onclick="openTool('compress-excel');closeMob()"><svg class="mob-icon"><use href="#ic-compress"/></svg>Compress Excel</a></div></div></div>
+  <div class="mob-section"><button class="mob-section-btn" onclick="toggleMobSec(this)" aria-expanded="false">Security<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6L8 10L12 6"/></svg></button><div class="mob-sub"><div class="mob-sub-inner"><a class="mob-link" onclick="openTool('protect-word');closeMob()"><svg class="mob-icon"><use href="#ic-lock"/></svg>Protect Word</a><a class="mob-link" onclick="openTool('unlock-word');closeMob()"><svg class="mob-icon"><use href="#ic-unlock"/></svg>Unlock Word</a><a class="mob-link" onclick="openTool('protect-excel');closeMob()"><svg class="mob-icon"><use href="#ic-lock"/></svg>Protect Excel</a><a class="mob-link" onclick="openTool('unlock-excel');closeMob()"><svg class="mob-icon"><use href="#ic-unlock"/></svg>Unlock Excel</a><a class="mob-link" onclick="openTool('sign-pdf');closeMob()"><svg class="mob-icon"><use href="#ic-sign"/></svg>Sign PDF</a><a class="mob-link" onclick="openTool('redact-pdf');closeMob()"><svg class="mob-icon"><use href="#ic-redact"/></svg>Redact PDF</a><a class="mob-link" onclick="openTool('compare-pdf');closeMob()"><svg class="mob-icon"><use href="#ic-compare"/></svg>Compare PDF</a></div></div></div>
 </div>
 
 <!-- HOME PAGE -->
@@ -1007,7 +1030,7 @@ const TOOLS_PDF_CORE={
     endpoint:'/api/pdf/sign',field:'file',
     form:()=>`<div class="tp-form-group"><label class="tp-form-label">Signer Name</label><input class="tp-form-input" type="text" id="name" placeholder="Full name"/></div><div class="tp-form-group"><label class="tp-form-label">Reason (optional)</label><input class="tp-form-input" type="text" id="reason" placeholder="e.g., Approved"/></div>`},
   'redact-pdf':{title:'Redact PDF',icon:'redact',desc:'Permanently remove sensitive information.',multi:false,accept:'.pdf',
-    endpoint:'/api/pdf/redact',field:'file',
+    endpoint:'/api/pdf/redact-pdf',field:'file',
     form:()=>`<div class="tp-form-group"><label class="tp-form-label">Text to Redact</label><input class="tp-form-input" type="text" id="search_text" placeholder="e.g., Social Security Number"/></div>`},
   'compare-pdf':{title:'Compare PDF',icon:'compare',desc:'Find differences between two PDFs.',multi:true,accept:'.pdf',
     endpoint:'/api/pdf/compare',field:'files',
@@ -1396,7 +1419,7 @@ async function processToolFile(){
     if(newIdx!==msgIdx){msgIdx=newIdx;pTxt.textContent=PROCESS_MSGS[msgIdx];if(announcer)announcer.textContent=PROCESS_MSGS[msgIdx];}
   },400);
   abortCtrl=new AbortController();
-  let d=null,isAsyncJob=false;
+  let d=null;
   try{
     const fd=new FormData();
     if(t.multi){selFiles.forEach(f=>fd.append(t.field,f));}else{fd.append(t.field,selFiles[0]);}
@@ -1455,40 +1478,7 @@ if(d.success && d.async && d.status_url){
   return; // stop — do not call showResult yet
 }
     if(curTool!==toolAtCallTime)return;
-    if(d.success&&d.async&&d.status_url){
-      isAsyncJob=true;
-      if(tick){clearInterval(tick);tick=null;}
-      fill.style.width='90%';pTxt.textContent='This may take a minute… please wait';
-      if(announcer)announcer.textContent=pTxt.textContent;
-      prog.classList.add('show');
-      let attempts=0;const maxAttempts=360;const pollUrl=API+d.status_url;pollingActive=true;
-      const poll=async()=>{
-        if(!pollingActive||curTool!==toolAtCallTime)return;
-        if(++attempts>maxAttempts){processingActive=false;showResult('error',{message:'This is taking longer than expected. Try a smaller file or split the PDF first.'});return;}
-        try{
-          const pollResponse=await fetch(pollUrl,{headers:{'X-Requested-With':'XMLHttpRequest'},credentials:'same-origin'});
-          const pollData=await pollResponse.json();
-          if(pollData.status==='completed'){
-            fill.style.width='100%';pTxt.textContent='Done!';
-            const filename=pollData.output_path?pollData.output_path.split('/').pop():null;
-            processingActive=false;
-            showResult('success',{success:true,message:'Your file is ready',signed_url:(pollData.download_url?API+pollData.download_url:null)||(filename?API+'/download/'+filename:null),filename:filename,size_human:pollData.size_human||''});
-          }else if(pollData.status==='failed'){
-            processingActive=false;showResult('error',{message:pollData.error||'Something went wrong. Please try again.'});
-          }else{
-            if(pollData.progress){
-              const pv=Math.min(99,parseInt(pollData.progress)||0);
-              fill.style.width=pv+'%';
-              pTxt.textContent='This may take a minute… '+pv+'% done';
-              if(announcer)announcer.textContent=pTxt.textContent;
-            }
-            currentPollTimeout=setTimeout(poll,5000);
-          }
-        }catch(e){if(pollingActive&&attempts<maxAttempts){currentPollTimeout=setTimeout(poll,5000);}else{processingActive=false;showResult('error',{message:'Connection lost. Please check your internet and try again.'});}}
-      };
-      currentPollTimeout=setTimeout(poll,3000);
-      cancelBtn.classList.remove('show');
-    }else{processingActive=false;showResult(d.success?'success':'error',d);}
+    processingActive=false;showResult(d.success?'success':'error',d);
   }catch(err){
     if(tick){clearInterval(tick);tick=null;}
     processingActive=false;
@@ -1505,7 +1495,7 @@ if(d.success && d.async && d.status_url){
     }else{showResult('error',{message:'Something went wrong. Please try again.'});}
   }finally{
     if(tick){clearInterval(tick);tick=null;}
-    if(!isAsyncJob){cancelBtn.classList.remove('show');if(!processingActive){btn.disabled=!selFiles.length;btn.style.display='flex';}}
+    cancelBtn.classList.remove('show');if(!processingActive){btn.disabled=!selFiles.length;btn.style.display='flex';}
   }
 }
 
