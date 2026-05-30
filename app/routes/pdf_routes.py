@@ -93,6 +93,10 @@ def crop_pdf():
 def redact_pdf():
     return _handle("redact_pdf", "pdf", "PDF redacted successfully")
 
+@pdf_bp.route("/edit",           methods=["POST"])
+def edit_pdf():
+    return _handle("edit_pdf",   "pdf", "PDF edited successfully")
+
 
 # ── Security ───────────────────────────────────────────────────────────────────
 

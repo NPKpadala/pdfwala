@@ -859,6 +859,270 @@ def crop_pdf(ctx: JobContext) -> dict:
     return {}
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# PDF EDIT — text/image/highlight/note overlays via PyMuPDF
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Limits — generous but bounded so a malicious payload can't OOM the worker.
+_EDIT_MAX_OPS_TOTAL   = 5000   # combined operations across all lists
+_EDIT_MAX_TEXT_LEN    = 4000
+_EDIT_MAX_NOTE_LEN    = 4000
+_EDIT_MAX_IMAGE_BYTES = 25 * 1024 * 1024   # 25 MB per overlay image
+_EDIT_FONT_MAP = {
+    "helv": "helv", "helvetica": "helv",
+    "tiro": "tiro", "times": "tiro", "times-roman": "tiro",
+    "cour": "cour", "courier": "cour", "mono": "cour",
+}
+
+
+def _edit_parse_color(value, default=(0.0, 0.0, 0.0)) -> tuple:
+    """Accept '#rrggbb', 'rrggbb', [r,g,b] (0-255 or 0-1), or None."""
+    if value is None or value == "":
+        return default
+    if isinstance(value, (list, tuple)) and len(value) >= 3:
+        try:
+            vals = [float(v) for v in value[:3]]
+        except (TypeError, ValueError):
+            return default
+        if max(vals) > 1.001:
+            vals = [v / 255.0 for v in vals]
+        return tuple(max(0.0, min(1.0, v)) for v in vals)
+    if isinstance(value, str):
+        s = value.strip().lstrip("#")
+        if len(s) == 6:
+            try:
+                return (
+                    int(s[0:2], 16) / 255.0,
+                    int(s[2:4], 16) / 255.0,
+                    int(s[4:6], 16) / 255.0,
+                )
+            except ValueError:
+                return default
+    return default
+
+
+def _edit_parse_payload(ctx: JobContext) -> dict:
+    """
+    Edits arrive as a JSON string in form field 'edits' (or 'payload'),
+    or piecemeal as form fields 'text_overlays', 'highlights', etc.
+    Returns a dict with normalised lists: text_overlays, highlights,
+    annotations, image_overlays.
+    """
+    raw = ctx.params.get("edits") or ctx.params.get("payload")
+    data: dict = {}
+    if raw:
+        try:
+            parsed = json.loads(raw) if isinstance(raw, str) else raw
+            if isinstance(parsed, dict):
+                data = parsed
+        except (TypeError, ValueError) as ex:
+            raise ValidationError(f"edits is not valid JSON: {ex}")
+
+    # Allow individual form fields to override / supplement
+    for key in ("text_overlays", "highlights", "annotations", "image_overlays"):
+        if key in ctx.params and key not in data:
+            try:
+                data[key] = json.loads(ctx.params[key])
+            except (TypeError, ValueError):
+                raise ValidationError(f"{key} is not valid JSON")
+
+    def _aslist(v):
+        if v is None:
+            return []
+        return v if isinstance(v, list) else [v]
+
+    out = {
+        "text_overlays":  _aslist(data.get("text_overlays")),
+        "highlights":     _aslist(data.get("highlights")),
+        "annotations":    _aslist(data.get("annotations")),
+        "image_overlays": _aslist(data.get("image_overlays")),
+    }
+
+    total = sum(len(out[k]) for k in out)
+    if total == 0:
+        raise ValidationError(
+            "No edits provided. Send a JSON 'edits' object with at least one "
+            "of: text_overlays, highlights, annotations, image_overlays."
+        )
+    if total > _EDIT_MAX_OPS_TOTAL:
+        raise ValidationError(
+            f"Too many edit operations ({total}); limit is {_EDIT_MAX_OPS_TOTAL}."
+        )
+    return out
+
+
+@register("edit_pdf")
+def edit_pdf(ctx: JobContext) -> dict:
+    """
+    Apply per-page overlays and annotations.
+
+    Accepts a JSON 'edits' payload of the shape:
+      {
+        "text_overlays":  [{"page":0,"x":72,"y":120,"text":"Hello",
+                            "font_size":14,"color":"#1d4ed8","font":"helv"}],
+        "highlights":     [{"page":0,"x1":50,"y1":100,"x2":300,"y2":120,
+                            "color":"#ffff00","opacity":0.4}],
+        "annotations":    [{"page":0,"x":200,"y":200,"content":"Review this",
+                            "type":"text","title":"Reviewer"}],
+        "image_overlays": [{"page":0,"x":300,"y":300,"width":120,"height":80,
+                            "image_b64":"<base64-png-or-jpg>"}]
+      }
+
+    Page indices are 0-based. Coordinates are PDF points from the top-left
+    of the page (origin at upper-left of the visible page rect), matching
+    what the frontend draws on its canvas preview.
+    """
+    _require(FITZ_OK, "edit_pdf", "PyMuPDF")
+    _guard_empty(ctx.input_path)
+    edits = _edit_parse_payload(ctx)
+
+    # Lazy import — base64 only needed for image_overlays
+    import base64
+
+    doc = fitz.open(ctx.input_path)
+    try:
+        n_pages = len(doc)
+        applied = {"text": 0, "highlight": 0, "annotation": 0, "image": 0}
+
+        def _resolve_page(idx):
+            try:
+                p = int(idx)
+            except (TypeError, ValueError):
+                raise ValidationError(f"Invalid page index: {idx!r}")
+            if p < 0:
+                p += n_pages
+            if p < 0 or p >= n_pages:
+                raise ValidationError(
+                    f"Page index {idx} out of range (0..{n_pages - 1})"
+                )
+            return p
+
+        # ── Text overlays ─────────────────────────────────────────────
+        for op in edits["text_overlays"]:
+            if not isinstance(op, dict):
+                raise ValidationError("text_overlays entries must be objects")
+            page = doc[_resolve_page(op.get("page", 0))]
+            text = str(op.get("text", ""))[:_EDIT_MAX_TEXT_LEN]
+            if not text:
+                continue
+            x = float(op.get("x", 72))
+            y = float(op.get("y", 72))
+            size = float(op.get("font_size", op.get("size", 14)))
+            size = max(4.0, min(size, 400.0))
+            color = _edit_parse_color(op.get("color"), (0.0, 0.0, 0.0))
+            font_key = str(op.get("font", "helv")).lower().strip()
+            font = _EDIT_FONT_MAP.get(font_key, "helv")
+            # PyMuPDF's insert_text only accepts rotate values that are
+            # multiples of 90; snap to the nearest quadrant.
+            try:
+                requested_rot = int(op.get("rotate", 0)) % 360
+            except (TypeError, ValueError):
+                requested_rot = 0
+            rotate = int(round(requested_rot / 90.0)) * 90 % 360
+            try:
+                page.insert_text(
+                    (x, y), text,
+                    fontname=font, fontsize=size,
+                    color=color, rotate=rotate, overlay=True,
+                )
+            except Exception as ex:
+                raise ProcessingError(f"insert_text failed on page {op.get('page')}: {ex}")
+            applied["text"] += 1
+
+        # ── Highlights (semi-transparent rectangles) ──────────────────
+        for op in edits["highlights"]:
+            if not isinstance(op, dict):
+                raise ValidationError("highlights entries must be objects")
+            page = doc[_resolve_page(op.get("page", 0))]
+            x1 = float(op.get("x1", op.get("x", 0)))
+            y1 = float(op.get("y1", op.get("y", 0)))
+            if "x2" in op and "y2" in op:
+                x2 = float(op["x2"]); y2 = float(op["y2"])
+            else:
+                x2 = x1 + float(op.get("width", 100))
+                y2 = y1 + float(op.get("height", 20))
+            rect = fitz.Rect(min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
+            if rect.width <= 0 or rect.height <= 0:
+                continue
+            color = _edit_parse_color(op.get("color"), (1.0, 1.0, 0.0))
+            opacity = max(0.05, min(1.0, float(op.get("opacity", 0.4))))
+            try:
+                annot = page.add_highlight_annot(rect)
+                annot.set_colors(stroke=color)
+                annot.set_opacity(opacity)
+                annot.update()
+            except Exception:
+                # Fall back to a drawn rectangle for PDFs where highlight annot fails
+                page.draw_rect(
+                    rect, color=color, fill=color,
+                    fill_opacity=opacity, width=0, overlay=True,
+                )
+            applied["highlight"] += 1
+
+        # ── Sticky-note annotations ───────────────────────────────────
+        for op in edits["annotations"]:
+            if not isinstance(op, dict):
+                raise ValidationError("annotations entries must be objects")
+            page = doc[_resolve_page(op.get("page", 0))]
+            content = str(op.get("content", op.get("text", "")))[:_EDIT_MAX_NOTE_LEN]
+            x = float(op.get("x", 72)); y = float(op.get("y", 72))
+            title = str(op.get("title", op.get("author", "PDFWala")))[:120]
+            try:
+                annot = page.add_text_annot((x, y), content, icon="Note")
+                annot.set_info(title=title, content=content)
+                color = _edit_parse_color(op.get("color"), (1.0, 0.85, 0.3))
+                annot.set_colors(stroke=color)
+                annot.update()
+            except Exception as ex:
+                raise ProcessingError(f"add_text_annot failed: {ex}")
+            applied["annotation"] += 1
+
+        # ── Image overlays ────────────────────────────────────────────
+        for op in edits["image_overlays"]:
+            if not isinstance(op, dict):
+                raise ValidationError("image_overlays entries must be objects")
+            b64 = op.get("image_b64") or op.get("image") or ""
+            if isinstance(b64, str) and b64.startswith("data:"):
+                # strip data URL prefix "data:image/png;base64,"
+                _, _, b64 = b64.partition(",")
+            if not b64:
+                raise ValidationError("image_overlays entry missing image_b64")
+            try:
+                blob = base64.b64decode(b64, validate=False)
+            except Exception as ex:
+                raise ValidationError(f"image_b64 is not valid base64: {ex}")
+            if len(blob) > _EDIT_MAX_IMAGE_BYTES:
+                raise ValidationError(
+                    f"image_overlays entry too large "
+                    f"({len(blob)} bytes; max {_EDIT_MAX_IMAGE_BYTES})"
+                )
+            _validate_image_data(blob, max_bytes=_EDIT_MAX_IMAGE_BYTES)
+
+            page = doc[_resolve_page(op.get("page", 0))]
+            x = float(op.get("x", 72)); y = float(op.get("y", 72))
+            w = float(op.get("width", 120)); h = float(op.get("height", 80))
+            rect = fitz.Rect(x, y, x + w, y + h)
+            try:
+                page.insert_image(rect, stream=blob, overlay=True, keep_proportion=True)
+            except Exception as ex:
+                raise ProcessingError(f"insert_image failed: {ex}")
+            applied["image"] += 1
+
+        doc.save(ctx.output_path, deflate=True, garbage=3)
+    finally:
+        doc.close()
+
+    log.info(
+        f"[{ctx.job_id}] edit_pdf: text={applied['text']} "
+        f"highlight={applied['highlight']} note={applied['annotation']} "
+        f"image={applied['image']}"
+    )
+    return {
+        "applied":          applied,
+        "total_operations": sum(applied.values()),
+    }
+
+
 @register("redact_pdf")
 def redact_pdf(ctx: JobContext) -> dict:
     """

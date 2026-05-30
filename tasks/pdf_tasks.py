@@ -149,6 +149,9 @@ def task_extract_pages(self, job_id): _run_job(job_id)
 @celery_app.task(base=_BaseTask, name="tasks.organize_pdf",  bind=True)
 def task_organize_pdf(self, job_id):  _run_job(job_id)
 
+@celery_app.task(base=_BaseTask, name="tasks.edit_pdf",      bind=True)
+def task_edit_pdf(self, job_id):      _run_job(job_id)
+
 
 # ── Operation → task function map ─────────────────────────────────────────────
 PDF_TASK_MAP = {
@@ -178,4 +181,5 @@ PDF_TASK_MAP = {
     "remove_pages":  task_remove_pages,
     "extract_pages": task_extract_pages,
     "organize_pdf":  task_organize_pdf,
+    "edit_pdf":      task_edit_pdf,
 }
