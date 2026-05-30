@@ -1163,7 +1163,7 @@ const TOOLS=new Proxy({},{
 const SLUG_MAP={merge:'merge-pdf',split:'split-pdf',organize:'organize-pdf','remove-pages':'remove-pages','extract-pages':'extract-pages',info:'pdf-info',compress:'compress-pdf','repair-pdf':'repair-pdf','ocr-pdf':'ocr-pdf',rotate:'rotate-pdf',watermark:'watermark-pdf','page-numbers':'page-numbers',crop:'crop-pdf','sign-pdf':'sign-pdf',protect:'protect-pdf',unlock:'unlock-pdf','redact-pdf':'redact-pdf','edit-pdf':'edit-pdf','compare-pdf':'compare-pdf','pdf-to-image':'pdf-to-image','pdf-to-word':'pdf-to-word','pdf-to-excel':'pdf-to-excel','pdf-to-ppt':'pdf-to-ppt','pdf-to-pdfa':'pdf-to-pdfa','image-to-pdf':'image-to-pdf','jpg-to-pdf':'jpg-to-pdf','word-to-pdf':'word-to-pdf','excel-to-pdf':'excel-to-pdf','html-to-pdf':'html-to-pdf','compress-image':'compress-image','resize-image':'resize-image','webp-to-jpg':'webp-to-jpg','png-to-jpg':'png-to-jpg','image-to-word':'image-to-word','image-to-excel':'image-to-excel','word-to-jpg':'word-to-jpg','word-to-png':'word-to-png','word-to-txt':'word-to-txt','word-to-excel':'word-to-excel','word-to-ppt':'word-to-ppt','word-to-html':'word-to-html','word-to-json':'word-to-json','compress-word':'compress-word','unlock-word':'unlock-word','protect-word':'protect-word','edit-word':'edit-word','excel-to-csv':'excel-to-csv','excel-to-jpg':'excel-to-jpg','excel-to-png':'excel-to-png','excel-to-word':'excel-to-word','excel-to-ppt':'excel-to-ppt','excel-to-html':'excel-to-html','excel-to-json':'excel-to-json','compress-excel':'compress-excel','unlock-excel':'unlock-excel','protect-excel':'protect-excel','repair-excel':'repair-excel'};
 const SLUG_TO_TOOL=Object.fromEntries(Object.entries(SLUG_MAP).map(([k,v])=>[v,k]));
 
-const FILE_SUGGEST={pdf:['compress','pdf-to-word','pdf-to-image','merge','split','protect','watermark','ocr-pdf'],image:['compress-image','image-to-pdf','resize-image','webp-to-jpg','png-to-jpg','image-to-word'],word:['word-to-pdf','word-to-jpg','compress-word','word-to-txt','protect-word','word-to-excel'],excel:['excel-to-pdf','excel-to-csv','compress-excel','excel-to-json','protect-excel','excel-to-jpg'],html:['html-to-pdf']};
+const FILE_SUGGEST={pdf:['edit-pdf','compress','pdf-to-word','pdf-to-image','merge','split','protect','watermark','ocr-pdf'],image:['compress-image','image-to-pdf','resize-image','webp-to-jpg','png-to-jpg','image-to-word'],word:['word-to-pdf','word-to-jpg','compress-word','word-to-txt','protect-word','word-to-excel'],excel:['excel-to-pdf','excel-to-csv','compress-excel','excel-to-json','protect-excel','excel-to-jpg'],html:['html-to-pdf']};
 
 const API=APP_CONFIG.API_BASE;
 let curTool=null,selFiles=[],lastFn=null,lastUrl=null,abortCtrl=null,revealObserver=null;
@@ -1477,46 +1477,14 @@ async function processToolFile(){
     if(r.status===502||r.status===503){throw new Error('SERVER_UNAVAILABLE');}
     if(!r.ok&&r.status>=500){throw new Error('SERVER_ERROR_'+r.status);}
     d=await r.json();
-if(d.success && d.async && d.status_url){
-  const fill = document.getElementById('tpProgressFill');
-  const pTxt = document.getElementById('tpProgressText');
-  fill.style.width = '10%';
-  pTxt.textContent = 'Processing in background...';
-
-  let attempts = 0;
-  const poll = async () => {
-    if(++attempts > 360){
-      showResult('error', {message:'Taking too long. Try a smaller file.'});
-      return;
-    }
-    try{
-      const pr = await fetch(API + d.status_url);
-      const pd = await pr.json();
-      if(pd.status === 'completed'){
-        fill.style.width = '100%';
-        pTxt.textContent = 'Done!';
-        const fn = pd.output_path ? pd.output_path.split('/').pop() : null;
-        showResult('success', {
-          filename: fn || pd.filename,
-          size_human: pd.size_human || '',
-          reduction_pct: pd.reduction_pct || pd.result?.reduction_pct || ''
-        });
-      } else if(pd.status === 'failed'){
-        showResult('error', {message: pd.error || 'Processing failed'});
-      } else {
-        if(pd.progress){
-          fill.style.width = pd.progress + '%';
-          pTxt.textContent = 'Processing... ' + pd.progress + '%';
-        }
-        setTimeout(poll, 3000);
-      }
-    } catch(e){ setTimeout(poll, 3000); }
-  };
-  setTimeout(poll, 3000);
-  return; // stop — do not call showResult yet
-}
     if(curTool!==toolAtCallTime)return;
-    if(d.success&&d.async&&d.status_url){
+    // Rate-limit explicit signal from backend
+    if(r.status===429){processingActive=false;showResult('error',{message:d.error||'You are sending requests too fast. Please wait a minute and try again.'});return;}
+    // Backend returns 202 + {status:"queued", status_url} when the job is async.
+    // (Previous code checked d.async, which the backend never sets — async jobs
+    // would silently hang forever in the UI.)
+    const isAsync = d.success && d.status_url && (r.status===202 || d.status==='queued');
+    if(isAsync){
       isAsyncJob=true;
       if(tick){clearInterval(tick);tick=null;}
       fill.style.width='90%';pTxt.textContent='This may take a minute… please wait';
