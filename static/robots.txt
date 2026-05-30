@@ -4,7 +4,7 @@ Disallow: /api/
 Disallow: /download/
 Disallow: /api/*/status/
 
-Sitemap: https://npkpadala.com/sitemap.xml
+Sitemap: https://npkpadala.com/pdfwala/sitemap.xml
 
 Crawl-delay: 2
 

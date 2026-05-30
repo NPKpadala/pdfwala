@@ -14,7 +14,7 @@ _PDF_FAST_OPS = {
     "compress_pdf", "rotate_pdf", "watermark_pdf", "page_numbers",
     "crop_pdf", "protect_pdf", "unlock_pdf", "sign_pdf", "redact_pdf",
     "pdf_info", "remove_pages", "extract_pages", "organize_pdf",
-    "split_pdf", "linearize_pdf", "repair_pdf",
+    "split_pdf", "linearize_pdf", "repair_pdf", "edit_pdf",
 }
 _PDF_SLOW_OPS = {
     "ocr_pdf", "compare_pdf", "merge_pdf",

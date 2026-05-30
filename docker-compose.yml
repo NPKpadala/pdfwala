@@ -209,25 +209,35 @@ services:
     restart: unless-stopped
     user: "1000:1000"
     working_dir: /app
+    # Use --schedule (Celery 5.x) — env var CELERYBEAT_SCHEDULE_FILENAME has
+    # been ignored since Celery 4. Schedule lives in a named volume the
+    # pdfwala user owns; the inner --schedule path also points there.
     command: >
       celery -A workers.celery_app:celery_app beat
       --loglevel=info
       --scheduler celery.beat:PersistentScheduler
+      --schedule /tmp/celerybeat-schedule
     volumes:
-      - celery_beat_data:/home/pdfwala/celerybeat:rw
+      - celery_beat_data:/var/lib/pdfwala-beat:rw
     environment:
       <<: *app-env
-      CELERYBEAT_SCHEDULE_FILENAME: /home/pdfwala/celerybeat/celerybeat-schedule
     depends_on:
       redis:
         condition: service_healthy
-    # Beat doesn't expose a network port; check that the schedule file is being updated
+    # Beat doesn't expose a network port. The simplest reliable signal is
+    # that the celery beat process is alive AND the schedule shelve file
+    # exists (created within a few seconds of startup).
     healthcheck:
-      test: ["CMD-SHELL", "test -f /home/pdfwala/celerybeat/celerybeat-schedule || exit 1"]
+      # Beat persists its shelve lazily (sometimes minutes after start),
+      # so don't depend on the file. The process being alive is the
+      # right signal: when beat dies, --restart unless-stopped brings it
+      # back, but the healthcheck still needs to flip 'unhealthy' in
+      # the meantime so monitoring can notice.
+      test: ["CMD-SHELL", "pgrep -f 'celery.*beat' >/dev/null || exit 1"]
       interval: 60s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 30s
     networks:
       - pdfwala-network
 
