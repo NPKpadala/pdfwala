@@ -1887,3 +1887,295 @@ def compare_pdf(ctx: JobContext) -> dict:
     ctx.set_progress(100)
     log.info(f"[{ctx.job_id}] compare_pdf: {pages} pages compared")
     return {"pages_compared": pages}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CANVAS EDITOR — in-place text editing (synchronous, NOT pipeline-registered)
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Powers the "Edit PDF" visual canvas tool. Called DIRECTLY from
+# app/routes/pdf_routes.py (no Celery, no Redis job) because the user waits
+# interactively and the work is fast (<2s for typical PDFs):
+#
+#   _parse_canvas_sync(pdf_path)                 -> dict   (page images + text spans)
+#   _save_canvas_sync(pdf_path, changes, scanned)-> bytes  (rebuilt PDF)
+#
+# Scanned PDFs (no text layer) are auto-OCR'd: Tesseract word boxes become
+# editable spans directly — no text-layer round-trip, so the existing ocr_pdf
+# tool is left completely untouched.
+#
+# Coordinates everywhere are PDF points with a TOP-LEFT origin (the space used
+# by both page.get_text() and page.get_pixmap()), so frontend overlay math is a
+# simple uniform scale.
+
+_CANVAS_RENDER_DPI   = 150     # page preview render resolution
+_CANVAS_MAX_PAGES    = 50      # sync endpoint — keep render fast & memory bounded
+_CANVAS_OCR_DPI      = 200     # OCR render resolution for scanned PDFs
+_CANVAS_OCR_MIN_CONF = 30      # drop OCR words below this confidence
+
+# Cache base-14 fitz.Font objects — re-creating them per span is wasteful.
+_FITZ_FONT_CACHE: dict = {}
+
+
+def _fitz_font(fontname: str):
+    f = _FITZ_FONT_CACHE.get(fontname)
+    if f is None:
+        f = fitz.Font(fontname=fontname)
+        _FITZ_FONT_CACHE[fontname] = f
+    return f
+
+
+def _is_scanned_pdf(path: str) -> bool:
+    """
+    True if the PDF has no usable text layer.
+    Checks the first 3 pages; < 50 stripped chars total → treat as scanned.
+    """
+    doc = fitz.open(path)
+    try:
+        pages_to_check = min(3, len(doc))
+        total_chars = 0
+        for i in range(pages_to_check):
+            total_chars += len(doc[i].get_text().strip())
+        return total_chars < 50
+    finally:
+        doc.close()
+
+
+def _pack_color_to_rgb(c) -> list:
+    """PyMuPDF span colour is a packed sRGB int. Return [R,G,B] in 0-255."""
+    if isinstance(c, (list, tuple)):
+        vals = list(c[:3]) or [0, 0, 0]
+        if vals and max(vals) <= 1.0:
+            vals = [int(round(v * 255)) for v in vals]
+        return [int(max(0, min(255, v))) for v in vals]
+    try:
+        c = int(c)
+    except (TypeError, ValueError):
+        return [0, 0, 0]
+    return [(c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF]
+
+
+def _base14_for(font: str, flags: int) -> str:
+    """Map an arbitrary font + span flags to a base-14 PyMuPDF font code.
+
+    NOTE: the correct italic code is 'heit' (Helvetica-Oblique) and bold-italic
+    is 'hebi' (Helvetica-BoldOblique). 'heio' is NOT a valid code.
+    flags bit 4 (16) = bold, bit 1 (2) = italic.
+    """
+    fl = (font or "").lower()
+    bold   = bool(flags & (1 << 4)) or "bold" in fl or "black" in fl or "heavy" in fl
+    italic = bool(flags & (1 << 1)) or "italic" in fl or "oblique" in fl
+    if bold and italic:
+        return "hebi"
+    if bold:
+        return "hebo"
+    if italic:
+        return "heit"
+    return "helv"
+
+
+def _ocr_page_spans(page, dpi: int = _CANVAS_OCR_DPI, lang: str = "eng") -> list:
+    """
+    OCR one page and synthesise editable spans in PDF-point coordinates
+    (top-left origin). Used only for scanned PDFs.
+    """
+    mat = fitz.Matrix(dpi / 72, dpi / 72)
+    pix = page.get_pixmap(matrix=mat, alpha=False, colorspace=fitz.csGRAY)
+    img = Image.open(io.BytesIO(pix.tobytes("png")))
+    data = pytesseract.image_to_data(
+        img, lang=lang, output_type=TesseractOutput.DICT, config="--psm 3 --oem 3"
+    )
+    scale = 72.0 / dpi   # pixel -> point
+    spans = []
+    n = len(data.get("text", []))
+    for i in range(n):
+        word = (data["text"][i] or "").strip()
+        if not word:
+            continue
+        try:
+            conf = int(float(data["conf"][i]))
+        except (TypeError, ValueError):
+            conf = -1
+        if conf < _CANVAS_OCR_MIN_CONF:
+            continue
+        x = data["left"][i]   * scale
+        y = data["top"][i]    * scale
+        w = data["width"][i]  * scale
+        h = data["height"][i] * scale
+        if w <= 0 or h <= 0:
+            continue
+        size = max(6.0, h * 0.85)
+        baseline_y = y + h - h * 0.18
+        spans.append({
+            "text": word,
+            "x0": round(x, 2),       "y0": round(y, 2),
+            "x1": round(x + w, 2),   "y1": round(y + h, 2),
+            "ox": round(x, 2),       "oy": round(baseline_y, 2),
+            "font": "OCR", "size": round(size, 2),
+            "color": [0, 0, 0], "flags": 0,
+        })
+    return spans
+
+
+def _parse_canvas_sync(pdf_path: str, render_dpi: int = _CANVAS_RENDER_DPI,
+                       max_pages: int = _CANVAS_MAX_PAGES) -> dict:
+    """Render page images + extract editable text spans for the canvas editor."""
+    _require(FITZ_OK, "parse-canvas", "PyMuPDF")
+    import base64
+    _guard_empty(pdf_path)
+
+    scanned = _is_scanned_pdf(pdf_path)
+    use_ocr = scanned and TESSERACT_OK and PIL_OK
+
+    doc = fitz.open(pdf_path)
+    try:
+        n = len(doc)
+        if n > max_pages:
+            raise ValidationError(
+                f"This PDF has {n} pages. The visual editor supports up to "
+                f"{max_pages} pages — use Split PDF first to edit a section."
+            )
+        mat = fitz.Matrix(render_dpi / 72, render_dpi / 72)
+        pages = []
+        total_spans = 0
+        for pno in range(n):
+            page = doc[pno]
+            rect = page.rect
+            pix  = page.get_pixmap(matrix=mat, alpha=False)
+            img_b64 = base64.b64encode(pix.tobytes("png")).decode("ascii")
+
+            spans = []
+            if use_ocr:
+                for j, sp in enumerate(_ocr_page_spans(page)):
+                    sp["id"] = f"p{pno}_o{j}"
+                    spans.append(sp)
+            else:
+                d = page.get_text(
+                    "dict",
+                    flags=fitz.TEXTFLAGS_DICT | fitz.TEXT_PRESERVE_WHITESPACE,
+                )
+                for bi, block in enumerate(d.get("blocks", [])):
+                    if block.get("type", 0) != 0:        # 0 = text block
+                        continue
+                    for li, line in enumerate(block.get("lines", [])):
+                        for si, span in enumerate(line.get("spans", [])):
+                            text = span.get("text", "")
+                            if not text.strip():
+                                continue
+                            x0, y0, x1, y1 = span["bbox"]
+                            ox, oy = span.get("origin", (x0, y1))
+                            spans.append({
+                                "id":   f"p{pno}_b{bi}_l{li}_s{si}",
+                                "text": text,
+                                "x0": round(x0, 2), "y0": round(y0, 2),
+                                "x1": round(x1, 2), "y1": round(y1, 2),
+                                "ox": round(ox, 2), "oy": round(oy, 2),
+                                "font": span.get("font", ""),
+                                "size": round(span.get("size", 0), 2),
+                                "color": _pack_color_to_rgb(span.get("color", 0)),
+                                "flags": int(span.get("flags", 0)),
+                            })
+            total_spans += len(spans)
+            pages.append({
+                "page": pno,
+                "pdf_width":     round(rect.width, 2),
+                "pdf_height":    round(rect.height, 2),
+                "render_width":  pix.width,
+                "render_height": pix.height,
+                "image_b64":     img_b64,
+                "spans":         spans,
+            })
+        return {
+            "scanned":     scanned,
+            "ocr_applied": use_ocr,
+            "page_count":  n,
+            "total_spans": total_spans,
+            "pages":       pages,
+        }
+    finally:
+        doc.close()
+
+
+def _insert_fitted_text(page, ch: dict) -> None:
+    """Insert one replacement span, shrinking font to fit the original width."""
+    new_text = str(ch.get("new_text", ""))
+    if new_text == "":
+        return  # pure deletion — the redaction already cleared the original
+    x0 = float(ch["x0"]); y0 = float(ch["y0"])
+    x1 = float(ch["x1"]); y1 = float(ch["y1"])
+    fontname = _base14_for(str(ch.get("font", "")), int(ch.get("flags", 0) or 0))
+    color = _pack_color_to_rgb(ch.get("color", [0, 0, 0]))
+    color_f = tuple(v / 255.0 for v in color)
+    size = float(ch.get("size", 0) or 0) or max(6.0, (y1 - y0) * 0.8)
+
+    avail_w = max(1.0, x1 - x0)
+    try:
+        tw = _fitz_font(fontname).text_length(new_text, fontsize=size)
+    except Exception:
+        tw = 0
+    fs = size
+    if tw > avail_w and tw > 0:
+        fs = max(4.0, size * (avail_w / tw) * 0.985)   # shrink to fit width
+
+    ox = float(ch.get("ox", x0))
+    oy = float(ch.get("oy", y1 - size * 0.18))
+    try:
+        page.insert_text((ox, oy), new_text, fontname=fontname,
+                         fontsize=fs, color=color_f, overlay=True)
+    except Exception as ex:
+        log.warning(f"canvas insert_text failed for span {ch.get('id')}: {ex}")
+
+
+def _save_canvas_sync(pdf_path: str, changes: list, scanned: bool = False) -> bytes:
+    """Surgically replace only the edited spans; everything else is untouched."""
+    _require(FITZ_OK, "save-canvas", "PyMuPDF")
+    if not isinstance(changes, list):
+        raise ValidationError("changes must be a list")
+
+    by_page: dict = {}
+    for ch in changes:
+        try:
+            pno = int(ch["page"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        by_page.setdefault(pno, []).append(ch)
+
+    if not by_page:
+        raise ValidationError("No valid changes to apply")
+
+    # Scanned pages: blank the covered raster pixels. Text pages: leave images
+    # (logos/photos) alone — only text/vector under the rect is removed.
+    img_mode = fitz.PDF_REDACT_IMAGE_PIXELS if scanned else fitz.PDF_REDACT_IMAGE_NONE
+
+    doc = fitz.open(pdf_path)
+    try:
+        npages = len(doc)
+        edited = 0
+        for pno, chs in by_page.items():
+            if pno < 0 or pno >= npages:
+                continue
+            page = doc[pno]
+            # Step A — white out every original on this page, then apply once
+            applied_any = False
+            for ch in chs:
+                try:
+                    x0 = float(ch["x0"]); y0 = float(ch["y0"])
+                    x1 = float(ch["x1"]); y1 = float(ch["y1"])
+                except (KeyError, TypeError, ValueError):
+                    continue
+                page.add_redact_annot(fitz.Rect(x0 - 1, y0 - 1, x1 + 1, y1 + 1),
+                                      fill=(1, 1, 1))
+                applied_any = True
+            if applied_any:
+                page.apply_redactions(images=img_mode)
+            # Step B — re-insert the new text
+            for ch in chs:
+                _insert_fitted_text(page, ch)
+                edited += 1
+        if edited == 0:
+            raise ValidationError("No valid changes to apply")
+        buf = io.BytesIO()
+        doc.save(buf, deflate=True, garbage=4, clean=True)
+        return buf.getvalue()
+    finally:
+        doc.close()
