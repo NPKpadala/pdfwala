@@ -944,10 +944,17 @@ def pdf_info(ctx: JobContext) -> dict:
             is_lin = "/Linearized" in (xobj or "")
         except Exception:
             pass
+        # PyMuPDF 1.24 removed Document.pdf_version(). The version is exposed
+        # in metadata['format'] as e.g. "PDF 1.7".
+        pdf_version = ""
+        fmt = (meta or {}).get("format", "")
+        if isinstance(fmt, str) and fmt.upper().startswith("PDF"):
+            pdf_version = fmt.split(" ", 1)[-1] if " " in fmt else fmt
+
         return {
             "metadata": {
                 "page_count":       len(doc),
-                "pdf_version":      str(doc.pdf_version()),
+                "pdf_version":      pdf_version,
                 "title":            meta.get("title", ""),
                 "author":           meta.get("author", ""),
                 "encrypted":        doc.is_encrypted,

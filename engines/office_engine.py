@@ -270,13 +270,17 @@ def _libre(
         lo_env["DISPLAY"]            = ""        # explicitly unset display
         lo_env["HOME"]               = profile_dir  # isolated home per call
 
+        # LibreOffice 24+ replaced `--user-installation=PATH` with the bootstrap
+        # variable `-env:UserInstallation=file://PATH`. The old form errors out
+        # with "Error in option" and rc=1 on 24+, breaking every conversion.
         result = subprocess.run(
             [
                 Config.LIBREOFFICE,
                 "--headless",
-                "--norestore",                      # never show crash-recovery UI
-                "--nofirststartwizard",             # FIX V14: skip first-run wizard
-                f"--user-installation={profile_dir}",
+                "--norestore",
+                "--nologo",
+                "--nofirststartwizard",
+                f"-env:UserInstallation=file://{profile_dir}",
                 "--convert-to", fmt,
                 "--outdir", safe_out_dir,
                 input_path,
@@ -331,7 +335,7 @@ def word_to_pdf(ctx: JobContext) -> dict:
                 "LibreOffice Word→PDF conversion failed — check file integrity"
             )
         _validate_output(converted, "word_to_pdf", min_bytes=500)
-        os.replace(converted, ctx.output_path)
+        shutil.move(converted, ctx.output_path)
         ctx.set_progress(100)
     finally:
         shutil.rmtree(out_dir, ignore_errors=True)
@@ -361,7 +365,7 @@ def word_to_txt(ctx: JobContext) -> dict:
         if not result:
             raise ProcessingError("LibreOffice Word→TXT failed")
         _validate_output(result, "word_to_txt", min_bytes=1)
-        os.replace(result, ctx.output_path)
+        shutil.move(result, ctx.output_path)
     finally:
         shutil.rmtree(out_dir, ignore_errors=True)
 
@@ -379,7 +383,7 @@ def word_to_html(ctx: JobContext) -> dict:
         if not result:
             raise ProcessingError("LibreOffice Word→HTML failed")
         _validate_output(result, "word_to_html", min_bytes=50)
-        os.replace(result, ctx.output_path)
+        shutil.move(result, ctx.output_path)
     finally:
         shutil.rmtree(out_dir, ignore_errors=True)
     return {"size_bytes": os.path.getsize(ctx.output_path)}
@@ -821,7 +825,7 @@ def excel_to_pdf(ctx: JobContext) -> dict:
         if not result:
             raise ProcessingError("LibreOffice Excel→PDF conversion failed")
         _validate_output(result, "excel_to_pdf", min_bytes=500)
-        os.replace(result, ctx.output_path)
+        shutil.move(result, ctx.output_path)
         ctx.set_progress(100)
     finally:
         shutil.rmtree(out_dir, ignore_errors=True)
@@ -1271,7 +1275,7 @@ def repair_excel(ctx: JobContext) -> dict:
                 wb3 = load_workbook(result, data_only=True)
                 sheets = wb3.sheetnames
                 wb3.close()
-                os.replace(result, ctx.output_path)
+                shutil.move(result, ctx.output_path)
                 log.info(f"[{ctx.job_id}] repair_excel: libreoffice, {len(sheets)} sheets")
                 return {"method": "libreoffice", "sheets": len(sheets)}
             except Exception as ve:
@@ -1303,7 +1307,7 @@ def ppt_to_pdf(ctx: JobContext) -> dict:
                 "check that the file is a valid presentation"
             )
         _validate_output(result, "ppt_to_pdf", min_bytes=500)
-        os.replace(result, ctx.output_path)
+        shutil.move(result, ctx.output_path)
         ctx.set_progress(100)
     finally:
         shutil.rmtree(out_dir, ignore_errors=True)
@@ -1530,7 +1534,7 @@ def excel_to_html(ctx: JobContext) -> dict:
         if not result:
             raise ProcessingError("LibreOffice Excel→HTML conversion failed")
         _validate_output(result, "excel_to_html", min_bytes=50)
-        os.replace(result, ctx.output_path)
+        shutil.move(result, ctx.output_path)
     finally:
         shutil.rmtree(out_dir, ignore_errors=True)
     return {"size_bytes": os.path.getsize(ctx.output_path)}
@@ -1577,7 +1581,7 @@ def html_to_pdf(ctx: JobContext) -> dict:
         if not result:
             raise ProcessingError("LibreOffice HTML→PDF conversion failed")
         _validate_output(result, "html_to_pdf", min_bytes=500)
-        os.replace(result, ctx.output_path)
+        shutil.move(result, ctx.output_path)
     finally:
         shutil.rmtree(out_dir, ignore_errors=True)
     return {"size_bytes": os.path.getsize(ctx.output_path)}

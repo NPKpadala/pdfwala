@@ -13,6 +13,7 @@ Operations:
 import io
 import logging
 import os
+import shutil
 
 from config import Config
 from core.context import JobContext
@@ -835,7 +836,7 @@ def images_to_pdf(ctx: JobContext) -> dict:
 
     # Merge batch PDFs into final output
     if len(batch_pdfs) == 1:
-        os.replace(batch_pdfs[0], ctx.output_path)
+        shutil.move(batch_pdfs[0], ctx.output_path)
     else:
         if FITZ_OK:
             merged = fitz.open()
