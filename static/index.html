@@ -1570,7 +1570,19 @@ function downloadToolResult(){
     const parsed=new URL(lastUrl,window.location.origin);
     if(parsed.origin!==window.location.origin&&!lastUrl.startsWith('/')){toast('Invalid download URL','error');return;}
   }catch(e){toast('Invalid download URL','error');return;}
-  const a=document.createElement('a');a.href=lastUrl;const originalName = selFiles[0]?.name?.replace(/\.[^.]+$/, '') || 'pdfwala_output';const ext = lastFn?.split('.').pop() || 'pdf';a.download = originalName + '_' + curTool + '.' + ext;
+  // Build a friendly download name: <original-base>.<server-extension>
+  // (e.g. "Resume.pdf" + pdf_to_word_xxx.docx → "Resume.docx").
+  // For Edit PDF, prefer the user's typed filename. Falls back to the
+  // server-supplied filename if we don't know the original.
+  const a=document.createElement('a');a.href=lastUrl;
+  const serverExt=(lastFn||'').split('.').pop()||'pdf';
+  let base='';
+  if(curTool==='edit-pdf'){
+    const typed=(document.getElementById('etxFilename')||{}).value||'';
+    base=typed.replace(/\.[^.]+$/,'').trim();
+  }
+  if(!base){base=(selFiles[0]?.name||'').replace(/\.[^.]+$/,'');}
+  a.download = base ? (base+'.'+serverExt) : (lastFn||'pdfwala_output.'+serverExt);
   document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
@@ -1614,8 +1626,12 @@ function tpRadio(el,fid,val){
         feeds the response into the standard showResult() download flow.
    No PDF.js — we removed the annotation-only previewer.
 */
-const QUILL_CSS='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css';
-const QUILL_JS ='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js';
+// Quill is bundled locally so it always loads — no CDN dependency, no CSP fight.
+const QUILL_CSS='/pdfwala/vendor/quill/quill.snow.min.css';
+const QUILL_JS ='/pdfwala/vendor/quill/quill.min.js';
+// Edit PDF only accepts files up to this size. Keeps PDF→DOCX→PDF fast and
+// keeps memory bounded on the worker. Enforced again on the server.
+const EDIT_PDF_MAX_BYTES = 5 * 1024 * 1024;   // 5 MB
 
 let __etxQuillReady=null;
 function etxLoadQuill(){
@@ -1675,30 +1691,53 @@ function etxInit(){
 
 async function etxOnUpload(file){
   if(!file)return;
+  // Hard 5 MB client-side cap. The PDF→DOCX step memory-multiplies; larger
+  // files take 30s+ and we want the editor to feel instant.
+  if(file.size>EDIT_PDF_MAX_BYTES){
+    const sizeMb=(file.size/(1024*1024)).toFixed(1);
+    const msg=`File is ${sizeMb} MB — Edit PDF supports files up to 5 MB. Use Compress PDF first, or Split PDF into smaller pieces.`;
+    etxStatus(msg,false);toast(msg,'error');
+    // Clear the file from selFiles so user can re-try with a smaller one
+    selFiles=[];renderFileList();
+    const btn=document.getElementById('tpBtnProcess');if(btn){btn.disabled=true;btn.title='Upload a PDF first.';}
+    return;
+  }
   if(window.__etxState.loadingFor===file.name&&window.__etxState.loaded)return;
   window.__etxState.loadingFor=file.name;
   window.__etxState.loaded=false;
+  window.__etxState.originalName=file.name; // remember for download naming
   const wrap=document.getElementById('etxEditorWrap');if(wrap)wrap.style.display='none';
-  etxStatus('Converting PDF to editable text… (this can take a few seconds for long docs)',true);
+  etxStatus('Converting PDF to editable text… (a few seconds, please wait)',true);
   const btn=document.getElementById('tpBtnProcess');
   if(btn){btn.disabled=true;btn.title='Loading editor…';}
+  // Auto-fill the output filename from the upload, sans extension
+  const fnInput=document.getElementById('etxFilename');
+  if(fnInput){
+    const base=(file.name||'edited').replace(/\.[^.]+$/,'').replace(/[^a-z0-9_\- ]/gi,'').slice(0,60)||'edited';
+    fnInput.value=base;
+  }
   try{
     await etxLoadQuill();
+  }catch(ex){
+    const msg='Editor failed to load. Reload the page and try again.';
+    etxStatus(msg,false);toast(msg,'error');
+    return;
+  }
+  try{
     const fd=new FormData();
     fd.append('file',file);
     const r=await fetch(API+'/api/pdf/edit-text/load',{method:'POST',body:fd,credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}});
     if(window.__etxState.loadingFor!==file.name)return;
     let d=null;try{d=await r.json();}catch(e){}
     if(!r.ok||!d||!d.success){
-      const msg=(d&&d.error)||(r.status===429?'Too many requests — please wait a moment.':'Could not convert this PDF for editing.');
-      etxStatus(msg,false);
-      toast(msg,'error');
+      const msg=(d&&d.error)||(r.status===429?'Too many requests — please wait a moment.':'Could not convert this PDF for editing. The file may be image-only or password-protected.');
+      etxStatus(msg,false);toast(msg,'error');
       return;
     }
     etxMountQuill(d.html||'<p></p>');
     window.__etxState.loaded=true;
     if(wrap)wrap.style.display='block';
-    etxStatus(`Loaded ${d.page_count||0} page${d.page_count===1?'':'s'} (${d.char_count||0} characters). Edit below, then click "Save as PDF".`,false);
+    etxStatus(`Loaded ${d.page_count||0} page${d.page_count===1?'':'s'} (${d.char_count||0} characters). Edit below, then click "Process file" to save as PDF.`,false);
     if(btn){btn.disabled=false;btn.title='';}
   }catch(ex){
     console.error(ex);

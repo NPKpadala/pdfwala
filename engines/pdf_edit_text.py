@@ -75,8 +75,9 @@ except Exception:
 
 
 # ── Limits ──────────────────────────────────────────────────────────────────
-_MAX_HTML_BYTES        = 5 * 1024 * 1024   # 5 MB of edited HTML — generous
-_MAX_LOAD_PAGE_COUNT   = 200               # refuse to load huge books for edit
+_MAX_LOAD_PDF_BYTES    = 5 * 1024 * 1024   # 5 MB hard cap on input PDF for /load
+_MAX_HTML_BYTES        = 5 * 1024 * 1024   # 5 MB of edited HTML on /save
+_MAX_LOAD_PAGE_COUNT   = 50                # refuse to load huge books for edit
 _DEFAULT_PAGE_SIZE     = "a4"              # 'a4' | 'letter'
 
 # Allowed HTML tags/attrs for the editor payload (input from user).
@@ -218,6 +219,15 @@ def pdf_to_editor_html(ctx: JobContext):
 
     if not ctx.input_path or not os.path.exists(ctx.input_path):
         raise ValidationError("Upload failed — no input file received.")
+
+    # 5 MB cap — keep PDF→DOCX→HTML responsive and the editor instant.
+    in_size = os.path.getsize(ctx.input_path)
+    if in_size > _MAX_LOAD_PDF_BYTES:
+        raise ValidationError(
+            f"File is {in_size / (1024*1024):.1f} MB. Edit PDF supports files "
+            f"up to {_MAX_LOAD_PDF_BYTES // (1024*1024)} MB — try Compress PDF "
+            f"first, or use Split PDF to edit one section at a time."
+        )
 
     # Quick page-count guard via PyMuPDF (already imported elsewhere in app)
     page_count = 0
