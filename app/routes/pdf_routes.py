@@ -98,6 +98,52 @@ def edit_pdf():
     return _handle("edit_pdf",   "pdf", "PDF edited successfully")
 
 
+# ── Edit PDF (text-editor flow) ───────────────────────────────────────────────
+# Two endpoints that round-trip a PDF through DOCX so the user can edit the
+# actual text in a rich-text editor in the browser, then save back to PDF.
+#
+#   /edit-text/load : POST PDF  →  returns sanitised HTML for the editor
+#   /edit-text/save : POST HTML →  returns a fresh PDF (download_url + filename)
+#
+# These bypass the JobController async machinery — both calls are interactive
+# (the user is waiting in the browser) so they run inline and return 200.
+
+@pdf_bp.route("/edit-text/load", methods=["POST"])
+def edit_text_load():
+    rl = JobController.check_rate_limit(request)
+    if rl:
+        return rl
+    ctx = JobController.build_ctx(request, "edit_text_load")
+    try:
+        file_service.save_single(request, ctx, "file")
+    except ValidationError as ex:
+        return Result.error(ex.message, 400)
+    try:
+        from engines.pdf_edit_text import pdf_to_editor_html
+        result = pdf_to_editor_html(ctx)
+    except ValidationError as ex:
+        return Result.error(ex.message, 400)
+    except Exception as ex:
+        return Result.error(f"Could not prepare editor: {ex}", 500, ctx.job_id)
+    return result
+
+
+@pdf_bp.route("/edit-text/save", methods=["POST"])
+def edit_text_save():
+    rl = JobController.check_rate_limit(request)
+    if rl:
+        return rl
+    ctx = JobController.build_ctx(request, "edit_text_save")
+    try:
+        from engines.pdf_edit_text import editor_html_to_pdf
+        result = editor_html_to_pdf(ctx, request)
+    except ValidationError as ex:
+        return Result.error(ex.message, 400)
+    except Exception as ex:
+        return Result.error(f"Save failed: {ex}", 500, ctx.job_id)
+    return result
+
+
 # ── Security ───────────────────────────────────────────────────────────────────
 
 @pdf_bp.route("/protect",        methods=["POST"])

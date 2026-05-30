@@ -6,7 +6,7 @@
 <meta name="robots" content="index, follow"/>
 <meta name="description" content="PDFWala — Every document tool you'll ever need. Merge, compress, convert, and secure any file. Fast, free, and private."/>
 <meta name="theme-color" content="#0A0E1A"/>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: blob:; connect-src 'self' https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self';">
 <link rel="manifest" href="/pdfwala/manifest.json">
 
 <!-- FAVICON: Custom Raven Logo -->
@@ -323,37 +323,26 @@ input,select,textarea{font-family:inherit}
 @media(max-width:480px){.tp-form-row{grid-template-columns:1fr}}
 .tp-form-hint{font-size:10.5px;color:var(--text-3);margin-top:3px}
 
-/* ── PDF EDITOR ──────────────────────────────────────────────────── */
-.ed-toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:var(--bg-3);border-radius:var(--r-sm);margin-bottom:10px}
-.ed-tool{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;font-size:12.5px;font-weight:600;color:var(--text-2);background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-sm);transition:background var(--t),border-color var(--t),color var(--t);cursor:pointer}
-.ed-tool:hover{border-color:var(--border-hover);color:var(--text)}
-.ed-tool.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.ed-tool.danger{margin-left:auto;color:var(--rose-500)}
-.ed-tool.danger:hover{background:var(--rose-500);color:#fff;border-color:var(--rose-500)}
-.ed-tool svg{flex-shrink:0}
-.ed-props{margin-bottom:10px}
-.ed-props .ed-color{padding:2px;height:38px;cursor:pointer}
-.ed-pages{display:flex;flex-direction:column;gap:14px;max-height:65vh;overflow-y:auto;padding:8px;background:var(--bg-3);border-radius:var(--r-sm);scrollbar-width:thin}
-.ed-page-wrap{position:relative;align-self:center;box-shadow:0 4px 16px rgba(0,0,0,0.35);border-radius:4px;overflow:hidden;background:#fff}
-.ed-page-wrap canvas{display:block;max-width:100%;height:auto;cursor:crosshair}
-.ed-overlay{position:absolute;inset:0;pointer-events:none}
-.ed-overlay > *{pointer-events:auto}
-.ed-el{position:absolute;cursor:move;border:1.5px dashed transparent;border-radius:3px;padding:0;box-sizing:border-box;user-select:none;font-family:system-ui,sans-serif;line-height:1.1}
-.ed-el.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,130,246,0.25)}
-.ed-el .ed-handle{position:absolute;width:10px;height:10px;background:var(--accent);border:2px solid #fff;border-radius:50%;right:-5px;bottom:-5px;cursor:se-resize}
-.ed-el.kind-text{padding:2px 4px;white-space:nowrap;color:#1d4ed8;font-weight:600}
-.ed-el.kind-highlight{background:rgba(255,235,59,0.4);pointer-events:auto}
-.ed-el.kind-note{width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:#f59e0b;color:#fff;border-radius:50%;font-weight:700;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,0.3)}
-.ed-el.kind-note .ed-handle{display:none}
-.ed-el.kind-image{background-size:contain;background-repeat:no-repeat;background-position:center}
-.ed-page-label{font-size:11px;color:var(--text-3);text-align:center;margin-top:2px}
-@media(max-width:700px){
-  .ed-toolbar{justify-content:flex-start}
-  .ed-tool span{display:none}
-  .ed-tool{padding:8px 10px}
-  .ed-tool.danger{margin-left:auto}
-  .ed-pages{max-height:55vh}
-}
+/* ── PDF TEXT EDITOR (Quill-based) ──────────────────────────────── */
+.etx-wrap{margin-top:10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg-2);overflow:hidden}
+.etx-toolbar{background:var(--bg-3);border-bottom:1px solid var(--border)}
+.etx-toolbar .ql-toolbar.ql-snow{border:none;padding:8px 10px}
+.etx-editor{min-height:55vh;max-height:70vh;overflow-y:auto;background:#fff;color:#111;padding:0;font-family:'Liberation Serif','DejaVu Serif',serif;font-size:14px;line-height:1.55}
+.etx-editor .ql-editor{padding:20px 26px;min-height:55vh;font-family:'Liberation Serif','DejaVu Serif',serif;color:#111}
+.etx-editor .ql-editor h1{font-family:'Liberation Sans','DejaVu Sans',sans-serif;font-size:24px;margin:0 0 10px}
+.etx-editor .ql-editor h2{font-family:'Liberation Sans','DejaVu Sans',sans-serif;font-size:19px;margin:14px 0 8px}
+.etx-editor .ql-editor h3{font-family:'Liberation Sans','DejaVu Sans',sans-serif;font-size:16px;margin:12px 0 6px}
+.etx-editor .ql-editor p{margin:0 0 10px}
+.etx-editor .ql-editor table{border-collapse:collapse;margin:8px 0}
+.etx-editor .ql-editor td,.etx-editor .ql-editor th{border:1px solid #888;padding:4px 6px}
+.etx-editor .ql-editor img{max-width:100%;height:auto}
+.etx-editor .ql-editor blockquote{border-left:3px solid #ccc;padding-left:14px;color:#444;margin:8px 0}
+.etx-editor .ql-editor pre{background:#f3f4f6;color:#111;padding:8px 10px;border-radius:6px;font-family:'DejaVu Sans Mono',monospace;font-size:12px}
+.etx-editor .ql-editor ul,.etx-editor .ql-editor ol{padding-left:24px}
+.etx-status-loading{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-3);border:1px dashed var(--border);border-radius:var(--r-sm);font-size:12.5px;color:var(--text-2);margin-top:6px}
+.etx-spinner{width:14px;height:14px;border:2px solid var(--ink-500);border-top-color:var(--accent);border-radius:50%;animation:etx-spin .8s linear infinite;flex-shrink:0}
+@keyframes etx-spin{to{transform:rotate(360deg)}}
+@media(max-width:700px){.etx-editor{min-height:48vh;max-height:62vh}.etx-editor .ql-editor{padding:16px 18px}}
 .tp-radio-group{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
 .tp-radio-chip{padding:5px 11px;border:1.5px solid var(--border);border-radius:50px;font-size:12px;font-weight:500;color:var(--text-2);background:var(--bg);transition:all var(--t);cursor:pointer;user-select:none}
 .tp-radio-chip:hover{border-color:var(--accent);color:var(--accent)}
@@ -1042,33 +1031,29 @@ const TOOLS_PDF_CORE={
   'redact-pdf':{title:'Redact PDF',icon:'redact',desc:'Permanently remove sensitive information.',multi:false,accept:'.pdf',
     endpoint:'/api/pdf/redact',field:'file',
     form:()=>`<div class="tp-form-group"><label class="tp-form-label">Text to Redact</label><input class="tp-form-input" type="text" id="search_text" placeholder="e.g., Social Security Number"/></div>`},
-  'edit-pdf':{title:'Edit PDF',icon:'edit',desc:'Add text, highlights, sticky notes, and images directly onto any PDF page.',multi:false,accept:'.pdf',
-    endpoint:'/api/pdf/edit',field:'file',
-    form:()=>{queueMicrotask(edInit);return `
-      <div class="ed-toolbar" id="edToolbar" role="toolbar" aria-label="PDF editor tools">
-        <button type="button" class="ed-tool active" data-tool="text" onclick="edSetTool('text')" title="Add text">${svgIcon('edit',14)}<span>Text</span></button>
-        <button type="button" class="ed-tool" data-tool="highlight" onclick="edSetTool('highlight')" title="Highlight">${svgIcon('watermark',14)}<span>Highlight</span></button>
-        <button type="button" class="ed-tool" data-tool="note" onclick="edSetTool('note')" title="Add sticky note">${svgIcon('info',14)}<span>Note</span></button>
-        <button type="button" class="ed-tool" data-tool="image" onclick="edSetTool('image')" title="Add image">${svgIcon('image',14)}<span>Image</span></button>
-        <label class="ed-tool ed-upload" title="Choose image to insert" style="cursor:pointer">${svgIcon('upload',14)}<span>Image file</span>
-          <input id="edImgPicker" type="file" accept=".png,.jpg,.jpeg" style="display:none" onchange="edPickImage(event)"/>
-        </label>
-        <button type="button" class="ed-tool danger" onclick="edClearAll()" title="Remove all edits">${svgIcon('x',14)}<span>Clear</span></button>
-      </div>
-      <div class="ed-props" id="edProps">
-        <div class="tp-form-row">
-          <div class="tp-form-group"><label class="tp-form-label">Text</label><input class="tp-form-input" type="text" id="edText" value="Approved" oninput="edPropChange()"/></div>
-          <div class="tp-form-group"><label class="tp-form-label">Font Size</label><input class="tp-form-input" type="number" id="edFontSize" value="16" min="6" max="200" oninput="edPropChange()"/></div>
+  'edit-pdf':{title:'Edit PDF',icon:'edit',desc:'Edit the actual text inside your PDF — change words, fix typos, add paragraphs, then save back as PDF.',multi:false,accept:'.pdf',
+    endpoint:'/api/pdf/edit-text/save',field:'file',
+    form:()=>{queueMicrotask(etxInit);return `
+      <div id="etxLoadStatus" class="tp-form-hint">Upload a PDF above — it will be converted to an editable document.</div>
+      <div class="tp-form-row" style="margin-top:6px">
+        <div class="tp-form-group">
+          <label class="tp-form-label">Page size</label>
+          <select class="tp-form-select" id="etxPageSize">
+            <option value="a4" selected>A4</option>
+            <option value="letter">Letter</option>
+          </select>
         </div>
-        <div class="tp-form-row">
-          <div class="tp-form-group"><label class="tp-form-label">Color</label><input class="tp-form-input ed-color" type="color" id="edColor" value="#1d4ed8" oninput="edPropChange()"/></div>
-          <div class="tp-form-group"><label class="tp-form-label">Highlight opacity</label><input class="tp-form-input" type="range" id="edOpacity" min="10" max="100" value="40" oninput="edPropChange()"/></div>
+        <div class="tp-form-group">
+          <label class="tp-form-label">File name</label>
+          <input class="tp-form-input" type="text" id="etxFilename" value="edited" maxlength="60"/>
         </div>
-        <div class="tp-form-hint">Click anywhere on a page to place the selected element. Click a placed element to edit it; drag to move; press Delete to remove.</div>
       </div>
-      <div id="edStatus" class="tp-form-hint" style="margin-top:8px"></div>
-      <div id="edPages" class="ed-pages" role="region" aria-label="PDF preview"></div>
-      <textarea id="edits" name="edits" style="display:none" aria-hidden="true"></textarea>
+      <div id="etxEditorWrap" class="etx-wrap" style="display:none">
+        <div id="etxToolbar" class="etx-toolbar"></div>
+        <div id="etxEditor" class="etx-editor"></div>
+        <div class="tp-form-hint" style="margin-top:6px">Edit freely. Layout-heavy PDFs (multi-column, complex tables) may simplify on save — the editor preserves text, headings, lists, bold/italic, and tables.</div>
+      </div>
+      <textarea id="html" name="html" style="display:none" aria-hidden="true"></textarea>
     `}},
   'compare-pdf':{title:'Compare PDF',icon:'compare',desc:'Find differences between two PDFs.',multi:true,accept:'.pdf',
     endpoint:'/api/pdf/compare',field:'files',
@@ -1429,6 +1414,8 @@ const PROCESS_MSGS=[
 async function processToolFile(){
   if(!curTool||!selFiles.length)return;
   if(processingActive){toast('Already processing, please wait…','error');return;}
+  // Edit PDF uses a custom save flow (HTML → PDF, no file re-upload)
+  if(curTool==='edit-pdf'){return etxSave();}
   processingActive=true;
   const t=TOOLS[curTool];
   const protectTools=['protect','protect-word','protect-excel'];
@@ -1613,350 +1600,196 @@ function tpRadio(el,fid,val){
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   PDF EDITOR  (used by the 'edit-pdf' tool)
+   PDF TEXT EDITOR (used by the 'edit-pdf' tool)
    ─────────────────────────────────────────────────────────────────────────────
-   State lives in window.__edState. Each element is:
-     { id, kind:'text|highlight|note|image', page, x, y, w, h,
-       text?, fontSize?, color?, opacity?, imgB64? }
-   Coordinates are in CSS pixels relative to the rendered canvas at scale 1.5.
-   Conversion to PDF points uses the canvas viewport.scale captured per page.
+   Flow:
+     1. User picks a PDF in the standard upload area. handleFiles() fires.
+     2. We hook handleFiles via etxOnUpload(file): POST → /api/pdf/edit-text/load
+        which returns sanitised HTML extracted from the PDF (PDF → docx via
+        pdf2docx → html via mammoth on the backend).
+     3. The HTML loads into a Quill rich-text editor. User edits freely.
+     4. When the user clicks "Process file", processToolFile detects
+        curTool === 'edit-pdf' and routes through etxSave() instead — that
+        function reads Quill's HTML, POSTs to /api/pdf/edit-text/save, and
+        feeds the response into the standard showResult() download flow.
+   No PDF.js — we removed the annotation-only previewer.
 */
-const PDFJS_CDN='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-const PDFJS_WORKER='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-let __edPdfjsReady=null;
-function edLoadPdfjs(){
-  if(__edPdfjsReady)return __edPdfjsReady;
-  __edPdfjsReady=new Promise((resolve,reject)=>{
-    if(window.pdfjsLib){resolve(window.pdfjsLib);return;}
-    const s=document.createElement('script');s.src=PDFJS_CDN;s.async=true;
-    s.onload=()=>{try{window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;resolve(window.pdfjsLib);}catch(e){reject(e);}};
-    s.onerror=()=>reject(new Error('Failed to load PDF.js'));
+const QUILL_CSS='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css';
+const QUILL_JS ='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js';
+
+let __etxQuillReady=null;
+function etxLoadQuill(){
+  if(__etxQuillReady)return __etxQuillReady;
+  __etxQuillReady=new Promise((resolve,reject)=>{
+    if(window.Quill){resolve(window.Quill);return;}
+    if(!document.querySelector('link[data-quill]')){
+      const link=document.createElement('link');
+      link.rel='stylesheet';link.href=QUILL_CSS;link.dataset.quill='1';
+      document.head.appendChild(link);
+    }
+    const s=document.createElement('script');
+    s.src=QUILL_JS;s.async=true;
+    s.onload=()=>resolve(window.Quill);
+    s.onerror=()=>reject(new Error('Failed to load Quill editor'));
     document.head.appendChild(s);
   });
-  return __edPdfjsReady;
+  return __etxQuillReady;
 }
-window.__edState={tool:'text',elements:[],pages:[],selected:null,nextId:1,renderScale:1.5,pickedImgB64:null};
-function edStatus(msg){const el=document.getElementById('edStatus');if(el)el.textContent=msg||'';}
-function edInit(){
-  // Called after the tool form() is inserted. Reset state, attach hooks.
-  window.__edState={tool:'text',elements:[],pages:[],selected:null,nextId:1,renderScale:1.5,pickedImgB64:null};
-  edSyncJson();
-  // Wire the standard file input to also render the PDF
-  const fi=document.getElementById('toolFileInput');
-  if(fi&&!fi.__edHooked){
-    fi.__edHooked=true;
-    fi.addEventListener('change',()=>{if(curTool==='edit-pdf'&&fi.files[0])edLoadPdf(fi.files[0]);});
+
+window.__etxState={quill:null,loaded:false,loadingFor:null};
+
+function etxStatus(msg,spinning){
+  const el=document.getElementById('etxLoadStatus');if(!el)return;
+  if(!msg){el.textContent='';el.className='tp-form-hint';return;}
+  if(spinning){
+    el.className='etx-status-loading';
+    el.innerHTML='<span class="etx-spinner" aria-hidden="true"></span><span></span>';
+    el.querySelector('span:last-child').textContent=msg;
+  }else{
+    el.className='tp-form-hint';
+    el.textContent=msg;
   }
-  // Also hook the dropzone for drag-drop into the canvas region
+}
+
+function etxInit(){
+  window.__etxState={quill:null,loaded:false,loadingFor:null};
+  etxStatus('Choose a PDF above — it will be converted to an editable document.',false);
+  const wrap=document.getElementById('etxEditorWrap');if(wrap)wrap.style.display='none';
+  const btn=document.getElementById('tpBtnProcess');
+  if(btn){btn.disabled=true;btn.title='Upload a PDF first.';}
+  const fi=document.getElementById('toolFileInput');
+  if(fi&&!fi.__etxHooked){
+    fi.__etxHooked=true;
+    fi.addEventListener('change',()=>{if(curTool==='edit-pdf'&&fi.files[0])etxOnUpload(fi.files[0]);});
+  }
   const dz=document.getElementById('tpDropzone');
-  if(dz&&!dz.__edHooked){
-    dz.__edHooked=true;
+  if(dz&&!dz.__etxHooked){
+    dz.__etxHooked=true;
     dz.addEventListener('drop',e=>{
       if(curTool!=='edit-pdf')return;
       const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
-      if(f&&f.type==='application/pdf')edLoadPdf(f);
+      if(f&&/\.pdf$/i.test(f.name))etxOnUpload(f);
     });
   }
-  edStatus('Upload a PDF to start editing.');
 }
-function edSetTool(t){
-  window.__edState.tool=t;
-  document.querySelectorAll('#edToolbar .ed-tool[data-tool]').forEach(b=>{
-    b.classList.toggle('active',b.dataset.tool===t);
-  });
-  // Show/hide property fields based on tool
-  const showText=t==='text'||t==='note';
-  const showFs=t==='text';
-  const showOp=t==='highlight';
-  document.getElementById('edText').closest('.tp-form-group').style.display=showText?'':'none';
-  document.getElementById('edFontSize').closest('.tp-form-group').style.display=showFs?'':'none';
-  document.getElementById('edColor').closest('.tp-form-group').style.display=(t!=='image')?'':'none';
-  document.getElementById('edOpacity').closest('.tp-form-group').style.display=showOp?'':'none';
-  if(t==='image'&&!window.__edState.pickedImgB64){
-    edStatus('Tip: click "Image file" to pick a PNG/JPG first, then click on the page where you want it.');
-  }else if(t==='image'){
-    edStatus('Click on a page to drop the chosen image.');
-  }else{
-    edStatus('Click on a page to add a '+t+'.');
-  }
-}
-function edPickImage(ev){
-  const f=ev.target.files&&ev.target.files[0];if(!f)return;
-  if(f.size>10*1024*1024){toast('Image too large (max 10 MB).','error');return;}
-  const r=new FileReader();
-  r.onload=()=>{
-    const dataUrl=r.result;
-    window.__edState.pickedImgB64=String(dataUrl).split(',')[1]||'';
-    window.__edState.pickedImgDataUrl=dataUrl;
-    edSetTool('image');
-    edStatus('Image loaded. Click on a page to drop it.');
-  };
-  r.readAsDataURL(f);
-}
-function edClearAll(){
-  window.__edState.elements=[];
-  window.__edState.selected=null;
-  document.querySelectorAll('.ed-overlay').forEach(o=>o.innerHTML='');
-  edSyncJson();
-  edStatus('All edits cleared.');
-}
-async function edLoadPdf(file){
-  edStatus('Loading PDF…');
+
+async function etxOnUpload(file){
+  if(!file)return;
+  if(window.__etxState.loadingFor===file.name&&window.__etxState.loaded)return;
+  window.__etxState.loadingFor=file.name;
+  window.__etxState.loaded=false;
+  const wrap=document.getElementById('etxEditorWrap');if(wrap)wrap.style.display='none';
+  etxStatus('Converting PDF to editable text… (this can take a few seconds for long docs)',true);
+  const btn=document.getElementById('tpBtnProcess');
+  if(btn){btn.disabled=true;btn.title='Loading editor…';}
   try{
-    const pdfjsLib=await edLoadPdfjs();
-    const buf=await file.arrayBuffer();
-    const pdf=await pdfjsLib.getDocument({data:buf}).promise;
-    const host=document.getElementById('edPages');
-    if(!host){edStatus('Editor not mounted.');return;}
-    host.innerHTML='';
-    window.__edState.elements=[];window.__edState.pages=[];window.__edState.selected=null;
-    const scale=window.__edState.renderScale;
-    for(let i=1;i<=pdf.numPages;i++){
-      const page=await pdf.getPage(i);
-      const viewport=page.getViewport({scale});
-      const wrap=document.createElement('div');wrap.className='ed-page-wrap';
-      wrap.style.width=viewport.width+'px';
-      const canvas=document.createElement('canvas');
-      canvas.width=viewport.width;canvas.height=viewport.height;
-      const overlay=document.createElement('div');overlay.className='ed-overlay';
-      wrap.appendChild(canvas);wrap.appendChild(overlay);
-      const label=document.createElement('div');label.className='ed-page-label';label.textContent='Page '+i;
-      host.appendChild(wrap);host.appendChild(label);
-      await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-      // Each page records its CSS dimensions and PDF point dimensions
-      window.__edState.pages.push({
-        index:i-1,
-        canvas,overlay,wrap,
-        cssW:viewport.width,cssH:viewport.height,
-        ptW:viewport.width/scale,ptH:viewport.height/scale,
-        scale
-      });
-      canvas.addEventListener('click',ev=>edOnPageClick(ev,i-1));
-      overlay.addEventListener('click',ev=>{
-        // clicking blank overlay area also drops an element
-        if(ev.target===overlay)edOnPageClick(ev,i-1);
-      });
+    await etxLoadQuill();
+    const fd=new FormData();
+    fd.append('file',file);
+    const r=await fetch(API+'/api/pdf/edit-text/load',{method:'POST',body:fd,credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}});
+    if(window.__etxState.loadingFor!==file.name)return;
+    let d=null;try{d=await r.json();}catch(e){}
+    if(!r.ok||!d||!d.success){
+      const msg=(d&&d.error)||(r.status===429?'Too many requests — please wait a moment.':'Could not convert this PDF for editing.');
+      etxStatus(msg,false);
+      toast(msg,'error');
+      return;
     }
-    edStatus('Ready. Choose a tool and click anywhere on a page to add it.');
-    // Defer button-state correction until after handleFiles has run
-    setTimeout(edSyncJson,0);
+    etxMountQuill(d.html||'<p></p>');
+    window.__etxState.loaded=true;
+    if(wrap)wrap.style.display='block';
+    etxStatus(`Loaded ${d.page_count||0} page${d.page_count===1?'':'s'} (${d.char_count||0} characters). Edit below, then click "Save as PDF".`,false);
+    if(btn){btn.disabled=false;btn.title='';}
   }catch(ex){
     console.error(ex);
-    edStatus('Could not preview this PDF: '+(ex&&ex.message||ex)+' — you can still apply edits by typing coordinates, but a clean preview is recommended.');
+    etxStatus('Could not load editor: '+(ex&&ex.message||ex),false);
+    toast('Could not load editor','error');
   }
 }
-function edOnPageClick(ev,pageIdx){
-  const st=window.__edState;
-  const page=st.pages[pageIdx];if(!page)return;
-  const rect=page.canvas.getBoundingClientRect();
-  // Scale to canvas internal CSS coords (canvas may be visually shrunk by max-width)
-  const sx=page.canvas.width/rect.width;
-  const sy=page.canvas.height/rect.height;
-  const x=(ev.clientX-rect.left)*sx;
-  const y=(ev.clientY-rect.top )*sy;
-  const tool=st.tool;
-  const color=document.getElementById('edColor').value||'#1d4ed8';
-  const fs=parseFloat(document.getElementById('edFontSize').value||'16');
-  const op=parseFloat(document.getElementById('edOpacity').value||'40')/100;
-  const txt=(document.getElementById('edText').value||'').trim();
-  let el={id:st.nextId++,kind:tool,page:pageIdx,x:x,y:y};
-  if(tool==='text'){
-    if(!txt){toast('Type text in the Text field first.','error');return;}
-    el.text=txt;el.fontSize=fs;el.color=color;
-    el.w=Math.max(40,txt.length*fs*0.6);el.h=fs*1.3;
-  }else if(tool==='highlight'){
-    el.w=160;el.h=20;el.color=color;el.opacity=op;
-  }else if(tool==='note'){
-    el.text=txt||'Note';el.color=color;el.w=28;el.h=28;
-  }else if(tool==='image'){
-    if(!st.pickedImgB64){toast('Click "Image file" to pick an image first.','error');return;}
-    el.imgB64=st.pickedImgB64;el.imgDataUrl=st.pickedImgDataUrl;el.w=120;el.h=120;
-  }
-  st.elements.push(el);edRender(el);edSelect(el.id);edSyncJson();
+
+function etxMountQuill(html){
+  const host=document.getElementById('etxEditor');
+  const toolbarHost=document.getElementById('etxToolbar');
+  if(!host||!toolbarHost||!window.Quill)return;
+  host.innerHTML='';
+  toolbarHost.innerHTML=`
+    <div id="etxQuillBar">
+      <span class="ql-formats">
+        <select class="ql-header"><option value="1">H1</option><option value="2">H2</option><option value="3">H3</option><option selected></option></select>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button><button class="ql-strike"></button>
+      </span>
+      <span class="ql-formats">
+        <select class="ql-color"></select><select class="ql-background"></select>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-list" value="ordered"></button><button class="ql-list" value="bullet"></button>
+        <button class="ql-indent" value="-1"></button><button class="ql-indent" value="+1"></button>
+      </span>
+      <span class="ql-formats">
+        <select class="ql-align"></select>
+        <button class="ql-blockquote"></button><button class="ql-code-block"></button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-link"></button><button class="ql-image"></button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-clean"></button>
+      </span>
+    </div>`;
+  const q=new window.Quill(host,{
+    theme:'snow',
+    placeholder:'Edit your document…',
+    modules:{toolbar:'#etxQuillBar'},
+  });
+  q.clipboard.dangerouslyPasteHTML(0,html);
+  q.setSelection(0,0);
+  const ta=document.getElementById('html');
+  function sync(){if(ta)ta.value=q.root.innerHTML;}
+  sync();
+  q.on('text-change',sync);
+  window.__etxState.quill=q;
 }
-function edRender(el){
-  const st=window.__edState;
-  const page=st.pages[el.page];if(!page)return;
-  const div=document.createElement('div');
-  div.className='ed-el kind-'+el.kind;
-  div.dataset.id=el.id;
-  div.style.left=el.x+'px';div.style.top=el.y+'px';
-  div.style.width=el.w+'px';div.style.height=el.h+'px';
-  if(el.kind==='text'){
-    div.textContent=el.text;
-    div.style.color=el.color||'#1d4ed8';
-    div.style.fontSize=(el.fontSize||16)+'px';
-    div.style.lineHeight='1.1';
-  }else if(el.kind==='highlight'){
-    const rgba=edHexToRgba(el.color||'#ffeb3b',el.opacity||0.4);
-    div.style.background=rgba;
-  }else if(el.kind==='note'){
-    div.textContent='!';
-    div.style.background=el.color||'#f59e0b';
-    div.title=el.text||'Note';
-  }else if(el.kind==='image'){
-    div.style.backgroundImage='url('+(el.imgDataUrl||('data:image/png;base64,'+el.imgB64))+')';
+
+async function etxSave(){
+  if(!window.__etxState.loaded||!window.__etxState.quill){
+    toast('Please upload a PDF first.','error');return;
   }
-  // Handles & interactions (omit handle for notes — fixed size)
-  if(el.kind!=='note'){
-    const h=document.createElement('div');h.className='ed-handle';div.appendChild(h);
-    h.addEventListener('mousedown',e=>edStartResize(e,el.id));
-    h.addEventListener('touchstart',e=>edStartResize(e,el.id),{passive:false});
+  const editor=window.__etxState.quill;
+  const htmlOut=editor.root.innerHTML;
+  if(!htmlOut||editor.getText().trim().length===0){
+    toast('Nothing to save — the document is empty.','error');return;
   }
-  div.addEventListener('mousedown',e=>edStartDrag(e,el.id));
-  div.addEventListener('touchstart',e=>edStartDrag(e,el.id),{passive:false});
-  div.addEventListener('click',e=>{e.stopPropagation();edSelect(el.id);});
-  div.addEventListener('dblclick',e=>{e.stopPropagation();edEditElement(el.id);});
-  page.overlay.appendChild(div);
-}
-function edFindEl(id){return window.__edState.elements.find(e=>e.id===id);}
-function edFindNode(id){return document.querySelector('.ed-el[data-id="'+id+'"]');}
-function edSelect(id){
-  window.__edState.selected=id;
-  document.querySelectorAll('.ed-el').forEach(n=>n.classList.toggle('selected',n.dataset.id==String(id)));
-  // Push selected element's properties back into the toolbar inputs
-  const el=edFindEl(id);if(!el)return;
-  if(el.kind==='text'||el.kind==='note'){document.getElementById('edText').value=el.text||'';}
-  if(el.kind==='text'){document.getElementById('edFontSize').value=el.fontSize||16;}
-  if(el.color){document.getElementById('edColor').value=el.color;}
-  if(typeof el.opacity==='number'){document.getElementById('edOpacity').value=Math.round(el.opacity*100);}
-}
-function edPropChange(){
-  const id=window.__edState.selected;if(id==null)return;
-  const el=edFindEl(id);if(!el)return;
-  const txt=document.getElementById('edText').value;
-  const fs=parseFloat(document.getElementById('edFontSize').value||'16');
-  const color=document.getElementById('edColor').value;
-  const op=parseFloat(document.getElementById('edOpacity').value||'40')/100;
-  if(el.kind==='text'){el.text=txt;el.fontSize=fs;el.color=color;el.w=Math.max(40,(el.text||'').length*fs*0.6);el.h=fs*1.3;}
-  if(el.kind==='note'){el.text=txt;el.color=color;}
-  if(el.kind==='highlight'){el.color=color;el.opacity=op;}
-  const node=edFindNode(id);if(node){node.remove();edRender(el);edSelect(id);}
-  edSyncJson();
-}
-function edEditElement(id){
-  const el=edFindEl(id);if(!el)return;
-  if(el.kind==='text'||el.kind==='note'){
-    const nv=prompt(el.kind==='note'?'Note text:':'Text:',el.text||'');
-    if(nv!=null){el.text=nv;const n=edFindNode(id);if(n){n.remove();edRender(el);edSelect(id);}edSyncJson();}
-  }
-}
-function edStartDrag(ev,id){
-  ev.preventDefault();ev.stopPropagation();
-  edSelect(id);
-  const el=edFindEl(id);if(!el)return;
-  const page=window.__edState.pages[el.page];if(!page)return;
-  const rect=page.canvas.getBoundingClientRect();
-  const sx=page.canvas.width/rect.width, sy=page.canvas.height/rect.height;
-  const pt=ev.touches?ev.touches[0]:ev;
-  const startMx=pt.clientX, startMy=pt.clientY;
-  const startX=el.x, startY=el.y;
-  function move(e){
-    const p=e.touches?e.touches[0]:e;
-    const dx=(p.clientX-startMx)*sx, dy=(p.clientY-startMy)*sy;
-    el.x=Math.max(0,Math.min(page.cssW-el.w,startX+dx));
-    el.y=Math.max(0,Math.min(page.cssH-el.h,startY+dy));
-    const n=edFindNode(id);if(n){n.style.left=el.x+'px';n.style.top=el.y+'px';}
-  }
-  function up(){
-    window.removeEventListener('mousemove',move);
-    window.removeEventListener('mouseup',up);
-    window.removeEventListener('touchmove',move);
-    window.removeEventListener('touchend',up);
-    edSyncJson();
-  }
-  window.addEventListener('mousemove',move);
-  window.addEventListener('mouseup',up);
-  window.addEventListener('touchmove',move,{passive:false});
-  window.addEventListener('touchend',up);
-}
-function edStartResize(ev,id){
-  ev.preventDefault();ev.stopPropagation();
-  edSelect(id);
-  const el=edFindEl(id);if(!el)return;
-  const page=window.__edState.pages[el.page];if(!page)return;
-  const rect=page.canvas.getBoundingClientRect();
-  const sx=page.canvas.width/rect.width, sy=page.canvas.height/rect.height;
-  const pt=ev.touches?ev.touches[0]:ev;
-  const startMx=pt.clientX, startMy=pt.clientY;
-  const startW=el.w, startH=el.h;
-  function move(e){
-    const p=e.touches?e.touches[0]:e;
-    el.w=Math.max(12,startW+(p.clientX-startMx)*sx);
-    el.h=Math.max(8 ,startH+(p.clientY-startMy)*sy);
-    const n=edFindNode(id);if(n){n.style.width=el.w+'px';n.style.height=el.h+'px';if(el.kind==='text'){n.style.whiteSpace='normal';}}
-  }
-  function up(){
-    window.removeEventListener('mousemove',move);
-    window.removeEventListener('mouseup',up);
-    window.removeEventListener('touchmove',move);
-    window.removeEventListener('touchend',up);
-    edSyncJson();
-  }
-  window.addEventListener('mousemove',move);
-  window.addEventListener('mouseup',up);
-  window.addEventListener('touchmove',move,{passive:false});
-  window.addEventListener('touchend',up);
-}
-window.addEventListener('keydown',e=>{
-  if(curTool!=='edit-pdf')return;
-  if(e.key!=='Delete'&&e.key!=='Backspace')return;
-  const tgt=document.activeElement;
-  if(tgt&&['INPUT','TEXTAREA'].includes(tgt.tagName))return;
-  const id=window.__edState.selected;if(id==null)return;
-  e.preventDefault();
-  const idx=window.__edState.elements.findIndex(x=>x.id===id);
-  if(idx>=0){window.__edState.elements.splice(idx,1);const n=edFindNode(id);if(n)n.remove();window.__edState.selected=null;edSyncJson();}
-});
-function edHexToRgba(hex,alpha){
-  const h=String(hex).replace('#','');
-  if(h.length<6)return`rgba(255,235,59,${alpha})`;
-  return`rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${alpha})`;
-}
-function edSyncJson(){
-  // Convert CSS px → PDF points and emit a payload our /api/pdf/edit accepts.
-  const st=window.__edState;
-  const out={text_overlays:[],highlights:[],annotations:[],image_overlays:[]};
-  for(const el of st.elements){
-    const p=st.pages[el.page];if(!p)continue;
-    const toPt=v=>v/p.scale;
-    if(el.kind==='text'){
-      // PDF baseline y vs CSS top y: PyMuPDF insert_text uses baseline anchor.
-      // Add fontSize*0.8 to push the baseline below the click point.
-      const fsPt=toPt((el.fontSize||16));
-      out.text_overlays.push({
-        page:el.page,x:toPt(el.x),y:toPt(el.y)+fsPt*0.8,
-        text:el.text||'',font_size:fsPt,color:el.color||'#1d4ed8'
-      });
-    }else if(el.kind==='highlight'){
-      out.highlights.push({
-        page:el.page,
-        x1:toPt(el.x),y1:toPt(el.y),
-        x2:toPt(el.x+el.w),y2:toPt(el.y+el.h),
-        color:el.color||'#ffeb3b',opacity:el.opacity||0.4
-      });
-    }else if(el.kind==='note'){
-      out.annotations.push({
-        page:el.page,x:toPt(el.x+el.w/2),y:toPt(el.y+el.h/2),
-        content:el.text||'',title:'Reviewer',color:el.color||'#f59e0b'
-      });
-    }else if(el.kind==='image'){
-      out.image_overlays.push({
-        page:el.page,x:toPt(el.x),y:toPt(el.y),
-        width:toPt(el.w),height:toPt(el.h),image_b64:el.imgB64
-      });
+  const pageSize=(document.getElementById('etxPageSize')||{}).value||'a4';
+  const filename=((document.getElementById('etxFilename')||{}).value||'edited').replace(/[^a-z0-9_\-]/gi,'').slice(0,60)||'edited';
+  const btn=document.getElementById('tpBtnProcess'),cancelBtn=document.getElementById('tpBtnCancel'),prog=document.getElementById('tpProgress'),fill=document.getElementById('tpProgressFill'),pTxt=document.getElementById('tpProgressText'),ph=document.getElementById('tpResultPlaceholder');
+  btn.disabled=true;btn.style.display='none';
+  if(cancelBtn)cancelBtn.classList.remove('show');
+  prog.classList.add('show');fill.style.width='15%';pTxt.textContent='Rendering edited PDF…';
+  if(ph)ph.style.display='none';
+  let pct=15;const tick=setInterval(()=>{pct=Math.min(pct+Math.random()*8,90);fill.style.width=pct+'%';},350);
+  try{
+    const fd=new FormData();
+    fd.append('html',htmlOut);
+    fd.append('page_size',pageSize);
+    fd.append('filename',filename);
+    const r=await fetch(API+'/api/pdf/edit-text/save',{method:'POST',body:fd,credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}});
+    let d=null;try{d=await r.json();}catch(e){}
+    clearInterval(tick);
+    if(!r.ok||!d||!d.success){
+      const msg=(d&&d.error)||(r.status===429?'Too many requests — please wait a moment.':'Could not save your PDF.');
+      fill.style.width='0';prog.classList.remove('show');btn.disabled=false;btn.style.display='flex';
+      showResult('error',{message:msg});
+      return;
     }
+    fill.style.width='100%';pTxt.textContent='Done!';
+    showResult('success',{success:true,message:'Your PDF is ready',signed_url:d.download_url?API+d.download_url:null,filename:d.filename,size_human:d.size_human||''});
+  }catch(ex){
+    clearInterval(tick);
+    fill.style.width='0';prog.classList.remove('show');btn.disabled=false;btn.style.display='flex';
+    showResult('error',{message:'Network error — please try again.'});
   }
-  const ta=document.getElementById('edits');if(ta)ta.value=JSON.stringify(out);
-  // Update the process button enabled state: need at least one edit
-  const total=out.text_overlays.length+out.highlights.length+out.annotations.length+out.image_overlays.length;
-  const btn=document.getElementById('tpBtnProcess');
-  const haveFile=typeof selFiles!=='undefined'&&selFiles&&selFiles.length>0;
-  if(btn){
-    if(haveFile&&total>0){btn.disabled=false;btn.title='';}
-    else if(haveFile&&total===0){btn.disabled=true;btn.title='Add at least one edit before processing.';}
-  }
-  edStatus(total?(total+' edit'+(total===1?'':'s')+' staged. Click "Process" when ready.'):'No edits yet — choose a tool and click on a page.');
 }
 
 /* META */
