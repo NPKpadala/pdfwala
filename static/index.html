@@ -952,7 +952,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
      Image:  /api/image/{operation}
    ============================================================ */
 
-const APP_CONFIG={MAX_FILE_SIZE_MB:200,LARGE_FILE_WARN_MB:50,API_BASE:window.location.origin,MAX_RECENT_TOOLS:3,SEARCH_DEBOUNCE_MS:200};
+const APP_CONFIG={MAX_FILE_SIZE_MB:10,LARGE_FILE_WARN_MB:8,API_BASE:window.location.origin,MAX_RECENT_TOOLS:3,SEARCH_DEBOUNCE_MS:200};
 
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 const escapeHtml=esc;
@@ -1243,7 +1243,7 @@ function renderTool(id){
   document.getElementById('tpBreadcrumbCurrent').textContent=t.title;
   const fi=document.getElementById('toolFileInput');fi.accept=t.accept;fi.multiple=!!t.multi;fi.value='';
   // Show accepted formats cleanly
-  document.getElementById('tpDropHint').textContent='Accepted: '+t.accept.replace(/\./g,'').replace(/,/g,', ').toUpperCase()+(t.multi?' (multiple files OK)':'');
+  document.getElementById('tpDropHint').textContent='Accepted: '+t.accept.replace(/\./g,'').replace(/,/g,', ').toUpperCase()+(t.multi?' (multiple files OK)':'')+` · Max ${APP_CONFIG.MAX_FILE_SIZE_MB}MB`;
   const oc=t.form(),hasOpts=oc.trim().length>0;
   const po=document.getElementById('panelOptions'),tg=document.getElementById('tpTopGrid');
   if(hasOpts){document.getElementById('tpOptionsArea').innerHTML=oc;po.style.display='block';tg.style.gridTemplateColumns='1fr 1fr';tg.classList.remove('no-options');}
@@ -1286,11 +1286,13 @@ function handleFiles(files){
     if(!validateFileExtension(f,curTool)){toast(`Invalid file type. Accepted: ${t.accept}`,'error');return;}
   }
   const MAX_FILES=t.multi?20:1;
-  const MAX_TOTAL_SIZE=500*1024*1024;
+  // 10 MB per file; for multi-file ops cap the total at 2x to stay inside
+  // the worker's working-memory budget.
+  const MAX_TOTAL_SIZE=APP_CONFIG.MAX_FILE_SIZE_MB*1024*1024*2;
   if(selFiles.length+files.length>MAX_FILES){toast(`Maximum ${MAX_FILES} file${MAX_FILES>1?'s':''} allowed`,'error');return;}
   const totalSize=[...selFiles,...files].reduce((s,f)=>s+f.size,0);
-  if(totalSize>MAX_TOTAL_SIZE){toast('File is too large. Please try a smaller file.','error');return;}
-  for(const f of files){if(f.size>max){toast('This file is too large. Please try a smaller file.','error');return;}}
+  if(totalSize>MAX_TOTAL_SIZE){toast(`Combined size too large. Maximum ${(MAX_TOTAL_SIZE/1024/1024).toFixed(0)}MB across all files for free use.`,'error');return;}
+  for(const f of files){if(f.size>max){toast(`File too large (${(f.size/1024/1024).toFixed(1)} MB). Maximum size is ${APP_CONFIG.MAX_FILE_SIZE_MB}MB for free use — try Compress PDF first.`,'error');return;}}
   if(curTool==='compare-pdf'){const proposed=[...selFiles,...files];if(proposed.length>2){toast('Compare needs exactly 2 PDF files','error');return;}}
   selFiles=t.multi?[...selFiles,...files]:[files[0]];
   renderFileList();
@@ -1320,7 +1322,11 @@ function rmFile(i){
 
 /* Hero file suggest */
 function handleHeroFile(f){
-  if(!f)return;if(f.size>APP_CONFIG.MAX_FILE_SIZE_MB*1024*1024){toast('This file is too large. Please try a smaller file.','error');return;}
+  if(!f)return;
+  if(f.size>APP_CONFIG.MAX_FILE_SIZE_MB*1024*1024){
+    toast(`File too large (${(f.size/1024/1024).toFixed(1)} MB). Maximum size is ${APP_CONFIG.MAX_FILE_SIZE_MB}MB for free use — try Compress PDF first.`,'error');
+    return;
+  }
   const tp=detectType(f);showSuggest(f,tp,FILE_SUGGEST[tp]||['compress','merge','split']);
 }
 function showSuggest(f,tp,ids){
@@ -1788,7 +1794,12 @@ function cvEditSpan(span){
   input.style.width=Math.max(wPct,12)+'%';
   const h=span.getBoundingClientRect().height||16;
   input.style.fontSize=Math.max(9,Math.min(h*0.8,26))+'px';
-  layer.appendChild(input); input.focus(); input.select();
+  // Focus but DON'T select-all — drop the cursor at the end so the user can
+  // type/backspace from where they expect. (input.select() would highlight
+  // the entire line and replace it on the next keystroke.)
+  layer.appendChild(input);
+  input.focus();
+  try{ const n=input.value.length; input.setSelectionRange(n,n); }catch(e){}
   let done=false;
   const commit=()=>{if(done)return;done=true;input.remove();span.classList.remove('selected');cvCommit(span,input.value);};
   const cancel=()=>{if(done)return;done=true;input.remove();span.classList.remove('selected');};

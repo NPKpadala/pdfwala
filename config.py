@@ -25,15 +25,22 @@ class Config:
     SECRET_KEY         = os.getenv("SECRET_KEY", "dev-secret-change-in-prod")
     DEBUG              = os.getenv("DEBUG", "false").lower() == "true"
     TESTING            = False
-    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", 200 * 1024 * 1024))
+    # Free-tier hard cap. Infra is small; we deliberately keep this low so
+    # every request runs in sync mode (gunicorn full-perf) and finishes in
+    # seconds. Multipart overhead is ~1% of body size — give 1 MB headroom.
+    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", 11 * 1024 * 1024))
 
     UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", str(BASE_DIR / "uploads"))
     OUTPUT_FOLDER = os.getenv("OUTPUT_FOLDER", str(BASE_DIR / "outputs"))
     TEMP_FOLDER   = os.getenv("TEMP_FOLDER",   str(BASE_DIR / "temp"))
     OUTPUT_DIR    = os.getenv("OUTPUT_FOLDER", str(BASE_DIR / "outputs"))   # alias
 
-    MAX_FILE_SIZE         = int(os.getenv("MAX_FILE_SIZE",         200 * 1024 * 1024))
-    ASYNC_THRESHOLD       = int(os.getenv("ASYNC_THRESHOLD",         5 * 1024 * 1024))
+    MAX_FILE_SIZE         = int(os.getenv("MAX_FILE_SIZE",         10 * 1024 * 1024))
+    # Higher than MAX_FILE_SIZE on purpose: every accepted file is therefore
+    # handled in-process by gunicorn (sync, fast). Celery still runs for
+    # scheduled cleanup and any internal use, but the user-facing path is
+    # never async, removing the "your file is queued forever" failure mode.
+    ASYNC_THRESHOLD       = int(os.getenv("ASYNC_THRESHOLD",        11 * 1024 * 1024))
     FILE_TTL_SEC          = int(os.getenv("FILE_TTL_SEC",           7200))
     EXCEL_ROW_LIMIT       = int(os.getenv("EXCEL_ROW_LIMIT",        50000))
     EXCEL_COL_LIMIT       = int(os.getenv("EXCEL_COL_LIMIT",        1000))
