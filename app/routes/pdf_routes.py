@@ -25,6 +25,21 @@ log = logging.getLogger("pdfwala.routes.pdf")
 
 # ── Helper ─────────────────────────────────────────────────────────────────────
 
+# Operations that are always slow (seconds to minutes even for small files).
+# These bypass the file-size threshold and always run on a Celery worker so
+# they never tie up a gunicorn web worker — even with the 10 MB upload cap,
+# a single sync OCR can hold a request slot for minutes and starve other
+# users. The frontend already handles async polling.
+_ALWAYS_ASYNC = {
+    "ocr_pdf",
+    "pdf_to_word",   # pdf2docx can be heavy on dense PDFs
+    "pdf_to_excel",
+    "pdf_to_ppt",
+    "pdf_to_pdfa",   # Ghostscript PDF/A conversion is slow
+    "compare_pdf",
+}
+
+
 def _handle(operation: str, output_ext: str, msg: str,
             multi: bool = False, field: str = "file"):
     rl = JobController.check_rate_limit(request)
@@ -39,7 +54,10 @@ def _handle(operation: str, output_ext: str, msg: str,
     except ValidationError as ex:
         return Result.error(ex.message, 400)
     task_fn = PDF_TASK_MAP.get(operation)
-    return JobController.run_or_enqueue(ctx, size, task_fn, output_ext, msg)
+    force_async = operation in _ALWAYS_ASYNC
+    return JobController.run_or_enqueue(
+        ctx, size, task_fn, output_ext, msg, force_async=force_async,
+    )
 
 
 # ── Organize ───────────────────────────────────────────────────────────────────

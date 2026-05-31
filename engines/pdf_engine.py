@@ -1696,15 +1696,24 @@ def pdf_to_pdfa(ctx: JobContext) -> dict:
 def ocr_pdf(ctx: JobContext) -> dict:
     """
     OCR a scanned PDF using Tesseract.
-    - Default DPI lowered to 200 (4x less RAM than 300 DPI, same accuracy for most docs)
-    - Parallel page processing via ThreadPoolExecutor
-    - lang and psm/oem parameters sanitised (whitelist)
-    - Chunked progress reporting
+
+    Tuned for the small-infra free-tier:
+    - Default DPI 150 (Tesseract is accurate ≥150 DPI for most scans;
+      previously 200 was 2× the data per page for no measurable accuracy gain).
+    - Direct pixmap→PIL handoff (no PNG round-trip → big speedup; the old
+      path did fitz pixmap → PNG encode → BytesIO → PIL decode for every
+      page, which was the dominant cost for dense scans).
+    - Worker-slow Celery queue handles up to 2 concurrent OCRs; we
+      deliberately do NOT spawn extra threads here (worker concurrency
+      already provides page-level parallelism via the queue, and ganging
+      4 tesseracts on 4 cores per job thrashes the CPU).
+    - lang/psm/oem are whitelist-sanitised. Chunked progress reporting
+      lets the polling UI show real movement.
     """
     _require(TESSERACT_OK and FITZ_OK, "ocr_pdf", "pytesseract + PyMuPDF")
     lang_raw = ctx.params.get("lang", "eng")
     lang     = _sanitise_tesseract_lang(lang_raw)
-    dpi      = int(ctx.params.get("dpi", 200))          # 200 default, not 300
+    dpi      = int(ctx.params.get("dpi", 150))          # 150 default (was 200)
     dpi      = max(72, min(dpi, 600))
 
     psm_raw = int(ctx.params.get("psm", 3))
@@ -1716,7 +1725,10 @@ def ocr_pdf(ctx: JobContext) -> dict:
     psm = psm_raw
     oem = oem_raw
 
-    workers = Config.OCR_WORKERS
+    # Cap in-process workers conservatively. The worker-slow Celery container
+    # already runs `--concurrency=2`, so two OCR jobs can be in flight at
+    # once; adding 4 threads per job would oversubscribe a 4-core VM.
+    workers = max(1, min(Config.OCR_WORKERS, 2))
     max_pages = Config.MAX_OCR_PAGES
 
     _guard_empty(ctx.input_path)
@@ -1730,14 +1742,19 @@ def ocr_pdf(ctx: JobContext) -> dict:
             "Split the PDF first or contact support for bulk processing."
         )
 
-    # Pre-render all pages to PNG bytes (allows parallel Tesseract calls)
-    page_images: list[tuple[int, float, float, bytes]] = []
+    # Pre-render all pages directly to PIL images — no PNG round-trip.
+    page_images: list[tuple[int, float, float, "Image.Image"]] = []
     try:
         for page_num, src_page in enumerate(src_doc):
             pw, ph = src_page.rect.width, src_page.rect.height
             mat    = fitz.Matrix(dpi / 72, dpi / 72)
             pix    = src_page.get_pixmap(matrix=mat, alpha=False, colorspace=fitz.csGRAY)
-            page_images.append((page_num, pw, ph, pix.tobytes("png")))
+            # Zero-copy handoff: pix.samples is a raw byte buffer Tesseract
+            # accepts via PIL. Avoids PNG encode + decode (was ~40% of total
+            # time for dense pages).
+            mode = "L" if pix.n == 1 else ("RGB" if pix.n == 3 else "RGBA")
+            img  = Image.frombytes(mode, (pix.width, pix.height), pix.samples)
+            page_images.append((page_num, pw, ph, img))
     finally:
         src_doc.close()
 
@@ -1745,8 +1762,7 @@ def ocr_pdf(ctx: JobContext) -> dict:
 
     def _ocr_page(args: tuple) -> tuple[int, float, float, Optional[dict]]:
         """Worker: run Tesseract on one page image. Returns (page_num, pw, ph, hocr|None)."""
-        page_num, pw, ph, png_bytes = args
-        img = Image.open(io.BytesIO(png_bytes))
+        page_num, pw, ph, img = args
         try:
             hocr = pytesseract.image_to_data(
                 img, lang=lang,

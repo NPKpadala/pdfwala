@@ -118,7 +118,7 @@ def upload(path, mime="application/pdf"):
 
 def run_sync(name, route, fields, files):
     st, body, ct = post(route, fields=fields, files=files)
-    if st != 200 or ct != "application/json":
+    if st not in (200, 202) or ct != "application/json":
         return None, f"HTTP {st} (ct={ct}) {body[:120]!r}"
     try:
         d = json.loads(body)
@@ -126,6 +126,28 @@ def run_sync(name, route, fields, files):
         return None, f"bad JSON: {body[:120]!r}"
     if not d.get("success"):
         return None, f"success=false err={d.get('error','')[:160]}"
+    # Async tools (pdf_routes._ALWAYS_ASYNC) reply HTTP 202 + status_url.
+    # Poll until completed, then return the final payload as if sync.
+    if st == 202 or d.get("status") == "queued":
+        status_url = d.get("status_url")
+        if not status_url:
+            return None, f"async without status_url: {d!r}"
+        deadline = time.time() + 600   # 10 min cap per tool
+        while time.time() < deadline:
+            time.sleep(2)
+            ps, pb, _ = get(status_url)
+            if ps != 200:
+                return None, f"poll HTTP {ps}"
+            try:
+                pd = json.loads(pb)
+            except Exception:
+                return None, f"poll bad JSON: {pb[:120]!r}"
+            status = pd.get("status")
+            if status == "completed":
+                return pd, None
+            if status in ("failed", "timeout"):
+                return None, f"async {status}: {pd.get('error','')[:160]}"
+        return None, "async poll timed out after 10 min"
     return d, None
 
 

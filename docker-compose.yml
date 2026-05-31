@@ -39,7 +39,10 @@ x-app-env: &app-env
   OCR_TIMEOUT: ${OCR_TIMEOUT:-900}
   TASK_SOFT_TIMEOUT: ${TASK_SOFT_TIMEOUT:-1800}
   TASK_HARD_TIMEOUT: ${TASK_HARD_TIMEOUT:-2100}
-  OCR_WORKERS: ${OCR_WORKERS:-4}
+  # Per-job tesseract threads. Worker-slow Celery container runs
+  # --concurrency=2, so 2 OCR jobs * 2 threads = 4 tesseracts on a 4-core
+  # box. Bumping to 4 here would cause CPU thrash.
+  OCR_WORKERS: ${OCR_WORKERS:-2}
   GUNICORN_WORKERS: ${GUNICORN_WORKERS:-4}
   GUNICORN_THREADS: ${GUNICORN_THREADS:-8}
   RATE_LIMIT_RPM: ${RATE_LIMIT_RPM:-120}
