@@ -359,6 +359,21 @@ input,select,textarea{font-family:inherit}
   .cv-main{max-height:64vh}
   .cv-pages{padding:10px}
 }
+
+/* ── PDF INFO INLINE CARD ───────────────────────────────────────── */
+.pdfinfo-card{margin-top:14px;padding:14px 16px;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--r-sm);text-align:left}
+.pdfinfo-grid{display:grid;grid-template-columns:140px 1fr;gap:6px 14px;margin:0 0 10px 0}
+.pdfinfo-grid dt{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;align-self:center}
+.pdfinfo-grid dd{margin:0;font-size:13px;color:var(--text);word-break:break-word}
+.pdfinfo-section{margin-top:10px}
+.pdfinfo-section-label{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.pdfinfo-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pdfinfo-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;font-size:11.5px;background:var(--bg-2);border:1px solid var(--border);border-radius:999px;color:var(--text-2);font-family:'DM Sans',system-ui,sans-serif}
+.pdfinfo-chip small{color:var(--text-3);font-weight:600}
+.pdfinfo-muted{font-size:12px;color:var(--text-3);font-style:italic}
+.pdfinfo-copy{margin-top:12px;padding:6px 14px;font-size:11.5px;font-weight:600;color:var(--text-2);background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer;transition:border-color var(--t),color var(--t)}
+.pdfinfo-copy:hover{border-color:var(--accent);color:var(--accent)}
+@media(max-width:600px){.pdfinfo-grid{grid-template-columns:1fr}.pdfinfo-grid dt{margin-top:6px}}
 .tp-radio-group{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
 .tp-radio-chip{padding:5px 11px;border:1.5px solid var(--border);border-radius:50px;font-size:12px;font-weight:500;color:var(--text-2);background:var(--bg);transition:all var(--t);cursor:pointer;user-select:none}
 .tp-radio-chip:hover{border-color:var(--accent);color:var(--accent)}
@@ -1559,6 +1574,12 @@ function showResult(type,data){
   if(data.reduction_pct)pa.push(data.reduction_pct+'% smaller');
   pills.innerHTML=pa.map(p=>`<span class="tp-result-pill">${esc(p)}</span>`).join('');
   if(type==='success'){
+    // PDF Info returns metadata in the response, not a downloadable file —
+    // render it inline instead of looking for a missing download URL.
+    if(data.metadata && typeof data.metadata === 'object' && !data.download_url){
+      renderPdfInfo(data.metadata, titleEl, inner, procBtn, dlBtn, again);
+      return;
+    }
     let url=data.signed_url||data.download_url;
     if(!url&&data.filename){const fn=(data.filename||'').replace(/^\/pdfwala/,'');url=fn.startsWith('/')?API+fn:API+'/download/'+fn;}
     if(url){
@@ -1580,6 +1601,79 @@ function showResult(type,data){
     }
     again.classList.add('show');
   }else{dlBtn.style.display='none';procBtn.disabled=!selFiles.length;procBtn.style.display='flex';toast(msg,'error');}
+}
+
+// Render PDF metadata inline (PDF Info tool — no downloadable file).
+function renderPdfInfo(meta, titleEl, inner, procBtn, dlBtn, again){
+  // Friendly title
+  titleEl.innerHTML='';
+  const ic=document.createElement('span'); ic.innerHTML=svgIcon('info',14);
+  titleEl.appendChild(ic);
+  titleEl.appendChild(document.createTextNode(' PDF details'));
+  // Build a compact, readable card
+  const yes='✓', no='✗';
+  const rows = [
+    ['Pages',         meta.page_count],
+    ['PDF version',   meta.pdf_version || '—'],
+    ['File size',     meta.size_human || (meta.file_size_bytes ? (meta.file_size_bytes+' bytes') : '—')],
+    ['Title',         meta.title    || '—'],
+    ['Author',        meta.author   || '—'],
+    ['Encrypted',     meta.encrypted ? yes+' Yes' : no+' No'],
+    ['Linearized',    meta.is_linearized ? yes+' Yes' : no+' No'],
+    ['Has form fields', meta.has_forms ? yes+' Yes' : no+' No'],
+    ['Has bookmarks',   meta.has_toc   ? yes+' Yes' : no+' No'],
+    ['Images',        meta.image_count != null ? meta.image_count : '—'],
+  ];
+  const fonts = Array.isArray(meta.fonts_used) ? meta.fonts_used.filter(Boolean) : [];
+  const sizes = Array.isArray(meta.page_sizes) ? meta.page_sizes : [];
+  const sizesHtml = sizes.length
+    ? sizes.map(s=>`<span class="pdfinfo-chip">${esc(s.w+' × '+s.h+' pt')} <small>×${esc(String(s.count))}</small></span>`).join('')
+    : '<span class="pdfinfo-muted">—</span>';
+  const fontsHtml = fonts.length
+    ? fonts.slice(0,12).map(f=>`<span class="pdfinfo-chip">${esc(f)}</span>`).join('')
+      + (fonts.length>12?` <span class="pdfinfo-muted">+${fonts.length-12} more</span>`:'')
+    : '<span class="pdfinfo-muted">—</span>';
+
+  const card = document.createElement('div');
+  card.className = 'pdfinfo-card';
+  card.innerHTML = `
+    <dl class="pdfinfo-grid">
+      ${rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(String(v))}</dd>`).join('')}
+    </dl>
+    <div class="pdfinfo-section">
+      <div class="pdfinfo-section-label">Page sizes</div>
+      <div class="pdfinfo-chips">${sizesHtml}</div>
+    </div>
+    <div class="pdfinfo-section">
+      <div class="pdfinfo-section-label">Fonts</div>
+      <div class="pdfinfo-chips">${fontsHtml}</div>
+    </div>
+    <button class="pdfinfo-copy" type="button" onclick="copyPdfInfo(this)">Copy as JSON</button>
+  `;
+  card.dataset.json = JSON.stringify(meta, null, 2);
+
+  // Replace any previous info card and append fresh
+  inner.querySelectorAll('.pdfinfo-card').forEach(n=>n.remove());
+  inner.appendChild(card);
+  // No download for the info tool — keep the action area clean
+  if(dlBtn) dlBtn.style.display='none';
+  if(procBtn) procBtn.style.display='none';
+  if(again) again.classList.add('show');
+  toast('PDF details ready','success');
+}
+
+function copyPdfInfo(btn){
+  const card = btn.closest('.pdfinfo-card');
+  if(!card) return;
+  const txt = card.dataset.json || '';
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>{
+      const t=btn.textContent; btn.textContent='Copied!';
+      setTimeout(()=>{btn.textContent=t;},1500);
+    }).catch(()=>toast('Copy failed — select the text manually','error'));
+  }else{
+    toast('Clipboard not available in this browser','error');
+  }
 }
 
 function downloadToolResult(){

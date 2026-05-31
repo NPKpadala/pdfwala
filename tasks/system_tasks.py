@@ -16,47 +16,62 @@ from config import Config
 log = logging.getLogger("pdfwala.tasks.system")
 
 
+def _sweep_dir(directory: str, max_age_seconds: int, only_suffix: str = ""):
+    """Delete files under `directory` older than the age threshold.
+
+    Optionally restrict to files with a given suffix (e.g. '.tmp').
+    Returns (deleted, errors).
+    """
+    deleted = errors = 0
+    if not os.path.isdir(directory):
+        return deleted, errors
+    now = time.time()
+    for fname in os.listdir(directory):
+        if only_suffix and not fname.endswith(only_suffix):
+            continue
+        fpath = os.path.join(directory, fname)
+        try:
+            if not os.path.isfile(fpath):
+                continue
+            if now - os.path.getmtime(fpath) > max_age_seconds:
+                os.remove(fpath)
+                deleted += 1
+        except OSError as ex:
+            log.warning(f"cleanup: could not delete {fpath}: {ex}")
+            errors += 1
+    return deleted, errors
+
+
 @celery_app.task(name="tasks.system_tasks.cleanup_output_files")
 def cleanup_output_files():
     """
-    Delete output files older than Config.FILE_TTL_SEC.
-    Also delete orphaned .tmp upload files older than 10 minutes.
+    Hourly cleanup task. Three sweeps:
+
+      1. OUTPUT_FOLDER : completed outputs older than FILE_TTL_SEC (2 h).
+      2. UPLOAD_FOLDER : completed uploads older than 1 hour. Sync mode
+                         means the input file is no longer needed once the
+                         response goes out — without this sweep these
+                         accumulate forever (this is what filled the
+                         uploads volume to 24 MB of stale 1-day-old files).
+      3. UPLOAD_FOLDER : orphaned `.tmp` fragments older than 10 minutes
+                         (interrupted multipart uploads).
+      4. TEMP_FOLDER   : anything older than 1 hour (engine scratch space).
     """
     if not Config.CLEANUP_ENABLED:
         return {"skipped": True}
 
-    now     = time.time()
-    deleted = 0
-    errors  = 0
+    deleted = errors = 0
+    upload_ttl_sec = int(os.getenv("UPLOAD_TTL_SEC", "3600"))
+    temp_ttl_sec   = int(os.getenv("TEMP_TTL_SEC",   "3600"))
 
-    # Clean output files
-    output_dir = Config.OUTPUT_FOLDER
-    if os.path.isdir(output_dir):
-        for fname in os.listdir(output_dir):
-            fpath = os.path.join(output_dir, fname)
-            try:
-                if os.path.isfile(fpath):
-                    age = now - os.path.getmtime(fpath)
-                    if age > Config.FILE_TTL_SEC:
-                        os.remove(fpath)
-                        deleted += 1
-            except OSError as ex:
-                log.warning(f"Cleanup: could not delete {fpath}: {ex}")
-                errors += 1
-
-    # Clean orphaned .tmp upload files (older than 10 minutes)
-    upload_dir = Config.UPLOAD_FOLDER
-    if os.path.isdir(upload_dir):
-        for fname in os.listdir(upload_dir):
-            if fname.endswith(".tmp"):
-                fpath = os.path.join(upload_dir, fname)
-                try:
-                    age = now - os.path.getmtime(fpath)
-                    if age > 600:   # 10 minutes
-                        os.remove(fpath)
-                        deleted += 1
-                except OSError:
-                    pass
+    for sweep in (
+        (Config.OUTPUT_FOLDER, Config.FILE_TTL_SEC, ""),     # outputs (TTL_SEC)
+        (Config.UPLOAD_FOLDER, upload_ttl_sec,      ""),     # completed uploads
+        (Config.UPLOAD_FOLDER, 600,                 ".tmp"), # orphan fragments
+        (Config.TEMP_FOLDER,   temp_ttl_sec,        ""),     # engine temp scratch
+    ):
+        d, e = _sweep_dir(*sweep)
+        deleted += d; errors += e
 
     log.info(f"cleanup_output_files: deleted={deleted} errors={errors}")
     return {"deleted": deleted, "errors": errors}
