@@ -22,8 +22,10 @@ x-app-env: &app-env
   TEMP_FOLDER: /home/pdfwala/data/temp
   LOG_LEVEL: ${LOG_LEVEL:-INFO}
   FLASK_ENV: ${FLASK_ENV:-production}
-  MAX_FILE_SIZE: ${MAX_FILE_SIZE:-209715200}
-  ASYNC_THRESHOLD: ${ASYNC_THRESHOLD:-5242880}
+  MAX_FILE_SIZE: ${MAX_FILE_SIZE:-10485760}
+  # ASYNC_THRESHOLD > MAX_FILE_SIZE → every accepted file runs sync (gunicorn).
+  ASYNC_THRESHOLD: ${ASYNC_THRESHOLD:-11534336}
+  MAX_CONTENT_LENGTH: ${MAX_CONTENT_LENGTH:-11534336}
   FILE_TTL_SEC: ${FILE_TTL_SEC:-7200}
   MAX_PDF_PAGES: ${MAX_PDF_PAGES:-5000}
   MAX_OCR_PAGES: ${MAX_OCR_PAGES:-500}
@@ -37,7 +39,10 @@ x-app-env: &app-env
   OCR_TIMEOUT: ${OCR_TIMEOUT:-900}
   TASK_SOFT_TIMEOUT: ${TASK_SOFT_TIMEOUT:-1800}
   TASK_HARD_TIMEOUT: ${TASK_HARD_TIMEOUT:-2100}
-  OCR_WORKERS: ${OCR_WORKERS:-4}
+  # Per-job tesseract threads. Worker-slow Celery container runs
+  # --concurrency=2, so 2 OCR jobs * 2 threads = 4 tesseracts on a 4-core
+  # box. Bumping to 4 here would cause CPU thrash.
+  OCR_WORKERS: ${OCR_WORKERS:-2}
   GUNICORN_WORKERS: ${GUNICORN_WORKERS:-4}
   GUNICORN_THREADS: ${GUNICORN_THREADS:-8}
   RATE_LIMIT_RPM: ${RATE_LIMIT_RPM:-120}
@@ -254,6 +259,8 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - ./static:/usr/share/nginx/html:ro
+      - ./nginx/.htpasswd-demo:/etc/nginx/.htpasswd-demo:ro
+      - /etc/ssl/cloudflare:/etc/ssl/cloudflare:ro
     depends_on:
       - app
     healthcheck:

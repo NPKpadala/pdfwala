@@ -67,9 +67,13 @@ def create_app(env: str = None) -> Flask:
 
     @app.errorhandler(413)
     def handle_too_large(_):
+        # Show the user-facing cap (MAX_FILE_SIZE), not the buffered request
+        # cap (MAX_CONTENT_LENGTH = MAX_FILE_SIZE + multipart overhead).
+        max_mb = cfg.MAX_FILE_SIZE // (1024 * 1024)
         return Result.error(
-            f"File too large. Maximum is "
-            f"{cfg.MAX_CONTENT_LENGTH // (1024*1024)} MB.", 413
+            f"File too large. Maximum size is {max_mb}MB for free use — "
+            f"try Compress PDF first, or use Split PDF to break it into "
+            f"smaller pieces.", 413
         )
 
     @app.errorhandler(404)

@@ -4,17 +4,41 @@ All PDF tool endpoints. Routes ONLY: validate input, build ctx, enqueue/run.
 Zero processing logic.
 """
 
-from flask import Blueprint, request
+import io
+import json
+import logging
+import os
+import shutil
+import tempfile
+
+from flask import Blueprint, request, jsonify, send_file
 
 from app.controllers.job_controller import JobController
+from config import Config
 from core.exceptions import ValidationError
 from core.result import Result
 from services.file_service import file_service
 from tasks.pdf_tasks import PDF_TASK_MAP
 
 pdf_bp = Blueprint("pdf", __name__, url_prefix="/api/pdf")
+log = logging.getLogger("pdfwala.routes.pdf")
 
 # ── Helper ─────────────────────────────────────────────────────────────────────
+
+# Operations that are always slow (seconds to minutes even for small files).
+# These bypass the file-size threshold and always run on a Celery worker so
+# they never tie up a gunicorn web worker — even with the 10 MB upload cap,
+# a single sync OCR can hold a request slot for minutes and starve other
+# users. The frontend already handles async polling.
+_ALWAYS_ASYNC = {
+    "ocr_pdf",
+    "pdf_to_word",   # pdf2docx can be heavy on dense PDFs
+    "pdf_to_excel",
+    "pdf_to_ppt",
+    "pdf_to_pdfa",   # Ghostscript PDF/A conversion is slow
+    "compare_pdf",
+}
+
 
 def _handle(operation: str, output_ext: str, msg: str,
             multi: bool = False, field: str = "file"):
@@ -30,7 +54,10 @@ def _handle(operation: str, output_ext: str, msg: str,
     except ValidationError as ex:
         return Result.error(ex.message, 400)
     task_fn = PDF_TASK_MAP.get(operation)
-    return JobController.run_or_enqueue(ctx, size, task_fn, output_ext, msg)
+    force_async = operation in _ALWAYS_ASYNC
+    return JobController.run_or_enqueue(
+        ctx, size, task_fn, output_ext, msg, force_async=force_async,
+    )
 
 
 # ── Organize ───────────────────────────────────────────────────────────────────
@@ -98,6 +125,52 @@ def edit_pdf():
     return _handle("edit_pdf",   "pdf", "PDF edited successfully")
 
 
+# ── Edit PDF (text-editor flow) ───────────────────────────────────────────────
+# Two endpoints that round-trip a PDF through DOCX so the user can edit the
+# actual text in a rich-text editor in the browser, then save back to PDF.
+#
+#   /edit-text/load : POST PDF  →  returns sanitised HTML for the editor
+#   /edit-text/save : POST HTML →  returns a fresh PDF (download_url + filename)
+#
+# These bypass the JobController async machinery — both calls are interactive
+# (the user is waiting in the browser) so they run inline and return 200.
+
+@pdf_bp.route("/edit-text/load", methods=["POST"])
+def edit_text_load():
+    rl = JobController.check_rate_limit(request)
+    if rl:
+        return rl
+    ctx = JobController.build_ctx(request, "edit_text_load")
+    try:
+        file_service.save_single(request, ctx, "file")
+    except ValidationError as ex:
+        return Result.error(ex.message, 400)
+    try:
+        from engines.pdf_edit_text import pdf_to_editor_html
+        result = pdf_to_editor_html(ctx)
+    except ValidationError as ex:
+        return Result.error(ex.message, 400)
+    except Exception as ex:
+        return Result.error(f"Could not prepare editor: {ex}", 500, ctx.job_id)
+    return result
+
+
+@pdf_bp.route("/edit-text/save", methods=["POST"])
+def edit_text_save():
+    rl = JobController.check_rate_limit(request)
+    if rl:
+        return rl
+    ctx = JobController.build_ctx(request, "edit_text_save")
+    try:
+        from engines.pdf_edit_text import editor_html_to_pdf
+        result = editor_html_to_pdf(ctx, request)
+    except ValidationError as ex:
+        return Result.error(ex.message, 400)
+    except Exception as ex:
+        return Result.error(f"Save failed: {ex}", 500, ctx.job_id)
+    return result
+
+
 # ── Security ───────────────────────────────────────────────────────────────────
 
 @pdf_bp.route("/protect",        methods=["POST"])
@@ -159,3 +232,111 @@ def ocr_pdf():
 def compare_pdf():
     return _handle("compare_pdf", "zip", "PDF comparison completed",
                    multi=True, field="files")
+
+
+# ── Canvas Editor (visual in-place text editing) ─────────────────────────────
+# Synchronous endpoints — the user is waiting interactively and the work is
+# fast (<2s for typical PDFs), so these run inline (no Celery / Redis job).
+#   POST /api/pdf/parse-canvas : PDF            → page images + editable spans (JSON)
+#   POST /api/pdf/save-canvas  : PDF + changes  → rebuilt PDF (binary download)
+# Scanned PDFs are auto-OCR'd inside parse-canvas.
+
+_CANVAS_MAX_UPLOAD  = 50 * 1024 * 1024   # 50 MB
+_CANVAS_MAX_CHANGES = 5000
+_CANVAS_MAX_TEXTLEN = 2000
+
+
+def _canvas_take_upload():
+    """Save the uploaded PDF to TEMP_FOLDER with a 50 MB cap.
+    Returns (path, None) on success or (None, error_response)."""
+    f = request.files.get("file")
+    if not f or not f.filename:
+        return None, Result.error("No file uploaded (field='file')", 400)
+    if (request.content_length or 0) > _CANVAS_MAX_UPLOAD:
+        return None, Result.error(
+            "File too large — the visual editor supports files up to 50 MB. "
+            "Try Compress PDF first.", 413)
+    fd, path = tempfile.mkstemp(suffix=".pdf", dir=Config.TEMP_FOLDER)
+    os.close(fd)
+    f.seek(0)
+    with open(path, "wb") as out:
+        shutil.copyfileobj(f, out, length=65536)
+    size = os.path.getsize(path)
+    if size == 0:
+        os.remove(path)
+        return None, Result.error("Uploaded file is empty", 400)
+    if size > _CANVAS_MAX_UPLOAD:
+        os.remove(path)
+        return None, Result.error(
+            "File too large — the visual editor supports files up to 50 MB. "
+            "Try Compress PDF first.", 413)
+    return path, None
+
+
+@pdf_bp.route("/parse-canvas", methods=["POST"])
+def parse_canvas():
+    rl = JobController.check_rate_limit(request)
+    if rl:
+        return rl
+    path, err = _canvas_take_upload()
+    if err:
+        return err
+    try:
+        from engines.pdf_engine import _parse_canvas_sync
+        return jsonify(_parse_canvas_sync(path)), 200
+    except ValidationError as ex:
+        return Result.error(ex.message, 400)
+    except Exception as ex:
+        log.exception("parse-canvas failed")
+        return Result.error(f"Could not read this PDF for editing: {ex}", 500)
+    finally:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+
+@pdf_bp.route("/save-canvas", methods=["POST"])
+def save_canvas():
+    rl = JobController.check_rate_limit(request)
+    if rl:
+        return rl
+    path, err = _canvas_take_upload()
+    if err:
+        return err
+    try:
+        raw = request.form.get("changes", "")
+        if not raw:
+            return Result.error("No changes provided", 400)
+        try:
+            changes = json.loads(raw)
+        except (TypeError, ValueError):
+            return Result.error("changes is not valid JSON", 400)
+        if not isinstance(changes, list) or not changes:
+            return Result.error("No changes provided", 400)
+        if len(changes) > _CANVAS_MAX_CHANGES:
+            return Result.error(
+                f"Too many edits ({len(changes)}); limit is {_CANVAS_MAX_CHANGES}.", 400)
+        for ch in changes:
+            if isinstance(ch, dict) and "new_text" in ch:
+                ch["new_text"] = str(ch["new_text"])[:_CANVAS_MAX_TEXTLEN]
+        scanned = str(request.form.get("scanned", "")).lower() in ("1", "true", "yes")
+
+        from engines.pdf_engine import _save_canvas_sync
+        pdf_bytes = _save_canvas_sync(path, changes, scanned=scanned)
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name="edited.pdf",
+        )
+    except ValidationError as ex:
+        return Result.error(ex.message, 400)
+    except Exception as ex:
+        log.exception("save-canvas failed")
+        return Result.error(f"Could not save your edited PDF: {ex}", 500)
+    finally:
+        try:
+            os.remove(path)
+        except OSError:
+            pass

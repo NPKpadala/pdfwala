@@ -6,7 +6,7 @@
 <meta name="robots" content="index, follow"/>
 <meta name="description" content="PDFWala — Every document tool you'll ever need. Merge, compress, convert, and secure any file. Fast, free, and private."/>
 <meta name="theme-color" content="#0A0E1A"/>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: blob:; connect-src 'self' https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self';">
 <link rel="manifest" href="/pdfwala/manifest.json">
 
 <!-- FAVICON: Custom Raven Logo -->
@@ -323,37 +323,57 @@ input,select,textarea{font-family:inherit}
 @media(max-width:480px){.tp-form-row{grid-template-columns:1fr}}
 .tp-form-hint{font-size:10.5px;color:var(--text-3);margin-top:3px}
 
-/* ── PDF EDITOR ──────────────────────────────────────────────────── */
-.ed-toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:var(--bg-3);border-radius:var(--r-sm);margin-bottom:10px}
-.ed-tool{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;font-size:12.5px;font-weight:600;color:var(--text-2);background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-sm);transition:background var(--t),border-color var(--t),color var(--t);cursor:pointer}
-.ed-tool:hover{border-color:var(--border-hover);color:var(--text)}
-.ed-tool.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.ed-tool.danger{margin-left:auto;color:var(--rose-500)}
-.ed-tool.danger:hover{background:var(--rose-500);color:#fff;border-color:var(--rose-500)}
-.ed-tool svg{flex-shrink:0}
-.ed-props{margin-bottom:10px}
-.ed-props .ed-color{padding:2px;height:38px;cursor:pointer}
-.ed-pages{display:flex;flex-direction:column;gap:14px;max-height:65vh;overflow-y:auto;padding:8px;background:var(--bg-3);border-radius:var(--r-sm);scrollbar-width:thin}
-.ed-page-wrap{position:relative;align-self:center;box-shadow:0 4px 16px rgba(0,0,0,0.35);border-radius:4px;overflow:hidden;background:#fff}
-.ed-page-wrap canvas{display:block;max-width:100%;height:auto;cursor:crosshair}
-.ed-overlay{position:absolute;inset:0;pointer-events:none}
-.ed-overlay > *{pointer-events:auto}
-.ed-el{position:absolute;cursor:move;border:1.5px dashed transparent;border-radius:3px;padding:0;box-sizing:border-box;user-select:none;font-family:system-ui,sans-serif;line-height:1.1}
-.ed-el.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,130,246,0.25)}
-.ed-el .ed-handle{position:absolute;width:10px;height:10px;background:var(--accent);border:2px solid #fff;border-radius:50%;right:-5px;bottom:-5px;cursor:se-resize}
-.ed-el.kind-text{padding:2px 4px;white-space:nowrap;color:#1d4ed8;font-weight:600}
-.ed-el.kind-highlight{background:rgba(255,235,59,0.4);pointer-events:auto}
-.ed-el.kind-note{width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:#f59e0b;color:#fff;border-radius:50%;font-weight:700;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,0.3)}
-.ed-el.kind-note .ed-handle{display:none}
-.ed-el.kind-image{background-size:contain;background-repeat:no-repeat;background-position:center}
-.ed-page-label{font-size:11px;color:var(--text-3);text-align:center;margin-top:2px}
+/* ── PDF VISUAL CANVAS EDITOR ────────────────────────────────────── */
+.cv-status{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-2);margin-top:4px}
+.cv-status.loading{padding:9px 12px;background:var(--bg-3);border:1px dashed var(--border);border-radius:var(--r-sm)}
+.cv-spinner{width:14px;height:14px;border:2px solid var(--ink-500);border-top-color:var(--accent);border-radius:50%;animation:cv-spin .8s linear infinite;flex-shrink:0}
+@keyframes cv-spin{to{transform:rotate(360deg)}}
+.cv-banner{background:#fef9c3;border:1px solid #eab308;color:#713f12;padding:10px 14px;border-radius:8px;margin:8px 0;font-size:12.5px;line-height:1.5}
+.cv-workspace{margin-top:10px;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;background:var(--bg-2)}
+.cv-bar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-3);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+.cv-bar-info{font-size:12px;color:var(--text-3)}
+.cv-bar-spacer{flex:1}
+.cv-changes{font-size:12px;font-weight:600;color:var(--text-2);padding:3px 10px;border-radius:999px;background:var(--bg-2);border:1px solid var(--border)}
+.cv-changes.has{color:#92400e;background:rgba(251,191,36,.18);border-color:rgba(251,191,36,.5)}
+.cv-save-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px;font-weight:700;color:#fff;border:none;border-radius:var(--r-sm);background:linear-gradient(135deg,var(--blue-600),var(--violet-500));box-shadow:0 4px 14px rgba(37,99,235,.35);cursor:pointer;transition:opacity var(--t)}
+.cv-save-btn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.cv-main{display:flex;gap:0;max-height:72vh}
+.cv-thumbs{flex:0 0 96px;overflow-y:auto;padding:10px 8px;background:var(--bg-3);border-right:1px solid var(--border);scrollbar-width:thin}
+.cv-thumb{display:block;width:80px;margin:0 auto 10px;border:2px solid transparent;border-radius:4px;overflow:hidden;cursor:pointer;background:#fff;transition:border-color var(--t)}
+.cv-thumb img{display:block;width:100%;height:auto}
+.cv-thumb.active{border-color:var(--accent)}
+.cv-thumb-label{display:block;text-align:center;font-size:10px;color:var(--text-3);margin-top:2px}
+.cv-pages{flex:1;overflow-y:auto;padding:18px;background:repeating-linear-gradient(45deg,var(--bg-3),var(--bg-3) 12px,var(--bg-2) 12px,var(--bg-2) 24px);scrollbar-width:thin}
+.cv-page{position:relative;display:block;margin:0 auto 20px;background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.4);max-width:100%}
+.cv-page>img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+.cv-spans{position:absolute;inset:0;pointer-events:none}
+.cv-span{position:absolute;pointer-events:auto;cursor:text;box-sizing:border-box;border:1px solid transparent;border-radius:2px;overflow:hidden;white-space:nowrap;font-family:'Helvetica Neue',Arial,sans-serif;display:flex;align-items:center;transition:border-color .1s,background .1s}
+.cv-span:hover{border-color:rgba(59,130,246,.6);background:rgba(59,130,246,.08)}
+.cv-span.edited{border-color:rgba(251,191,36,.85);background:#fff}
+.cv-span.selected{border-color:rgba(249,115,22,.9);background:rgba(249,115,22,.08)}
+.cv-span-input{position:absolute;z-index:20;box-sizing:border-box;border:2px solid var(--blue-500);border-radius:3px;background:#fff;color:#111;padding:1px 4px;font-family:'Helvetica Neue',Arial,sans-serif;outline:none;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.cv-page-label{position:absolute;top:-16px;left:0;font-size:11px;color:var(--text-3)}
 @media(max-width:700px){
-  .ed-toolbar{justify-content:flex-start}
-  .ed-tool span{display:none}
-  .ed-tool{padding:8px 10px}
-  .ed-tool.danger{margin-left:auto}
-  .ed-pages{max-height:55vh}
+  .cv-thumbs{flex-basis:62px}
+  .cv-thumb{width:48px}
+  .cv-main{max-height:64vh}
+  .cv-pages{padding:10px}
 }
+
+/* ── PDF INFO INLINE CARD ───────────────────────────────────────── */
+.pdfinfo-card{margin-top:14px;padding:14px 16px;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--r-sm);text-align:left}
+.pdfinfo-grid{display:grid;grid-template-columns:140px 1fr;gap:6px 14px;margin:0 0 10px 0}
+.pdfinfo-grid dt{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;align-self:center}
+.pdfinfo-grid dd{margin:0;font-size:13px;color:var(--text);word-break:break-word}
+.pdfinfo-section{margin-top:10px}
+.pdfinfo-section-label{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.pdfinfo-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pdfinfo-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;font-size:11.5px;background:var(--bg-2);border:1px solid var(--border);border-radius:999px;color:var(--text-2);font-family:'DM Sans',system-ui,sans-serif}
+.pdfinfo-chip small{color:var(--text-3);font-weight:600}
+.pdfinfo-muted{font-size:12px;color:var(--text-3);font-style:italic}
+.pdfinfo-copy{margin-top:12px;padding:6px 14px;font-size:11.5px;font-weight:600;color:var(--text-2);background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer;transition:border-color var(--t),color var(--t)}
+.pdfinfo-copy:hover{border-color:var(--accent);color:var(--accent)}
+@media(max-width:600px){.pdfinfo-grid{grid-template-columns:1fr}.pdfinfo-grid dt{margin-top:6px}}
 .tp-radio-group{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
 .tp-radio-chip{padding:5px 11px;border:1.5px solid var(--border);border-radius:50px;font-size:12px;font-weight:500;color:var(--text-2);background:var(--bg);transition:all var(--t);cursor:pointer;user-select:none}
 .tp-radio-chip:hover{border-color:var(--accent);color:var(--accent)}
@@ -947,7 +967,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
      Image:  /api/image/{operation}
    ============================================================ */
 
-const APP_CONFIG={MAX_FILE_SIZE_MB:200,LARGE_FILE_WARN_MB:50,API_BASE:window.location.origin,MAX_RECENT_TOOLS:3,SEARCH_DEBOUNCE_MS:200};
+const APP_CONFIG={MAX_FILE_SIZE_MB:10,LARGE_FILE_WARN_MB:8,API_BASE:window.location.origin,MAX_RECENT_TOOLS:3,SEARCH_DEBOUNCE_MS:200};
 
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 const escapeHtml=esc;
@@ -1042,33 +1062,25 @@ const TOOLS_PDF_CORE={
   'redact-pdf':{title:'Redact PDF',icon:'redact',desc:'Permanently remove sensitive information.',multi:false,accept:'.pdf',
     endpoint:'/api/pdf/redact',field:'file',
     form:()=>`<div class="tp-form-group"><label class="tp-form-label">Text to Redact</label><input class="tp-form-input" type="text" id="search_text" placeholder="e.g., Social Security Number"/></div>`},
-  'edit-pdf':{title:'Edit PDF',icon:'edit',desc:'Add text, highlights, sticky notes, and images directly onto any PDF page.',multi:false,accept:'.pdf',
-    endpoint:'/api/pdf/edit',field:'file',
-    form:()=>{queueMicrotask(edInit);return `
-      <div class="ed-toolbar" id="edToolbar" role="toolbar" aria-label="PDF editor tools">
-        <button type="button" class="ed-tool active" data-tool="text" onclick="edSetTool('text')" title="Add text">${svgIcon('edit',14)}<span>Text</span></button>
-        <button type="button" class="ed-tool" data-tool="highlight" onclick="edSetTool('highlight')" title="Highlight">${svgIcon('watermark',14)}<span>Highlight</span></button>
-        <button type="button" class="ed-tool" data-tool="note" onclick="edSetTool('note')" title="Add sticky note">${svgIcon('info',14)}<span>Note</span></button>
-        <button type="button" class="ed-tool" data-tool="image" onclick="edSetTool('image')" title="Add image">${svgIcon('image',14)}<span>Image</span></button>
-        <label class="ed-tool ed-upload" title="Choose image to insert" style="cursor:pointer">${svgIcon('upload',14)}<span>Image file</span>
-          <input id="edImgPicker" type="file" accept=".png,.jpg,.jpeg" style="display:none" onchange="edPickImage(event)"/>
-        </label>
-        <button type="button" class="ed-tool danger" onclick="edClearAll()" title="Remove all edits">${svgIcon('x',14)}<span>Clear</span></button>
-      </div>
-      <div class="ed-props" id="edProps">
-        <div class="tp-form-row">
-          <div class="tp-form-group"><label class="tp-form-label">Text</label><input class="tp-form-input" type="text" id="edText" value="Approved" oninput="edPropChange()"/></div>
-          <div class="tp-form-group"><label class="tp-form-label">Font Size</label><input class="tp-form-input" type="number" id="edFontSize" value="16" min="6" max="200" oninput="edPropChange()"/></div>
+  'edit-pdf':{title:'Edit PDF',icon:'edit',desc:'Edit the real text inside your PDF — click any line to change words, fix typos, or delete. Scanned PDFs work too (auto-OCR). Then save back as PDF.',multi:false,accept:'.pdf',
+    endpoint:'/api/pdf/save-canvas',field:'file',
+    form:()=>{queueMicrotask(cvInit);return `
+      <div id="cvBanner" class="cv-banner" style="display:none"></div>
+      <div id="cvStatus" class="cv-status">Upload a PDF above to start editing — text and scanned PDFs are both supported.</div>
+      <div id="cvWorkspace" class="cv-workspace" style="display:none">
+        <div class="cv-bar">
+          <span class="cv-bar-info" id="cvInfo"></span>
+          <span class="cv-bar-spacer"></span>
+          <span class="cv-changes" id="cvChanges">0 changes</span>
+          <button type="button" class="cv-save-btn" id="cvSaveBtn" onclick="cvSave()" disabled>
+            <svg width="13" height="13"><use href="#ic-download"/></svg> Save PDF
+          </button>
         </div>
-        <div class="tp-form-row">
-          <div class="tp-form-group"><label class="tp-form-label">Color</label><input class="tp-form-input ed-color" type="color" id="edColor" value="#1d4ed8" oninput="edPropChange()"/></div>
-          <div class="tp-form-group"><label class="tp-form-label">Highlight opacity</label><input class="tp-form-input" type="range" id="edOpacity" min="10" max="100" value="40" oninput="edPropChange()"/></div>
+        <div class="cv-main">
+          <div class="cv-thumbs" id="cvThumbs" aria-label="Page thumbnails"></div>
+          <div class="cv-pages" id="cvPages"></div>
         </div>
-        <div class="tp-form-hint">Click anywhere on a page to place the selected element. Click a placed element to edit it; drag to move; press Delete to remove.</div>
       </div>
-      <div id="edStatus" class="tp-form-hint" style="margin-top:8px"></div>
-      <div id="edPages" class="ed-pages" role="region" aria-label="PDF preview"></div>
-      <textarea id="edits" name="edits" style="display:none" aria-hidden="true"></textarea>
     `}},
   'compare-pdf':{title:'Compare PDF',icon:'compare',desc:'Find differences between two PDFs.',multi:true,accept:'.pdf',
     endpoint:'/api/pdf/compare',field:'files',
@@ -1246,7 +1258,7 @@ function renderTool(id){
   document.getElementById('tpBreadcrumbCurrent').textContent=t.title;
   const fi=document.getElementById('toolFileInput');fi.accept=t.accept;fi.multiple=!!t.multi;fi.value='';
   // Show accepted formats cleanly
-  document.getElementById('tpDropHint').textContent='Accepted: '+t.accept.replace(/\./g,'').replace(/,/g,', ').toUpperCase()+(t.multi?' (multiple files OK)':'');
+  document.getElementById('tpDropHint').textContent='Accepted: '+t.accept.replace(/\./g,'').replace(/,/g,', ').toUpperCase()+(t.multi?' (multiple files OK)':'')+` · Max ${APP_CONFIG.MAX_FILE_SIZE_MB}MB`;
   const oc=t.form(),hasOpts=oc.trim().length>0;
   const po=document.getElementById('panelOptions'),tg=document.getElementById('tpTopGrid');
   if(hasOpts){document.getElementById('tpOptionsArea').innerHTML=oc;po.style.display='block';tg.style.gridTemplateColumns='1fr 1fr';tg.classList.remove('no-options');}
@@ -1289,11 +1301,13 @@ function handleFiles(files){
     if(!validateFileExtension(f,curTool)){toast(`Invalid file type. Accepted: ${t.accept}`,'error');return;}
   }
   const MAX_FILES=t.multi?20:1;
-  const MAX_TOTAL_SIZE=500*1024*1024;
+  // 10 MB per file; for multi-file ops cap the total at 2x to stay inside
+  // the worker's working-memory budget.
+  const MAX_TOTAL_SIZE=APP_CONFIG.MAX_FILE_SIZE_MB*1024*1024*2;
   if(selFiles.length+files.length>MAX_FILES){toast(`Maximum ${MAX_FILES} file${MAX_FILES>1?'s':''} allowed`,'error');return;}
   const totalSize=[...selFiles,...files].reduce((s,f)=>s+f.size,0);
-  if(totalSize>MAX_TOTAL_SIZE){toast('File is too large. Please try a smaller file.','error');return;}
-  for(const f of files){if(f.size>max){toast('This file is too large. Please try a smaller file.','error');return;}}
+  if(totalSize>MAX_TOTAL_SIZE){toast(`Combined size too large. Maximum ${(MAX_TOTAL_SIZE/1024/1024).toFixed(0)}MB across all files for free use.`,'error');return;}
+  for(const f of files){if(f.size>max){toast(`File too large (${(f.size/1024/1024).toFixed(1)} MB). Maximum size is ${APP_CONFIG.MAX_FILE_SIZE_MB}MB for free use — try Compress PDF first.`,'error');return;}}
   if(curTool==='compare-pdf'){const proposed=[...selFiles,...files];if(proposed.length>2){toast('Compare needs exactly 2 PDF files','error');return;}}
   selFiles=t.multi?[...selFiles,...files]:[files[0]];
   renderFileList();
@@ -1323,7 +1337,11 @@ function rmFile(i){
 
 /* Hero file suggest */
 function handleHeroFile(f){
-  if(!f)return;if(f.size>APP_CONFIG.MAX_FILE_SIZE_MB*1024*1024){toast('This file is too large. Please try a smaller file.','error');return;}
+  if(!f)return;
+  if(f.size>APP_CONFIG.MAX_FILE_SIZE_MB*1024*1024){
+    toast(`File too large (${(f.size/1024/1024).toFixed(1)} MB). Maximum size is ${APP_CONFIG.MAX_FILE_SIZE_MB}MB for free use — try Compress PDF first.`,'error');
+    return;
+  }
   const tp=detectType(f);showSuggest(f,tp,FILE_SUGGEST[tp]||['compress','merge','split']);
 }
 function showSuggest(f,tp,ids){
@@ -1429,6 +1447,8 @@ const PROCESS_MSGS=[
 async function processToolFile(){
   if(!curTool||!selFiles.length)return;
   if(processingActive){toast('Already processing, please wait…','error');return;}
+  // Edit PDF uses a custom canvas save flow (spans → rebuilt PDF blob)
+  if(curTool==='edit-pdf'){return cvSave();}
   processingActive=true;
   const t=TOOLS[curTool];
   const protectTools=['protect','protect-word','protect-excel'];
@@ -1554,6 +1574,12 @@ function showResult(type,data){
   if(data.reduction_pct)pa.push(data.reduction_pct+'% smaller');
   pills.innerHTML=pa.map(p=>`<span class="tp-result-pill">${esc(p)}</span>`).join('');
   if(type==='success'){
+    // PDF Info returns metadata in the response, not a downloadable file —
+    // render it inline instead of looking for a missing download URL.
+    if(data.metadata && typeof data.metadata === 'object' && !data.download_url){
+      renderPdfInfo(data.metadata, titleEl, inner, procBtn, dlBtn, again);
+      return;
+    }
     let url=data.signed_url||data.download_url;
     if(!url&&data.filename){const fn=(data.filename||'').replace(/^\/pdfwala/,'');url=fn.startsWith('/')?API+fn:API+'/download/'+fn;}
     if(url){
@@ -1577,13 +1603,92 @@ function showResult(type,data){
   }else{dlBtn.style.display='none';procBtn.disabled=!selFiles.length;procBtn.style.display='flex';toast(msg,'error');}
 }
 
+// Render PDF metadata inline (PDF Info tool — no downloadable file).
+function renderPdfInfo(meta, titleEl, inner, procBtn, dlBtn, again){
+  // Friendly title
+  titleEl.innerHTML='';
+  const ic=document.createElement('span'); ic.innerHTML=svgIcon('info',14);
+  titleEl.appendChild(ic);
+  titleEl.appendChild(document.createTextNode(' PDF details'));
+  // Build a compact, readable card
+  const yes='✓', no='✗';
+  const rows = [
+    ['Pages',         meta.page_count],
+    ['PDF version',   meta.pdf_version || '—'],
+    ['File size',     meta.size_human || (meta.file_size_bytes ? (meta.file_size_bytes+' bytes') : '—')],
+    ['Title',         meta.title    || '—'],
+    ['Author',        meta.author   || '—'],
+    ['Encrypted',     meta.encrypted ? yes+' Yes' : no+' No'],
+    ['Linearized',    meta.is_linearized ? yes+' Yes' : no+' No'],
+    ['Has form fields', meta.has_forms ? yes+' Yes' : no+' No'],
+    ['Has bookmarks',   meta.has_toc   ? yes+' Yes' : no+' No'],
+    ['Images',        meta.image_count != null ? meta.image_count : '—'],
+  ];
+  const fonts = Array.isArray(meta.fonts_used) ? meta.fonts_used.filter(Boolean) : [];
+  const sizes = Array.isArray(meta.page_sizes) ? meta.page_sizes : [];
+  const sizesHtml = sizes.length
+    ? sizes.map(s=>`<span class="pdfinfo-chip">${esc(s.w+' × '+s.h+' pt')} <small>×${esc(String(s.count))}</small></span>`).join('')
+    : '<span class="pdfinfo-muted">—</span>';
+  const fontsHtml = fonts.length
+    ? fonts.slice(0,12).map(f=>`<span class="pdfinfo-chip">${esc(f)}</span>`).join('')
+      + (fonts.length>12?` <span class="pdfinfo-muted">+${fonts.length-12} more</span>`:'')
+    : '<span class="pdfinfo-muted">—</span>';
+
+  const card = document.createElement('div');
+  card.className = 'pdfinfo-card';
+  card.innerHTML = `
+    <dl class="pdfinfo-grid">
+      ${rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(String(v))}</dd>`).join('')}
+    </dl>
+    <div class="pdfinfo-section">
+      <div class="pdfinfo-section-label">Page sizes</div>
+      <div class="pdfinfo-chips">${sizesHtml}</div>
+    </div>
+    <div class="pdfinfo-section">
+      <div class="pdfinfo-section-label">Fonts</div>
+      <div class="pdfinfo-chips">${fontsHtml}</div>
+    </div>
+    <button class="pdfinfo-copy" type="button" onclick="copyPdfInfo(this)">Copy as JSON</button>
+  `;
+  card.dataset.json = JSON.stringify(meta, null, 2);
+
+  // Replace any previous info card and append fresh
+  inner.querySelectorAll('.pdfinfo-card').forEach(n=>n.remove());
+  inner.appendChild(card);
+  // No download for the info tool — keep the action area clean
+  if(dlBtn) dlBtn.style.display='none';
+  if(procBtn) procBtn.style.display='none';
+  if(again) again.classList.add('show');
+  toast('PDF details ready','success');
+}
+
+function copyPdfInfo(btn){
+  const card = btn.closest('.pdfinfo-card');
+  if(!card) return;
+  const txt = card.dataset.json || '';
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>{
+      const t=btn.textContent; btn.textContent='Copied!';
+      setTimeout(()=>{btn.textContent=t;},1500);
+    }).catch(()=>toast('Copy failed — select the text manually','error'));
+  }else{
+    toast('Clipboard not available in this browser','error');
+  }
+}
+
 function downloadToolResult(){
   if(!lastUrl)return;
   try{
     const parsed=new URL(lastUrl,window.location.origin);
     if(parsed.origin!==window.location.origin&&!lastUrl.startsWith('/')){toast('Invalid download URL','error');return;}
   }catch(e){toast('Invalid download URL','error');return;}
-  const a=document.createElement('a');a.href=lastUrl;const originalName = selFiles[0]?.name?.replace(/\.[^.]+$/, '') || 'pdfwala_output';const ext = lastFn?.split('.').pop() || 'pdf';a.download = originalName + '_' + curTool + '.' + ext;
+  // Build a friendly download name: <original-base>.<server-extension>
+  // (e.g. "Resume.pdf" + pdf_to_word_xxx.docx → "Resume.docx").
+  // Falls back to the server-supplied filename if we don't know the original.
+  const a=document.createElement('a');a.href=lastUrl;
+  const serverExt=(lastFn||'').split('.').pop()||'pdf';
+  const base=(selFiles[0]?.name||'').replace(/\.[^.]+$/,'');
+  a.download = base ? (base+'.'+serverExt) : (lastFn||'pdfwala_output.'+serverExt);
   document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
@@ -1613,350 +1718,270 @@ function tpRadio(el,fid,val){
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   PDF EDITOR  (used by the 'edit-pdf' tool)
+   PDF VISUAL CANVAS EDITOR  (used by the 'edit-pdf' tool)
    ─────────────────────────────────────────────────────────────────────────────
-   State lives in window.__edState. Each element is:
-     { id, kind:'text|highlight|note|image', page, x, y, w, h,
-       text?, fontSize?, color?, opacity?, imgB64? }
-   Coordinates are in CSS pixels relative to the rendered canvas at scale 1.5.
-   Conversion to PDF points uses the canvas viewport.scale captured per page.
+   1. User picks a PDF in the standard upload area → cvOnUpload(file).
+   2. POST /api/pdf/parse-canvas → page images (base64 PNG @150dpi) + text spans
+      (or auto-OCR'd spans for scanned PDFs).
+   3. Each page renders as an <img> with an absolute overlay of transparent
+      span boxes positioned in PERCENT (resolution-independent — survives any
+      display width / responsive resize).
+   4. Click a span → inline <input>; commit stores the change + shows a live
+      white-backed preview of the new text in place.
+   5. Save → POST /api/pdf/save-canvas (original file + changes) → PDF blob is
+      downloaded as "edited_<original>.pdf".
 */
-const PDFJS_CDN='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-const PDFJS_WORKER='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-let __edPdfjsReady=null;
-function edLoadPdfjs(){
-  if(__edPdfjsReady)return __edPdfjsReady;
-  __edPdfjsReady=new Promise((resolve,reject)=>{
-    if(window.pdfjsLib){resolve(window.pdfjsLib);return;}
-    const s=document.createElement('script');s.src=PDFJS_CDN;s.async=true;
-    s.onload=()=>{try{window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS_WORKER;resolve(window.pdfjsLib);}catch(e){reject(e);}};
-    s.onerror=()=>reject(new Error('Failed to load PDF.js'));
-    document.head.appendChild(s);
-  });
-  return __edPdfjsReady;
+const CV_MAX_BYTES = 50 * 1024 * 1024;   // matches backend cap
+window.__cv = null;
+
+function cvNewState(){return {file:null,data:null,scanned:false,changes:new Map(),pageEls:[],thumbEls:[],observer:null};}
+
+function cvStatus(msg, loading){
+  const el=document.getElementById('cvStatus'); if(!el)return;
+  el.className='cv-status'+(loading?' loading':'');
+  el.innerHTML='';
+  if(loading){const s=document.createElement('span');s.className='cv-spinner';el.appendChild(s);}
+  const t=document.createElement('span'); t.textContent=msg||''; el.appendChild(t);
 }
-window.__edState={tool:'text',elements:[],pages:[],selected:null,nextId:1,renderScale:1.5,pickedImgB64:null};
-function edStatus(msg){const el=document.getElementById('edStatus');if(el)el.textContent=msg||'';}
-function edInit(){
-  // Called after the tool form() is inserted. Reset state, attach hooks.
-  window.__edState={tool:'text',elements:[],pages:[],selected:null,nextId:1,renderScale:1.5,pickedImgB64:null};
-  edSyncJson();
-  // Wire the standard file input to also render the PDF
+
+function cvInit(){
+  // Full-width single-column layout so the editor has room
+  const tg=document.getElementById('tpTopGrid'); if(tg)tg.style.gridTemplateColumns='1fr';
+  if(window.__cv&&window.__cv.observer){try{window.__cv.observer.disconnect();}catch(e){}}
+  window.__cv=cvNewState();
+  const ws=document.getElementById('cvWorkspace'); if(ws)ws.style.display='none';
+  const bn=document.getElementById('cvBanner'); if(bn)bn.style.display='none';
+  const sb=document.getElementById('cvSaveBtn'); if(sb)sb.disabled=true;
+  const pb=document.getElementById('tpBtnProcess'); if(pb){pb.disabled=true;pb.title='Upload a PDF and edit a line first.';}
+  cvStatus('Upload a PDF above to start editing — text and scanned PDFs are both supported.',false);
   const fi=document.getElementById('toolFileInput');
-  if(fi&&!fi.__edHooked){
-    fi.__edHooked=true;
-    fi.addEventListener('change',()=>{if(curTool==='edit-pdf'&&fi.files[0])edLoadPdf(fi.files[0]);});
-  }
-  // Also hook the dropzone for drag-drop into the canvas region
+  if(fi&&!fi.__cvHooked){fi.__cvHooked=true;fi.addEventListener('change',()=>{if(curTool==='edit-pdf'&&fi.files[0])cvOnUpload(fi.files[0]);});}
   const dz=document.getElementById('tpDropzone');
-  if(dz&&!dz.__edHooked){
-    dz.__edHooked=true;
-    dz.addEventListener('drop',e=>{
-      if(curTool!=='edit-pdf')return;
-      const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
-      if(f&&f.type==='application/pdf')edLoadPdf(f);
-    });
+  if(dz&&!dz.__cvHooked){dz.__cvHooked=true;dz.addEventListener('drop',e=>{if(curTool!=='edit-pdf')return;const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f&&/\.pdf$/i.test(f.name))cvOnUpload(f);});}
+}
+
+async function cvOnUpload(file){
+  if(!file)return;
+  if(file.size>CV_MAX_BYTES){
+    const mb=(file.size/(1024*1024)).toFixed(1);
+    const msg=`File is ${mb} MB — Edit PDF supports files up to 50 MB. Try Compress PDF first.`;
+    cvStatus(msg,false); toast(msg,'error');
+    selFiles=[]; renderFileList();
+    const pb=document.getElementById('tpBtnProcess'); if(pb)pb.disabled=true;
+    return;
   }
-  edStatus('Upload a PDF to start editing.');
-}
-function edSetTool(t){
-  window.__edState.tool=t;
-  document.querySelectorAll('#edToolbar .ed-tool[data-tool]').forEach(b=>{
-    b.classList.toggle('active',b.dataset.tool===t);
-  });
-  // Show/hide property fields based on tool
-  const showText=t==='text'||t==='note';
-  const showFs=t==='text';
-  const showOp=t==='highlight';
-  document.getElementById('edText').closest('.tp-form-group').style.display=showText?'':'none';
-  document.getElementById('edFontSize').closest('.tp-form-group').style.display=showFs?'':'none';
-  document.getElementById('edColor').closest('.tp-form-group').style.display=(t!=='image')?'':'none';
-  document.getElementById('edOpacity').closest('.tp-form-group').style.display=showOp?'':'none';
-  if(t==='image'&&!window.__edState.pickedImgB64){
-    edStatus('Tip: click "Image file" to pick a PNG/JPG first, then click on the page where you want it.');
-  }else if(t==='image'){
-    edStatus('Click on a page to drop the chosen image.');
-  }else{
-    edStatus('Click on a page to add a '+t+'.');
-  }
-}
-function edPickImage(ev){
-  const f=ev.target.files&&ev.target.files[0];if(!f)return;
-  if(f.size>10*1024*1024){toast('Image too large (max 10 MB).','error');return;}
-  const r=new FileReader();
-  r.onload=()=>{
-    const dataUrl=r.result;
-    window.__edState.pickedImgB64=String(dataUrl).split(',')[1]||'';
-    window.__edState.pickedImgDataUrl=dataUrl;
-    edSetTool('image');
-    edStatus('Image loaded. Click on a page to drop it.');
-  };
-  r.readAsDataURL(f);
-}
-function edClearAll(){
-  window.__edState.elements=[];
-  window.__edState.selected=null;
-  document.querySelectorAll('.ed-overlay').forEach(o=>o.innerHTML='');
-  edSyncJson();
-  edStatus('All edits cleared.');
-}
-async function edLoadPdf(file){
-  edStatus('Loading PDF…');
+  if(window.__cv&&window.__cv.observer){try{window.__cv.observer.disconnect();}catch(e){}}
+  window.__cv=cvNewState();
+  window.__cv.file=file;
+  document.getElementById('cvWorkspace').style.display='none';
+  document.getElementById('cvBanner').style.display='none';
+  cvStatus('Reading your PDF… large or scanned files take a few seconds.',true);
+  const pb=document.getElementById('tpBtnProcess'); if(pb)pb.disabled=true;
   try{
-    const pdfjsLib=await edLoadPdfjs();
-    const buf=await file.arrayBuffer();
-    const pdf=await pdfjsLib.getDocument({data:buf}).promise;
-    const host=document.getElementById('edPages');
-    if(!host){edStatus('Editor not mounted.');return;}
-    host.innerHTML='';
-    window.__edState.elements=[];window.__edState.pages=[];window.__edState.selected=null;
-    const scale=window.__edState.renderScale;
-    for(let i=1;i<=pdf.numPages;i++){
-      const page=await pdf.getPage(i);
-      const viewport=page.getViewport({scale});
-      const wrap=document.createElement('div');wrap.className='ed-page-wrap';
-      wrap.style.width=viewport.width+'px';
-      const canvas=document.createElement('canvas');
-      canvas.width=viewport.width;canvas.height=viewport.height;
-      const overlay=document.createElement('div');overlay.className='ed-overlay';
-      wrap.appendChild(canvas);wrap.appendChild(overlay);
-      const label=document.createElement('div');label.className='ed-page-label';label.textContent='Page '+i;
-      host.appendChild(wrap);host.appendChild(label);
-      await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-      // Each page records its CSS dimensions and PDF point dimensions
-      window.__edState.pages.push({
-        index:i-1,
-        canvas,overlay,wrap,
-        cssW:viewport.width,cssH:viewport.height,
-        ptW:viewport.width/scale,ptH:viewport.height/scale,
-        scale
-      });
-      canvas.addEventListener('click',ev=>edOnPageClick(ev,i-1));
-      overlay.addEventListener('click',ev=>{
-        // clicking blank overlay area also drops an element
-        if(ev.target===overlay)edOnPageClick(ev,i-1);
-      });
+    const fd=new FormData(); fd.append('file',file);
+    const r=await fetch(API+'/api/pdf/parse-canvas',{method:'POST',body:fd,credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}});
+    if(window.__cv.file!==file)return; // a newer upload superseded this one
+    let d=null; try{d=await r.json();}catch(e){}
+    if(!r.ok||!d||!d.pages){
+      const msg=(d&&d.error)||(r.status===429?'Too many requests — please wait a moment.':r.status===413?'File too large — max 50 MB.':'Could not read this PDF for editing.');
+      cvStatus(msg,false); toast(msg,'error'); return;
     }
-    edStatus('Ready. Choose a tool and click anywhere on a page to add it.');
-    // Defer button-state correction until after handleFiles has run
-    setTimeout(edSyncJson,0);
+    cvRender(d);
   }catch(ex){
     console.error(ex);
-    edStatus('Could not preview this PDF: '+(ex&&ex.message||ex)+' — you can still apply edits by typing coordinates, but a clean preview is recommended.');
+    cvStatus('Could not load the editor: '+(ex&&ex.message||ex),false);
+    toast('Could not load the editor','error');
   }
 }
-function edOnPageClick(ev,pageIdx){
-  const st=window.__edState;
-  const page=st.pages[pageIdx];if(!page)return;
-  const rect=page.canvas.getBoundingClientRect();
-  // Scale to canvas internal CSS coords (canvas may be visually shrunk by max-width)
-  const sx=page.canvas.width/rect.width;
-  const sy=page.canvas.height/rect.height;
-  const x=(ev.clientX-rect.left)*sx;
-  const y=(ev.clientY-rect.top )*sy;
-  const tool=st.tool;
-  const color=document.getElementById('edColor').value||'#1d4ed8';
-  const fs=parseFloat(document.getElementById('edFontSize').value||'16');
-  const op=parseFloat(document.getElementById('edOpacity').value||'40')/100;
-  const txt=(document.getElementById('edText').value||'').trim();
-  let el={id:st.nextId++,kind:tool,page:pageIdx,x:x,y:y};
-  if(tool==='text'){
-    if(!txt){toast('Type text in the Text field first.','error');return;}
-    el.text=txt;el.fontSize=fs;el.color=color;
-    el.w=Math.max(40,txt.length*fs*0.6);el.h=fs*1.3;
-  }else if(tool==='highlight'){
-    el.w=160;el.h=20;el.color=color;el.opacity=op;
-  }else if(tool==='note'){
-    el.text=txt||'Note';el.color=color;el.w=28;el.h=28;
-  }else if(tool==='image'){
-    if(!st.pickedImgB64){toast('Click "Image file" to pick an image first.','error');return;}
-    el.imgB64=st.pickedImgB64;el.imgDataUrl=st.pickedImgDataUrl;el.w=120;el.h=120;
+
+function cvRender(d){
+  const cv=window.__cv;
+  cv.data=d; cv.scanned=!!d.scanned;
+  const banner=document.getElementById('cvBanner');
+  if(d.scanned){
+    banner.style.display='block';
+    banner.textContent=d.ocr_applied
+      ? '⚡ This was a scanned PDF. OCR was applied automatically so you can edit the text. Accuracy depends on scan quality.'
+      : '⚠ This looks like a scanned PDF but OCR is unavailable, so no editable text was found.';
+  }else{banner.style.display='none';}
+
+  if(!d.total_spans){
+    cvStatus('No editable text was found in this PDF — it may be an image-only scan we could not read.',false);
+    document.getElementById('cvWorkspace').style.display='none';
+    return;
   }
-  st.elements.push(el);edRender(el);edSelect(el.id);edSyncJson();
+
+  const pagesHost=document.getElementById('cvPages');
+  const thumbsHost=document.getElementById('cvThumbs');
+  pagesHost.innerHTML=''; thumbsHost.innerHTML='';
+  cv.pageEls=[]; cv.thumbEls=[];
+
+  d.pages.forEach(pg=>{
+    // Thumbnail
+    const th=document.createElement('div'); th.className='cv-thumb'; th.dataset.page=pg.page;
+    const ti=document.createElement('img'); ti.src='data:image/png;base64,'+pg.image_b64; ti.alt='Page '+(pg.page+1); ti.loading='lazy';
+    th.appendChild(ti);
+    const tl=document.createElement('div'); tl.className='cv-thumb-label'; tl.textContent=pg.page+1;
+    th.onclick=()=>cvScrollToPage(pg.page);
+    thumbsHost.appendChild(th); thumbsHost.appendChild(tl); cv.thumbEls[pg.page]=th;
+
+    // Page
+    const page=document.createElement('div'); page.className='cv-page'; page.dataset.page=pg.page;
+    const lbl=document.createElement('div'); lbl.className='cv-page-label'; lbl.textContent='Page '+(pg.page+1); page.appendChild(lbl);
+    const img=document.createElement('img'); img.src='data:image/png;base64,'+pg.image_b64; img.alt='Page '+(pg.page+1); img.loading='lazy'; page.appendChild(img);
+    const layer=document.createElement('div'); layer.className='cv-spans'; page.appendChild(layer);
+    const W=pg.pdf_width||1, H=pg.pdf_height||1;
+    pg.spans.forEach(sp=>{
+      const el=document.createElement('div'); el.className='cv-span';
+      el.style.left=(sp.x0/W*100)+'%'; el.style.top=(sp.y0/H*100)+'%';
+      el.style.width=((sp.x1-sp.x0)/W*100)+'%'; el.style.height=((sp.y1-sp.y0)/H*100)+'%';
+      el.dataset.id=sp.id; el.dataset.page=pg.page;
+      el.dataset.x0=sp.x0; el.dataset.y0=sp.y0; el.dataset.x1=sp.x1; el.dataset.y1=sp.y1;
+      el.dataset.ox=(sp.ox!=null?sp.ox:sp.x0); el.dataset.oy=(sp.oy!=null?sp.oy:sp.y1);
+      el.dataset.font=sp.font||''; el.dataset.size=sp.size||0;
+      el.dataset.color=(sp.color||[0,0,0]).join(','); el.dataset.flags=sp.flags||0;
+      el.dataset.original=sp.text;
+      el.title='Click to edit';
+      el.addEventListener('click',ev=>{ev.stopPropagation();cvEditSpan(el);});
+      layer.appendChild(el);
+    });
+    pagesHost.appendChild(page); cv.pageEls[pg.page]=page;
+  });
+
+  // Active-thumbnail tracking
+  cv.observer=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        const p=+e.target.dataset.page;
+        cv.thumbEls.forEach(t=>t&&t.classList.remove('active'));
+        if(cv.thumbEls[p])cv.thumbEls[p].classList.add('active');
+      }
+    });
+  },{root:pagesHost,threshold:0.5});
+  cv.pageEls.forEach(p=>p&&cv.observer.observe(p));
+  if(cv.thumbEls[0])cv.thumbEls[0].classList.add('active');
+
+  document.getElementById('cvWorkspace').style.display='block';
+  document.getElementById('cvInfo').textContent=(d.page_count+' page'+(d.page_count===1?'':'s'))+' · '+d.total_spans+' editable lines';
+  const big = d.page_count>20;
+  cvStatus(big?'Large PDF loaded — scrolling may be heavy. Click any line to edit it.':'Loaded. Click any line of text to edit it. Edited lines turn yellow.',false);
+  cvUpdateCounter();
 }
-function edRender(el){
-  const st=window.__edState;
-  const page=st.pages[el.page];if(!page)return;
-  const div=document.createElement('div');
-  div.className='ed-el kind-'+el.kind;
-  div.dataset.id=el.id;
-  div.style.left=el.x+'px';div.style.top=el.y+'px';
-  div.style.width=el.w+'px';div.style.height=el.h+'px';
-  if(el.kind==='text'){
-    div.textContent=el.text;
-    div.style.color=el.color||'#1d4ed8';
-    div.style.fontSize=(el.fontSize||16)+'px';
-    div.style.lineHeight='1.1';
-  }else if(el.kind==='highlight'){
-    const rgba=edHexToRgba(el.color||'#ffeb3b',el.opacity||0.4);
-    div.style.background=rgba;
-  }else if(el.kind==='note'){
-    div.textContent='!';
-    div.style.background=el.color||'#f59e0b';
-    div.title=el.text||'Note';
-  }else if(el.kind==='image'){
-    div.style.backgroundImage='url('+(el.imgDataUrl||('data:image/png;base64,'+el.imgB64))+')';
+
+function cvScrollToPage(idx){
+  const cv=window.__cv; const el=cv&&cv.pageEls[idx];
+  if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function cvEditSpan(span){
+  const layer=span.parentNode;
+  const existing=layer.querySelector('.cv-span-input'); if(existing)existing.remove();
+  document.querySelectorAll('.cv-span.selected').forEach(s=>s.classList.remove('selected'));
+  span.classList.add('selected');
+  const id=span.dataset.id;
+  const cur=window.__cv.changes.has(id)?window.__cv.changes.get(id).new_text:span.dataset.original;
+  const input=document.createElement('input');
+  input.type='text'; input.className='cv-span-input'; input.value=cur;
+  input.style.left=span.style.left; input.style.top=span.style.top;
+  input.style.height=span.style.height;
+  const wPct=parseFloat(span.style.width)||10;
+  input.style.width=Math.max(wPct,12)+'%';
+  const h=span.getBoundingClientRect().height||16;
+  input.style.fontSize=Math.max(9,Math.min(h*0.8,26))+'px';
+  // Focus but DON'T select-all — drop the cursor at the end so the user can
+  // type/backspace from where they expect. (input.select() would highlight
+  // the entire line and replace it on the next keystroke.)
+  layer.appendChild(input);
+  input.focus();
+  try{ const n=input.value.length; input.setSelectionRange(n,n); }catch(e){}
+  let done=false;
+  const commit=()=>{if(done)return;done=true;input.remove();span.classList.remove('selected');cvCommit(span,input.value);};
+  const cancel=()=>{if(done)return;done=true;input.remove();span.classList.remove('selected');};
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();commit();}
+    else if(e.key==='Escape'){e.preventDefault();cancel();}
+  });
+  input.addEventListener('blur',commit);
+}
+
+function cvCommit(span,value){
+  const cv=window.__cv; const id=span.dataset.id; const orig=span.dataset.original;
+  if(value===orig){
+    cv.changes.delete(id);
+    span.classList.remove('edited');
+    span.textContent=''; span.style.background=''; span.style.color='';
+  }else{
+    const color=(span.dataset.color||'0,0,0').split(',').map(Number);
+    const flags=+span.dataset.flags||0;
+    cv.changes.set(id,{
+      id, page:+span.dataset.page,
+      x0:+span.dataset.x0, y0:+span.dataset.y0, x1:+span.dataset.x1, y1:+span.dataset.y1,
+      ox:+span.dataset.ox, oy:+span.dataset.oy,
+      font:span.dataset.font, size:+span.dataset.size,
+      color, flags, new_text:value,
+    });
+    span.classList.add('edited');
+    span.textContent=value;
+    span.style.color=`rgb(${color[0]||0},${color[1]||0},${color[2]||0})`;
+    span.style.background='#fff';
+    const h=span.getBoundingClientRect().height||16;
+    span.style.fontSize=Math.max(8,Math.min(h*0.82,40))+'px';
+    span.style.fontWeight=(flags&16)?'700':'400';
+    span.style.fontStyle=(flags&2)?'italic':'normal';
   }
-  // Handles & interactions (omit handle for notes — fixed size)
-  if(el.kind!=='note'){
-    const h=document.createElement('div');h.className='ed-handle';div.appendChild(h);
-    h.addEventListener('mousedown',e=>edStartResize(e,el.id));
-    h.addEventListener('touchstart',e=>edStartResize(e,el.id),{passive:false});
-  }
-  div.addEventListener('mousedown',e=>edStartDrag(e,el.id));
-  div.addEventListener('touchstart',e=>edStartDrag(e,el.id),{passive:false});
-  div.addEventListener('click',e=>{e.stopPropagation();edSelect(el.id);});
-  div.addEventListener('dblclick',e=>{e.stopPropagation();edEditElement(el.id);});
-  page.overlay.appendChild(div);
+  cvUpdateCounter();
 }
-function edFindEl(id){return window.__edState.elements.find(e=>e.id===id);}
-function edFindNode(id){return document.querySelector('.ed-el[data-id="'+id+'"]');}
-function edSelect(id){
-  window.__edState.selected=id;
-  document.querySelectorAll('.ed-el').forEach(n=>n.classList.toggle('selected',n.dataset.id==String(id)));
-  // Push selected element's properties back into the toolbar inputs
-  const el=edFindEl(id);if(!el)return;
-  if(el.kind==='text'||el.kind==='note'){document.getElementById('edText').value=el.text||'';}
-  if(el.kind==='text'){document.getElementById('edFontSize').value=el.fontSize||16;}
-  if(el.color){document.getElementById('edColor').value=el.color;}
-  if(typeof el.opacity==='number'){document.getElementById('edOpacity').value=Math.round(el.opacity*100);}
+
+function cvUpdateCounter(){
+  const n=window.__cv?window.__cv.changes.size:0;
+  const el=document.getElementById('cvChanges');
+  if(el){el.textContent=n+' change'+(n===1?'':'s');el.classList.toggle('has',n>0);}
+  const sb=document.getElementById('cvSaveBtn'); if(sb)sb.disabled=n===0;
+  const pb=document.getElementById('tpBtnProcess'); if(pb){pb.disabled=n===0;pb.title=n===0?'Edit a line first.':'';}
 }
-function edPropChange(){
-  const id=window.__edState.selected;if(id==null)return;
-  const el=edFindEl(id);if(!el)return;
-  const txt=document.getElementById('edText').value;
-  const fs=parseFloat(document.getElementById('edFontSize').value||'16');
-  const color=document.getElementById('edColor').value;
-  const op=parseFloat(document.getElementById('edOpacity').value||'40')/100;
-  if(el.kind==='text'){el.text=txt;el.fontSize=fs;el.color=color;el.w=Math.max(40,(el.text||'').length*fs*0.6);el.h=fs*1.3;}
-  if(el.kind==='note'){el.text=txt;el.color=color;}
-  if(el.kind==='highlight'){el.color=color;el.opacity=op;}
-  const node=edFindNode(id);if(node){node.remove();edRender(el);edSelect(id);}
-  edSyncJson();
-}
-function edEditElement(id){
-  const el=edFindEl(id);if(!el)return;
-  if(el.kind==='text'||el.kind==='note'){
-    const nv=prompt(el.kind==='note'?'Note text:':'Text:',el.text||'');
-    if(nv!=null){el.text=nv;const n=edFindNode(id);if(n){n.remove();edRender(el);edSelect(id);}edSyncJson();}
-  }
-}
-function edStartDrag(ev,id){
-  ev.preventDefault();ev.stopPropagation();
-  edSelect(id);
-  const el=edFindEl(id);if(!el)return;
-  const page=window.__edState.pages[el.page];if(!page)return;
-  const rect=page.canvas.getBoundingClientRect();
-  const sx=page.canvas.width/rect.width, sy=page.canvas.height/rect.height;
-  const pt=ev.touches?ev.touches[0]:ev;
-  const startMx=pt.clientX, startMy=pt.clientY;
-  const startX=el.x, startY=el.y;
-  function move(e){
-    const p=e.touches?e.touches[0]:e;
-    const dx=(p.clientX-startMx)*sx, dy=(p.clientY-startMy)*sy;
-    el.x=Math.max(0,Math.min(page.cssW-el.w,startX+dx));
-    el.y=Math.max(0,Math.min(page.cssH-el.h,startY+dy));
-    const n=edFindNode(id);if(n){n.style.left=el.x+'px';n.style.top=el.y+'px';}
-  }
-  function up(){
-    window.removeEventListener('mousemove',move);
-    window.removeEventListener('mouseup',up);
-    window.removeEventListener('touchmove',move);
-    window.removeEventListener('touchend',up);
-    edSyncJson();
-  }
-  window.addEventListener('mousemove',move);
-  window.addEventListener('mouseup',up);
-  window.addEventListener('touchmove',move,{passive:false});
-  window.addEventListener('touchend',up);
-}
-function edStartResize(ev,id){
-  ev.preventDefault();ev.stopPropagation();
-  edSelect(id);
-  const el=edFindEl(id);if(!el)return;
-  const page=window.__edState.pages[el.page];if(!page)return;
-  const rect=page.canvas.getBoundingClientRect();
-  const sx=page.canvas.width/rect.width, sy=page.canvas.height/rect.height;
-  const pt=ev.touches?ev.touches[0]:ev;
-  const startMx=pt.clientX, startMy=pt.clientY;
-  const startW=el.w, startH=el.h;
-  function move(e){
-    const p=e.touches?e.touches[0]:e;
-    el.w=Math.max(12,startW+(p.clientX-startMx)*sx);
-    el.h=Math.max(8 ,startH+(p.clientY-startMy)*sy);
-    const n=edFindNode(id);if(n){n.style.width=el.w+'px';n.style.height=el.h+'px';if(el.kind==='text'){n.style.whiteSpace='normal';}}
-  }
-  function up(){
-    window.removeEventListener('mousemove',move);
-    window.removeEventListener('mouseup',up);
-    window.removeEventListener('touchmove',move);
-    window.removeEventListener('touchend',up);
-    edSyncJson();
-  }
-  window.addEventListener('mousemove',move);
-  window.addEventListener('mouseup',up);
-  window.addEventListener('touchmove',move,{passive:false});
-  window.addEventListener('touchend',up);
-}
-window.addEventListener('keydown',e=>{
-  if(curTool!=='edit-pdf')return;
-  if(e.key!=='Delete'&&e.key!=='Backspace')return;
-  const tgt=document.activeElement;
-  if(tgt&&['INPUT','TEXTAREA'].includes(tgt.tagName))return;
-  const id=window.__edState.selected;if(id==null)return;
-  e.preventDefault();
-  const idx=window.__edState.elements.findIndex(x=>x.id===id);
-  if(idx>=0){window.__edState.elements.splice(idx,1);const n=edFindNode(id);if(n)n.remove();window.__edState.selected=null;edSyncJson();}
-});
-function edHexToRgba(hex,alpha){
-  const h=String(hex).replace('#','');
-  if(h.length<6)return`rgba(255,235,59,${alpha})`;
-  return`rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${alpha})`;
-}
-function edSyncJson(){
-  // Convert CSS px → PDF points and emit a payload our /api/pdf/edit accepts.
-  const st=window.__edState;
-  const out={text_overlays:[],highlights:[],annotations:[],image_overlays:[]};
-  for(const el of st.elements){
-    const p=st.pages[el.page];if(!p)continue;
-    const toPt=v=>v/p.scale;
-    if(el.kind==='text'){
-      // PDF baseline y vs CSS top y: PyMuPDF insert_text uses baseline anchor.
-      // Add fontSize*0.8 to push the baseline below the click point.
-      const fsPt=toPt((el.fontSize||16));
-      out.text_overlays.push({
-        page:el.page,x:toPt(el.x),y:toPt(el.y)+fsPt*0.8,
-        text:el.text||'',font_size:fsPt,color:el.color||'#1d4ed8'
-      });
-    }else if(el.kind==='highlight'){
-      out.highlights.push({
-        page:el.page,
-        x1:toPt(el.x),y1:toPt(el.y),
-        x2:toPt(el.x+el.w),y2:toPt(el.y+el.h),
-        color:el.color||'#ffeb3b',opacity:el.opacity||0.4
-      });
-    }else if(el.kind==='note'){
-      out.annotations.push({
-        page:el.page,x:toPt(el.x+el.w/2),y:toPt(el.y+el.h/2),
-        content:el.text||'',title:'Reviewer',color:el.color||'#f59e0b'
-      });
-    }else if(el.kind==='image'){
-      out.image_overlays.push({
-        page:el.page,x:toPt(el.x),y:toPt(el.y),
-        width:toPt(el.w),height:toPt(el.h),image_b64:el.imgB64
-      });
+
+async function cvSave(){
+  const cv=window.__cv;
+  if(!cv||!cv.file){toast('Upload a PDF first.','error');return;}
+  if(cv.changes.size===0){toast('No changes yet — click a line of text to edit it first.','error');return;}
+  const changes=Array.from(cv.changes.values());
+  const btn=document.getElementById('tpBtnProcess'),sb=document.getElementById('cvSaveBtn'),prog=document.getElementById('tpProgress'),fill=document.getElementById('tpProgressFill'),pTxt=document.getElementById('tpProgressText'),ph=document.getElementById('tpResultPlaceholder');
+  if(btn){btn.disabled=true;btn.style.display='none';}
+  if(sb)sb.disabled=true;
+  prog.classList.add('show'); fill.style.width='15%'; pTxt.textContent='Rebuilding your PDF…';
+  if(ph)ph.style.display='none';
+  let pct=15; const tick=setInterval(()=>{pct=Math.min(pct+Math.random()*9,90);fill.style.width=pct+'%';},300);
+  const finishUI=()=>{clearInterval(tick);if(btn){btn.disabled=false;btn.style.display='flex';}if(sb)sb.disabled=false;};
+  try{
+    const fd=new FormData();
+    fd.append('file',cv.file);
+    fd.append('changes',JSON.stringify(changes));
+    fd.append('scanned',cv.scanned?'true':'false');
+    const r=await fetch(API+'/api/pdf/save-canvas',{method:'POST',body:fd,credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}});
+    if(!r.ok){
+      let msg='Could not save your PDF.';
+      try{const j=await r.json();if(j&&j.error)msg=j.error;}catch(e){}
+      if(r.status===429)msg='Too many requests — please wait a moment.';
+      if(r.status===413)msg='File too large — the editor supports files up to 50 MB.';
+      finishUI(); fill.style.width='0'; prog.classList.remove('show');
+      showResult('error',{message:msg}); return;
     }
+    const blob=await r.blob();
+    fill.style.width='100%'; pTxt.textContent='Done!';
+    const baseName=(cv.file.name||'document.pdf').replace(/\.pdf$/i,'');
+    const outName='edited_'+baseName+'.pdf';
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=outName;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    finishUI();
+    setTimeout(()=>prog.classList.remove('show'),600);
+    if(ph){ph.style.display='flex';ph.innerHTML=`${svgIcon('check',28)}<span>Saved! <b>${esc(outName)}</b> (${fmt(blob.size)}) downloaded. Keep editing or process another file.</span>`;}
+    toast('Saved! Your edited PDF has downloaded.','success');
+  }catch(ex){
+    finishUI(); fill.style.width='0'; prog.classList.remove('show');
+    showResult('error',{message:'Network error — please try again.'});
   }
-  const ta=document.getElementById('edits');if(ta)ta.value=JSON.stringify(out);
-  // Update the process button enabled state: need at least one edit
-  const total=out.text_overlays.length+out.highlights.length+out.annotations.length+out.image_overlays.length;
-  const btn=document.getElementById('tpBtnProcess');
-  const haveFile=typeof selFiles!=='undefined'&&selFiles&&selFiles.length>0;
-  if(btn){
-    if(haveFile&&total>0){btn.disabled=false;btn.title='';}
-    else if(haveFile&&total===0){btn.disabled=true;btn.title='Add at least one edit before processing.';}
-  }
-  edStatus(total?(total+' edit'+(total===1?'':'s')+' staged. Click "Process" when ready.'):'No edits yet — choose a tool and click on a page.');
 }
 
 /* META */
