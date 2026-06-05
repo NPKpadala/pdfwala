@@ -41,6 +41,6 @@ prometheus-client==0.20.0
 python-magic==0.4.27
 
 # Edit PDF: docx <-> html conversion + html sanitisation
-mammoth==1.7.1
+mammoth==1.11.0
 beautifulsoup4==4.12.3
 bleach==6.1.0
