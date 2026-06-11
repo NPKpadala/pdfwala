@@ -1977,6 +1977,12 @@ def _base14_for(font: str, flags: int) -> str:
     NOTE: the correct italic code is 'heit' (Helvetica-Oblique) and bold-italic
     is 'hebi' (Helvetica-BoldOblique). 'heio' is NOT a valid code.
     flags bit 4 (16) = bold, bit 1 (2) = italic.
+
+    Kept for legacy callers (and as a fallback). The canvas editor now
+    routes through `_unicode_font_for` instead — base-14 helv/hebo etc.
+    SILENTLY corrupt em-dashes (—), "+" near digits, currency symbols (₹),
+    curly quotes, etc., because those glyphs aren't in their character set.
+    See _UNICODE_TTF_FOR / _insert_fitted_text for the real path.
     """
     fl = (font or "").lower()
     bold   = bool(flags & (1 << 4)) or "bold" in fl or "black" in fl or "heavy" in fl
@@ -1988,6 +1994,103 @@ def _base14_for(font: str, flags: int) -> str:
     if italic:
         return "heit"
     return "helv"
+
+
+# ── Canvas editor: Unicode-capable TTF font registry ────────────────────────
+# The canvas editor's previous behaviour was to insert replacement text via
+# PyMuPDF's base-14 fonts (helv/hebo/heit/hebi). Those fonts have ONLY
+# WinAnsi-1252 character coverage — so every em-dash, "50+", "₹", smart-quote
+# and Devanagari character was silently dropped or substituted, even when the
+# user just kept the original text and pressed Enter. That's the bug that
+# made colleagues laugh at the demo.
+#
+# DejaVu Sans is shipped with the image (LibreOffice depends on it) and
+# covers every character we've seen in real-world PDFs. We register the
+# four faces with stable internal aliases and reuse them on every page that
+# needs an edit. The TTF bytes are read once at import.
+
+_UNICODE_TTF_PATHS = {
+    "regular":    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "bold":       "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "italic":     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf",
+    "bolditalic": "/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf",
+}
+# Fallbacks for environments without DejaVu — keep the fix working anywhere
+# LibreOffice or any modern Linux distro has installed *something* covering
+# Latin + Indic + symbols.
+_UNICODE_TTF_FALLBACKS = [
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+    "/usr/share/fonts/dejavu/DejaVuSans.ttf",   # RHEL/Oracle path
+]
+
+# Cache: page_id -> {face_key: alias} so we don't re-embed the same TTF on
+# every span insertion (PyMuPDF embeds duplicates if you call insert_font
+# repeatedly with the same fontfile).
+_PAGE_UNICODE_FONT_CACHE: dict = {}
+# Cache: face_key -> fitz.Font (used for accurate text-length measurement)
+_UNICODE_FONT_OBJECTS: dict = {}
+
+
+def _resolve_unicode_ttf(face: str) -> Optional[str]:
+    path = _UNICODE_TTF_PATHS.get(face)
+    if path and os.path.exists(path):
+        return path
+    # Try the regular fallback for any face — better than dropping characters.
+    for fb in _UNICODE_TTF_FALLBACKS:
+        if os.path.exists(fb):
+            return fb
+    return None
+
+
+def _unicode_font_for(face_key: str):
+    """Return a fitz.Font for accurate width measurement, or None."""
+    if face_key in _UNICODE_FONT_OBJECTS:
+        return _UNICODE_FONT_OBJECTS[face_key]
+    path = _resolve_unicode_ttf(face_key)
+    if not path:
+        return None
+    try:
+        f = fitz.Font(fontfile=path)
+    except Exception:
+        f = None
+    _UNICODE_FONT_OBJECTS[face_key] = f
+    return f
+
+
+def _face_key_for(font: str, flags: int) -> str:
+    """Match the existing _base14_for logic but return our face key."""
+    fl = (font or "").lower()
+    bold   = bool(flags & (1 << 4)) or "bold" in fl or "black" in fl or "heavy" in fl
+    italic = bool(flags & (1 << 1)) or "italic" in fl or "oblique" in fl
+    if bold and italic:
+        return "bolditalic"
+    if bold:
+        return "bold"
+    if italic:
+        return "italic"
+    return "regular"
+
+
+def _ensure_unicode_font_on_page(page, face_key: str) -> Optional[str]:
+    """Embed the chosen TTF face on `page` (idempotent). Returns the alias
+    to use as `fontname=` in insert_text, or None if no TTF is available.
+    """
+    page_id = id(page)
+    page_cache = _PAGE_UNICODE_FONT_CACHE.setdefault(page_id, {})
+    if face_key in page_cache:
+        return page_cache[face_key]
+    path = _resolve_unicode_ttf(face_key)
+    if not path:
+        return None
+    alias = f"UNI_{face_key[:2]}"   # short alias, must be unique per page
+    try:
+        page.insert_font(fontname=alias, fontfile=path)
+    except Exception as ex:
+        log.warning(f"canvas: insert_font({alias}, {path}) failed: {ex}")
+        return None
+    page_cache[face_key] = alias
+    return alias
 
 
 def _ocr_page_spans(page, dpi: int = _CANVAS_OCR_DPI, lang: str = "eng") -> list:
@@ -2113,25 +2216,58 @@ def _parse_canvas_sync(pdf_path: str, render_dpi: int = _CANVAS_RENDER_DPI,
 
 
 def _insert_fitted_text(page, ch: dict) -> None:
-    """Insert one replacement span, shrinking font to fit the original width."""
+    """Insert one replacement span.
+
+    Uses a Unicode-capable TTF (DejaVu Sans) embedded on demand so
+    em-dashes, "50+", "₹", smart quotes, Devanagari, etc. survive the
+    edit. Falls back to base-14 helv only if no TTF is available — in
+    which case the legacy character-substitution bug returns.
+    Width is measured with the SAME font as the render to keep
+    shrink-to-fit honest.
+    """
     new_text = str(ch.get("new_text", ""))
     if new_text == "":
         return  # pure deletion — the redaction already cleared the original
     x0 = float(ch["x0"]); y0 = float(ch["y0"])
     x1 = float(ch["x1"]); y1 = float(ch["y1"])
-    fontname = _base14_for(str(ch.get("font", "")), int(ch.get("flags", 0) or 0))
+    flags = int(ch.get("flags", 0) or 0)
+    face_key = _face_key_for(str(ch.get("font", "")), flags)
+
     color = _pack_color_to_rgb(ch.get("color", [0, 0, 0]))
     color_f = tuple(v / 255.0 for v in color)
     size = float(ch.get("size", 0) or 0) or max(6.0, (y1 - y0) * 0.8)
 
+    # Prefer the embedded TTF; fall back to base-14 helv only if TTF
+    # registration failed (e.g. fonts removed from the image).
+    ttf_alias = _ensure_unicode_font_on_page(page, face_key)
+    measure_font = _unicode_font_for(face_key) if ttf_alias else None
+    if ttf_alias and measure_font is not None:
+        fontname = ttf_alias
+        measure = measure_font
+    else:
+        # Last-resort: base-14. Will silently drop em-dash / + / ₹ / etc.
+        fontname = _base14_for(str(ch.get("font", "")), flags)
+        measure = _fitz_font(fontname)
+        if not ttf_alias:
+            log.warning(
+                "canvas: no Unicode TTF available; falling back to base-14 — "
+                "em-dash / + / ₹ may be substituted in span %s",
+                ch.get("id"),
+            )
+
     avail_w = max(1.0, x1 - x0)
     try:
-        tw = _fitz_font(fontname).text_length(new_text, fontsize=size)
+        tw = measure.text_length(new_text, fontsize=size)
     except Exception:
         tw = 0
+
     fs = size
     if tw > avail_w and tw > 0:
-        fs = max(4.0, size * (avail_w / tw) * 0.985)   # shrink to fit width
+        # Shrink to fit width. Floor at 4 pt — anything smaller is
+        # unreadable and means the user typed something far longer
+        # than the original line; we'd rather they see condensed text
+        # than truncated text.
+        fs = max(4.0, size * (avail_w / tw) * 0.985)
 
     ox = float(ch.get("ox", x0))
     oy = float(ch.get("oy", y1 - size * 0.18))
@@ -2194,4 +2330,12 @@ def _save_canvas_sync(pdf_path: str, changes: list, scanned: bool = False) -> by
         doc.save(buf, deflate=True, garbage=4, clean=True)
         return buf.getvalue()
     finally:
+        # Drop the per-page font cache for THIS document — we keyed on id(page)
+        # which gets reused once the underlying objects are gc'd, so leaving
+        # stale entries can cause "missing font" errors on the next call.
+        try:
+            for pno in range(len(doc)):
+                _PAGE_UNICODE_FONT_CACHE.pop(id(doc[pno]), None)
+        except Exception:
+            pass
         doc.close()
