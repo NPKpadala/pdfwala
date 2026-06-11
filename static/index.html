@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="robots" content="index, follow"/>
-<meta name="description" content="PDFWala — Every document tool you'll ever need. Merge, compress, convert, and secure any file. Fast, free, and private."/>
+<meta name="description" content="Edit text inside any PDF — even scanned ones (auto-OCR). Plus 49 free tools: merge, compress, convert, sign, watermark. No signup, no watermarks. 10 MB free."/>
 <meta name="theme-color" content="#0A0E1A"/>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: blob:; connect-src 'self' https://cdnjs.cloudflare.com; worker-src 'self' blob: https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self';">
 <link rel="manifest" href="/pdfwala/manifest.json">
@@ -13,7 +13,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a0a1a'/%3E%3Cellipse cx='16' cy='16' rx='10' ry='10' fill='%23050510'/%3E%3Cpath d='M22 12 C22 9 20 7 17 7 C14 7 12 9 11 11 C10 13 10 14 11 15 L10 20 C9 22 8 23 8 24 C10 23 12 22 13 21 L15 20 C15 21 16 22 18 22 C20 22 22 20 22 18 Z' fill='%230a0e2a' stroke='%231e40ff' stroke-width='0.5'/%3E%3Ccircle cx='18' cy='12' r='2' fill='%231d4ed8'/%3E%3Ccircle cx='18.5' cy='11.5' r='0.8' fill='%2360a5fa'/%3E%3Cpath d='M12 10 C10 9 9 8 10 7' stroke='%231e40ff' stroke-width='0.8' fill='none'/%3E%3Cpath d='M11 14 C9 13 8 12 8 11' stroke='%231e3a8a' stroke-width='0.6' fill='none'/%3E%3C/svg%3E?v=2"/>
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAAoklEQVRYhe2WMQqAMAxFX0UQPICKBxARPIOH9xR6CkGwYMGhkNKhpYRSqJiXIaQQ8r5JIIQQQv5GSukGHMAFgAHtpOQALANgBeCQz2MAqAA0AFhgB4F7DlD1eDECZgANwARwAmwAJQCgACAAIAAIAAIAAIAAIAAIAAIAAIAAIAAIAAIAAIAAIAAIAAIAAIAAIAAIAAIAAIAAPgAfgDaAP8A9AH+AN0AdQAAAAASUVORK5CYII=">
 
-<title>PDFWala — Every Document Tool You'll Ever Need</title>
+<title>Edit PDF online — even scanned PDFs · PDFWala</title>
 <link rel="canonical" href="https://npkpadala.com/pdfwala/"/>
 <meta property="og:title" content="PDFWala — Document Automation Platform"/>
 <meta property="og:description" content="Merge, compress, convert, and secure any file. Fast, free, and private."/>
@@ -237,6 +237,68 @@ input,select,textarea{font-family:inherit}
 .global-drag-overlay-sub{font-size:14px;color:var(--text-2);margin-top:6px}
 
 /* WHY SECTION */
+/* ── Spotlight card for the Edit PDF differentiator ──────────────────────── */
+.spot{padding:48px 28px 8px;background:var(--bg)}
+.spot-inner{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:1.1fr 1fr;gap:28px;align-items:stretch;background:linear-gradient(135deg,rgba(37,99,235,0.10),rgba(124,58,237,0.10));border:1px solid var(--border);border-radius:var(--r-2xl);padding:36px 36px 32px;position:relative;overflow:hidden}
+.spot-inner::before{content:"";position:absolute;inset:-2px;border-radius:var(--r-2xl);padding:1.5px;background:linear-gradient(135deg,var(--blue-500),var(--violet-500),var(--cyan-500));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;opacity:.35}
+.spot-kicker{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--blue-400);background:rgba(59,130,246,.12);padding:5px 11px;border-radius:50px;margin-bottom:14px;border:1px solid rgba(59,130,246,.25)}
+.spot h2{font-family:var(--font-h);font-size:clamp(24px,3.4vw,38px);font-weight:800;line-height:1.1;letter-spacing:-1px;margin:0 0 14px;color:var(--text)}
+.spot h2 .accent{color:var(--blue-400)}
+[data-theme="light"] .spot h2 .accent{color:var(--blue-600)}
+.spot p{font-size:15px;line-height:1.6;color:var(--text-2);margin:0 0 18px}
+.spot-bullets{list-style:none;padding:0;margin:0 0 22px;display:grid;gap:9px}
+.spot-bullets li{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;color:var(--text-2)}
+.spot-bullets li svg{flex-shrink:0;margin-top:2px;color:var(--emerald-400)}
+.spot-cta{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--blue-600),var(--violet-500));color:#fff;border:none;font-weight:700;font-size:14.5px;padding:13px 24px;border-radius:var(--r-lg);cursor:pointer;box-shadow:0 8px 22px rgba(37,99,235,.35);transition:transform var(--t),box-shadow var(--t)}
+.spot-cta:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(37,99,235,.5)}
+.spot-cta svg{transition:transform var(--t)}
+.spot-cta:hover svg{transform:translateX(2px)}
+.spot-preview{background:#fff;border-radius:var(--r-lg);padding:18px;box-shadow:0 16px 44px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:8px;color:#111;font-family:'Liberation Serif',serif;min-height:240px}
+.spot-preview-line{padding:4px 6px;border-radius:3px;transition:background var(--t)}
+.spot-preview-line.editing{background:rgba(251,191,36,.25);border:1px dashed #f59e0b;color:#111;font-weight:600}
+.spot-preview-line.scanned{background:repeating-linear-gradient(45deg,#fafafa 0 8px,#f0f0f0 8px 16px);color:#444;font-style:italic}
+.spot-preview-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;margin-bottom:6px}
+.spot-pills{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:22px}
+.spot-pill{font-size:11.5px;color:var(--text-3);display:inline-flex;align-items:center;gap:5px}
+.spot-pill svg{color:var(--emerald-400)}
+@media(max-width:760px){.spot-inner{grid-template-columns:1fr;padding:28px 22px 22px}.spot-preview{min-height:180px}}
+
+/* ── Ad slots — hidden until you fill in your AdSense publisher id ──────── */
+.ad-slot{margin:24px auto;max-width:1080px;padding:0 28px;text-align:center;display:none}
+.ad-slot.show{display:block}
+.ad-slot-inner{min-height:90px;background:var(--bg-2);border:1px dashed var(--border);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:12px}
+@media(max-width:600px){.ad-slot-inner{min-height:50px}}
+
+/* ── Highlighted "Edit PDF" chip in the popular-tools band ───────────────── */
+.pop-band-chip-hero{background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(124,58,237,.18));border-color:rgba(37,99,235,.5);font-weight:700}
+.pop-band-chip-hero svg{color:var(--blue-400)}
+.pop-band-chip-tag{margin-left:4px;font-size:9.5px;font-weight:800;letter-spacing:.06em;background:var(--blue-500);color:#fff;border-radius:50px;padding:2px 7px}
+
+/* ── "Get Pro" CTA in the header ─────────────────────────────────────────── */
+.nav-pro-btn{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#f59e0b,#dc2626);color:#fff;border:none;font-weight:700;font-size:12.5px;padding:7px 14px;border-radius:50px;cursor:pointer;box-shadow:0 4px 14px rgba(245,158,11,.35);transition:transform var(--t),box-shadow var(--t);margin-right:6px}
+.nav-pro-btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(245,158,11,.5)}
+@media(max-width:768px){.nav-pro-btn{display:none}}
+
+/* ── Pro modal (waitlist capture) ────────────────────────────────────────── */
+.pro-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+.pro-modal-backdrop.show{display:flex}
+.pro-modal{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--r-xl);max-width:460px;width:100%;padding:32px 28px 28px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.5);position:relative}
+.pro-modal-close{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-3);cursor:pointer;padding:6px;line-height:0}
+.pro-modal-close:hover{color:var(--text)}
+.pro-modal-emoji{font-size:36px;margin-bottom:8px}
+.pro-modal h3{font-family:var(--font-h);font-size:22px;font-weight:800;color:var(--text);margin:0 0 8px}
+.pro-modal p{font-size:14px;color:var(--text-2);line-height:1.55;margin:0 0 18px}
+.pro-modal ul{list-style:none;padding:0;margin:0 0 20px;text-align:left;display:grid;gap:9px}
+.pro-modal ul li{font-size:13.5px;color:var(--text-2);display:flex;align-items:flex-start;gap:8px}
+.pro-modal ul li svg{flex-shrink:0;margin-top:2px;color:var(--emerald-400)}
+.pro-modal-form{display:flex;gap:8px;margin-bottom:8px}
+.pro-modal-form input{flex:1;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-size:13.5px;outline:none}
+.pro-modal-form input:focus{border-color:var(--blue-500)}
+.pro-modal-form button{padding:11px 18px;background:linear-gradient(135deg,#f59e0b,#dc2626);color:#fff;border:none;border-radius:var(--r-sm);font-weight:700;font-size:13.5px;cursor:pointer;white-space:nowrap}
+.pro-modal-hint{font-size:11.5px;color:var(--text-3)}
+.pro-modal-success{padding:18px 14px;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.35);border-radius:var(--r-sm);color:var(--emerald-400);font-size:13px;font-weight:600;display:none}
+.pro-modal-success.show{display:block}
+
 .why-section{background:var(--bg-2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:64px 28px}
 .why-inner{max-width:1280px;margin:auto}
 .why-header{text-align:center;margin-bottom:44px}
@@ -712,6 +774,10 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" aria-label="Toggle theme">
         <svg width="16" height="16" id="themeIcon"><use href="#ic-moon"/></svg>
       </button>
+      <button class="nav-pro-btn" onclick="openProModal()" aria-label="Upgrade to Pro">
+        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M8 2l1.8 3.6 4 0.6-2.9 2.8 0.7 4-3.6-1.9-3.6 1.9 0.7-4-2.9-2.8 4-0.6L8 2z"/></svg>
+        Get Pro
+      </button>
       <button class="nav-cta" onclick="navigateHome()">All Tools</button>
       <button class="mob-btn" onclick="toggleMob()" id="mobBtn" aria-label="Open menu" aria-expanded="false">
         <svg width="18" height="18" id="mobIcon"><use href="#ic-menu"/></svg>
@@ -728,6 +794,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   <div class="popular-tools-band-inner">
     <span class="popular-tools-band-label">Most Popular</span>
     <div class="popular-tools-chips" role="list">
+      <div class="pop-band-chip pop-band-chip-hero" onclick="openTool('edit-pdf')" data-tooltip="Edit text inside any PDF — works on scanned PDFs too (auto-OCR)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTool('edit-pdf');}"><svg width="13" height="13"><use href="#ic-edit"/></svg> Edit PDF <span class="pop-band-chip-tag">NEW</span></div>
       <div class="pop-band-chip" onclick="openTool('merge')" data-tooltip="Combine multiple PDFs" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTool('merge');}"><svg width="13" height="13"><use href="#ic-merge"/></svg> Merge PDF</div>
       <div class="pop-band-chip" onclick="openTool('compress')" data-tooltip="Reduce file size" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTool('compress');}"><svg width="13" height="13"><use href="#ic-compress"/></svg> Compress PDF</div>
       <div class="pop-band-chip" onclick="openTool('pdf-to-word')" data-tooltip="Convert PDF to DOCX" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTool('pdf-to-word');}"><svg width="13" height="13"><use href="#ic-file"/></svg> PDF to Word</div>
@@ -761,9 +828,9 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       <div class="float-card fc5"><svg class="fc-icon" width="18" height="18"><use href="#ic-zap"/></svg><div style="font-size:10px;font-weight:600;color:var(--blue-400)">Processing your file...</div></div>
     </div>
     <div class="hero-content">
-      <div class="hero-badge"><div class="badge-dot"></div>50+ Tools · Secure · No signup needed</div>
-      <h1>Every document tool<br/><span class="grad">you'll ever need</span></h1>
-      <p class="hero-sub">Merge, compress, convert, and secure any file. Fast, free, and private.</p>
+      <div class="hero-badge"><div class="badge-dot"></div>NEW · Edit text inside any PDF — even scanned ones</div>
+      <h1>Edit any PDF.<br/><span class="grad">Even scanned ones.</span></h1>
+      <p class="hero-sub">The only free PDF editor with auto-OCR. Plus 49 other tools — merge, compress, convert, secure. No signup, no watermarks, no waiting.</p>
       <div class="trust-row">
         <div class="trust-pill"><svg width="13" height="13"><use href="#ic-lock"/></svg>Bank-grade encryption</div>
         <div class="trust-pill"><svg width="13" height="13"><use href="#ic-zap"/></svg>Processing in seconds</div>
@@ -786,6 +853,70 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
       </div>
     </div>
   </section>
+
+  <!-- Edit PDF spotlight — the genuine differentiator ----------------------- -->
+  <section class="spot" aria-label="Edit PDF spotlight">
+    <div class="spot-inner">
+      <div>
+        <div class="spot-kicker"><svg width="9" height="9"><use href="#ic-zap"/></svg>NEW · Free forever</div>
+        <h2>The first <span class="accent">PDF editor</span> that handles scanned docs too.</h2>
+        <p>Most "edit PDF" tools refuse to touch scanned documents. We auto-detect, run OCR, and let you click any line of text to change it — right in your browser.</p>
+        <ul class="spot-bullets">
+          <li><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M3 8.5L6 11.5L13 4.5"/></svg>Works on scanned PDFs — auto-OCR built in</li>
+          <li><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M3 8.5L6 11.5L13 4.5"/></svg>Click-to-edit in place — no DOCX round-trip</li>
+          <li><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M3 8.5L6 11.5L13 4.5"/></svg>Keeps original layout, fonts &amp; images intact</li>
+          <li><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M3 8.5L6 11.5L13 4.5"/></svg>No signup. No watermark. 10MB free.</li>
+        </ul>
+        <button class="spot-cta" onclick="openTool('edit-pdf')" aria-label="Open Edit PDF tool">
+          Try Edit PDF — free <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M4 8H12M9 5L12 8L9 11"/></svg>
+        </button>
+      </div>
+      <div class="spot-preview" aria-hidden="true">
+        <div class="spot-preview-label">Invoice_Q3.pdf · scanned</div>
+        <div class="spot-preview-line scanned">Invoice #INV-2026-0421</div>
+        <div class="spot-preview-line scanned">Date: 15 March 2026</div>
+        <div class="spot-preview-line editing">Total: ₹ 1,24,500.00 ▏</div>
+        <div class="spot-preview-line scanned">Payment due: 30 days</div>
+        <div class="spot-preview-line scanned">Thank you for your business.</div>
+      </div>
+    </div>
+    <div class="spot-pills">
+      <span class="spot-pill"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M3 8.5L6 11.5L13 4.5"/></svg>Files deleted in 2 hours</span>
+      <span class="spot-pill"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M3 8.5L6 11.5L13 4.5"/></svg>No login required</span>
+      <span class="spot-pill"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M3 8.5L6 11.5L13 4.5"/></svg>Processed privately</span>
+      <span class="spot-pill"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M3 8.5L6 11.5L13 4.5"/></svg>Indian docs supported (Aadhaar, PAN, ITR)</span>
+    </div>
+  </section>
+
+  <!-- AdSense slot #1 — between spotlight and "Why" section.
+       Set window.ADSENSE_CLIENT and call enableAds() to flip it on. -->
+  <div class="ad-slot" id="adSlot1" aria-label="Advertisement">
+    <div class="ad-slot-inner">Advertisement</div>
+  </div>
+
+  <!-- Pro waitlist modal — opens from the "Get Pro" header button --------- -->
+  <div class="pro-modal-backdrop" id="proModalBackdrop" onclick="if(event.target===this)closeProModal()" role="dialog" aria-modal="true" aria-labelledby="proModalTitle">
+    <div class="pro-modal">
+      <button class="pro-modal-close" onclick="closeProModal()" aria-label="Close">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+      <div class="pro-modal-emoji">⚡</div>
+      <h3 id="proModalTitle">PDFWala Pro — coming soon</h3>
+      <p>Get notified when we launch the paid tier. Early-bird pricing for the first 100 sign-ups.</p>
+      <ul>
+        <li><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M3 8.5L6 11.5L13 4.5"/></svg>100 MB file size (vs 10 MB free)</li>
+        <li><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M3 8.5L6 11.5L13 4.5"/></svg>Batch process up to 50 files at once</li>
+        <li><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M3 8.5L6 11.5L13 4.5"/></svg>Priority queue — no waiting on OCR / conversions</li>
+        <li><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 16 16"><path d="M3 8.5L6 11.5L13 4.5"/></svg>Ad-free, of course</li>
+      </ul>
+      <form class="pro-modal-form" id="proModalForm" onsubmit="submitProWaitlist(event)">
+        <input type="email" id="proModalEmail" placeholder="you@example.com" required autocomplete="email" aria-label="Email address"/>
+        <button type="submit">Notify me</button>
+      </form>
+      <div class="pro-modal-hint">No spam. One launch email. Unsubscribe any time.</div>
+      <div class="pro-modal-success" id="proModalSuccess">✓ You're on the list — we'll email you when Pro launches.</div>
+    </div>
+  </div>
 
   <section class="why-section" id="whySection" aria-label="Why PDFWala">
     <div class="why-inner">
@@ -1528,7 +1659,20 @@ async function processToolFile(){
             if(pollData.progress){
               const pv=Math.min(99,parseInt(pollData.progress)||0);
               fill.style.width=pv+'%';
-              pTxt.textContent='This may take a minute… '+pv+'% done';
+              // Tool-aware status text — OCR especially feels broken with
+              // a generic "may take a minute" message at 4 minutes.
+              let stage='Working';
+              if(curTool==='ocr-pdf'){
+                stage = pv < 18 ? 'Reading your PDF'
+                      : pv < 30 ? 'Scanning each page'
+                      : pv < 85 ? 'Recognising text (this is the slow part — ~20s per page)'
+                      : 'Saving searchable PDF';
+              }else if(curTool==='pdf-to-word'){
+                stage = pv < 25 ? 'Analysing layout'
+                      : pv < 70 ? 'Rebuilding paragraphs'
+                      :          'Writing DOCX';
+              }
+              pTxt.textContent=stage+' · '+pv+'% done';
               if(announcer)announcer.textContent=pTxt.textContent;
             }
             currentPollTimeout=setTimeout(poll,5000);
@@ -1983,6 +2127,66 @@ async function cvSave(){
     showResult('error',{message:'Network error — please try again.'});
   }
 }
+
+/* ─── Pro waitlist (money-machine layer 0: prove demand before building) ─── */
+function openProModal(){
+  const m=document.getElementById('proModalBackdrop'); if(!m)return;
+  m.classList.add('show');
+  // Reset state on every open
+  document.getElementById('proModalForm').style.display='flex';
+  document.getElementById('proModalSuccess').classList.remove('show');
+  setTimeout(()=>{const i=document.getElementById('proModalEmail');if(i)i.focus();},80);
+  try{ localStorage.setItem('pw_pro_modal_opened', '1'); }catch(e){}
+}
+function closeProModal(){
+  const m=document.getElementById('proModalBackdrop'); if(m)m.classList.remove('show');
+}
+window.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){const m=document.getElementById('proModalBackdrop');if(m&&m.classList.contains('show'))closeProModal();}
+});
+async function submitProWaitlist(e){
+  e.preventDefault();
+  const email=(document.getElementById('proModalEmail').value||'').trim();
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    toast('Please enter a valid email','error'); return;
+  }
+  // Store locally as a fallback (so leads aren't lost if the API isn't ready).
+  // When you wire up a real /api/waitlist endpoint just replace this block.
+  try{
+    const stored=JSON.parse(localStorage.getItem('pw_pro_leads')||'[]');
+    if(!stored.includes(email)){stored.push(email);localStorage.setItem('pw_pro_leads',JSON.stringify(stored));}
+  }catch(_){}
+  try{
+    // Best-effort POST — silently ignore if endpoint isn't there yet.
+    await fetch(API+'/api/waitlist',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Requested-With':'XMLHttpRequest'},
+      body:JSON.stringify({email,source:'pro_modal',ts:Date.now()}),
+      credentials:'same-origin',
+    }).catch(()=>{});
+  }catch(_){}
+  document.getElementById('proModalForm').style.display='none';
+  document.getElementById('proModalSuccess').classList.add('show');
+}
+
+/* ─── AdSense — call enableAds(pubId, [slot,...]) from your console / build ──
+   Slots stay hidden until you set window.ADSENSE_CLIENT and inject the
+   AdSense script. This keeps the dom clean for Google's approval review. */
+function enableAds(clientId, slotIds){
+  if(!clientId) return;
+  window.ADSENSE_CLIENT=clientId;
+  // Inject the AdSense script once
+  if(!document.querySelector('script[data-adsense]')){
+    const s=document.createElement('script');
+    s.async=true;s.crossOrigin='anonymous';s.dataset.adsense='1';
+    s.src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+encodeURIComponent(clientId);
+    document.head.appendChild(s);
+  }
+  // Reveal slot placeholders so AdSense can fill them
+  (slotIds||['adSlot1']).forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('show');});
+}
+// Auto-enable if a publisher id was set before this script ran
+if(window.ADSENSE_CLIENT){enableAds(window.ADSENSE_CLIENT);}
 
 /* META */
 function updateMeta(id){const t=TOOLS[id];document.title=t.title+' — PDFWala';}
