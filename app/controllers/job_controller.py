@@ -77,7 +77,14 @@ class JobController:
             dur = (time.perf_counter() - t0) * 1000
             metrics.record(ctx.operation, dur, False)
             log.exception(f"[{ctx.job_id}] unhandled in sync run")
-            return Result.error(str(ex), 500, ctx.job_id)
+            # Don't leak the raw exception string to the client (often
+            # contains absolute filesystem paths or library internals).
+            # The full traceback is in the server logs against this job_id.
+            return Result.error(
+                "Something went wrong while processing your file. "
+                "Please try again, or contact support with the job id above.",
+                500, ctx.job_id,
+            )
 
     @staticmethod
     def _enqueue(ctx: JobContext, task_fn: Callable) -> Response:
@@ -88,15 +95,27 @@ class JobController:
             # Update Redis with task_id/is_async fields set by dispatch()
             redis_service.job_set(ctx.job_id, ctx.to_redis())
             return Result.async_accepted(ctx)
-        except Exception as ex:
+        except Exception:
+            # Same reasoning as the sync branch above — server logs hold detail.
             log.exception(f"[{ctx.job_id}] enqueue failed")
-            return Result.error(f"Failed to queue job: {ex}", 500, ctx.job_id)
+            return Result.error(
+                "We couldn't start your job. Please try again.",
+                500, ctx.job_id,
+            )
 
     @staticmethod
     def check_rate_limit(request: Request) -> Optional[Response]:
-        """Returns a 429 Response if rate-limited, else None."""
+        """Returns a 429 Response if rate-limited, else None.
+
+        Prefers headers set by our reverse proxy (CF-Connecting-IP from
+        Cloudflare, X-Real-IP from nginx) over client-supplied
+        X-Forwarded-For — the latter can be spoofed to bypass rate limits.
+        Falls back to X-Forwarded-For only if the proxy headers are missing.
+        """
         ip = (
-            request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+            request.headers.get("CF-Connecting-IP", "").strip()
+            or request.headers.get("X-Real-IP", "").strip()
+            or request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
             or request.remote_addr
             or "unknown"
         )

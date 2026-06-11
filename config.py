@@ -13,6 +13,7 @@ V14 FIXES over V13.1-patched:
 
 import logging
 import os
+import secrets
 from pathlib import Path
 
 BASE_DIR = Path(__file__).parent
@@ -22,7 +23,11 @@ _INSECURE_KEYS = {"dev-secret-change-in-prod", "changeme", "changeme-in-producti
 
 
 class Config:
-    SECRET_KEY         = os.getenv("SECRET_KEY", "dev-secret-change-in-prod")
+    # SECRET_KEY: never ship a literal default that could survive into prod.
+    # If the operator hasn't set one, generate an ephemeral random value per
+    # process — every restart invalidates existing sessions (correct failure
+    # mode: operator MUST set the env var for stable secrets across restarts).
+    SECRET_KEY         = os.getenv("SECRET_KEY") or secrets.token_hex(32)
     DEBUG              = os.getenv("DEBUG", "false").lower() == "true"
     TESTING            = False
     # Free-tier hard cap. Infra is small; we deliberately keep this low so
@@ -71,7 +76,10 @@ class Config:
     GHOSTSCRIPT      = os.getenv("GHOSTSCRIPT", "gs")
     LIBREOFFICE      = os.getenv("LIBREOFFICE", "soffice")
     FFMPEG           = os.getenv("FFMPEG",      "ffmpeg")
-    SIGNED_URL_SECRET = os.getenv("SIGNED_URL_SECRET", "dev-signed-url-secret-change-in-prod-min32")
+    # SIGNED_URL_SECRET: same rule as SECRET_KEY. Ephemeral per process if
+    # the operator didn't set one. Ensures download links can never be forged
+    # offline using a published default value.
+    SIGNED_URL_SECRET = os.getenv("SIGNED_URL_SECRET") or secrets.token_hex(32)
     SIGNED_URL_EXPIRY = int(os.getenv("SIGNED_URL_EXPIRY", 3600))
 
     SUBPROCESS_TIMEOUT = int(os.getenv("SUBPROCESS_TIMEOUT", 300))
@@ -91,7 +99,11 @@ class Config:
         "txt", "html", "csv", "png", "jpg",
     }
 
-    CORS_ORIGINS    = os.getenv("CORS_ORIGINS", "*").split(",")
+    # CORS_ORIGINS: default to "no cross-origin allowed" instead of "*".
+    # Operators that need wider CORS set CORS_ORIGINS explicitly (comma-list
+    # of origins). "*" used to default through to flask_cors which, combined
+    # with credentialed requests, can leak responses cross-origin.
+    CORS_ORIGINS    = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
     API_KEY_HEADER  = "X-API-Key"
     REQUIRE_API_KEY = os.getenv("REQUIRE_API_KEY", "false").lower() == "true"
     VALID_API_KEYS  = set(
@@ -101,23 +113,26 @@ class Config:
     @classmethod
     def validate(cls):
         """
-        Warn on insecure dev config, raise only in production.
+        Refuse to run with insecure secrets in ANY environment.
+
+        The previous "warn in dev, raise in prod" split meant a dev that
+        slipped into production with FLASK_ENV unset (the historical default
+        of CONFIG_MAP['default']) would only emit a log warning — and
+        the hardcoded `dev-secret-change-in-prod` got accepted. Now any
+        recognised-bad value, missing value, or short value (<32 chars)
+        aborts startup regardless of FLASK_ENV.
         """
         _gen_cmd = "python -c \"import secrets; print(secrets.token_hex(32))\""
-        is_prod  = os.getenv("FLASK_ENV", "development") == "production"
         issues   = []
 
         if cls.SECRET_KEY in _INSECURE_KEYS or len(cls.SECRET_KEY) < 32:
             issues.append(f"SECRET_KEY is insecure. Generate with: {_gen_cmd}")
-        if not cls.SIGNED_URL_SECRET or len(cls.SIGNED_URL_SECRET) < 32:
+        if not cls.SIGNED_URL_SECRET or len(cls.SIGNED_URL_SECRET) < 32 \
+           or cls.SIGNED_URL_SECRET in _INSECURE_KEYS:
             issues.append(f"SIGNED_URL_SECRET is weak/missing. Generate with: {_gen_cmd}")
 
-        if issues:
-            for msg in issues:
-                if is_prod:
-                    raise RuntimeError(f"[PROD CONFIG ERROR] {msg}")
-                else:
-                    _log.warning(f"[DEV CONFIG WARNING] {msg}")
+        for msg in issues:
+            raise RuntimeError(f"[CONFIG ERROR] {msg}")
 
     @classmethod
     def init_dirs(cls):
@@ -150,10 +165,15 @@ CONFIG_MAP = {
     "development": DevelopmentConfig,
     "production":  ProductionConfig,
     "testing":     TestingConfig,
-    "default":     DevelopmentConfig,
+    # Default to PRODUCTION (DEBUG=False). Previously this was Development,
+    # which enabled the interactive Werkzeug debugger on any deploy that
+    # forgot to set FLASK_ENV — turning a missed env var into RCE.
+    "default":     ProductionConfig,
 }
 
 
 def get_config(env: str = None) -> type:
-    env = env or os.getenv("FLASK_ENV", "development")
-    return CONFIG_MAP.get(env, DevelopmentConfig)
+    # Mirror CONFIG_MAP: unspecified env → production. Devs who need the
+    # debugger explicitly opt in with FLASK_ENV=development.
+    env = env or os.getenv("FLASK_ENV", "production")
+    return CONFIG_MAP.get(env, ProductionConfig)

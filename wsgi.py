@@ -90,8 +90,12 @@ def create_app(env: str = None) -> Flask:
 application = create_app()
 
 if __name__ == "__main__":
+    # Direct `python wsgi.py` invocation is a dev convenience only.
+    # We deliberately do NOT forward `debug=` from config: the Werkzeug
+    # interactive debugger is RCE-equivalent. Opt in EXPLICITLY by setting
+    # FLASK_DEBUG=1 in your shell when you actually want it.
     application.run(
-        host="0.0.0.0",
+        host="127.0.0.1",     # local-only — never bind 0.0.0.0 in this code path
         port=int(os.getenv("PORT", 5000)),
-        debug=application.config["DEBUG"],
+        debug=os.getenv("FLASK_DEBUG") == "1",
     )
