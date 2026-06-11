@@ -1165,7 +1165,14 @@ def redact_pdf(ctx: JobContext) -> dict:
                     page.add_redact_annot(rect, fill=(0, 0, 0))
                     count += 1
             else:
-                for match in compiled.finditer(page.get_text("text")):
+                # Cap per-page text length fed to the regex engine. Even with
+                # SafeRegex's pattern allowlist + thread timeout, CPython
+                # cannot interrupt a runaway C-level match — bounding the
+                # input is the strongest guarantee we can give.
+                page_text = page.get_text("text")
+                if page_text and len(page_text) > 100_000:
+                    page_text = page_text[:100_000]
+                for match in compiled.finditer(page_text):
                     for rect in page.search_for(match.group()):
                         page.add_redact_annot(rect, fill=(0, 0, 0))
                         count += 1
