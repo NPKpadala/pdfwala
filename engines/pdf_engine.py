@@ -2278,6 +2278,94 @@ def _insert_fitted_text(page, ch: dict) -> None:
         log.warning(f"canvas insert_text failed for span {ch.get('id')}: {ex}")
 
 
+def _sample_background_color(page, rect: "fitz.Rect", dpi: int = 96) -> tuple:
+    """Sample the page background color *around* a text rectangle.
+
+    Previously every redaction used a hardcoded white fill — that leaves an
+    ugly white box on any colored page (blue header bands, dark themes, etc).
+    Now we render a small region around the span, look at pixels JUST OUTSIDE
+    the text bbox (not under it — that has glyphs we don't want sampled), and
+    return the dominant colour as a fitz-style (r, g, b) float tuple in 0..1.
+
+    Strategy:
+      • Render a clip box that's the span rect + 6 pt margin.
+      • Mask out the inner text rect (pixels inside it are the OLD text and
+        will skew our sample).
+      • Build a coarse histogram by quantising each pixel to a 16-bucket cube.
+      • Pick the most-populated bucket. Tie-breaks favour brighter colours so
+        a near-white background with anti-aliased text edges still picks the
+        background, not the dark text edge halo.
+
+    Returns (r, g, b) in 0..1. Falls back to white (1, 1, 1) on any error so
+    the editor at least matches today's behaviour rather than crashing.
+    """
+    try:
+        margin = 6.0
+        page_rect = page.rect
+        clip = fitz.Rect(
+            max(page_rect.x0, rect.x0 - margin),
+            max(page_rect.y0, rect.y0 - margin),
+            min(page_rect.x1, rect.x1 + margin),
+            min(page_rect.y1, rect.y1 + margin),
+        )
+        if clip.is_empty or clip.width < 2 or clip.height < 2:
+            return (1.0, 1.0, 1.0)
+
+        mat = fitz.Matrix(dpi / 72.0, dpi / 72.0)
+        pix = page.get_pixmap(matrix=mat, alpha=False, clip=clip)
+        # pix is now a small image. Convert sample coords to pixmap pixels.
+        sx = mat.a   # horizontal scale (dpi / 72)
+        sy = mat.d
+        # Pixel bounds of the INNER text rect (in pixmap coords, relative to clip).
+        ix0 = int(round((rect.x0 - clip.x0) * sx))
+        iy0 = int(round((rect.y0 - clip.y0) * sy))
+        ix1 = int(round((rect.x1 - clip.x0) * sx))
+        iy1 = int(round((rect.y1 - clip.y0) * sy))
+
+        # Build histogram of OUTSIDE pixels.
+        # pix.samples is bytes RGB, row-major, stride = pix.stride.
+        samples = pix.samples
+        w, h, stride = pix.width, pix.height, pix.stride
+        hist: dict = {}
+        # Walk every Nth pixel to keep this fast — 200-300 samples is plenty.
+        step = max(1, (w * h) // 1200)
+        idx = 0
+        for y in range(h):
+            row = y * stride
+            for x in range(w):
+                idx += 1
+                if idx % step:
+                    continue
+                # skip pixels INSIDE the text bbox (they're the old glyphs)
+                if ix0 <= x < ix1 and iy0 <= y < iy1:
+                    continue
+                r = samples[row + x*3]
+                g = samples[row + x*3 + 1]
+                b = samples[row + x*3 + 2]
+                # 16-bucket cube → 4096 possible keys
+                key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4)
+                hist[key] = hist.get(key, 0) + 1
+        if not hist:
+            return (1.0, 1.0, 1.0)
+        # Best bucket; tie-break by luminance so near-white wins over anti-
+        # aliased dark text edges that may have landed in the outer ring.
+        def _score(item):
+            key, count = item
+            r = ((key >> 8) & 0xF) << 4
+            g = ((key >> 4) & 0xF) << 4
+            b = (key & 0xF) << 4
+            lum = 0.299*r + 0.587*g + 0.114*b
+            return (count, lum)
+        best = max(hist.items(), key=_score)[0]
+        r = (((best >> 8) & 0xF) << 4) + 8   # +8 = bucket center
+        g = (((best >> 4) & 0xF) << 4) + 8
+        b = ( (best       & 0xF) << 4) + 8
+        return (r / 255.0, g / 255.0, b / 255.0)
+    except Exception as ex:
+        log.warning(f"canvas: background colour sample failed ({ex}); falling back to white")
+        return (1.0, 1.0, 1.0)
+
+
 def _save_canvas_sync(pdf_path: str, changes: list, scanned: bool = False) -> bytes:
     """Surgically replace only the edited spans; everything else is untouched."""
     _require(FITZ_OK, "save-canvas", "PyMuPDF")
@@ -2307,7 +2395,10 @@ def _save_canvas_sync(pdf_path: str, changes: list, scanned: bool = False) -> by
             if pno < 0 or pno >= npages:
                 continue
             page = doc[pno]
-            # Step A — white out every original on this page, then apply once
+            # Step A — for each edited span, sample the page background colour
+            # AROUND the span and use that as the redaction fill. The old code
+            # hardcoded white, which left a glaring white rectangle on every
+            # coloured page (blue headers, dark themes, image backgrounds…).
             applied_any = False
             for ch in chs:
                 try:
@@ -2315,8 +2406,9 @@ def _save_canvas_sync(pdf_path: str, changes: list, scanned: bool = False) -> by
                     x1 = float(ch["x1"]); y1 = float(ch["y1"])
                 except (KeyError, TypeError, ValueError):
                     continue
-                page.add_redact_annot(fitz.Rect(x0 - 1, y0 - 1, x1 + 1, y1 + 1),
-                                      fill=(1, 1, 1))
+                rect = fitz.Rect(x0 - 1, y0 - 1, x1 + 1, y1 + 1)
+                bg = _sample_background_color(page, rect)
+                page.add_redact_annot(rect, fill=bg)
                 applied_any = True
             if applied_any:
                 page.apply_redactions(images=img_mode)
