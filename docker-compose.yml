@@ -259,6 +259,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - ./static:/usr/share/nginx/html:ro
+      - /var/www/certbot:/var/www/certbot:ro
     depends_on:
       - app
     healthcheck:
