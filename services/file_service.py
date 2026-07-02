@@ -32,6 +32,7 @@ class FileService:
         with open(tmp, "wb") as fh:
             shutil.copyfileobj(f, fh, length=65536)
         os.rename(tmp, dest)
+        ctx.original_filename = f.filename
         size = os.path.getsize(dest)
         if size == 0:
             os.remove(dest)
@@ -63,6 +64,11 @@ class FileService:
         max_mb    = max_per // (1024 * 1024)
         paths = []
         total = 0
+        # Use the first uploaded file's name as the base for the output name.
+        for _f in files:
+            if _f and _f.filename:
+                ctx.original_filename = _f.filename
+                break
         for f in files:
             if not f or not f.filename:
                 continue
@@ -108,7 +114,17 @@ class FileService:
 
     @staticmethod
     def resolve_output_path(ctx: JobContext, ext: str) -> str:
-        fname = f"{ctx.operation}_{ctx.job_id[:8]}.{ext.lstrip('.')}"
+        # Build a friendly name from the original upload (invoice.pdf →
+        # invoice_compressed_a3f2b1c8.pdf). The short job_id keeps outputs unique
+        # in the shared OUTPUT_FOLDER while still surfacing the original name and
+        # correct extension to the user.
+        from utils.helpers import generate_output_filename
+        base = ctx.original_filename or ctx.operation
+        friendly = generate_output_filename(base, ctx.operation, output_ext=ext)
+        stem, _, extn = friendly.rpartition(".")
+        stem = stem or "file"
+        extn = extn or ext.lstrip(".")
+        fname = f"{stem}_{ctx.job_id[:8]}.{extn}"
         ctx.output_path = os.path.join(Config.OUTPUT_FOLDER, fname)
         return ctx.output_path
 

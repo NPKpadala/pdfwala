@@ -33,6 +33,7 @@ class JobContext:
     input_path:  str = ""        # absolute path to uploaded temp file
     input_paths: List[str] = field(default_factory=list)  # multi-file ops
     output_path: str = ""        # absolute path where engine writes output
+    original_filename: str = ""  # user's uploaded filename (for friendly output naming)
 
     # ── Operation parameters (set by route handler) ──────────────────────
     params: Dict[str, Any] = field(default_factory=dict)
@@ -61,6 +62,7 @@ class JobContext:
             "input_path":   self.input_path,
             "input_paths":  json.dumps(self.input_paths),
             "output_path":  self.output_path,
+            "original_filename": self.original_filename,
             "params":       json.dumps(self.params),
             "status":       self.status,
             "progress":     str(self.progress),
@@ -83,6 +85,7 @@ class JobContext:
         ctx.input_path   = data.get("input_path", "")
         ctx.input_paths  = json.loads(data.get("input_paths", "[]"))
         ctx.output_path  = data.get("output_path", "")
+        ctx.original_filename = data.get("original_filename", "")
         ctx.params       = json.loads(data.get("params", "{}"))
         ctx.status       = data.get("status", "pending")
         ctx.progress     = int(data.get("progress", 0))

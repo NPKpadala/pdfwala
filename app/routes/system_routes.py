@@ -25,9 +25,15 @@ system_bp = Blueprint("system", __name__)
 def download(filename: str):
     # Resolve the full path and verify it stays within OUTPUT_FOLDER
     try:
+        # Reject any filename that carries a path separator outright — download
+        # names are always flat basenames under OUTPUT_FOLDER.
+        if os.sep in filename or (os.altsep and os.altsep in filename):
+            return Result.error("Invalid filename", 400)
         output_root = Path(Config.OUTPUT_FOLDER).resolve()
         path = (output_root / filename).resolve()
-        if not str(path).startswith(str(output_root) + os.sep) and path != output_root:
+        # is_relative_to is the correct containment check (Python 3.9+) and is
+        # not fooled by sibling dirs sharing a name prefix (e.g. /outputs_evil).
+        if not path.is_relative_to(output_root):
             return Result.error("Invalid filename", 400)
     except (ValueError, OSError):
         return Result.error("Invalid filename", 400)

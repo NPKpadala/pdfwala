@@ -26,9 +26,15 @@ def test_pipeline_run_success(tmp_path):
         open(ctx.output_path, "wb").write(b"fake")
         return {"pages": 1}
 
+    # Use a throwaway input file — Pipeline.run() deletes ctx.input_path in its
+    # cleanup phase, so this must NOT point at a real source file (it previously
+    # pointed at __file__, which deleted this test module on every run).
+    inp = tmp_path / "in.bin"
+    inp.write_bytes(b"fake input")
+
     ctx = JobContext()
     ctx.operation   = "_test_run"
-    ctx.input_path  = __file__
+    ctx.input_path  = str(inp)
     ctx.output_path = out
 
     with patch("core.pipeline.redis_service") as mock_redis:
@@ -44,9 +50,12 @@ def test_pipeline_run_failure(tmp_path):
     def _bad(ctx):
         raise ProcessingError("deliberate failure")
 
+    inp = tmp_path / "in.bin"
+    inp.write_bytes(b"fake input")
+
     ctx = JobContext()
     ctx.operation   = "_test_fail"
-    ctx.input_path  = __file__
+    ctx.input_path  = str(inp)
     ctx.output_path = str(tmp_path / "out.pdf")
 
     with patch("core.pipeline.redis_service"):

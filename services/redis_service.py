@@ -100,8 +100,13 @@ class RedisService:
         now   = time.time()
         key   = f"rl:{identifier}"
         try:
-            self._get().zremrangebyscore(key, 0, now - 60)
-            return max(0, limit - self._get().zcard(key))
+            # Prune expired entries and count remaining atomically — two separate
+            # calls could race with a concurrent request and report a stale count.
+            pipe = self._get().pipeline(transaction=True)
+            pipe.zremrangebyscore(key, 0, now - 60)
+            pipe.zcard(key)
+            results = pipe.execute()
+            return max(0, limit - results[1])
         except Exception:
             return limit
 

@@ -1,7 +1,15 @@
 """tests/conftest.py"""
 import os
 import pytest
-from app import create_app
+
+# The app factory lives in wsgi.py (not app/__init__.py). Set required secrets
+# before importing so Config.validate() is satisfied in any environment (CI).
+os.environ.setdefault("FLASK_ENV", "testing")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-that-is-at-least-32-bytes!")
+os.environ.setdefault("SIGNED_URL_SECRET", "test-signed-url-secret-at-least-32-bytes!")
+
+from wsgi import create_app  # noqa: E402
+
 
 @pytest.fixture(scope="session")
 def app():

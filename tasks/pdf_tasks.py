@@ -31,10 +31,15 @@ class _BaseTask(Task):
         job_id = args[0] if args else task_id
         log.error(f"[{job_id}] task failure: {exc}")
         try:
-            redis_service.job_update(job_id, {
-                "status": "failed",
-                "error":  str(exc)[:500],
-            })
+            # _run_job already writes a friendly, operation-specific error before
+            # re-raising. Only fill in a generic message if the job hasn't been
+            # marked failed yet, so we don't clobber the better message.
+            data = redis_service.job_get(job_id)
+            if not data or data.get("status") != "failed":
+                redis_service.job_update(job_id, {
+                    "status": "failed",
+                    "error":  str(exc)[:500],
+                })
         except Exception:
             pass
 
@@ -152,6 +157,33 @@ def task_organize_pdf(self, job_id):  _run_job(job_id)
 @celery_app.task(base=_BaseTask, name="tasks.edit_pdf",      bind=True)
 def task_edit_pdf(self, job_id):      _run_job(job_id)
 
+@celery_app.task(base=_BaseTask, name="tasks.split_by_bookmarks", bind=True)
+def task_split_by_bookmarks(self, job_id): _run_job(job_id)
+
+@celery_app.task(base=_BaseTask, name="tasks.split_by_size",  bind=True)
+def task_split_by_size(self, job_id): _run_job(job_id)
+
+@celery_app.task(base=_BaseTask, name="tasks.alternate_mix",  bind=True)
+def task_alternate_mix(self, job_id): _run_job(job_id)
+
+@celery_app.task(base=_BaseTask, name="tasks.remove_metadata", bind=True)
+def task_remove_metadata(self, job_id): _run_job(job_id)
+
+@celery_app.task(base=_BaseTask, name="tasks.add_header_footer", bind=True)
+def task_add_header_footer(self, job_id): _run_job(job_id)
+
+@celery_app.task(base=_BaseTask, name="tasks.resize_pdf",     bind=True)
+def task_resize_pdf(self, job_id):    _run_job(job_id)
+
+@celery_app.task(base=_BaseTask, name="tasks.pdf_to_html",    bind=True)
+def task_pdf_to_html(self, job_id):   _run_job(job_id)
+
+@celery_app.task(base=_BaseTask, name="tasks.fill_form",      bind=True)
+def task_fill_form(self, job_id):     _run_job(job_id)
+
+@celery_app.task(base=_BaseTask, name="tasks.flatten_pdf",    bind=True)
+def task_flatten_pdf(self, job_id):   _run_job(job_id)
+
 
 # ── Operation → task function map ─────────────────────────────────────────────
 PDF_TASK_MAP = {
@@ -182,4 +214,13 @@ PDF_TASK_MAP = {
     "extract_pages": task_extract_pages,
     "organize_pdf":  task_organize_pdf,
     "edit_pdf":      task_edit_pdf,
+    "split_by_bookmarks": task_split_by_bookmarks,
+    "split_by_size":      task_split_by_size,
+    "alternate_mix":      task_alternate_mix,
+    "remove_metadata":    task_remove_metadata,
+    "add_header_footer":  task_add_header_footer,
+    "resize_pdf":         task_resize_pdf,
+    "pdf_to_html":        task_pdf_to_html,
+    "fill_form":          task_fill_form,
+    "flatten_pdf":        task_flatten_pdf,
 }

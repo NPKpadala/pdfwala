@@ -55,43 +55,77 @@ def truncate_string(text: str, maxlen: int = 200, suffix: str = "...") -> str:
     return text[: maxlen - len(suffix)] + suffix
 
 
+# Friendly, human-readable label for each registered operation. Used to build
+# output filenames like "invoice_compressed.pdf" instead of leaking the internal
+# operation name ("invoice_compress_pdf.pdf").
+_OP_LABEL = {
+    "compress_pdf": "compressed", "merge_pdf": "merged", "split_pdf": "split",
+    "rotate_pdf": "rotated", "watermark_pdf": "watermarked",
+    "protect_pdf": "protected", "unlock_pdf": "unlocked", "crop_pdf": "cropped",
+    "sign_pdf": "signed", "redact_pdf": "redacted", "ocr_pdf": "ocr",
+    "organize_pdf": "organized", "remove_pages": "pages_removed",
+    "extract_pages": "extracted", "repair_pdf": "repaired",
+    "linearize_pdf": "web_optimized", "page_numbers": "numbered",
+    "edit_pdf": "edited", "pdf_info": "info",
+    "pdf_to_word": "converted", "pdf_to_excel": "converted",
+    "pdf_to_ppt": "converted", "pdf_to_pdfa": "pdfa",
+    "pdf_to_image": "images", "pdf_to_jpg": "jpg", "pdf_to_png": "png",
+    "compare_pdf": "comparison", "pdf_to_html": "html",
+    "split_by_bookmarks": "chapters", "split_by_size": "parts",
+    "alternate_mix": "interleaved", "remove_metadata": "cleaned",
+    "add_header_footer": "stamped", "resize_pdf": "resized",
+    "fill_form": "filled", "flatten_pdf": "flattened",
+}
+
+# Operations whose output is always a ZIP, used only when the caller doesn't
+# pass an explicit output_ext (e.g. the Pipeline fallback resolver).
+_ZIP_OPS = {
+    "split_pdf", "pdf_to_jpg", "pdf_to_png", "compare_pdf", "pdf_to_image",
+    "split_by_bookmarks", "split_by_size",
+}
+
+# Known label suffixes stripped from the stem so repeated operations don't
+# stack ("invoice_compressed_compressed.pdf").
+_KNOWN_SUFFIXES = ["_" + v for v in set(_OP_LABEL.values())]
+
+
 def generate_output_filename(
     original: str,
     operation: str,
+    output_ext: str = None,
     is_multi: bool = False,
     filenames: list = None,
 ) -> str:
     """
-    Derive an output filename from the original name + operation tag.
-    Produces .zip for multi-page export operations.
+    Derive a friendly output filename from the original name + operation label.
+
+    The extension is driven by `output_ext` when provided (so conversions get the
+    correct extension, e.g. invoice.pdf → invoice_converted.docx). When it is not
+    provided the original suffix is kept, except for known multi-file/ZIP
+    operations which are forced to .zip.
     """
     if is_multi and filenames and len(filenames) > 1:
         stems = [Path(f).stem for f in filenames]
         common = _common_prefix(stems).rstrip("_-")
-        name = common if len(common) > 2 else "merged_documents"
-        ext = ".pdf"
+        name = common if len(common) > 2 else "documents"
     else:
         name = Path(original).stem
-        for suffix in [
-            "_compressed", "_merged", "_rotated", "_watermarked",
-            "_protected", "_unlocked", "_cropped", "_converted",
-            "_to_jpg", "_to_png", "_to_txt", "_to_excel", "_to_ppt",
-            "_to_html", "_to_json", "_edited",
-        ]:
+        for suffix in _KNOWN_SUFFIXES:
             if name.endswith(suffix):
                 name = name[: -len(suffix)]
                 break
-        ext = Path(original).suffix
 
-    name = _UNSAFE_CHARS_RE.sub("_", name)
-    final = f"{name}_{operation}{ext}"
+    name = _UNSAFE_CHARS_RE.sub("_", name).strip("_") or "file"
+    label = _OP_LABEL.get(operation, operation)
 
-    multi_zip = {"split_pages", "to_jpg", "to_png", "comparison", "to_image"}
-    if operation in multi_zip:
-        final = re.sub(r"\.\w+$", ".zip", final)
-        if not final.endswith(".zip"):
-            final = Path(final).stem + ".zip"
-    return final
+    if output_ext:
+        ext = output_ext.lstrip(".").lower()
+    elif operation in _ZIP_OPS:
+        ext = "zip"
+    else:
+        ext = (Path(original).suffix.lstrip(".") or "pdf").lower()
+
+    return f"{name}_{label}.{ext}"
 
 
 def _common_prefix(strings: List[str]) -> str:

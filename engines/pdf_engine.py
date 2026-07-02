@@ -84,6 +84,8 @@ _VALID_ROTATION_ANGLES = {0, 90, 180, 270}
 _VALID_TESSERACT_LANGS = re.compile(r'^[a-zA-Z]{2,8}(\+[a-zA-Z]{2,8})*$')
 _VALID_TESSERACT_PSM   = frozenset(range(0, 14))
 _VALID_TESSERACT_OEM   = frozenset(range(0, 4))
+_OCR_MAX_WORDS_PER_PAGE = 10_000   # guard against runaway text insertion per page
+_COMPARE_WORD_CAP        = 500      # per-page word cap for text-similarity in compare_pdf
 
 # ── Library availability flags ────────────────────────────────────────────────
 try:
@@ -1252,8 +1254,11 @@ def protect_pdf(ctx: JobContext) -> dict:
     allow_copy  = ctx.params.get("allow_copy", True)
     if not pw:
         raise ValidationError("Password required")
-    if len(pw) > 128:
-        raise ValidationError("Password too long (max 128 chars)")
+    # PDF AES-256 (ISO 32000-2) caps passwords at 127 UTF-8 bytes; longer
+    # passwords are silently truncated by some readers, which would lock the
+    # user out. Reject them up front instead.
+    if len(pw.encode("utf-8")) > 127:
+        raise ValidationError("Password too long (max 127 bytes for AES-256 PDF encryption)")
 
     # Owner password must differ from user password
     owner_pw = pw + "-" + secrets.token_hex(4)
@@ -1291,17 +1296,16 @@ def unlock_pdf(ctx: JobContext) -> dict:
         raise ValidationError("Password required")
 
     doc = fitz.open(ctx.input_path)
-    authenticated = False
+    # Capture the real encryption state BEFORE authenticating — is_encrypted
+    # flips to False once we successfully authenticate, so reading it later
+    # would always report the document as unencrypted.
+    was_encrypted = bool(doc.is_encrypted)
     try:
-        if doc.is_encrypted:
+        if was_encrypted:
             # Try as user password first, then as owner password
-            if doc.authenticate(pw):
-                authenticated = True
-            else:
+            if not doc.authenticate(pw):
                 doc.close()
                 raise ValidationError("Wrong password — authentication failed")
-        else:
-            authenticated = True   # not encrypted — just re-save without encryption
 
         # Save with no encryption and full permissions
         doc.save(
@@ -1313,8 +1317,8 @@ def unlock_pdf(ctx: JobContext) -> dict:
     finally:
         doc.close()
 
-    log.info(f"[{ctx.job_id}] unlock_pdf: successfully unlocked")
-    return {"was_encrypted": not authenticated or True}
+    log.info(f"[{ctx.job_id}] unlock_pdf: successfully unlocked (was_encrypted={was_encrypted})")
+    return {"was_encrypted": was_encrypted}
 
 
 @register("sign_pdf")
@@ -1382,7 +1386,9 @@ def sign_pdf(ctx: JobContext) -> dict:
             shape.draw_rect(box_r)
             shape.finish(color=(0, 0, 0.6), fill=(0.9, 0.9, 1.0), width=0.8)
             line = f"{name} | {reason} | {today_str}"
-            shape.insert_text((sx, sy - 28), "✦ SIGNED", fontsize=9,
+            # ASCII only — the base-14 font used here has no glyph for "✦"
+            # (U+2726), which rendered as a missing-glyph box in strict viewers.
+            shape.insert_text((sx, sy - 28), "* SIGNED", fontsize=9,
                                color=(0, 0, 0.6))
             shape.insert_text((sx, sy - 12), line, fontsize=7.5,
                                color=(0.1, 0.1, 0.1))
@@ -1546,8 +1552,20 @@ def pdf_to_word(ctx: JobContext) -> dict:
                             base_doc.element.body.append(copy.deepcopy(element))
                     base_doc.save(ctx.output_path)
                 except Exception as merge_ex:
-                    log.warning(f"[{ctx.job_id}] chunk merge failed ({merge_ex}), using first chunk only")
-                    shutil.copy(chunk_docxs[0], ctx.output_path)
+                    # Do NOT silently ship only the first chunk — that drops the
+                    # majority of the document without telling the user. Fail
+                    # loudly with a count of the pages that would be lost and a
+                    # concrete next step.
+                    pages_in_first = min(chunk_size, page_count)
+                    lost = max(0, page_count - pages_in_first)
+                    log.error(f"[{ctx.job_id}] chunk merge failed ({merge_ex}); ~{lost} pages would be lost")
+                    raise ProcessingError(
+                        f"Could not assemble the converted Word document "
+                        f"({merge_ex}). About {lost} of {page_count} pages would "
+                        f"be missing from the output, so the conversion was "
+                        f"stopped. Split the PDF into sections of under "
+                        f"{CHUNK_THRESHOLD} pages and convert each separately."
+                    )
         finally:
             if tmp_dir:
                 shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -1809,11 +1827,21 @@ def ocr_pdf(ctx: JobContext) -> dict:
                 img_sx = pw / pix_w
                 img_sy = ph / pix_h
 
+                # Per-page word cap — mirrors the char cap used elsewhere so a
+                # pathological page (e.g. OCR noise on a photo) can't insert a
+                # runaway number of text objects and bloat the output PDF.
+                words_on_page = 0
                 for i in range(len(hocr.get("text", []))):
                     word = (hocr["text"][i] or "").strip()
                     conf = int(hocr["conf"][i]) if hocr["conf"][i] != -1 else 0
                     if not word or conf < 30:
                         continue
+                    if words_on_page >= _OCR_MAX_WORDS_PER_PAGE:
+                        log.warning(
+                            f"[{ctx.job_id}] ocr_pdf: page {page_num + 1} hit the "
+                            f"{_OCR_MAX_WORDS_PER_PAGE}-word cap; remaining words skipped"
+                        )
+                        break
                     x0 = hocr["left"][i]   * img_sx
                     y1 = (hocr["top"][i] + hocr["height"][i]) * img_sy
                     fs = max(4.0, hocr["height"][i] * img_sy * 0.85)
@@ -1822,6 +1850,7 @@ def ocr_pdf(ctx: JobContext) -> dict:
                         fontsize=fs, fontname="helv",
                         color=(0, 0, 0), render_mode=3, overlay=True,
                     )
+                    words_on_page += 1
             pages_processed += 1
 
         if pages_processed == 0:
@@ -1865,35 +1894,67 @@ def compare_pdf(ctx: JobContext) -> dict:
         zf, buf = _open_zip_writer(ctx.output_path, pages)
         try:
             for i in range(pages):
-                pix1 = doc1[i].get_pixmap(dpi=150)
-                pix2 = doc2[i].get_pixmap(dpi=150)
-                img1 = Image.open(io.BytesIO(pix1.tobytes("png"))).convert("RGB")
-                img2 = Image.open(io.BytesIO(pix2.tobytes("png"))).convert("RGB")
-                if img1.size != img2.size:
-                    img2 = img2.resize(img1.size, Image.LANCZOS)
-                diff = ImageChops.difference(img1, img2)
-                diff = diff.point(lambda x: min(x * 8, 255))
-                db   = io.BytesIO()
-                diff.save(db, "PNG")
-                zf.writestr(f"diff_page_{i + 1:04d}.png", db.getvalue())
+                img1 = img2 = diff = None
+                try:
+                    pix1 = doc1[i].get_pixmap(dpi=150)
+                    pix2 = doc2[i].get_pixmap(dpi=150)
+                    img1 = Image.open(io.BytesIO(pix1.tobytes("png"))).convert("RGB")
+                    img2 = Image.open(io.BytesIO(pix2.tobytes("png"))).convert("RGB")
+                    if img1.size != img2.size:
+                        resized = img2.resize(img1.size, Image.LANCZOS)
+                        img2.close()
+                        img2 = resized
+                    diff = ImageChops.difference(img1, img2)
+                    diff = diff.point(lambda x: min(x * 8, 255))
+                    db   = io.BytesIO()
+                    diff.save(db, "PNG")
+                    zf.writestr(f"diff_page_{i + 1:04d}.png", db.getvalue())
+                finally:
+                    # Close PIL images explicitly — a large comparison otherwise
+                    # accumulates hundreds of decoded bitmaps in RAM.
+                    for im in (img1, img2, diff):
+                        try:
+                            if im is not None:
+                                im.close()
+                        except Exception:
+                            pass
 
-                words1 = [w[4] for w in doc1[i].get_text("words")][:500]
-                words2 = [w[4] for w in doc2[i].get_text("words")][:500]
+                # Similarity is capped at _COMPARE_WORD_CAP words/page for speed;
+                # tell the caller when that cap actually changed the input so a
+                # low score on a dense page isn't mistaken for real divergence.
+                raw_words1 = [w[4] for w in doc1[i].get_text("words")]
+                raw_words2 = [w[4] for w in doc2[i].get_text("words")]
+                word_cap_applied = (
+                    len(raw_words1) > _COMPARE_WORD_CAP
+                    or len(raw_words2) > _COMPARE_WORD_CAP
+                )
+                words1 = raw_words1[:_COMPARE_WORD_CAP]
+                words2 = raw_words2[:_COMPARE_WORD_CAP]
                 sm     = difflib.SequenceMatcher(None, words1, words2)
                 sim    = round(sm.ratio() * 100, 1)
                 sims.append(sim)
-                diff_data.append({"page": i + 1, "similarity_pct": sim})
+                diff_data.append({
+                    "page": i + 1,
+                    "similarity_pct": sim,
+                    "word_cap_applied": word_cap_applied,
+                })
 
                 if i % 10 == 0:
                     ctx.set_progress(int(i / pages * 90))
 
-            zf.writestr(
-                "summary.json",
-                json.dumps({
-                    "pages":                    diff_data,
-                    "overall_similarity_pct":   round(sum(sims) / len(sims), 1) if sims else 0,
-                }),
-            )
+            any_capped = any(d["word_cap_applied"] for d in diff_data)
+            summary = {
+                "pages":                  diff_data,
+                "overall_similarity_pct": round(sum(sims) / len(sims), 1) if sims else 0,
+            }
+            if any_capped:
+                summary["accuracy_note"] = (
+                    f"One or more pages exceeded {_COMPARE_WORD_CAP} words; the "
+                    "text-similarity score for those pages is based on the first "
+                    f"{_COMPARE_WORD_CAP} words only and may understate the real "
+                    "similarity."
+                )
+            zf.writestr("summary.json", json.dumps(summary))
         finally:
             _finalise_zip(zf, buf, ctx.output_path)
     finally:
@@ -1903,6 +1964,419 @@ def compare_pdf(ctx: JobContext) -> dict:
     ctx.set_progress(100)
     log.info(f"[{ctx.job_id}] compare_pdf: {pages} pages compared")
     return {"pages_compared": pages}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PDF SPLIT / MIX (extra organize operations)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_FILENAME_SAFE_RE = re.compile(r'[^\w\-]+')
+
+
+def _sanitise_filename(name: str, fallback: str = "section") -> str:
+    """Turn an arbitrary bookmark/title into a safe, bounded filename stem."""
+    cleaned = _FILENAME_SAFE_RE.sub("_", (name or "").strip()).strip("_")
+    return (cleaned[:80] or fallback)
+
+
+@register("split_by_bookmarks")
+def split_by_bookmarks(ctx: JobContext) -> dict:
+    """
+    Split a PDF at each top-level (level 1) bookmark into a streaming ZIP.
+    Each output file is named by the (sanitised) bookmark title.
+    Raises ValidationError if the PDF has no bookmarks.
+    """
+    _require(FITZ_OK, "split_by_bookmarks", "PyMuPDF")
+    _guard_empty(ctx.input_path)
+
+    src = fitz.open(ctx.input_path)
+    try:
+        total = len(src)
+        toc = src.get_toc()  # [level, title, page(1-based)]
+        tops = [(t[1], t[2]) for t in toc if t[0] == 1 and 1 <= t[2] <= total]
+        if not tops:
+            raise ValidationError(
+                "This PDF has no top-level bookmarks to split on. Use Split PDF "
+                "to split by page ranges instead."
+            )
+
+        # Build inclusive 0-based [start, end] ranges from bookmark boundaries.
+        ranges = []
+        for i, (title, page) in enumerate(tops):
+            start = page - 1
+            end = (tops[i + 1][1] - 2) if i + 1 < len(tops) else total - 1
+            end = max(start, min(end, total - 1))
+            ranges.append((title, start, end))
+
+        zf, buf = _open_zip_writer(ctx.output_path, len(ranges))
+        try:
+            for idx, (title, start, end) in enumerate(ranges):
+                out = fitz.open()
+                out.insert_pdf(src, from_page=start, to_page=end)
+                data = out.tobytes(deflate=True, garbage=2)
+                out.close()
+                stem = _sanitise_filename(title, f"section_{idx + 1}")
+                zf.writestr(f"{idx + 1:02d}_{stem}.pdf", data)
+                ctx.set_progress(int((idx + 1) / len(ranges) * 95))
+        finally:
+            _finalise_zip(zf, buf, ctx.output_path)
+    finally:
+        src.close()
+
+    log.info(f"[{ctx.job_id}] split_by_bookmarks: {len(ranges)} sections")
+    return {"sections": len(ranges)}
+
+
+@register("split_by_size")
+def split_by_size(ctx: JobContext) -> dict:
+    """
+    Split a PDF into parts each no larger than `max_mb` (default 10), greedily
+    accumulating whole pages. A single page larger than the limit is emitted on
+    its own. Output is a streaming ZIP.
+    """
+    _require(FITZ_OK, "split_by_size", "PyMuPDF")
+    _guard_empty(ctx.input_path)
+
+    try:
+        max_mb = float(ctx.params.get("max_mb", 10))
+    except (TypeError, ValueError):
+        raise ValidationError("max_mb must be a number")
+    if max_mb <= 0:
+        raise ValidationError("max_mb must be positive")
+    max_bytes = int(max_mb * 1024 * 1024)
+
+    src = fitz.open(ctx.input_path)
+    try:
+        total = len(src)
+        zf, buf = _open_zip_writer(ctx.output_path, total)
+        part_index = 0
+        try:
+            cur = fitz.open()
+            for i in range(total):
+                cur.insert_pdf(src, from_page=i, to_page=i)
+                data = cur.tobytes(deflate=True, garbage=2)
+                if len(data) > max_bytes and len(cur) > 1:
+                    # This page tipped the part over the limit — flush everything
+                    # BEFORE it, then start a fresh part with this page.
+                    cur.delete_page(len(cur) - 1)
+                    part_index += 1
+                    zf.writestr(
+                        f"part_{part_index:03d}.pdf",
+                        cur.tobytes(deflate=True, garbage=2),
+                    )
+                    cur.close()
+                    cur = fitz.open()
+                    cur.insert_pdf(src, from_page=i, to_page=i)
+                ctx.set_progress(int((i + 1) / total * 95))
+            if len(cur) > 0:
+                part_index += 1
+                zf.writestr(
+                    f"part_{part_index:03d}.pdf",
+                    cur.tobytes(deflate=True, garbage=2),
+                )
+            cur.close()
+        finally:
+            _finalise_zip(zf, buf, ctx.output_path)
+    finally:
+        src.close()
+
+    log.info(f"[{ctx.job_id}] split_by_size: {part_index} parts (<= {max_mb} MB each)")
+    return {"parts": part_index, "max_mb": max_mb}
+
+
+@register("alternate_mix")
+def alternate_mix(ctx: JobContext) -> dict:
+    """
+    Interleave the pages of two PDFs (A1, B1, A2, B2, ...).
+    param reverse_second: if truthy, iterate the second PDF's pages in reverse
+    order — handy for merging a front-side scan with a back-side scan captured
+    in reverse.
+    """
+    _require(FITZ_OK, "alternate_mix", "PyMuPDF")
+    if not ctx.input_paths or len(ctx.input_paths) < 2:
+        raise ValidationError("alternate_mix needs exactly two PDF files")
+
+    reverse_second = str(ctx.params.get("reverse_second", "")).lower() in (
+        "1", "true", "yes", "on",
+    )
+
+    a = fitz.open(ctx.input_paths[0])
+    b = fitz.open(ctx.input_paths[1])
+    la, lb = len(a), len(b)
+    try:
+        if la == 0 or lb == 0:
+            raise ValidationError("Both PDFs must have at least one page")
+        b_order = list(range(lb))
+        if reverse_second:
+            b_order.reverse()
+        out = fitz.open()
+        try:
+            for i in range(max(la, lb)):
+                if i < la:
+                    out.insert_pdf(a, from_page=i, to_page=i)
+                if i < lb:
+                    bi = b_order[i]
+                    out.insert_pdf(b, from_page=bi, to_page=bi)
+            out.save(ctx.output_path, deflate=True, garbage=3)
+        finally:
+            out.close()
+    finally:
+        a.close()
+        b.close()
+
+    log.info(f"[{ctx.job_id}] alternate_mix: reverse_second={reverse_second}")
+    return {"pages_total": la + lb, "reverse_second": reverse_second}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PDF METADATA / STAMPS / RESIZE / FORMS / HTML
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@register("remove_metadata")
+def remove_metadata(ctx: JobContext) -> dict:
+    """
+    Strip document metadata (title/author/subject/keywords/creator/producer)
+    and any XMP metadata stream — a privacy cleaner.
+    """
+    _require(FITZ_OK, "remove_metadata", "PyMuPDF")
+    _guard_empty(ctx.input_path)
+
+    doc = fitz.open(ctx.input_path)
+    try:
+        meta = doc.metadata or {}
+        fields_cleared = sorted(k for k, v in meta.items() if v)
+        doc.set_metadata({})
+        try:
+            doc.del_xml_metadata()
+        except Exception as ex:
+            log.warning(f"[{ctx.job_id}] remove_metadata: XMP strip skipped ({ex})")
+        doc.save(ctx.output_path, garbage=4, deflate=True)
+    finally:
+        doc.close()
+
+    log.info(f"[{ctx.job_id}] remove_metadata: cleared {fields_cleared}")
+    return {"fields_cleared": fields_cleared}
+
+
+@register("add_header_footer")
+def add_header_footer(ctx: JobContext) -> dict:
+    """
+    Stamp a centered header and/or footer on every page.
+    params: header_text, footer_text, font_size (default 10), margin (default 20).
+    Supports {page} and {total} placeholders.
+    """
+    _require(FITZ_OK, "add_header_footer", "PyMuPDF")
+    header_text = str(ctx.params.get("header_text", "") or "")
+    footer_text = str(ctx.params.get("footer_text", "") or "")
+    if not header_text and not footer_text:
+        raise ValidationError("Provide at least one of header_text or footer_text")
+    try:
+        font_size = float(ctx.params.get("font_size", 10))
+        margin = float(ctx.params.get("margin", 20))
+    except (TypeError, ValueError):
+        raise ValidationError("font_size and margin must be numbers")
+    font_size = max(4.0, min(font_size, 72.0))
+
+    _guard_empty(ctx.input_path)
+    doc = fitz.open(ctx.input_path)
+    try:
+        total = len(doc)
+
+        def _fmt(t, i):
+            return t.replace("{page}", str(i + 1)).replace("{total}", str(total))
+
+        for i, page in enumerate(doc):
+            r = page.rect
+            if header_text:
+                rect = fitz.Rect(margin, margin, r.width - margin, margin + font_size + 4)
+                page.insert_textbox(
+                    rect, _fmt(header_text, i), fontsize=font_size,
+                    fontname="helv", align=1,
+                )
+            if footer_text:
+                rect = fitz.Rect(
+                    margin, r.height - margin - font_size - 4,
+                    r.width - margin, r.height - margin,
+                )
+                page.insert_textbox(
+                    rect, _fmt(footer_text, i), fontsize=font_size,
+                    fontname="helv", align=1,
+                )
+        doc.save(ctx.output_path, deflate=True)
+    finally:
+        doc.close()
+
+    log.info(f"[{ctx.job_id}] add_header_footer: {total} pages stamped")
+    return {"pages_stamped": total}
+
+
+_PAGE_SIZE_POINTS = {
+    "A4":     (595, 842),
+    "A3":     (842, 1191),
+    "Letter": (612, 792),
+    "Legal":  (612, 1008),
+}
+
+
+@register("resize_pdf")
+def resize_pdf(ctx: JobContext) -> dict:
+    """
+    Rescale every page onto a standard paper size (A4/A3/Letter/Legal),
+    preserving aspect ratio and centering the content.
+    """
+    _require(FITZ_OK, "resize_pdf", "PyMuPDF")
+    page_size = str(ctx.params.get("page_size", "A4")).strip().title()
+    # Normalise common variants
+    aliases = {"A4": "A4", "A3": "A3", "Letter": "Letter", "Legal": "Legal"}
+    page_size = aliases.get(page_size, page_size)
+    if page_size not in _PAGE_SIZE_POINTS:
+        raise ValidationError(
+            f"page_size must be one of: {', '.join(_PAGE_SIZE_POINTS)}"
+        )
+    tw, th = _PAGE_SIZE_POINTS[page_size]
+
+    _guard_empty(ctx.input_path)
+    src = fitz.open(ctx.input_path)
+    resized = 0
+    try:
+        out = fitz.open()
+        try:
+            for i in range(len(src)):
+                sp = src[i].rect
+                if sp.width <= 0 or sp.height <= 0:
+                    continue
+                scale = min(tw / sp.width, th / sp.height)
+                w = sp.width * scale
+                h = sp.height * scale
+                x = (tw - w) / 2
+                y = (th - h) / 2
+                new_page = out.new_page(width=tw, height=th)
+                new_page.show_pdf_page(fitz.Rect(x, y, x + w, y + h), src, i)
+                resized += 1
+            out.save(ctx.output_path, deflate=True, garbage=3)
+        finally:
+            out.close()
+    finally:
+        src.close()
+
+    log.info(f"[{ctx.job_id}] resize_pdf: {resized} pages → {page_size}")
+    return {"pages_resized": resized, "target_size": page_size}
+
+
+@register("pdf_to_html")
+def pdf_to_html(ctx: JobContext) -> dict:
+    """
+    Export a PDF to a single self-contained HTML file (one <div> per page).
+    """
+    _require(FITZ_OK, "pdf_to_html", "PyMuPDF")
+    _guard_empty(ctx.input_path)
+
+    doc = fitz.open(ctx.input_path)
+    try:
+        parts = []
+        for i, page in enumerate(doc):
+            r = page.rect
+            body = page.get_text("html")
+            parts.append(
+                f'<div class="pdf-page" data-page="{i + 1}" '
+                f'style="position:relative;width:{r.width:.0f}pt;'
+                f'height:{r.height:.0f}pt;margin:0 auto 16px;'
+                f'box-shadow:0 1px 4px rgba(0,0,0,.2);background:#fff;'
+                f'overflow:hidden">{body}</div>'
+            )
+        html = (
+            "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+            "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+            "<title>PDF export</title>"
+            "<style>body{background:#eee;margin:0;padding:16px;"
+            "font-family:sans-serif}.pdf-page p{margin:0}</style></head>"
+            f"<body>{''.join(parts)}</body></html>"
+        )
+        with open(ctx.output_path, "w", encoding="utf-8") as fh:
+            fh.write(html)
+        n = len(doc)
+    finally:
+        doc.close()
+
+    log.info(f"[{ctx.job_id}] pdf_to_html: {n} pages")
+    return {"pages": n}
+
+
+@register("fill_form")
+def fill_form(ctx: JobContext) -> dict:
+    """
+    Fill AcroForm fields from a JSON dict of {field_name: value}.
+    Text fields take strings, checkboxes take booleans, dropdowns take strings.
+    """
+    _require(FITZ_OK, "fill_form", "PyMuPDF")
+    raw = ctx.params.get("fields", "{}")
+    try:
+        fields = json.loads(raw) if isinstance(raw, str) else (raw or {})
+    except (TypeError, ValueError) as ex:
+        raise ValidationError(f"fields is not valid JSON: {ex}")
+    if not isinstance(fields, dict):
+        raise ValidationError("fields must be a JSON object of {field_name: value}")
+
+    _guard_empty(ctx.input_path)
+    doc = fitz.open(ctx.input_path)
+    found = 0
+    filled = 0
+    try:
+        for page in doc:
+            try:
+                widgets = list(page.widgets() or [])
+            except Exception:
+                widgets = []
+            for w in widgets:
+                found += 1
+                name = w.field_name
+                if name not in fields:
+                    continue
+                value = fields[name]
+                try:
+                    if w.field_type == fitz.PDF_WIDGET_TYPE_CHECKBOX:
+                        truthy = value in (True, "true", "True", "on", "yes", 1, "1")
+                        w.field_value = bool(truthy)
+                    else:
+                        w.field_value = str(value)
+                    w.update()
+                    filled += 1
+                except Exception as ex:
+                    log.warning(f"[{ctx.job_id}] fill_form: field {name!r} failed: {ex}")
+        doc.save(ctx.output_path, deflate=True, garbage=3)
+    finally:
+        doc.close()
+
+    log.info(f"[{ctx.job_id}] fill_form: filled {filled}/{found}")
+    return {"fields_filled": filled, "fields_found": found}
+
+
+@register("flatten_pdf")
+def flatten_pdf(ctx: JobContext) -> dict:
+    """
+    Bake form fields and annotations into static page content so values are no
+    longer editable. Uses PyMuPDF's bake().
+    """
+    _require(FITZ_OK, "flatten_pdf", "PyMuPDF")
+    _guard_empty(ctx.input_path)
+
+    doc = fitz.open(ctx.input_path)
+    try:
+        count = 0
+        for page in doc:
+            try:
+                count += len(list(page.widgets() or []))
+            except Exception:
+                pass
+        if not hasattr(doc, "bake"):
+            raise UnsupportedOperation("flatten_pdf", "PyMuPDF>=1.23 (Document.bake)")
+        doc.bake(annots=True, widgets=True)
+        doc.save(ctx.output_path, deflate=True, garbage=3)
+    finally:
+        doc.close()
+
+    log.info(f"[{ctx.job_id}] flatten_pdf: flattened {count} fields")
+    return {"fields_flattened": count}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -2100,7 +2574,10 @@ def _ocr_page_spans(page, dpi: int = _CANVAS_OCR_DPI, lang: str = "eng") -> list
     """
     mat = fitz.Matrix(dpi / 72, dpi / 72)
     pix = page.get_pixmap(matrix=mat, alpha=False, colorspace=fitz.csGRAY)
-    img = Image.open(io.BytesIO(pix.tobytes("png")))
+    # Zero-copy handoff (same approach as ocr_pdf): skip the PNG encode+decode
+    # round-trip and build the PIL image straight from the raw pixmap buffer.
+    mode = "L" if pix.n == 1 else ("RGB" if pix.n == 3 else "RGBA")
+    img = Image.frombytes(mode, (pix.width, pix.height), pix.samples)
     data = pytesseract.image_to_data(
         img, lang=lang, output_type=TesseractOutput.DICT, config="--psm 3 --oem 3"
     )

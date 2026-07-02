@@ -384,25 +384,43 @@ def create_page_number_pdf(label: str, position: str, pw: float, ph: float) -> b
 def parse_page_ranges(spec: str, total: int) -> List[int]:
     """Parse '1-3,5,7-9' into sorted 0-based page indices."""
     indices: Set[int] = set()
+    skipped: List[str] = []
     for part in spec.split(","):
         part = part.strip()
+        if not part:
+            continue
         if "-" in part:
             try:
                 a_s, b_s = part.split("-", 1)
                 a, b = int(a_s.strip()), int(b_s.strip())
                 if a < 1 or b < 1:
+                    skipped.append(part)
                     continue
+                added_before = len(indices)
                 for i in range(max(1, a), min(b, total) + 1):
                     indices.add(i - 1)
+                if len(indices) == added_before:
+                    skipped.append(part)   # range fully out of bounds
             except ValueError:
-                pass
+                skipped.append(part)
         else:
             try:
                 n = int(part)
                 if 1 <= n <= total:
                     indices.add(n - 1)
+                else:
+                    skipped.append(part)   # out-of-range page number
             except ValueError:
-                pass
+                skipped.append(part)
+    if skipped:
+        # An empty result from invalid input looks identical to a genuinely
+        # empty valid range — surface the skipped tokens so callers/users can
+        # tell the difference.
+        log.warning(
+            "parse_page_ranges: ignored %d invalid/out-of-range token(s) in %r "
+            "(total pages=%d): %s",
+            len(skipped), spec, total, ", ".join(skipped),
+        )
     return sorted(indices)
 
 

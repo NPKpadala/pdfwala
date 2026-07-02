@@ -55,6 +55,13 @@ def _handle(operation: str, output_ext: str, msg: str,
         return Result.error(ex.message, 400)
     task_fn = PDF_TASK_MAP.get(operation)
     force_async = operation in _ALWAYS_ASYNC
+    # Guard: an async dispatch with no registered task would blow up inside
+    # queue_service with an AttributeError on None. Fail cleanly instead.
+    if task_fn is None and (force_async or file_service.is_async(size)):
+        return Result.error(
+            f"No async task is registered for '{operation}'. This operation "
+            "cannot be processed right now.", 501,
+        )
     return JobController.run_or_enqueue(
         ctx, size, task_fn, output_ext, msg, force_async=force_async,
     )
@@ -81,6 +88,19 @@ def remove_pages():
 @pdf_bp.route("/extract-pages",  methods=["POST"])
 def extract_pages():
     return _handle("extract_pages", "pdf", "Pages extracted successfully")
+
+@pdf_bp.route("/split-by-bookmarks", methods=["POST"])
+def split_by_bookmarks():
+    return _handle("split_by_bookmarks", "zip", "PDF split by bookmarks successfully")
+
+@pdf_bp.route("/split-by-size",  methods=["POST"])
+def split_by_size():
+    return _handle("split_by_size", "zip", "PDF split by size successfully")
+
+@pdf_bp.route("/alternate-mix",  methods=["POST"])
+def alternate_mix():
+    return _handle("alternate_mix", "pdf", "PDFs interleaved successfully",
+                   multi=True, field="files")
 
 
 # ── Optimize ───────────────────────────────────────────────────────────────────
@@ -119,6 +139,26 @@ def crop_pdf():
 @pdf_bp.route("/redact",         methods=["POST"])
 def redact_pdf():
     return _handle("redact_pdf", "pdf", "PDF redacted successfully")
+
+@pdf_bp.route("/remove-metadata", methods=["POST"])
+def remove_metadata():
+    return _handle("remove_metadata", "pdf", "Metadata removed successfully")
+
+@pdf_bp.route("/header-footer",  methods=["POST"])
+def add_header_footer():
+    return _handle("add_header_footer", "pdf", "Header/footer added successfully")
+
+@pdf_bp.route("/resize",         methods=["POST"])
+def resize_pdf():
+    return _handle("resize_pdf", "pdf", "PDF resized successfully")
+
+@pdf_bp.route("/fill-form",      methods=["POST"])
+def fill_form():
+    return _handle("fill_form", "pdf", "Form filled successfully")
+
+@pdf_bp.route("/flatten",        methods=["POST"])
+def flatten_pdf():
+    return _handle("flatten_pdf", "pdf", "PDF flattened successfully")
 
 @pdf_bp.route("/edit",           methods=["POST"])
 def edit_pdf():
@@ -223,6 +263,10 @@ def pdf_to_ppt():
 @pdf_bp.route("/to-pdfa",        methods=["POST"])
 def pdf_to_pdfa():
     return _handle("pdf_to_pdfa", "pdf", "PDF converted to PDF/A")
+
+@pdf_bp.route("/to-html",        methods=["POST"])
+def pdf_to_html():
+    return _handle("pdf_to_html", "html", "PDF converted to HTML")
 
 @pdf_bp.route("/ocr",            methods=["POST"])
 def ocr_pdf():
