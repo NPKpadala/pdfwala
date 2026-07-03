@@ -124,6 +124,14 @@ def get_metrics():
     return jsonify(metrics.get_stats(op)), 200
 
 
+# ── Visitor metrics (consumed by the ops monitor) ──────────────────────────────
+
+@system_bp.route("/metrics/visitors")
+def visitor_metrics():
+    from services.visitors import get_visitor_stats
+    return jsonify(get_visitor_stats()), 200
+
+
 # ── Ready / liveness (for k8s / docker healthcheck) ──────────────────────────
 
 @system_bp.route("/ready")

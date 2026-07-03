@@ -57,6 +57,33 @@ def create_app(env: str = None) -> Flask:
     app.register_blueprint(image_bp)
     app.register_blueprint(system_bp)
 
+    # ── Unique-visitor tracking (best-effort, never breaks a request) ────
+    # Counts distinct client IPs per day via Redis HyperLogLog. Internal
+    # probes and static/download traffic are excluded so the number reflects
+    # real site visitors. Surfaced at GET /metrics/visitors for the ops monitor.
+    from flask import request as _request
+    from services.visitors import record_visit
+
+    _VISITOR_SKIP_PREFIXES = (
+        "/health", "/ready", "/live", "/metrics", "/download",
+        "/api/v1/health", "/api/v1/ready", "/api/v1/live",
+    )
+
+    @app.before_request
+    def _track_visitor():
+        try:
+            path = _request.path or ""
+            if _request.method == "OPTIONS" or path.startswith(_VISITOR_SKIP_PREFIXES):
+                return
+            ip = (
+                _request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+                or _request.remote_addr
+                or ""
+            )
+            record_visit(ip)
+        except Exception:
+            pass  # tracking must never affect the response
+
     # ── Global error handlers ────────────────────────────────────────────
     from core.exceptions import PDFWalaError
     from core.result import Result
