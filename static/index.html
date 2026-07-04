@@ -1725,7 +1725,7 @@ function showResult(type,data){
       return;
     }
     let url=data.signed_url||data.download_url;
-    if(!url&&data.filename){const fn=(data.filename||'').replace(/^\/,'');url=fn.startsWith('/')?API+fn:API+'/download/'+fn;}
+    if(!url&&data.filename){const fn=(data.filename||'').replace(/^\/pdfwala/,'');url=fn.startsWith('/')?API+fn:API+'/download/'+fn;}
     if(url){
       try{
         const parsed=new URL(url,window.location.origin);
@@ -2200,7 +2200,7 @@ window.addEventListener('popstate',()=>{
   if(id&&TOOLS[id]){updateMeta(id);renderTool(id);}else{updateMetaHome();showHome();}
 });
 function getToolFromURL(){
-  const m=window.location.pathname.match(/^\/pdfwala\/([^\/]+)\/?$/);
+  const m=window.location.pathname.match(/^\/([^\/]+)\/?$/);
   if(m&&m[1]&&m[1]!=='pdfwala')return SLUG_TO_TOOL[m[1]]||null;return null;
 }
 
