@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -922,7 +922,8 @@
             function navigate() {
                 // idx always equals the face currently shown (set on init and each step)
                 const target = document.querySelector(faces[idx].target);
-                if (target) target.scrollIntoView({ behavior: 'smooth' });
+                if (target && window.smoothScrollToEl) window.smoothScrollToEl(target);
+                else if (target) target.scrollIntoView({ behavior: 'smooth' });
             }
             scene.addEventListener('click', navigate);
             scene.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(); } });
@@ -1048,6 +1049,38 @@
             resize(); init(); draw();
             let rt;
             window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { resize(); init(); }, 200); });
+        })();
+    </script>
+
+    <!-- In-page navigation: land ON the section (clear the fixed navbar) and
+         work correctly across the pinned ScrollTrigger section. -->
+    <script>
+        (function () {
+            var NAV_OFFSET = 76; // fixed navbar is h-16 (64px) + breathing room
+            function smoothScrollToEl(el) {
+                var y = el.getBoundingClientRect().top + window.pageYOffset - NAV_OFFSET;
+                window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+            }
+            window.smoothScrollToEl = smoothScrollToEl;
+
+            document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+                a.addEventListener('click', function (e) {
+                    var href = a.getAttribute('href') || '';
+                    e.preventDefault();
+                    if (href === '#' || href.length < 2) {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        return;
+                    }
+                    var el = document.querySelector(href);
+                    if (el) smoothScrollToEl(el);
+                });
+            });
+
+            // Recalculate pinned-section spacer sizes once everything has loaded
+            // so anchor targets resolve to the right position.
+            if (window.ScrollTrigger) {
+                window.addEventListener('load', function () { ScrollTrigger.refresh(); });
+            }
         })();
     </script>
 </body>
