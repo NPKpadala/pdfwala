@@ -1715,8 +1715,14 @@ function showResult(type,data){
   const pa=[];
   if(data.pages)pa.push(data.pages+' pages');
   if(data.size_human)pa.push(data.size_human);
-  if(data.reduction_pct)pa.push(data.reduction_pct+'% smaller');
+  if(data.already_optimized)pa.push('Already optimized');
+  else if(data.reduction_pct>0)pa.push(data.reduction_pct+'% smaller');
   pills.innerHTML=pa.map(p=>`<span class="tp-result-pill">${esc(p)}</span>`).join('');
+  if(data.already_optimized&&data.note){
+    const n=document.createElement('div');
+    n.style.cssText='margin-top:8px;font-size:12px;color:var(--text-muted,#9BA3B4);line-height:1.5';
+    n.textContent=data.note;pills.appendChild(n);
+  }
   if(type==='success'){
     // PDF Info returns metadata in the response, not a downloadable file —
     // render it inline instead of looking for a missing download URL.

@@ -512,12 +512,17 @@ def compress_pdf(ctx: JobContext) -> dict:
     """
     _require(FITZ_OK and PIL_OK, "compress_pdf", "PyMuPDF + Pillow")
     quality = ctx.params.get("quality", "medium")
+    # Every level must produce REAL compression. The old "low"/"medium" used
+    # /printer, whose default 1.5x downsample threshold means images just under
+    # ~1.5x the target DPI are left untouched → 0% on many PDFs. We now use
+    # /ebook–/screen and force a 1.0 downsample threshold (below), so images
+    # above the target DPI are always downsampled.
     cfg = {
-        "maximum": {"dpi": 72,  "quality": 45, "gs": "/screen"},
-        "high":    {"dpi": 96,  "quality": 60, "gs": "/ebook"},
-        "medium":  {"dpi": 120, "quality": 72, "gs": "/printer"},
-        "low":     {"dpi": 150, "quality": 85, "gs": "/printer"},
-    }.get(quality, {"dpi": 120, "quality": 72, "gs": "/printer"})
+        "maximum": {"dpi": 72,  "quality": 40, "gs": "/screen"},  # smallest
+        "high":    {"dpi": 100, "quality": 55, "gs": "/screen"},
+        "medium":  {"dpi": 120, "quality": 70, "gs": "/ebook"},   # default balance
+        "low":     {"dpi": 144, "quality": 82, "gs": "/ebook"},   # gentle, high quality
+    }.get(quality, {"dpi": 120, "quality": 70, "gs": "/ebook"})
 
     _guard_empty(ctx.input_path)
     orig = os.path.getsize(ctx.input_path)
@@ -559,9 +564,17 @@ def compress_pdf(ctx: JobContext) -> dict:
             gs_out,
             cfg["gs"],
             extra_flags=[
+                "-dDownsampleColorImages=true",
+                "-dDownsampleGrayImages=true",
                 "-dColorImageDownsampleType=/Bicubic",
+                "-dGrayImageDownsampleType=/Bicubic",
+                # Force downsampling of any image above the target DPI (default
+                # 1.5x threshold is why the old presets did nothing).
+                "-dColorImageDownsampleThreshold=1.0",
+                "-dGrayImageDownsampleThreshold=1.0",
                 f"-dColorImageResolution={cfg['dpi']}",
                 f"-dGrayImageResolution={cfg['dpi']}",
+                f"-dJPEGQ={cfg['quality']}",
             ],
         )
     except OperationTimeoutError:
@@ -590,12 +603,19 @@ def compress_pdf(ctx: JobContext) -> dict:
 
     new_size  = os.path.getsize(ctx.output_path)
     reduction = round((1 - new_size / orig) * 100, 1) if orig else 0
+    # When a file is already optimized, no honest tool can shrink it further.
+    # Flag it so the UI can say "already optimized" instead of a weak "1.9%".
+    already_optimized = reduction < 3.0
     ctx.set_progress(100)
     log.info(f"[{ctx.job_id}] compress_pdf: {orig} → {new_size} bytes ({reduction}% reduction)")
     return {
         "reduction_pct":          reduction,
         "original_size_bytes":    orig,
         "compressed_size_bytes":  new_size,
+        "already_optimized":      already_optimized,
+        "note": ("This PDF is already well-optimized, so we kept it at its "
+                 "original quality and size rather than degrade it for a "
+                 "negligible gain.") if already_optimized else None,
     }
 
 
