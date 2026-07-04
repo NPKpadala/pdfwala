@@ -13,6 +13,9 @@
 # is owned here so future clients (mobile/API/admin) know what they consume.
 meta:
   module: pdf
+  label: PDF
+  icon: file
+  order: 1
   manifest_version: "1.0.0"
 
 # Shared defaults (YAML merge key <<: *base applies these; override any field).

@@ -1,14 +1,2675 @@
 {
- "schema_version": "1.0",
- "modules": {
-  "pdf": {
-   "manifest_version": "1.0.0",
-   "source": "pdf.yaml"
+ "version": {
+  "schema_version": "1.0",
+  "generated_at": "2026-07-04T19:52:07.308492Z",
+  "git_sha": "f6372ff",
+  "module_versions": {
+   "image": "1.0.0",
+   "office": "1.0.0",
+   "pdf": "1.0.0"
   }
  },
- "generated_at": "2026-07-04T19:37:55.731186Z",
- "git_sha": "9786065",
+ "modules": {
+  "image": {
+   "module": "image",
+   "label": "Image",
+   "icon": "image",
+   "order": 2,
+   "manifest_version": "1.0.0",
+   "source": "image.yaml",
+   "categories": {
+    "convert": {
+     "label": "Convert",
+     "order": 1,
+     "icon": "refresh",
+     "description": "Convert images to and from other formats."
+    },
+    "compress": {
+     "label": "Compress",
+     "order": 2,
+     "icon": "compress",
+     "description": "Reduce image file size."
+    },
+    "resize": {
+     "label": "Resize",
+     "order": 3,
+     "icon": "crop",
+     "description": "Resize and scale images."
+    },
+    "edit": {
+     "label": "Edit",
+     "order": 4,
+     "icon": "edit",
+     "description": "Crop, rotate, watermark and enhance images."
+    },
+    "ai": {
+     "label": "AI",
+     "order": 5,
+     "icon": "sparkles",
+     "description": "AI-powered image tools."
+    }
+   }
+  },
+  "office": {
+   "module": "office",
+   "label": "Office",
+   "icon": "file-text",
+   "order": 3,
+   "manifest_version": "1.0.0",
+   "source": "office.yaml",
+   "categories": {
+    "word": {
+     "label": "Word",
+     "order": 1,
+     "icon": "file-text",
+     "description": "Convert, edit and secure Word documents."
+    },
+    "excel": {
+     "label": "Excel",
+     "order": 2,
+     "icon": "table",
+     "description": "Convert, compress and secure spreadsheets."
+    },
+    "powerpoint": {
+     "label": "PowerPoint",
+     "order": 3,
+     "icon": "presentation",
+     "description": "Convert and secure presentations."
+    },
+    "web": {
+     "label": "Web",
+     "order": 4,
+     "icon": "code",
+     "description": "Convert web documents."
+    }
+   }
+  },
+  "pdf": {
+   "module": "pdf",
+   "label": "PDF",
+   "icon": "file",
+   "order": 1,
+   "manifest_version": "1.0.0",
+   "source": "pdf.yaml",
+   "categories": {
+    "optimize": {
+     "label": "Optimize",
+     "order": 1,
+     "icon": "compress",
+     "description": "Shrink, repair and web-optimize PDFs."
+    },
+    "organize": {
+     "label": "Organize",
+     "order": 2,
+     "icon": "pages",
+     "description": "Merge, split and reorder pages."
+    },
+    "edit": {
+     "label": "Edit",
+     "order": 3,
+     "icon": "edit",
+     "description": "Rotate, crop, watermark and mark up PDFs."
+    },
+    "convert": {
+     "label": "Convert",
+     "order": 4,
+     "icon": "refresh",
+     "description": "Convert PDFs to and from other formats."
+    },
+    "security": {
+     "label": "Security",
+     "order": 5,
+     "icon": "shield",
+     "description": "Protect, unlock, sign and redact PDFs."
+    },
+    "view": {
+     "label": "View",
+     "order": 6,
+     "icon": "eye",
+     "description": "Inspect and compare PDFs."
+    }
+   }
+  }
+ },
  "tools": [
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 10,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "high",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [
+    "reduce image size",
+    "shrink image"
+   ],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "jpg"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "compress_image",
+   "slug": "compress-image",
+   "route": "/compress",
+   "category": "compress",
+   "engine": "compress_image",
+   "success_msg": "Image compressed"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 11,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "high",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [
+    "image resizer"
+   ],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "jpg"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "resize_image",
+   "slug": "resize-image",
+   "route": "/resize",
+   "category": "resize",
+   "engine": "resize_image",
+   "success_msg": "Image resized"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [
+    "image converter"
+   ],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "output_ext_from": "format",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "jpg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "convert_image",
+   "slug": "convert-image",
+   "route": "/convert",
+   "category": "convert",
+   "engine": "convert_image",
+   "success_msg": "Image converted"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 12,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "high",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [
+    "jpg to pdf",
+    "picture to pdf"
+   ],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "pdf"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "image_to_pdf",
+   "slug": "image-to-pdf",
+   "route": "/to-pdf",
+   "category": "convert",
+   "engine": "image_to_pdf",
+   "success_msg": "Image converted to PDF",
+   "output_ext": "pdf"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "files",
+    "multi": true,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "pdf"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "images_to_pdf",
+   "slug": "images-to-pdf",
+   "route": "/to-pdf/multiple",
+   "category": "convert",
+   "engine": "images_to_pdf",
+   "success_msg": "Images merged to PDF"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "png"
+   ],
+   "output_extensions": [
+    "jpg"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "png_to_jpg",
+   "slug": "png-to-jpg",
+   "route": "/png-to-jpg",
+   "category": "convert",
+   "engine": "png_to_jpg",
+   "success_msg": "PNG converted to JPG"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "webp"
+   ],
+   "output_extensions": [
+    "jpg"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "webp_to_jpg",
+   "slug": "webp-to-jpg",
+   "route": "/webp-to-jpg",
+   "category": "convert",
+   "engine": "webp_to_jpg",
+   "success_msg": "WebP converted to JPG"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "xlsx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "image_to_excel",
+   "slug": "image-to-excel",
+   "route": "/to-excel",
+   "category": "convert",
+   "engine": "image_to_excel",
+   "success_msg": "Image OCR to Excel",
+   "output_ext": "xlsx"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "docx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "image_to_word",
+   "slug": "image-to-word",
+   "route": "/to-word",
+   "category": "convert",
+   "engine": "image_to_word",
+   "success_msg": "Image OCR to Word",
+   "output_ext": "docx"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "jpg"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "crop_image",
+   "slug": "crop-image",
+   "route": "/crop",
+   "category": "edit",
+   "engine": "crop_image",
+   "success_msg": "Image cropped"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "jpg"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "rotate_image",
+   "slug": "rotate-image",
+   "route": "/rotate",
+   "category": "edit",
+   "engine": "rotate_image",
+   "success_msg": "Image rotated"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "jpg"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "flip_image",
+   "slug": "flip-image",
+   "route": "/flip",
+   "category": "edit",
+   "engine": "flip_image",
+   "success_msg": "Image flipped"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "jpg"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "grayscale_image",
+   "slug": "grayscale-image",
+   "route": "/grayscale",
+   "category": "edit",
+   "engine": "grayscale_image",
+   "success_msg": "Image converted to grayscale"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "jpg"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "enhance_image",
+   "slug": "enhance-image",
+   "route": "/enhance",
+   "category": "edit",
+   "engine": "enhance_image",
+   "success_msg": "Image enhanced"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "jpg"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "watermark_image",
+   "slug": "watermark-image",
+   "route": "/watermark",
+   "category": "edit",
+   "engine": "watermark_image",
+   "success_msg": "Watermark added"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "jpg"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "add_text_image",
+   "slug": "add-text-image",
+   "route": "/add-text",
+   "category": "edit",
+   "engine": "add_text_image",
+   "success_msg": "Text added to image"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "files",
+    "multi": true,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "jpg"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "merge_images",
+   "slug": "merge-images",
+   "route": "/merge",
+   "category": "edit",
+   "engine": "merge_images",
+   "success_msg": "Images merged"
+  },
+  {
+   "module": "image",
+   "status": "draft",
+   "priority": 13,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "high",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "image",
+   "hero_image": null,
+   "aliases": [
+    "background remover",
+    "remove image background"
+   ],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "jpg",
+    "async": false,
+    "max_mb": 10,
+    "queue": "fast"
+   },
+   "supported_extensions": [
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "bmp",
+    "tiff",
+    "gif"
+   ],
+   "output_extensions": [
+    "png"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": true,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "remove_bg",
+   "slug": "remove-background",
+   "route": "/remove-bg",
+   "category": "ai",
+   "engine": "remove_bg",
+   "success_msg": "Background removed",
+   "output_ext": "png"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 20,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "high",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [
+    "doc to pdf",
+    "docx to pdf"
+   ],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "docx",
+    "doc"
+   ],
+   "output_extensions": [
+    "pdf"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "word",
+   "id": "word_to_pdf",
+   "slug": "word-to-pdf",
+   "route": "/word/to-pdf",
+   "engine": "word_to_pdf",
+   "success_msg": "Word converted to PDF",
+   "output_ext": "pdf"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "docx",
+    "doc"
+   ],
+   "output_extensions": [
+    "txt"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "word",
+   "id": "word_to_txt",
+   "slug": "word-to-txt",
+   "route": "/word/to-txt",
+   "engine": "word_to_txt",
+   "success_msg": "Word converted to text",
+   "output_ext": "txt"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "docx",
+    "doc"
+   ],
+   "output_extensions": [
+    "html"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "word",
+   "id": "word_to_html",
+   "slug": "word-to-html",
+   "route": "/word/to-html",
+   "engine": "word_to_html",
+   "success_msg": "Word converted to HTML",
+   "output_ext": "html"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "docx",
+    "doc"
+   ],
+   "output_extensions": [
+    "json"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "word",
+   "id": "word_to_json",
+   "slug": "word-to-json",
+   "route": "/word/to-json",
+   "engine": "word_to_json",
+   "success_msg": "Word converted to JSON",
+   "output_ext": "json"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "docx",
+    "doc"
+   ],
+   "output_extensions": [
+    "xlsx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "word",
+   "id": "word_to_excel",
+   "slug": "word-to-excel",
+   "route": "/word/to-excel",
+   "engine": "word_to_excel",
+   "success_msg": "Word converted to Excel",
+   "output_ext": "xlsx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "docx",
+    "doc"
+   ],
+   "output_extensions": [
+    "pptx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "word",
+   "id": "word_to_ppt",
+   "slug": "word-to-ppt",
+   "route": "/word/to-ppt",
+   "engine": "word_to_ppt",
+   "success_msg": "Word converted to PowerPoint",
+   "output_ext": "pptx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "docx",
+    "doc"
+   ],
+   "output_extensions": [
+    "zip"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "word",
+   "id": "word_to_jpg",
+   "slug": "word-to-jpg",
+   "route": "/word/to-jpg",
+   "engine": "word_to_jpg",
+   "success_msg": "Word converted to JPG",
+   "output_ext": "zip"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "docx",
+    "doc"
+   ],
+   "output_extensions": [
+    "zip"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "word",
+   "id": "word_to_png",
+   "slug": "word-to-png",
+   "route": "/word/to-png",
+   "engine": "word_to_png",
+   "success_msg": "Word converted to PNG",
+   "output_ext": "zip"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "docx",
+    "doc"
+   ],
+   "output_extensions": [
+    "docx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "word",
+   "id": "edit_word",
+   "slug": "edit-word",
+   "route": "/word/edit",
+   "engine": "edit_word",
+   "success_msg": "Word document edited",
+   "output_ext": "docx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "docx",
+    "doc"
+   ],
+   "output_extensions": [
+    "docx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "word",
+   "id": "compress_word",
+   "slug": "compress-word",
+   "route": "/word/compress",
+   "engine": "compress_word",
+   "success_msg": "Word compressed",
+   "output_ext": "docx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "docx",
+    "doc"
+   ],
+   "output_extensions": [
+    "docx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "word",
+   "id": "unlock_word",
+   "slug": "unlock-word",
+   "route": "/word/unlock",
+   "engine": "unlock_word",
+   "success_msg": "Word unlocked",
+   "output_ext": "docx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "docx",
+    "doc"
+   ],
+   "output_extensions": [
+    "docx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "word",
+   "id": "protect_word",
+   "slug": "protect-word",
+   "route": "/word/protect",
+   "engine": "protect_word",
+   "success_msg": "Word protected",
+   "output_ext": "docx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 21,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "high",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [
+    "xlsx to pdf"
+   ],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "xlsx",
+    "xls"
+   ],
+   "output_extensions": [
+    "pdf"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "excel",
+   "id": "excel_to_pdf",
+   "slug": "excel-to-pdf",
+   "route": "/excel/to-pdf",
+   "engine": "excel_to_pdf",
+   "success_msg": "Excel converted to PDF",
+   "output_ext": "pdf"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "xlsx",
+    "xls"
+   ],
+   "output_extensions": [
+    "csv"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "excel",
+   "id": "excel_to_csv",
+   "slug": "excel-to-csv",
+   "route": "/excel/to-csv",
+   "engine": "excel_to_csv",
+   "success_msg": "Excel converted to CSV",
+   "output_ext": "csv"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "xlsx",
+    "xls"
+   ],
+   "output_extensions": [
+    "docx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "excel",
+   "id": "excel_to_word",
+   "slug": "excel-to-word",
+   "route": "/excel/to-word",
+   "engine": "excel_to_word",
+   "success_msg": "Excel converted to Word",
+   "output_ext": "docx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "xlsx",
+    "xls"
+   ],
+   "output_extensions": [
+    "json"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "excel",
+   "id": "excel_to_json",
+   "slug": "excel-to-json",
+   "route": "/excel/to-json",
+   "engine": "excel_to_json",
+   "success_msg": "Excel converted to JSON",
+   "output_ext": "json"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "xlsx",
+    "xls"
+   ],
+   "output_extensions": [
+    "html"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "excel",
+   "id": "excel_to_html",
+   "slug": "excel-to-html",
+   "route": "/excel/to-html",
+   "engine": "excel_to_html",
+   "success_msg": "Excel converted to HTML",
+   "output_ext": "html"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "xlsx",
+    "xls"
+   ],
+   "output_extensions": [
+    "zip"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "excel",
+   "id": "excel_to_png",
+   "slug": "excel-to-png",
+   "route": "/excel/to-png",
+   "engine": "excel_to_png",
+   "success_msg": "Excel converted to PNG",
+   "output_ext": "zip"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "xlsx",
+    "xls"
+   ],
+   "output_extensions": [
+    "zip"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "excel",
+   "id": "excel_to_jpg",
+   "slug": "excel-to-jpg",
+   "route": "/excel/to-jpg",
+   "engine": "excel_to_jpg",
+   "success_msg": "Excel converted to JPG",
+   "output_ext": "zip"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "xlsx",
+    "xls"
+   ],
+   "output_extensions": [
+    "pptx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "excel",
+   "id": "excel_to_ppt",
+   "slug": "excel-to-ppt",
+   "route": "/excel/to-ppt",
+   "engine": "excel_to_ppt",
+   "success_msg": "Excel converted to PowerPoint",
+   "output_ext": "pptx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "xlsx",
+    "xls"
+   ],
+   "output_extensions": [
+    "xlsx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "excel",
+   "id": "compress_excel",
+   "slug": "compress-excel",
+   "route": "/excel/compress",
+   "engine": "compress_excel",
+   "success_msg": "Excel compressed",
+   "output_ext": "xlsx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "xlsx",
+    "xls"
+   ],
+   "output_extensions": [
+    "xlsx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "excel",
+   "id": "unlock_excel",
+   "slug": "unlock-excel",
+   "route": "/excel/unlock",
+   "engine": "unlock_excel",
+   "success_msg": "Excel unlocked",
+   "output_ext": "xlsx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "xlsx",
+    "xls"
+   ],
+   "output_extensions": [
+    "xlsx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "excel",
+   "id": "protect_excel",
+   "slug": "protect-excel",
+   "route": "/excel/protect",
+   "engine": "protect_excel",
+   "success_msg": "Excel protected",
+   "output_ext": "xlsx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "xlsx",
+    "xls"
+   ],
+   "output_extensions": [
+    "xlsx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "excel",
+   "id": "repair_excel",
+   "slug": "repair-excel",
+   "route": "/excel/repair",
+   "engine": "repair_excel",
+   "success_msg": "Excel repaired",
+   "output_ext": "xlsx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 22,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "high",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [
+    "powerpoint to pdf",
+    "pptx to pdf"
+   ],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "pptx",
+    "ppt"
+   ],
+   "output_extensions": [
+    "pdf"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "powerpoint",
+   "id": "ppt_to_pdf",
+   "slug": "ppt-to-pdf",
+   "route": "/ppt/to-pdf",
+   "engine": "ppt_to_pdf",
+   "success_msg": "PowerPoint converted to PDF",
+   "output_ext": "pdf"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "pptx",
+    "ppt"
+   ],
+   "output_extensions": [
+    "zip"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "powerpoint",
+   "id": "ppt_to_jpg",
+   "slug": "ppt-to-jpg",
+   "route": "/ppt/to-jpg",
+   "engine": "ppt_to_jpg",
+   "success_msg": "PowerPoint converted to JPG",
+   "output_ext": "zip"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "pptx",
+    "ppt"
+   ],
+   "output_extensions": [
+    "pptx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "powerpoint",
+   "id": "compress_ppt",
+   "slug": "compress-ppt",
+   "route": "/ppt/compress",
+   "engine": "compress_ppt",
+   "success_msg": "PowerPoint compressed",
+   "output_ext": "pptx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "pptx",
+    "ppt"
+   ],
+   "output_extensions": [
+    "pptx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "powerpoint",
+   "id": "unlock_ppt",
+   "slug": "unlock-ppt",
+   "route": "/ppt/unlock",
+   "engine": "unlock_ppt",
+   "success_msg": "PowerPoint unlocked",
+   "output_ext": "pptx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "pptx",
+    "ppt"
+   ],
+   "output_extensions": [
+    "pptx"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "category": "powerpoint",
+   "id": "protect_ppt",
+   "slug": "protect-ppt",
+   "route": "/ppt/protect",
+   "engine": "protect_ppt",
+   "success_msg": "PowerPoint protected",
+   "output_ext": "pptx"
+  },
+  {
+   "module": "office",
+   "status": "draft",
+   "priority": 50,
+   "subcategory": null,
+   "featured": false,
+   "popular": false,
+   "hidden": false,
+   "experimental": false,
+   "deprecated": false,
+   "search_volume": "low",
+   "difficulty": "medium",
+   "monetization_priority": 3,
+   "schema_type": "WebApplication",
+   "icon": "file-text",
+   "hero_image": null,
+   "aliases": [],
+   "processing": {
+    "field": "file",
+    "multi": false,
+    "output_ext": "pdf",
+    "async": false,
+    "max_mb": 10,
+    "queue": "office"
+   },
+   "supported_extensions": [
+    "html",
+    "htm"
+   ],
+   "output_extensions": [
+    "pdf"
+   ],
+   "flags": {
+    "supports_api": true,
+    "supports_batch": false,
+    "supports_ai": false,
+    "supports_mobile": true,
+    "premium": false
+   },
+   "related": [],
+   "guide_links": [],
+   "comparison_links": [],
+   "industry_links": [],
+   "id": "html_to_pdf",
+   "slug": "html-to-pdf",
+   "route": "/html/to-pdf",
+   "category": "web",
+   "engine": "html_to_pdf",
+   "success_msg": "HTML converted to PDF",
+   "output_ext": "pdf"
+  },
   {
    "module": "pdf",
    "status": "published",
@@ -2414,43 +5075,5 @@
    "engine": "compare_pdf",
    "success_msg": "PDF comparison completed"
   }
- ],
- "categories": {
-  "optimize": {
-   "label": "Optimize",
-   "order": 1,
-   "icon": "compress",
-   "description": "Shrink, repair and web-optimize PDFs."
-  },
-  "organize": {
-   "label": "Organize",
-   "order": 2,
-   "icon": "pages",
-   "description": "Merge, split and reorder pages."
-  },
-  "edit": {
-   "label": "Edit",
-   "order": 3,
-   "icon": "edit",
-   "description": "Rotate, crop, watermark and mark up PDFs."
-  },
-  "convert": {
-   "label": "Convert",
-   "order": 4,
-   "icon": "refresh",
-   "description": "Convert PDFs to and from other formats."
-  },
-  "security": {
-   "label": "Security",
-   "order": 5,
-   "icon": "shield",
-   "description": "Protect, unlock, sign and redact PDFs."
-  },
-  "view": {
-   "label": "View",
-   "order": 6,
-   "icon": "eye",
-   "description": "Inspect and compare PDFs."
-  }
- }
+ ]
 }

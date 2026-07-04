@@ -1,9 +1,9 @@
 """
-catalog/registry.py - the runtime Single Source of Truth.
+catalog/registry.py — the runtime Single Source of Truth (all modules).
 
-Reads the COMPILED manifest (catalog/tools.build.json, produced by build.py from
-the YAML source) and exposes typed access. Everything - Flask routes, SEO pages,
-sitemap, nav, related links, JSON-LD, future API/mobile/admin - derives from here.
+Reads the COMPILED catalog (catalog/tools.build.json) and exposes one unified,
+cross-module API. Everything — Flask routes, SEO pages, sitemap, nav, search,
+JSON-LD, and the future public API / mobile app / admin panel — derives here.
 
 Runtime dependency: stdlib json only (no YAML), so it is fast and portable.
 """
@@ -20,74 +20,88 @@ class Registry:
     def __init__(self, path: str = _BUILD):
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
-        self.tools = data["tools"]
-        self.categories = data.get("categories", {})
-        self.version = {
-            "schema_version": data.get("schema_version"),
-            "modules": data.get("modules", {}),
-            "generated_at": data.get("generated_at"),
-            "git_sha": data.get("git_sha"),
-        }
-        self.generated_at = data.get("generated_at")
+        self.version = data.get("version", {})
+        self.modules = data.get("modules", {})       # {mod: {label, icon, order, categories}}
+        self.tools = data.get("tools", [])
         self._by_slug = {t["slug"]: t for t in self.tools}
         self._by_id = {t["id"]: t for t in self.tools}
 
-    # ---- lookups ----
-    def all(self):
-        return self.tools
-
-    def by_slug(self, slug):
+    # ── single-tool / lookups ───────────────────────────────────────────────
+    def get_tool(self, slug):
         return self._by_slug.get(slug)
+
+    by_slug = get_tool                       # aliases (back-compat)
 
     def by_id(self, tool_id):
         return self._by_id.get(tool_id)
 
+    def all(self):
+        return self.tools
+
+    def get_module(self, module):
+        """Module metadata + its tools, or None."""
+        m = self.modules.get(module)
+        if not m:
+            return None
+        return dict(m, tools=self.module(module))
+
     def module(self, module):
         return [t for t in self.tools if t.get("module") == module]
 
+    def get_category(self, module, key):
+        return (self.modules.get(module, {}).get("categories", {}) or {}).get(key)
+
+    # ── UI collections (cross-module) ───────────────────────────────────────
     def published(self):
         return [t for t in self.tools if t.get("status") == "published"]
 
     def visible(self):
-        """Tools that should appear in the UI (not hidden, not deprecated)."""
         return [t for t in self.tools
                 if not t.get("hidden") and not t.get("deprecated")]
 
-    def featured(self):
+    def get_featured(self):
         return [t for t in self.visible() if t.get("featured")]
 
-    def popular(self):
+    def get_popular(self):
         return [t for t in self.visible() if t.get("popular")]
 
-    def in_category(self, category):
-        return [t for t in self.tools if t.get("category") == category]
-
-    def grouped_by_category(self):
-        """Ordered {category_key: {meta, tools[]}} for nav / grid rendering."""
-        out = {}
-        for key in sorted(self.categories, key=lambda k: self.categories[k].get("order", 99)):
-            out[key] = {"meta": self.categories[key],
-                        "tools": [t for t in self.visible() if t.get("category") == key]}
+    def get_modules(self):
+        """Ordered nested navigation: modules -> categories -> tools.
+        This single structure drives the whole nav/homepage."""
+        out = []
+        for mkey in sorted(self.modules, key=lambda k: self.modules[k].get("order", 99)):
+            m = self.modules[mkey]
+            cats = m.get("categories", {}) or {}
+            cat_list = []
+            for ckey in sorted(cats, key=lambda k: cats[k].get("order", 99)):
+                tools = [t for t in self.visible()
+                         if t.get("module") == mkey and t.get("category") == ckey]
+                if tools:
+                    cat_list.append({"key": ckey, **cats[ckey],
+                                     "tools": [self._card(t) for t in tools]})
+            out.append({"key": mkey, "label": m.get("label"), "icon": m.get("icon"),
+                        "order": m.get("order"), "categories": cat_list})
         return out
 
-    def display_name(self, slug):
-        t = self._by_slug.get(slug) or {}
-        name = (((t.get("content") or {}).get("en") or {}).get("display_name"))
-        return name or pretty_slug(slug)
+    def _card(self, t):
+        en = (t.get("content") or {}).get("en") or {}
+        return {"slug": t["slug"], "display_name": en.get("display_name") or pretty_slug(t["slug"]),
+                "icon": t.get("icon"), "module": t["module"], "category": t["category"],
+                "featured": bool(t.get("featured")), "popular": bool(t.get("popular"))}
 
-    # ---- derived contracts ----
-    def route_specs(self, module="pdf"):
-        """One spec per tool route so the Flask blueprint can register them in a
-        loop instead of a hand-maintained list."""
+    # ── routes (cross-module) ───────────────────────────────────────────────
+    def get_routes(self, module=None):
         specs = []
         for t in self.tools:
-            if t.get("module") != module:
+            if module and t.get("module") != module:
                 continue
             p = t.get("processing", {})
             specs.append({
+                "module":      t["module"],
                 "route":       t["route"],
                 "op":          t["engine"],
                 "output_ext":  p.get("output_ext", "pdf"),
+                "output_ext_from": p.get("output_ext_from"),
                 "multi":       bool(p.get("multi", False)),
                 "field":       p.get("field", "file"),
                 "success_msg": t.get("success_msg", "Done"),
@@ -95,9 +109,40 @@ class Registry:
             })
         return specs
 
-    def async_ops(self, module="pdf"):
-        return {t["engine"] for t in self.module(module)
-                if t.get("processing", {}).get("async")}
+    route_specs = get_routes                 # back-compat name used by pdf_routes.py
+
+    def async_ops(self, module=None):
+        return {t["engine"] for t in self.tools
+                if (module is None or t.get("module") == module)
+                and t.get("processing", {}).get("async")}
+
+    # ── search / related / sitemap ──────────────────────────────────────────
+    def get_search_index(self):
+        idx = []
+        for t in self.visible():
+            en = (t.get("content") or {}).get("en") or {}
+            idx.append({
+                "slug": t["slug"], "module": t["module"], "category": t["category"],
+                "display_name": en.get("display_name") or pretty_slug(t["slug"]),
+                "keywords": sorted(set((en.get("seo_keywords") or []) + (t.get("aliases") or []))),
+            })
+        return idx
+
+    def display_name(self, slug):
+        t = self._by_slug.get(slug) or {}
+        return (((t.get("content") or {}).get("en") or {}).get("display_name")
+                or pretty_slug(slug))
+
+    def get_related(self, slug):
+        t = self._by_slug.get(slug) or {}
+        return [{"slug": r, "name": self.display_name(r)} for r in t.get("related", [])]
+
+    def get_sitemap(self):
+        """Published, non-deprecated tools for the sitemap, priority-ordered."""
+        pub = [t for t in self.tools
+               if t.get("status") == "published" and not t.get("deprecated")]
+        pub.sort(key=lambda x: x.get("priority", 50))
+        return [{"slug": t["slug"], "priority": t.get("priority", 50)} for t in pub]
 
 
 registry = Registry()

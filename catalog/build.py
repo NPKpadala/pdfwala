@@ -44,19 +44,27 @@ SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 
 def load_manifest():
-    tools, categories, modules = [], {}, {}
+    """Auto-discover every manifest/*.yaml (module names never hardcoded).
+    Categories are namespaced PER MODULE (nested nav: module -> category -> tools)."""
+    tools, modules = [], {}
     for path in sorted(glob.glob(os.path.join(HERE, "manifest", "*.yaml"))):
         with open(path, encoding="utf-8") as f:
             doc = yaml.safe_load(f) or {}
         meta = doc.get("meta") or {}
         mod = meta.get("module") or os.path.splitext(os.path.basename(path))[0]
-        modules[mod] = {"manifest_version": meta.get("manifest_version", "0.0.0"),
-                        "source": os.path.basename(path)}
+        modules[mod] = {
+            "module": mod,
+            "label": meta.get("label", pretty_slug(mod)),
+            "icon": meta.get("icon", "file"),
+            "order": meta.get("order", 99),
+            "manifest_version": meta.get("manifest_version", "0.0.0"),
+            "source": os.path.basename(path),
+            "categories": doc.get("categories", {}),
+        }
         for t in doc.get("tools", []):
             t.setdefault("module", mod)
             tools.append(t)
-        categories.update(doc.get("categories", {}))
-    return tools, categories, modules
+    return tools, modules
 
 
 def load_engine_names():
@@ -73,7 +81,7 @@ def load_engine_names():
         return None
 
 
-def validate(tools, categories):
+def validate(tools, modules):
     errs = []
     slugs = {t.get("slug") for t in tools}
     engines = load_engine_names()
@@ -100,8 +108,12 @@ def validate(tools, categories):
         if t.get("route") and not ROUTE_RE.match(t["route"]):
             errs.append(f"{tid}: invalid route '{t.get('route')}'")
 
-        if t.get("category") not in categories:
-            errs.append(f"{tid}: unknown category '{t.get('category')}'")
+        mod = modules.get(t.get("module"))
+        if not mod:
+            errs.append(f"{tid}: unknown module '{t.get('module')}'")
+        elif t.get("category") not in mod.get("categories", {}):
+            errs.append(f"{tid}: category '{t.get('category')}' not defined in module "
+                        f"'{t.get('module')}'")
 
         # related: must exist, and a tool must not reference itself (circular)
         for r in t.get("related", []):
@@ -156,12 +168,13 @@ def name_of(slug, by_slug):
             or pretty_slug(slug))
 
 
-def render_ctx(t, categories, by_slug):
+def render_ctx(t, modules, by_slug):
     c = t["content"]["en"]
     exts = t.get("supported_extensions", ["pdf"])
+    cat_label = modules[t["module"]]["categories"][t["category"]]["label"]
     return {
         "slug": t["slug"],
-        "category": categories[t["category"]]["label"],
+        "category": cat_label,
         "category_slug": t["category"],
         "title": c["seo_title"], "meta_description": c["seo_description"],
         "h1": c["h1"], "intro": c["intro"],
@@ -170,7 +183,7 @@ def render_ctx(t, categories, by_slug):
         "benefits": c["benefits"], "use_cases": c["use_cases"], "faqs": c["faqs"],
         "related": [{"slug": r, "name": name_of(r, by_slug)} for r in t.get("related", [])],
         "widget": {
-            "endpoint": "/api/pdf" + t["route"],
+            "endpoint": "/api/" + t["module"] + t["route"],
             "field": t["processing"].get("field", "file"),
             "multi": bool(t["processing"].get("multi", False)),
             "accept": ",".join("." + e for e in exts),
@@ -199,6 +212,7 @@ def public_entry(t):
         "field": t["processing"].get("field", "file"),
         "multi": bool(t["processing"].get("multi", False)),
         "accept": ",".join("." + e for e in t.get("supported_extensions", [])),
+        "output_ext": t["processing"].get("output_ext"),
         "aliases": t.get("aliases", []),
         "keywords": keywords,
         "flags": t.get("flags", {}),
@@ -206,8 +220,8 @@ def public_entry(t):
 
 
 def main():
-    tools, categories, modules = load_manifest()
-    errs = validate(tools, categories)
+    tools, modules = load_manifest()
+    errs = validate(tools, modules)
     if errs:
         print("MANIFEST VALIDATION FAILED (%d):" % len(errs))
         for e in errs:
@@ -217,19 +231,19 @@ def main():
     by_slug = {t["slug"]: t for t in tools}
     version = {
         "schema_version": SCHEMA_VERSION,
-        "modules": modules,
         "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
         "git_sha": git_sha(),
+        "module_versions": {m: modules[m]["manifest_version"] for m in modules},
     }
 
-    # 1. runtime artifact
-    build = dict(version, tools=tools, categories=categories)
+    # 1. runtime artifact (modules carry their own nested categories)
+    build = {"version": version, "modules": modules, "tools": tools}
     with open(os.path.join(HERE, "tools.build.json"), "w", encoding="utf-8") as f:
         json.dump(build, f, ensure_ascii=False, indent=1)
 
-    # 2. lean public artifact (search-ready)
+    # 2. lean public artifact (search-ready, all modules)
     pub = {"version": version,
-           "categories": categories,
+           "modules": modules,
            "tools": [public_entry(t) for t in tools]}
     with open(os.path.join(STATIC, "tools.json"), "w", encoding="utf-8") as f:
         json.dump(pub, f, ensure_ascii=False)
@@ -243,7 +257,7 @@ def main():
     for t in tools:
         if t.get("status") != "published":
             continue
-        html = tpl.render(t=render_ctx(t, categories, by_slug))
+        html = tpl.render(t=render_ctx(t, modules, by_slug))
         d = os.path.join(STATIC, "t", t["slug"])
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, "index.html"), "w", encoding="utf-8") as f:

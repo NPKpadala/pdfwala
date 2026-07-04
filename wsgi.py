@@ -51,11 +51,13 @@ def create_app(env: str = None) -> Flask:
     from app.routes.office_routes import office_bp
     from app.routes.image_routes  import image_bp
     from app.routes.system_routes import system_bp
+    from app.routes.catalog_routes import catalog_bp
 
     app.register_blueprint(pdf_bp)
     app.register_blueprint(office_bp)
     app.register_blueprint(image_bp)
     app.register_blueprint(system_bp)
+    app.register_blueprint(catalog_bp)
 
     # ── Unique-visitor tracking (best-effort, never breaks a request) ────
     # Counts distinct client IPs per day via Redis HyperLogLog. Internal
