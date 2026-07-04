@@ -1,7 +1,12 @@
 """
-app/routes/pdf_routes.py — PDFWala Enterprise V13.0
-All PDF tool endpoints. Routes ONLY: validate input, build ctx, enqueue/run.
-Zero processing logic.
+app/routes/pdf_routes.py — PDFWala
+
+Tool endpoints are NOT hand-written anymore. They are registered in a loop from
+the Single Source of Truth (catalog/manifest/pdf.yaml -> catalog.registry).
+Adding a PDF tool = add one entry to the manifest, rebuild, done — no route edits.
+
+Only the special interactive endpoints (edit-text, canvas) remain hand-written,
+because they bypass the standard upload -> pipeline -> download flow.
 """
 
 import io
@@ -14,6 +19,7 @@ import tempfile
 from flask import Blueprint, request, jsonify, send_file
 
 from app.controllers.job_controller import JobController
+from catalog.registry import registry
 from config import Config
 from core.exceptions import ValidationError
 from core.result import Result
@@ -23,25 +29,11 @@ from tasks.pdf_tasks import PDF_TASK_MAP
 pdf_bp = Blueprint("pdf", __name__, url_prefix="/api/pdf")
 log = logging.getLogger("pdfwala.routes.pdf")
 
-# ── Helper ─────────────────────────────────────────────────────────────────────
 
-# Operations that are always slow (seconds to minutes even for small files).
-# These bypass the file-size threshold and always run on a Celery worker so
-# they never tie up a gunicorn web worker — even with the 10 MB upload cap,
-# a single sync OCR can hold a request slot for minutes and starve other
-# users. The frontend already handles async polling.
-_ALWAYS_ASYNC = {
-    "ocr_pdf",
-    "pdf_to_word",   # pdf2docx can be heavy on dense PDFs
-    "pdf_to_excel",
-    "pdf_to_ppt",
-    "pdf_to_pdfa",   # Ghostscript PDF/A conversion is slow
-    "compare_pdf",
-}
-
+# ── Shared handler ──────────────────────────────────────────────────────────────
 
 def _handle(operation: str, output_ext: str, msg: str,
-            multi: bool = False, field: str = "file"):
+            multi: bool = False, field: str = "file", force_async: bool = False):
     rl = JobController.check_rate_limit(request)
     if rl:
         return rl
@@ -54,7 +46,6 @@ def _handle(operation: str, output_ext: str, msg: str,
     except ValidationError as ex:
         return Result.error(ex.message, 400)
     task_fn = PDF_TASK_MAP.get(operation)
-    force_async = operation in _ALWAYS_ASYNC
     # Guard: an async dispatch with no registered task would blow up inside
     # queue_service with an AttributeError on None. Fail cleanly instead.
     if task_fn is None and (force_async or file_service.is_async(size)):
@@ -67,113 +58,28 @@ def _handle(operation: str, output_ext: str, msg: str,
     )
 
 
-# ── Organize ───────────────────────────────────────────────────────────────────
+# ── Tool routes — generated from the manifest ────────────────────────────────────
 
-@pdf_bp.route("/merge",          methods=["POST"])
-def merge_pdf():
-    return _handle("merge_pdf", "pdf", "PDFs merged successfully", multi=True, field="files")
-
-@pdf_bp.route("/split",          methods=["POST"])
-def split_pdf():
-    return _handle("split_pdf", "zip", "PDF split successfully")
-
-@pdf_bp.route("/organize",       methods=["POST"])
-def organize_pdf():
-    return _handle("organize_pdf", "pdf", "PDF organized successfully")
-
-@pdf_bp.route("/remove-pages",   methods=["POST"])
-def remove_pages():
-    return _handle("remove_pages", "pdf", "Pages removed successfully")
-
-@pdf_bp.route("/extract-pages",  methods=["POST"])
-def extract_pages():
-    return _handle("extract_pages", "pdf", "Pages extracted successfully")
-
-@pdf_bp.route("/split-by-bookmarks", methods=["POST"])
-def split_by_bookmarks():
-    return _handle("split_by_bookmarks", "zip", "PDF split by bookmarks successfully")
-
-@pdf_bp.route("/split-by-size",  methods=["POST"])
-def split_by_size():
-    return _handle("split_by_size", "zip", "PDF split by size successfully")
-
-@pdf_bp.route("/alternate-mix",  methods=["POST"])
-def alternate_mix():
-    return _handle("alternate_mix", "pdf", "PDFs interleaved successfully",
-                   multi=True, field="files")
+def _register_tool_routes():
+    for spec in registry.route_specs("pdf"):
+        def _view(_s=spec):
+            return _handle(_s["op"], _s["output_ext"], _s["success_msg"],
+                           multi=_s["multi"], field=_s["field"],
+                           force_async=_s["force_async"])
+        endpoint = "tool_" + spec["op"]
+        _view.__name__ = endpoint
+        pdf_bp.add_url_rule(spec["route"], endpoint=endpoint,
+                            view_func=_view, methods=["POST"])
+    log.info("registered %d PDF tool routes from manifest",
+             len(registry.route_specs("pdf")))
 
 
-# ── Optimize ───────────────────────────────────────────────────────────────────
-
-@pdf_bp.route("/compress",       methods=["POST"])
-def compress_pdf():
-    return _handle("compress_pdf", "pdf", "PDF compressed successfully")
-
-@pdf_bp.route("/repair",         methods=["POST"])
-def repair_pdf():
-    return _handle("repair_pdf", "pdf", "PDF repaired successfully")
-
-@pdf_bp.route("/linearize",      methods=["POST"])
-def linearize_pdf():
-    return _handle("linearize_pdf", "pdf", "PDF linearized successfully")
-
-
-# ── Edit ───────────────────────────────────────────────────────────────────────
-
-@pdf_bp.route("/rotate",         methods=["POST"])
-def rotate_pdf():
-    return _handle("rotate_pdf", "pdf", "PDF rotated successfully")
-
-@pdf_bp.route("/watermark",      methods=["POST"])
-def watermark_pdf():
-    return _handle("watermark_pdf", "pdf", "Watermark added successfully")
-
-@pdf_bp.route("/page-numbers",   methods=["POST"])
-def page_numbers():
-    return _handle("page_numbers", "pdf", "Page numbers added successfully")
-
-@pdf_bp.route("/crop",           methods=["POST"])
-def crop_pdf():
-    return _handle("crop_pdf", "pdf", "PDF cropped successfully")
-
-@pdf_bp.route("/redact",         methods=["POST"])
-def redact_pdf():
-    return _handle("redact_pdf", "pdf", "PDF redacted successfully")
-
-@pdf_bp.route("/remove-metadata", methods=["POST"])
-def remove_metadata():
-    return _handle("remove_metadata", "pdf", "Metadata removed successfully")
-
-@pdf_bp.route("/header-footer",  methods=["POST"])
-def add_header_footer():
-    return _handle("add_header_footer", "pdf", "Header/footer added successfully")
-
-@pdf_bp.route("/resize",         methods=["POST"])
-def resize_pdf():
-    return _handle("resize_pdf", "pdf", "PDF resized successfully")
-
-@pdf_bp.route("/fill-form",      methods=["POST"])
-def fill_form():
-    return _handle("fill_form", "pdf", "Form filled successfully")
-
-@pdf_bp.route("/flatten",        methods=["POST"])
-def flatten_pdf():
-    return _handle("flatten_pdf", "pdf", "PDF flattened successfully")
-
-@pdf_bp.route("/edit",           methods=["POST"])
-def edit_pdf():
-    return _handle("edit_pdf",   "pdf", "PDF edited successfully")
+_register_tool_routes()
 
 
 # ── Edit PDF (text-editor flow) ───────────────────────────────────────────────
-# Two endpoints that round-trip a PDF through DOCX so the user can edit the
-# actual text in a rich-text editor in the browser, then save back to PDF.
-#
-#   /edit-text/load : POST PDF  →  returns sanitised HTML for the editor
-#   /edit-text/save : POST HTML →  returns a fresh PDF (download_url + filename)
-#
-# These bypass the JobController async machinery — both calls are interactive
-# (the user is waiting in the browser) so they run inline and return 200.
+# Round-trip a PDF through DOCX so the user can edit real text in the browser.
+# Interactive (the user is waiting) so these run inline and return 200.
 
 @pdf_bp.route("/edit-text/load", methods=["POST"])
 def edit_text_load():
@@ -211,79 +117,10 @@ def edit_text_save():
     return result
 
 
-# ── Security ───────────────────────────────────────────────────────────────────
-
-@pdf_bp.route("/protect",        methods=["POST"])
-def protect_pdf():
-    return _handle("protect_pdf", "pdf", "PDF protected successfully")
-
-@pdf_bp.route("/unlock",         methods=["POST"])
-def unlock_pdf():
-    return _handle("unlock_pdf", "pdf", "PDF unlocked successfully")
-
-@pdf_bp.route("/sign",           methods=["POST"])
-def sign_pdf():
-    return _handle("sign_pdf", "pdf", "PDF signed successfully")
-
-
-# ── Info ───────────────────────────────────────────────────────────────────────
-
-@pdf_bp.route("/info",           methods=["POST"])
-def pdf_info():
-    return _handle("pdf_info", "json", "PDF info extracted")
-
-
-# ── Convert ───────────────────────────────────────────────────────────────────
-
-@pdf_bp.route("/to-image",       methods=["POST"])
-def pdf_to_image():
-    fmt = request.form.get("format", "jpg")
-    return _handle("pdf_to_image", "zip", "PDF converted to images")
-
-@pdf_bp.route("/to-jpg",         methods=["POST"])
-def pdf_to_jpg():
-    return _handle("pdf_to_jpg", "zip", "PDF converted to JPG")
-
-@pdf_bp.route("/to-png",         methods=["POST"])
-def pdf_to_png():
-    return _handle("pdf_to_png", "zip", "PDF converted to PNG")
-
-@pdf_bp.route("/to-word",        methods=["POST"])
-def pdf_to_word():
-    return _handle("pdf_to_word", "docx", "PDF converted to Word")
-
-@pdf_bp.route("/to-excel",       methods=["POST"])
-def pdf_to_excel():
-    return _handle("pdf_to_excel", "xlsx", "PDF converted to Excel")
-
-@pdf_bp.route("/to-ppt",         methods=["POST"])
-def pdf_to_ppt():
-    return _handle("pdf_to_ppt", "pptx", "PDF converted to PowerPoint")
-
-@pdf_bp.route("/to-pdfa",        methods=["POST"])
-def pdf_to_pdfa():
-    return _handle("pdf_to_pdfa", "pdf", "PDF converted to PDF/A")
-
-@pdf_bp.route("/to-html",        methods=["POST"])
-def pdf_to_html():
-    return _handle("pdf_to_html", "html", "PDF converted to HTML")
-
-@pdf_bp.route("/ocr",            methods=["POST"])
-def ocr_pdf():
-    return _handle("ocr_pdf", "pdf", "OCR completed successfully")
-
-@pdf_bp.route("/compare",        methods=["POST"])
-def compare_pdf():
-    return _handle("compare_pdf", "zip", "PDF comparison completed",
-                   multi=True, field="files")
-
-
 # ── Canvas Editor (visual in-place text editing) ─────────────────────────────
-# Synchronous endpoints — the user is waiting interactively and the work is
-# fast (<2s for typical PDFs), so these run inline (no Celery / Redis job).
+# Synchronous endpoints — the user waits interactively and the work is fast.
 #   POST /api/pdf/parse-canvas : PDF            → page images + editable spans (JSON)
 #   POST /api/pdf/save-canvas  : PDF + changes  → rebuilt PDF (binary download)
-# Scanned PDFs are auto-OCR'd inside parse-canvas.
 
 _CANVAS_MAX_UPLOAD  = 50 * 1024 * 1024   # 50 MB
 _CANVAS_MAX_CHANGES = 5000
