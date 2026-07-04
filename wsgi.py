@@ -47,15 +47,15 @@ def create_app(env: str = None) -> Flask:
     import engines.image_engine    # noqa: F401
 
     # ── Register blueprints ─────────────────────────────────────────────
-    from app.routes.pdf_routes    import pdf_bp
-    from app.routes.office_routes import office_bp
-    from app.routes.image_routes  import image_bp
-    from app.routes.system_routes import system_bp
+    from app.routes.pdf_routes     import pdf_bp        # special PDF endpoints only
+    from app.routes.system_routes  import system_bp
     from app.routes.catalog_routes import catalog_bp
+    from app.routes.tool_factory   import register_catalog_routes
 
-    app.register_blueprint(pdf_bp)
-    app.register_blueprint(office_bp)
-    app.register_blueprint(image_bp)
+    # Every standard tool route for every module is generated from the catalog.
+    register_catalog_routes(app)
+
+    app.register_blueprint(pdf_bp)      # canvas + text-editor specials
     app.register_blueprint(system_bp)
     app.register_blueprint(catalog_bp)
 

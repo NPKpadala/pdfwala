@@ -1,8 +1,8 @@
 {
  "version": {
   "schema_version": "1.0",
-  "generated_at": "2026-07-04T19:52:07.308492Z",
-  "git_sha": "f6372ff",
+  "generated_at": "2026-07-04T20:11:26.920720Z",
+  "git_sha": "0be2d3d",
   "module_versions": {
    "image": "1.0.0",
    "office": "1.0.0",
