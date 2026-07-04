@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ t.title }}</title>
+<meta name="description" content="{{ t.meta_description }}">
+<link rel="canonical" href="https://pdf.npkpadala.com/{{ t.slug }}/">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="theme-color" content="#05060A">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2305060A'/><text x='50' y='70' font-size='62' font-family='monospace' fill='%232F6FED' text-anchor='middle'>P</text></svg>">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PDFWala">
+<meta property="og:url" content="https://pdf.npkpadala.com/{{ t.slug }}/">
+<meta property="og:title" content="{{ t.title }}">
+<meta property="og:description" content="{{ t.meta_description }}">
+<meta property="og:image" content="https://pdf.npkpadala.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ t.title }}">
+<meta name="twitter:description" content="{{ t.meta_description }}">
+<meta name="twitter:image" content="https://pdf.npkpadala.com/og.png">
+<link rel="preconnect" href="/assets/fonts">
+<link rel="stylesheet" href="/assets/fonts/fonts.css" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="/assets/fonts/fonts.css"></noscript>
+<link rel="stylesheet" href="/assets/tool.css">
+<script type="application/ld+json">
+{
+ "@context":"https://schema.org",
+ "@graph":[
+  {"@type":"WebApplication","name":"{{ t.h1 }}","url":"https://pdf.npkpadala.com/{{ t.slug }}/",
+   "applicationCategory":"UtilitiesApplication","operatingSystem":"All","browserRequirements":"Requires JavaScript",
+   "description":"{{ t.meta_description }}","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+   "publisher":{"@type":"Organization","name":"PDFWala","url":"https://pdf.npkpadala.com/"}},
+  {"@type":"BreadcrumbList","itemListElement":[
+   {"@type":"ListItem","position":1,"name":"PDFWala","item":"https://pdf.npkpadala.com/"},
+   {"@type":"ListItem","position":2,"name":"{{ t.category }}","item":"https://pdf.npkpadala.com/#{{ t.category_slug }}"},
+   {"@type":"ListItem","position":3,"name":"{{ t.h1 }}","item":"https://pdf.npkpadala.com/{{ t.slug }}/"}]},
+  {"@type":"FAQPage","mainEntity":[
+   {% for f in t.faqs %}{"@type":"Question","name":{{ f.q|tojson }},"acceptedAnswer":{"@type":"Answer","text":{{ f.a|tojson }}}}{% if not loop.last %},{% endif %}
+   {% endfor %}]}
+ ]
+}
+</script>
+</head>
+<body>
+<header class="site-h">
+  <div class="wrap hrow">
+    <a class="brand" href="/">PDF<span>Wala</span></a>
+    <nav class="hnav"><a href="/#{{ t.category_slug }}">{{ t.category }}</a><a href="/">All tools</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a><span>/</span><a href="/#{{ t.category_slug }}">{{ t.category }}</a><span>/</span><span aria-current="page">{{ t.h1 }}</span>
+  </nav>
+
+  <section class="hero">
+    <h1>{{ t.h1 }}</h1>
+    <p class="lead">{{ t.intro }}</p>
+  </section>
+
+  <!-- WORKING TOOL -->
+  <section class="tool-card" aria-label="{{ t.h1 }} tool">
+    <div id="tool-widget"></div>
+  </section>
+
+  <section class="content">
+    <h2>What {{ t.h1 }} does</h2>
+    <p>{{ t.what }}</p>
+
+    <h2>Why you need it</h2>
+    <p>{{ t.why }}</p>
+
+    <h2>How to {{ t.h1|lower }} in {{ t.steps|length }} steps</h2>
+    <ol class="steps">
+      {% for s in t.steps %}<li><strong>{{ s.t }}.</strong> {{ s.d }}</li>{% endfor %}
+    </ol>
+
+    <h2>Features</h2>
+    <div class="grid2">
+      {% for f in t.features %}<div class="ftr"><h3>{{ f.t }}</h3><p>{{ f.d }}</p></div>{% endfor %}
+    </div>
+
+    <h2>Benefits</h2>
+    <ul class="bul">{% for b in t.benefits %}<li>{{ b }}</li>{% endfor %}</ul>
+
+    <h2>Common use cases</h2>
+    <ul class="bul">{% for u in t.use_cases %}<li>{{ u }}</li>{% endfor %}</ul>
+
+    <h2 id="privacy">Security &amp; privacy</h2>
+    <p>{{ t.security }}</p>
+
+    <h2>Frequently asked questions</h2>
+    <div class="faq">
+      {% for f in t.faqs %}<details><summary>{{ f.q }}</summary><p>{{ f.a }}</p></details>{% endfor %}
+    </div>
+  </section>
+
+  <section class="related">
+    <h2>Related PDF tools</h2>
+    <div class="rel-grid">
+      {% for r in t.related %}<a href="/{{ r.slug }}/" class="rel">{{ r.name }}</a>{% endfor %}
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <h2>{{ t.cta_h }}</h2>
+    <p>{{ t.cta_p }}</p>
+    <a href="#tool-widget" class="cta-btn">{{ t.cta_btn }}</a>
+  </section>
+</main>
+
+<footer class="site-f">
+  <div class="wrap">
+    <div class="fcols">
+      <div><a class="brand" href="/">PDF<span>Wala</span></a><p class="muted">Free, private, fast document tools. Files auto-delete within 2 hours.</p></div>
+      <div><h4>Popular tools</h4>
+        <a href="/compress-pdf/">Compress PDF</a><a href="/merge-pdf/">Merge PDF</a><a href="/split-pdf/">Split PDF</a><a href="/pdf-to-word/">PDF to Word</a></div>
+      <div><h4>Company</h4><a href="/about">About</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Contact</a></div>
+    </div>
+    <div class="fbot muted">&copy; 2026 PDFWala · <a href="/">All tools</a></div>
+  </div>
+</footer>
+
+<script>window.TOOL_CFG = {{ t.widget|tojson }};</script>
+<script src="/assets/tool-widget.js" defer></script>
+</body>
+</html>
