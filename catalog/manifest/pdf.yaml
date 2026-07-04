@@ -2,24 +2,38 @@
 # PDFWala tool manifest — SINGLE SOURCE OF TRUTH (module: pdf)
 # Every system (Flask routes, SEO pages, sitemap, nav, related links, JSON-LD,
 # future mobile app / public API / admin panel) derives from this file.
-# Add a tool = add ONE entry here, run `python platform/build.py`, done.
+# Add a tool = add ONE entry here, run `python catalog/build.py`, done.
 #
 # i18n: language-neutral fields live at the top level; all human copy lives under
 # content.<locale>. Add a language later by adding content.es / content.hi, and
 # (optionally) slugs.<locale>, without changing the architecture.
 # =============================================================================
 
+# Module-level metadata. schema_version is bumped by build.py; manifest_version
+# is owned here so future clients (mobile/API/admin) know what they consume.
+meta:
+  module: pdf
+  manifest_version: "1.0.0"
+
 # Shared defaults (YAML merge key <<: *base applies these; override any field).
 _base: &base
   module: pdf
-  status: draft            # draft = API route only; published = also gets an SEO page
+  status: draft            # draft = API-only; published = also gets an SEO page
   priority: 50
+  # Category-system fields (drive the whole UI: grid, nav, badges, filters).
+  subcategory: null
+  featured: false          # spotlight on the homepage
+  popular: false           # "Popular tools" rail
+  hidden: false            # exists (API) but not shown in the UI
+  experimental: false      # beta badge
+  deprecated: false        # kept working, hidden from discovery, noindex
   search_volume: low
   difficulty: medium
   monetization_priority: 3
   schema_type: WebApplication
   icon: file
   hero_image: null
+  aliases: []              # extra search terms / alternate names
   processing: { field: file, multi: false, output_ext: pdf, async: false, max_mb: 10, queue: fast }
   supported_extensions: [pdf]
   output_extensions: [pdf]
@@ -39,6 +53,8 @@ tools:
   category: optimize
   engine: compress_pdf
   status: published
+  featured: true
+  popular: true
   priority: 1
   search_volume: high
   monetization_priority: 1
@@ -102,6 +118,8 @@ tools:
   category: organize
   engine: merge_pdf
   status: published
+  featured: true
+  popular: true
   priority: 2
   search_volume: high
   monetization_priority: 1
@@ -157,6 +175,8 @@ tools:
   category: organize
   engine: split_pdf
   status: published
+  featured: true
+  popular: true
   priority: 3
   search_volume: high
   monetization_priority: 2
@@ -220,6 +240,8 @@ tools:
   category: edit
   engine: rotate_pdf
   status: published
+  featured: true
+  popular: true
   priority: 4
   search_volume: high
   success_msg: PDF rotated successfully
@@ -286,6 +308,8 @@ tools:
   category: security
   engine: protect_pdf
   status: published
+  featured: true
+  popular: true
   priority: 5
   search_volume: high
   monetization_priority: 2
@@ -348,6 +372,8 @@ tools:
   category: convert
   engine: pdf_to_word
   status: published
+  featured: true
+  popular: true
   priority: 6
   search_volume: high
   monetization_priority: 1
@@ -411,9 +437,9 @@ tools:
 
 # Category display metadata (drives nav + breadcrumb labels).
 categories:
-  optimize: { label: Optimize, order: 1 }
-  organize: { label: Organize, order: 2 }
-  edit:     { label: Edit,     order: 3 }
-  convert:  { label: Convert,  order: 4 }
-  security: { label: Security, order: 5 }
-  view:     { label: View,     order: 6 }
+  optimize: { label: Optimize, order: 1, icon: compress, description: "Shrink, repair and web-optimize PDFs." }
+  organize: { label: Organize, order: 2, icon: pages,    description: "Merge, split and reorder pages." }
+  edit:     { label: Edit,     order: 3, icon: edit,     description: "Rotate, crop, watermark and mark up PDFs." }
+  convert:  { label: Convert,  order: 4, icon: refresh,  description: "Convert PDFs to and from other formats." }
+  security: { label: Security, order: 5, icon: shield,   description: "Protect, unlock, sign and redact PDFs." }
+  view:     { label: View,     order: 6, icon: eye,      description: "Inspect and compare PDFs." }

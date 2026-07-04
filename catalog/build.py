@@ -1,22 +1,24 @@
 """
-catalog/build.py - compile the YAML manifest into runtime artifacts + SEO pages.
+catalog/build.py - compile YAML manifest(s) into runtime artifacts + SEO pages.
 
     python catalog/build.py
 
-Pipeline:
-  catalog/manifest/*.yaml   (authored source, human-friendly)
-      -> validate (schema + uniqueness + referential integrity)
+  catalog/manifest/*.yaml   (authored source; one file per MODULE - plugin model)
+      -> validate (schema + uniqueness + referential integrity + more)
       -> catalog/tools.build.json   (runtime artifact, read by registry.py)
       -> static/tools.json          (lean public artifact: JS / mobile / API / admin)
       -> static/t/<slug>/index.html (SEO pages for published tools)
       -> static/sitemap.pdf.xml     (published tools + legal pages)
 
 Only build.py needs PyYAML; the running app reads JSON via registry.py.
+Build FAILS (exit 1) on any validation error - a broken manifest never ships.
 """
 import datetime
 import glob
 import json
 import os
+import re
+import subprocess
 import sys
 
 import yaml
@@ -29,44 +31,123 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, ".."))
 STATIC = os.path.join(ROOT, "static")
 
-REQUIRED = ["id", "slug", "route", "category", "module", "engine", "processing"]
+# Shape version of tools.build.json / tools.json. Bump when the schema changes
+# so mobile/API/admin clients can detect an incompatible catalog.
+SCHEMA_VERSION = "1.0"
+
+REQUIRED = ["id", "slug", "route", "category", "module", "engine", "processing",
+            "icon", "schema_type", "status"]
+BOOL_FIELDS = ["featured", "popular", "hidden", "experimental", "deprecated"]
+EXT_RE = re.compile(r"^[a-z0-9]{1,6}$")
+ROUTE_RE = re.compile(r"^/[a-z0-9][a-z0-9/-]*$")
+SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 
 def load_manifest():
-    tools, categories = [], {}
+    tools, categories, modules = [], {}, {}
     for path in sorted(glob.glob(os.path.join(HERE, "manifest", "*.yaml"))):
         with open(path, encoding="utf-8") as f:
             doc = yaml.safe_load(f) or {}
-        tools.extend(doc.get("tools", []))
+        meta = doc.get("meta") or {}
+        mod = meta.get("module") or os.path.splitext(os.path.basename(path))[0]
+        modules[mod] = {"manifest_version": meta.get("manifest_version", "0.0.0"),
+                        "source": os.path.basename(path)}
+        for t in doc.get("tools", []):
+            t.setdefault("module", mod)
+            tools.append(t)
         categories.update(doc.get("categories", {}))
-    return tools, categories
+    return tools, categories, modules
+
+
+def load_engine_names():
+    """Best-effort: the set of registered engine ops, to catch manifest typos.
+    Skipped silently if engines can't be imported in this environment."""
+    try:
+        sys.path.insert(0, ROOT)
+        import engines.pdf_engine   # noqa: F401
+        import engines.image_engine  # noqa: F401
+        import engines.office_engine  # noqa: F401
+        from core.pipeline import _ENGINES
+        return set(_ENGINES.keys())
+    except Exception:
+        return None
 
 
 def validate(tools, categories):
     errs = []
     slugs = {t.get("slug") for t in tools}
+    engines = load_engine_names()
     seen_slug, seen_id, seen_route = set(), set(), set()
+
     for t in tools:
         tid = t.get("id", "?")
+
         for k in REQUIRED:
-            if k not in t:
+            if not t.get(k) and t.get(k) is not False:
                 errs.append(f"{tid}: missing required field '{k}'")
-        s, i, key = t.get("slug"), t.get("id"), (t.get("module"), t.get("route"))
+
+        s, i, rkey = t.get("slug"), t.get("id"), (t.get("module"), t.get("route"))
         if s in seen_slug:
             errs.append(f"duplicate slug: {s}")
         if i in seen_id:
             errs.append(f"duplicate id: {i}")
-        if key in seen_route:
-            errs.append(f"duplicate route: {key}")
-        seen_slug.add(s); seen_id.add(i); seen_route.add(key)
+        if rkey in seen_route:
+            errs.append(f"duplicate route: {rkey}")
+        seen_slug.add(s); seen_id.add(i); seen_route.add(rkey)
+
+        if s and not SLUG_RE.match(s):
+            errs.append(f"{tid}: invalid slug '{s}' (lowercase, digits, hyphens)")
+        if t.get("route") and not ROUTE_RE.match(t["route"]):
+            errs.append(f"{tid}: invalid route '{t.get('route')}'")
+
         if t.get("category") not in categories:
             errs.append(f"{tid}: unknown category '{t.get('category')}'")
+
+        # related: must exist, and a tool must not reference itself (circular)
         for r in t.get("related", []):
             if r not in slugs:
                 errs.append(f"{tid}: related '{r}' is not a known tool slug")
-        if t.get("status") == "published" and "en" not in (t.get("content") or {}):
-            errs.append(f"{tid}: status=published but no content.en block")
+            if r == s:
+                errs.append(f"{tid}: related references itself (circular)")
+
+        # extensions
+        for group in ("supported_extensions", "output_extensions"):
+            for e in (t.get(group) or []):
+                if not EXT_RE.match(str(e)):
+                    errs.append(f"{tid}: invalid extension '{e}' in {group}")
+
+        # engine must exist (when we can check)
+        if engines is not None and t.get("engine") not in engines:
+            errs.append(f"{tid}: engine '{t.get('engine')}' is not registered")
+
+        # boolean category-system fields
+        for b in BOOL_FIELDS:
+            if b in t and not isinstance(t[b], bool):
+                errs.append(f"{tid}: field '{b}' must be true/false")
+
+        # published tools need a complete en translation
+        if t.get("status") == "published":
+            en = (t.get("content") or {}).get("en")
+            if not en:
+                errs.append(f"{tid}: status=published but missing content.en")
+            else:
+                for k in ("seo_title", "seo_description", "h1", "intro"):
+                    if not en.get(k):
+                        errs.append(f"{tid}: published tool missing content.en.{k}")
+
     return errs
+
+
+def git_sha():
+    env = os.environ.get("GIT_SHA")
+    if env:
+        return env.strip()
+    try:
+        return subprocess.check_output(
+            ["git", "-C", ROOT, "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL).decode().strip()
+    except Exception:
+        return "unknown"
 
 
 def name_of(slug, by_slug):
@@ -76,18 +157,14 @@ def name_of(slug, by_slug):
 
 
 def render_ctx(t, categories, by_slug):
-    """Flatten a tool + locale into the shape seo/template.html expects, so the
-    template stays untouched (zero-regression migration)."""
     c = t["content"]["en"]
     exts = t.get("supported_extensions", ["pdf"])
     return {
         "slug": t["slug"],
         "category": categories[t["category"]]["label"],
         "category_slug": t["category"],
-        "title": c["seo_title"],
-        "meta_description": c["seo_description"],
-        "h1": c["h1"],
-        "intro": c["intro"],
+        "title": c["seo_title"], "meta_description": c["seo_description"],
+        "h1": c["h1"], "intro": c["intro"],
         "what": c["what"], "why": c["why"], "security": c["security"],
         "steps": c["steps"], "features": c["features"],
         "benefits": c["benefits"], "use_cases": c["use_cases"], "faqs": c["faqs"],
@@ -106,35 +183,54 @@ def render_ctx(t, categories, by_slug):
 
 def public_entry(t):
     en = (t.get("content") or {}).get("en") or {}
+    keywords = sorted(set((en.get("seo_keywords") or []) + (t.get("aliases") or [])))
     return {
         "id": t["id"], "slug": t["slug"], "route": t["route"],
-        "category": t["category"], "module": t["module"],
+        "module": t["module"], "category": t["category"],
+        "subcategory": t.get("subcategory"),
         "status": t.get("status"), "priority": t.get("priority", 50),
+        "icon": t.get("icon", "file"),
+        "featured": bool(t.get("featured")), "popular": bool(t.get("popular")),
+        "hidden": bool(t.get("hidden")), "experimental": bool(t.get("experimental")),
+        "deprecated": bool(t.get("deprecated")),
         "display_name": en.get("display_name") or pretty_slug(t["slug"]),
         "short_description": en.get("short_description", ""),
+        "endpoint": "/api/" + t["module"] + t["route"],
+        "field": t["processing"].get("field", "file"),
+        "multi": bool(t["processing"].get("multi", False)),
+        "accept": ",".join("." + e for e in t.get("supported_extensions", [])),
+        "aliases": t.get("aliases", []),
+        "keywords": keywords,
         "flags": t.get("flags", {}),
     }
 
 
 def main():
-    tools, categories = load_manifest()
+    tools, categories, modules = load_manifest()
     errs = validate(tools, categories)
     if errs:
-        print("MANIFEST VALIDATION FAILED:")
+        print("MANIFEST VALIDATION FAILED (%d):" % len(errs))
         for e in errs:
             print("  -", e)
         sys.exit(1)
 
     by_slug = {t["slug"]: t for t in tools}
+    version = {
+        "schema_version": SCHEMA_VERSION,
+        "modules": modules,
+        "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "git_sha": git_sha(),
+    }
 
     # 1. runtime artifact
-    build = {"generated_at": datetime.datetime.utcnow().isoformat() + "Z",
-             "tools": tools, "categories": categories}
+    build = dict(version, tools=tools, categories=categories)
     with open(os.path.join(HERE, "tools.build.json"), "w", encoding="utf-8") as f:
         json.dump(build, f, ensure_ascii=False, indent=1)
 
-    # 2. lean public artifact
-    pub = {"tools": [public_entry(t) for t in tools], "categories": categories}
+    # 2. lean public artifact (search-ready)
+    pub = {"version": version,
+           "categories": categories,
+           "tools": [public_entry(t) for t in tools]}
     with open(os.path.join(STATIC, "tools.json"), "w", encoding="utf-8") as f:
         json.dump(pub, f, ensure_ascii=False)
 
@@ -154,10 +250,10 @@ def main():
             f.write(html)
         pages += 1
 
-    # 4. sitemap
+    # 4. sitemap (published, non-deprecated)
     today = datetime.date.today().isoformat()
     urls = ['<url><loc>https://pdf.npkpadala.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>']
-    for t in sorted([x for x in tools if x.get("status") == "published"],
+    for t in sorted([x for x in tools if x.get("status") == "published" and not x.get("deprecated")],
                     key=lambda x: x.get("priority", 50)):
         urls.append('<url><loc>https://pdf.npkpadala.com/%s/</loc><lastmod>%s</lastmod>'
                     '<changefreq>weekly</changefreq><priority>0.9</priority></url>' % (t["slug"], today))
@@ -170,8 +266,8 @@ def main():
     with open(os.path.join(STATIC, "sitemap.pdf.xml"), "w", encoding="utf-8") as f:
         f.write(sitemap)
 
-    print("BUILD OK: %d tools total, %d published (SEO pages), sitemap %d urls"
-          % (len(tools), pages, len(urls)))
+    print("BUILD OK: schema %s | modules %s | %d tools, %d published, sitemap %d urls | sha %s"
+          % (SCHEMA_VERSION, ",".join(modules), len(tools), pages, len(urls), version["git_sha"]))
 
 
 if __name__ == "__main__":

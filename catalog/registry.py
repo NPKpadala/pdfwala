@@ -22,6 +22,12 @@ class Registry:
             data = json.load(f)
         self.tools = data["tools"]
         self.categories = data.get("categories", {})
+        self.version = {
+            "schema_version": data.get("schema_version"),
+            "modules": data.get("modules", {}),
+            "generated_at": data.get("generated_at"),
+            "git_sha": data.get("git_sha"),
+        }
         self.generated_at = data.get("generated_at")
         self._by_slug = {t["slug"]: t for t in self.tools}
         self._by_id = {t["id"]: t for t in self.tools}
@@ -42,8 +48,27 @@ class Registry:
     def published(self):
         return [t for t in self.tools if t.get("status") == "published"]
 
+    def visible(self):
+        """Tools that should appear in the UI (not hidden, not deprecated)."""
+        return [t for t in self.tools
+                if not t.get("hidden") and not t.get("deprecated")]
+
+    def featured(self):
+        return [t for t in self.visible() if t.get("featured")]
+
+    def popular(self):
+        return [t for t in self.visible() if t.get("popular")]
+
     def in_category(self, category):
         return [t for t in self.tools if t.get("category") == category]
+
+    def grouped_by_category(self):
+        """Ordered {category_key: {meta, tools[]}} for nav / grid rendering."""
+        out = {}
+        for key in sorted(self.categories, key=lambda k: self.categories[k].get("order", 99)):
+            out[key] = {"meta": self.categories[key],
+                        "tools": [t for t in self.visible() if t.get("category") == key]}
+        return out
 
     def display_name(self, slug):
         t = self._by_slug.get(slug) or {}
