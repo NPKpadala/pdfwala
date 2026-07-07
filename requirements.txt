@@ -35,6 +35,12 @@ rembg==2.0.57
 
 # OCR
 pytesseract==0.3.10
+# numpy + OpenCV are already pulled in transitively by rembg; pin them
+# explicitly because ocr_pdf's preprocessing pipeline (deskew/denoise/threshold)
+# and image-quality checks import them directly — a future rembg change must
+# not silently remove them. Versions match what the image already ships.
+numpy==2.4.6
+opencv-python-headless==5.0.0.93
 
 # Metrics
 prometheus-client==0.20.0

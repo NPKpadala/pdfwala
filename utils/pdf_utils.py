@@ -445,36 +445,89 @@ def extract_pdf_metadata(path: str) -> dict:
     return meta
 
 
+def _effective_dpi(page, xref, pixel_w, pixel_h):
+    """
+    Effective on-page DPI of an image = its pixel dimensions divided by the
+    physical size (in inches) at which it is displayed on the page. This is the
+    number that actually matters for compression — a 3000px image shown in a
+    2-inch box is 1500 DPI and hugely over-resolved, regardless of the (often
+    absent/96) xres/yres tag baked into the image stream. Returns the largest
+    effective DPI across all placements, or None if the placement is unknown.
+    """
+    try:
+        rects = page.get_image_rects(xref)
+    except Exception:
+        rects = []
+    best = None
+    for r in rects:
+        w_in = r.width / 72.0
+        h_in = r.height / 72.0
+        if w_in <= 0 or h_in <= 0:
+            continue
+        d = max(pixel_w / w_in, pixel_h / h_in)
+        best = d if best is None else max(best, d)
+    return best
+
+
 def compress_pdf_images(doc, dpi: int = 120, quality: int = 72,
                         max_image_bytes: int = 5 * 1024 * 1024):
     """
-    In-place image compression for a PyMuPDF document.
-    Returns True if any images were modified.
-    Skips images larger than max_image_bytes to prevent RAM exhaustion.
+    In-place recompression/downsampling of raster images in a PyMuPDF document.
+    Returns True if any image was modified.
+
+    Correctness: images are rewritten via page.replace_image(xref, stream=...),
+    which rebuilds the image XObject dictionary (Filter/Width/Height/ColorSpace)
+    to match the new JPEG. The previous implementation swapped raw stream bytes
+    with doc.update_stream() while leaving the old dictionary in place, which
+    could leave /Filter and /Width-/Height inconsistent with the payload and
+    render as garbage.
+
+    Quality: the downsample decision uses the *effective* on-page DPI (see
+    _effective_dpi), so over-resolved scans/photos are actually reduced — the
+    old xres/yres heuristic skipped nearly everything.
+
+    Safety: images with a soft mask (/SMask, i.e. real transparency) are left
+    untouched so we never flatten alpha onto white; images larger than
+    max_image_bytes are skipped to bound RAM.
     """
     from PIL import Image
     modified = False
     for page in doc:
         for img in page.get_images(full=True):
             xref = img[0]
+            smask = img[1]           # 0 == no soft mask
             try:
+                if smask:
+                    continue         # preserve transparency — leave to Ghostscript
                 base = doc.extract_image(xref)
                 if not base:
                     continue
-                # Skip very large embedded images to avoid OOM (RAM guard)
                 if len(base.get("image", b"")) > max_image_bytes:
-                    continue
+                    continue         # RAM guard
+
                 pil = Image.open(io.BytesIO(base["image"]))
                 ow, oh = pil.size
-                src_dpi = max(base.get("xres", 150), base.get("yres", 150), 1)
-                scale   = min(1.0, dpi / src_dpi)
-                if scale >= 0.95:
+
+                eff = _effective_dpi(page, xref, ow, oh)
+                # Fall back to the embedded tag only when placement is unknown.
+                src_dpi = eff if eff else max(base.get("xres", 0),
+                                              base.get("yres", 0), 72)
+                scale = min(1.0, dpi / src_dpi) if src_dpi else 1.0
+
+                # Recompress in place (no resize) when the image is already at a
+                # sane resolution but stored as bulky PNG/flate — JPEG at the
+                # target quality still shrinks it. Only skip tiny images.
+                resize = scale < 0.95
+                if not resize and (ow * oh) < 90_000:   # < ~300x300, not worth it
                     continue
-                nw = max(1, int(ow * scale))
-                nh = max(1, int(oh * scale))
-                pil = pil.resize((nw, nh), Image.LANCZOS)
+
+                if resize:
+                    nw = max(1, int(ow * scale))
+                    nh = max(1, int(oh * scale))
+                    pil = pil.resize((nw, nh), Image.LANCZOS)
+
                 if pil.mode in ("RGBA", "P", "LA"):
-                    bg   = Image.new("RGB", pil.size, (255, 255, 255))
+                    bg = Image.new("RGB", pil.size, (255, 255, 255))
                     if pil.mode == "P":
                         pil = pil.convert("RGBA")
                     mask = pil.split()[-1] if pil.mode in ("RGBA", "LA") else None
@@ -482,9 +535,16 @@ def compress_pdf_images(doc, dpi: int = 120, quality: int = 72,
                     pil = bg
                 elif pil.mode != "RGB":
                     pil = pil.convert("RGB")
+
                 buf_img = io.BytesIO()
-                pil.save(buf_img, "JPEG", quality=quality, optimize=True, progressive=True)
-                doc.update_stream(xref, buf_img.getvalue())
+                pil.save(buf_img, "JPEG", quality=quality,
+                         optimize=True, progressive=True)
+                new_bytes = buf_img.getvalue()
+                # Never make an individual image bigger than it already was.
+                if len(new_bytes) >= len(base.get("image", b"")) and not resize:
+                    continue
+
+                page.replace_image(xref, stream=new_bytes)
                 modified = True
             except Exception:
                 pass

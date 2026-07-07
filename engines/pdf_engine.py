@@ -246,6 +246,34 @@ def _guard_empty(path: str) -> None:
         raise ValidationError("Input PDF has no pages")
 
 
+def _pdf_renders_ok(path: str, sample: int = 3) -> bool:
+    """
+    Cheap integrity gate for a candidate compressed PDF: open it and render a
+    few sampled pages at low DPI. Returns False on any structural/render error
+    so a corrupt-but-smaller candidate is never selected over the pristine
+    original. Sampling keeps this O(1)-ish even for large documents.
+    """
+    if not FITZ_OK:
+        return True
+    doc = None
+    try:
+        doc = fitz.open(path)
+        n = len(doc)
+        if n == 0:
+            return False
+        idxs = {0, n // 2, n - 1}
+        if sample < n:
+            idxs |= {n // 4, (3 * n) // 4}
+        for i in sorted(x for x in idxs if 0 <= x < n):
+            doc[i].get_pixmap(dpi=36)     # raises if the page is corrupt
+        return True
+    except Exception:
+        return False
+    finally:
+        if doc is not None:
+            doc.close()
+
+
 def _open_zip_writer(output_path: str, page_count: int):
     """
     Return a ZipFile that writes to disk (large) or BytesIO (small).
@@ -581,13 +609,26 @@ def compress_pdf(ctx: JobContext) -> dict:
                 f"-dColorImageResolution={cfg['dpi']}",
                 f"-dGrayImageResolution={cfg['dpi']}",
                 f"-dJPEGQ={cfg['quality']}",
+                # Font handling — subset + compress + keep everything embedded so
+                # text still renders on machines without the original fonts
+                # (matches Acrobat/iLovePDF output; smaller than full embedding).
+                "-dSubsetFonts=true",
+                "-dCompressFonts=true",
+                "-dEmbedAllFonts=true",
+                # Collapse byte-identical images that appear on many pages.
+                "-dDetectDuplicateImages=true",
+                # Linearize for "Fast Web View" — first page renders before the
+                # whole file downloads, exactly like Acrobat's web-optimized PDFs.
+                "-dFastWebView=true",
             ],
         )
     except OperationTimeoutError:
         log.warning(f"[{ctx.job_id}] GS timed out during compress")
     ctx.set_progress(80)
 
-    # Pick smallest valid candidate
+    # Pick the smallest candidate that still RENDERS. A recompression bug could
+    # otherwise produce a tiny but corrupt file that wins on size alone; the
+    # original is always valid and is the guaranteed fallback.
     candidates = []
     if gs_ok and os.path.exists(gs_out) and os.path.getsize(gs_out) > 0:
         candidates.append((os.path.getsize(gs_out), gs_out))
@@ -595,7 +636,12 @@ def compress_pdf(ctx: JobContext) -> dict:
         candidates.append((stage1_size, stage1))
     candidates.append((orig, ctx.input_path))
     candidates.sort(key=lambda x: x[0])
-    _chosen_size, chosen = candidates[0]
+
+    chosen = ctx.input_path
+    for _sz, cand in candidates:
+        if cand == ctx.input_path or _pdf_renders_ok(cand):
+            chosen = cand
+            break
 
     try:
         shutil.copy(chosen, ctx.output_path)
