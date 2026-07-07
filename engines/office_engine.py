@@ -995,7 +995,7 @@ def excel_to_json(ctx: JobContext) -> dict:
 
     use_headers = _coerce_bool(ctx.params.get("header", True))
     wb          = load_workbook(ctx.input_path, data_only=True, read_only=True)
-    data        = {}
+    sheetnames  = list(wb.sheetnames)   # C2: capture before close
     truncated   = False
 
     with open(ctx.output_path, "w", encoding="utf-8") as out_fh:
@@ -1003,14 +1003,14 @@ def excel_to_json(ctx: JobContext) -> dict:
         out_fh.write("{\n")
         first_sheet = True
 
-        for sname in wb.sheetnames:
+        for sname in sheetnames:
             ws      = wb[sname]
             headers = None
             rows    = []
-            row_n   = 0
+            header_pending = use_headers
 
             for raw_row in ws.iter_rows(values_only=True):
-                if row_n == 0 and use_headers:
+                if header_pending:
                     seen: dict = {}
                     headers    = []
                     for i, h in enumerate(raw_row[:_EXCEL_COL_LIMIT]):
@@ -1018,9 +1018,10 @@ def excel_to_json(ctx: JobContext) -> dict:
                         cnt  = seen.get(base, 0)
                         seen[base] = cnt + 1
                         headers.append(base if cnt == 0 else f"{base}_{cnt}")
-                    row_n += 1
+                    header_pending = False
                     continue
-                if row_n > _EXCEL_ROW_LIMIT:
+                # limit counts DATA rows only, identically with/without headers
+                if len(rows) >= _EXCEL_ROW_LIMIT:
                     truncated = True
                     break
                 if use_headers and headers:
@@ -1031,7 +1032,6 @@ def excel_to_json(ctx: JobContext) -> dict:
                     rows.append(row_dict)
                 else:
                     rows.append([coerce_cell_value(v) for v in raw_row[:_EXCEL_COL_LIMIT]])
-                row_n += 1
 
             sep   = "" if first_sheet else ",\n"
             safe  = json.dumps(sname)
@@ -1043,7 +1043,7 @@ def excel_to_json(ctx: JobContext) -> dict:
 
     wb.close()
     _validate_output(ctx.output_path, "excel_to_json", min_bytes=2)
-    return {"sheets": len(wb.sheetnames), "truncated": truncated}
+    return {"sheets": len(sheetnames), "truncated": truncated}
 
 
 @register("compress_excel")
@@ -1062,13 +1062,16 @@ def compress_excel(ctx: JobContext) -> dict:
     wb   = load_workbook(ctx.input_path, data_only=False)
 
     for ws in wb.worksheets:
-        # P3: openpyxl tracks max_row/max_column natively — O(1)
-        max_r = ws.max_row    or 0
-        max_c = ws.max_column or 0
-        # Trim trailing empty rows
-        if max_r > 0:
+        # ws.max_row counts styled-but-empty trailing rows too. Find the last
+        # row with actual values and drop everything after it (the previous
+        # delete_rows(max_row+1, 0) call was a no-op by construction).
+        last = 0
+        for r_idx, row in enumerate(ws.iter_rows(values_only=True), 1):
+            if any(v is not None for v in row):
+                last = r_idx
+        if 0 < last < ws.max_row:
             try:
-                ws.delete_rows(max_r + 1, ws.max_row - max_r)
+                ws.delete_rows(last + 1, ws.max_row - last)
             except Exception:
                 pass
 

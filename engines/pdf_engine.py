@@ -1701,39 +1701,91 @@ def pdf_to_ppt(ctx: JobContext) -> dict:
     return {"slides_created": slide_count}
 
 
+_PDFA_VERSION_RE = re.compile(r"^([123])[ab]?$", re.I)
+_PDFA_ICC_CANDIDATES = (
+    "/usr/share/color/icc/ghostscript/srgb.icc",
+    "/usr/share/color/icc/ghostscript/default_rgb.icc",
+)
+
+
+def _pdfa_def_ps(tmp_dir: str):
+    """
+    Write a PDFA_def.ps (stock Ghostscript prefix, ICC path made absolute)
+    into tmp_dir. Without this prefix Ghostscript emits a plain PDF with no
+    OutputIntent or pdfaid XMP — i.e. not PDF/A at all.
+    Returns (def_path, icc_dir) or (None, None) if resources are missing.
+    """
+    import glob as _glob
+    stock = sorted(_glob.glob("/usr/share/ghostscript/*/lib/PDFA_def.ps"))
+    icc   = next((p for p in _PDFA_ICC_CANDIDATES if os.path.exists(p)), None)
+    if not stock or not icc:
+        return None, None
+    txt = open(stock[-1], encoding="utf-8", errors="replace").read()
+    txt = txt.replace("/ICCProfile (srgb.icc)", f"/ICCProfile ({icc})")
+    def_path = os.path.join(tmp_dir, "PDFA_def.ps")
+    with open(def_path, "w", encoding="utf-8") as fh:
+        fh.write(txt)
+    return def_path, os.path.dirname(icc)
+
+
 @register("pdf_to_pdfa")
 def pdf_to_pdfa(ctx: JobContext) -> dict:
     """
     Convert to PDF/A via Ghostscript.
-    Checks returncode and verifies output exists.
+    The requested part (1/2/3) is validated and passed through — previously
+    2b silently produced PDF/A-1 and 3b produced PDF/A-2. The PDFA_def.ps
+    prefix embeds the sRGB OutputIntent + pdfaid XMP so output actually
+    identifies (and can validate) as PDF/A.
     """
-    version  = ctx.params.get("version", "1b")
-    pdfa_val = "2" if "3" in str(version) else "1"
+    version = str(ctx.params.get("version", "1b")).lower()
+    m = _PDFA_VERSION_RE.match(version)
+    if not m:
+        raise ValidationError(
+            f"Invalid PDF/A version '{version}' — use 1b, 2b or 3b"
+        )
+    pdfa_val = m.group(1)
     safe_out = _safe_output_path(ctx.output_path)
-    cmd = [
-        Config.GHOSTSCRIPT,
-        "-dBATCH", "-dNOPAUSE", "-dSAFER",
-        "-sDEVICE=pdfwrite",
-        f"-dPDFA={pdfa_val}",
-        "-dPDFACompatibilityPolicy=1",
-        f"-sOutputFile={safe_out}",
-        ctx.input_path,
-    ]
-    timeout = Config.PDFA_TIMEOUT
+
+    tmp_dir = tempfile.mkdtemp()
     try:
-        result = subprocess.run(cmd, capture_output=True, timeout=timeout)
-        if result.returncode != 0:
-            raise ProcessingError(
-                f"Ghostscript PDF/A conversion failed (rc={result.returncode}): "
-                f"{result.stderr[:200]}"
+        def_ps, icc_dir = _pdfa_def_ps(tmp_dir)
+        cmd = [
+            Config.GHOSTSCRIPT,
+            "-dBATCH", "-dNOPAUSE", "-dSAFER",
+            "-sDEVICE=pdfwrite",
+            f"-dPDFA={pdfa_val}",
+            "-dPDFACompatibilityPolicy=1",
+            "-sColorConversionStrategy=RGB",
+        ]
+        if def_ps:
+            cmd.append(f"--permit-file-read={icc_dir}/")
+        cmd.append(f"-sOutputFile={safe_out}")
+        if def_ps:
+            cmd.append(def_ps)
+        else:
+            log.warning(
+                f"[{ctx.job_id}] pdf_to_pdfa: PDFA_def.ps/ICC profile not found — "
+                "output will lack the PDF/A OutputIntent"
             )
-    except subprocess.TimeoutExpired:
-        raise OperationTimeoutError("PDF/A conversion", timeout)
+        cmd.append(ctx.input_path)
+
+        timeout = Config.PDFA_TIMEOUT
+        try:
+            result = subprocess.run(cmd, capture_output=True, timeout=timeout)
+            if result.returncode != 0:
+                err = result.stderr.decode("utf-8", "replace")[:200]
+                raise ProcessingError(
+                    f"Ghostscript PDF/A conversion failed (rc={result.returncode}): {err}"
+                )
+        except subprocess.TimeoutExpired:
+            raise OperationTimeoutError("PDF/A conversion", timeout)
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
     if not os.path.exists(safe_out) or os.path.getsize(safe_out) == 0:
         raise ProcessingError("PDF/A conversion produced empty output")
 
-    return {"pdfa_version": version}
+    return {"pdfa_version": f"{pdfa_val}b"}
 
 
 @register("ocr_pdf")
