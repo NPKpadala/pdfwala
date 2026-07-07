@@ -132,6 +132,12 @@ except ImportError:
     PDFPLUMBER_OK = False
 
 try:
+    import bleach
+    BLEACH_OK = True
+except ImportError:
+    BLEACH_OK = False
+
+try:
     from pptx import Presentation
     from pptx.util import Inches as PptxInches
     PPTX_OK = True
@@ -2283,20 +2289,56 @@ def resize_pdf(ctx: JobContext) -> dict:
     return {"pages_resized": resized, "target_size": page_size}
 
 
+# pdf_to_html sanitisation. MuPDF's get_text("html") escapes text nodes, but a
+# crafted PDF can still smuggle markup through attribute contexts (font names
+# and similar metadata land in inline styles). Whitelist exactly the tags,
+# attributes and CSS properties MuPDF emits so formatting survives intact.
+_HTML_EXPORT_TAGS  = {"div", "p", "span", "img", "b", "i", "u", "s", "br"}
+_HTML_EXPORT_ATTRS = {
+    "div":  ["style", "id"],
+    "img":  ["style", "src", "width", "height"],
+    "p":    ["style"], "span": ["style"],
+    "b":    ["style"], "i": ["style"], "u": ["style"], "s": ["style"],
+}
+_HTML_EXPORT_CSS = [
+    "position", "top", "left", "width", "height", "line-height",
+    "font-family", "font-size", "font-weight", "font-style",
+    "color", "transform", "letter-spacing", "vertical-align",
+]
+
+
+def _html_export_cleaner():
+    """bleach Cleaner for pdf_to_html output (data: images only, no links)."""
+    try:
+        from bleach.css_sanitizer import CSSSanitizer
+        css = CSSSanitizer(allowed_css_properties=_HTML_EXPORT_CSS)
+    except ImportError:
+        css = None  # styles are dropped: output stays safe, formatting degrades
+        log.warning("pdf_to_html: tinycss2 missing — inline styles stripped")
+    return bleach.Cleaner(
+        tags=_HTML_EXPORT_TAGS, attributes=_HTML_EXPORT_ATTRS,
+        protocols=["data"], css_sanitizer=css,
+        strip=True, strip_comments=True,
+    )
+
+
 @register("pdf_to_html")
 def pdf_to_html(ctx: JobContext) -> dict:
     """
     Export a PDF to a single self-contained HTML file (one <div> per page).
+    Page markup is sanitised (XSS) while preserving MuPDF's layout styles.
     """
     _require(FITZ_OK, "pdf_to_html", "PyMuPDF")
+    _require(BLEACH_OK, "pdf_to_html", "bleach")
     _guard_empty(ctx.input_path)
 
+    cleaner = _html_export_cleaner()
     doc = fitz.open(ctx.input_path)
     try:
         parts = []
         for i, page in enumerate(doc):
             r = page.rect
-            body = page.get_text("html")
+            body = cleaner.clean(page.get_text("html"))
             parts.append(
                 f'<div class="pdf-page" data-page="{i + 1}" '
                 f'style="position:relative;width:{r.width:.0f}pt;'

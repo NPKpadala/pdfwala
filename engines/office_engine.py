@@ -247,6 +247,31 @@ def _protect_office(ctx: JobContext, op: str, legacy_ext: str) -> dict:
     return {}
 
 
+_MAX_EXTRACT_ENTRIES = 10_000
+_MAX_EXTRACT_BYTES   = 512 * 1024 * 1024   # decompressed total (zip-bomb guard)
+
+
+def _safe_extract(zin: zipfile.ZipFile, dest: str) -> None:
+    """
+    Zip-Slip-safe replacement for ZipFile.extractall().
+    Rejects entries that resolve outside dest (../ segments, absolute paths)
+    and caps entry count and total decompressed size before extracting.
+    """
+    infos = zin.infolist()
+    if len(infos) > _MAX_EXTRACT_ENTRIES:
+        raise ValidationError("Archive contains too many entries")
+    root = os.path.realpath(dest)
+    total = 0
+    for info in infos:
+        total += info.file_size
+        if total > _MAX_EXTRACT_BYTES:
+            raise ValidationError("Archive decompresses beyond the allowed size")
+        target = os.path.realpath(os.path.join(dest, info.filename))
+        if target != root and not target.startswith(root + os.sep):
+            raise ValidationError("Unsafe archive entry path in document")
+    zin.extractall(dest)
+
+
 def _open_zip_writer(output_path: str, page_count: int):
     """
     Return (ZipFile, buf_or_None).
@@ -721,7 +746,7 @@ def compress_word(ctx: JobContext) -> dict:
     tmp_dir    = tempfile.mkdtemp()
     try:
         with zipfile.ZipFile(work_path, "r") as zin:
-            zin.extractall(tmp_dir)
+            _safe_extract(zin, tmp_dir)
 
         media_dir = os.path.join(tmp_dir, "word", "media")
         if os.path.isdir(media_dir) and PIL_OK:
@@ -761,6 +786,8 @@ def compress_word(ctx: JobContext) -> dict:
                 for fi in files:
                     abs_p = os.path.join(root, fi)
                     zout.write(abs_p, os.path.relpath(abs_p, tmp_dir))
+    except ValidationError:
+        raise
     except Exception as ex:
         raise ProcessingError(f"compress_word failed: {ex}") from ex
     finally:
@@ -1368,7 +1395,7 @@ def compress_ppt(ctx: JobContext) -> dict:
     tmp_dir    = tempfile.mkdtemp()
     try:
         with zipfile.ZipFile(work_path, "r") as zin:
-            zin.extractall(tmp_dir)
+            _safe_extract(zin, tmp_dir)
 
         # Images are in ppt/media/
         media_dirs = [
@@ -1409,6 +1436,8 @@ def compress_ppt(ctx: JobContext) -> dict:
                 for fi in files:
                     abs_p = os.path.join(root, fi)
                     zout.write(abs_p, os.path.relpath(abs_p, tmp_dir))
+    except ValidationError:
+        raise
     except Exception as ex:
         raise ProcessingError(f"compress_ppt failed: {ex}") from ex
     finally:
