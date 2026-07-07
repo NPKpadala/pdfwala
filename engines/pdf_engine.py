@@ -2389,7 +2389,7 @@ def flatten_pdf(ctx: JobContext) -> dict:
             except Exception:
                 pass
         if not hasattr(doc, "bake"):
-            raise UnsupportedOperation("flatten_pdf", "PyMuPDF>=1.23 (Document.bake)")
+            raise UnsupportedOperation("flatten_pdf", "PyMuPDF>=1.24.2 (Document.bake)")
         doc.bake(annots=True, widgets=True)
         doc.save(ctx.output_path, deflate=True, garbage=3)
     finally:
