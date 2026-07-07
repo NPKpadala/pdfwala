@@ -207,6 +207,46 @@ def _validate_office_magic(path: str) -> None:
         )
 
 
+def _protect_office(ctx: JobContext, op: str, legacy_ext: str) -> dict:
+    """
+    Shared implementation for protect_word / protect_excel / protect_ppt.
+    S2: enforces password length limit.
+    V3: rejects legacy OLE formats (msoffcrypto encrypts OOXML only).
+    msoffcrypto's encrypt(password, ofile) requires a WRITABLE BINARY FILE
+    OBJECT, not a path string. Output is ECMA-376 Agile encryption (AES-256),
+    the only scheme msoffcrypto supports — there is no cipher_algorithm kwarg.
+    """
+    if not MSOFFCRYPTO_OK:
+        raise UnsupportedOperation(op, "msoffcrypto-tool")
+
+    pw  = ctx.params.get("password",  "")
+    pw2 = ctx.params.get("password2", "")
+    _validate_password(pw)
+    if pw != pw2:
+        raise ValidationError("Passwords do not match")
+
+    ext = Path(ctx.input_path).suffix.lower()
+    if ext == legacy_ext:
+        raise ValidationError(
+            f"{legacy_ext} format does not support AES encryption — "
+            f"convert to {legacy_ext}x first, then protect"
+        )
+
+    _validate_office_magic(ctx.input_path)
+
+    try:
+        with open(ctx.input_path, "rb") as fp:
+            of = msoffcrypto.OfficeFile(fp)
+            with open(ctx.output_path, "wb") as fout:
+                of.encrypt(pw, fout)
+    except Exception as ex:
+        raise ProcessingError(f"Encryption failed: {ex}")
+
+    _validate_output(ctx.output_path, op, min_bytes=1000)
+    log.info(f"[{ctx.job_id}] {op}: encrypted {os.path.getsize(ctx.output_path)} bytes")
+    return {}
+
+
 def _open_zip_writer(output_path: str, page_count: int):
     """
     Return (ZipFile, buf_or_None).
@@ -773,42 +813,8 @@ def unlock_word(ctx: JobContext) -> dict:
 
 @register("protect_word")
 def protect_word(ctx: JobContext) -> dict:
-    """
-    Encrypt Word document with a password.
-    S2: enforces password length limit.
-    V3: rejects .doc files (msoffcrypto only handles .docx).
-    """
-    if not MSOFFCRYPTO_OK:
-        raise UnsupportedOperation("protect_word", "msoffcrypto-tool")
-
-    pw  = ctx.params.get("password",  "")
-    pw2 = ctx.params.get("password2", "")
-    _validate_password(pw)
-    if pw != pw2:
-        raise ValidationError("Passwords do not match")
-
-    ext = Path(ctx.input_path).suffix.lower()
-    if ext == ".doc":
-        raise ValidationError(
-            ".doc format does not support AES encryption — "
-            "convert to .docx first, then protect"
-        )
-
-    _validate_office_magic(ctx.input_path)
-
-    try:
-        with open(ctx.input_path, "rb") as fp:
-            of = msoffcrypto.OfficeFile(fp)
-            try:
-                of.encrypt(pw, ctx.output_path, cipher_algorithm="AES")
-            except TypeError:
-                of.encrypt(pw, ctx.output_path)
-    except Exception as ex:
-        raise ProcessingError(f"Encryption failed: {ex}")
-
-    _validate_output(ctx.output_path, "protect_word", min_bytes=1000)
-    log.info(f"[{ctx.job_id}] protect_word: encrypted {os.path.getsize(ctx.output_path)} bytes")
-    return {}
+    """Encrypt Word document with a password (see _protect_office)."""
+    return _protect_office(ctx, "protect_word", ".doc")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1092,37 +1098,8 @@ def unlock_excel(ctx: JobContext) -> dict:
 
 @register("protect_excel")
 def protect_excel(ctx: JobContext) -> dict:
-    """Encrypt Excel file. S2: enforces max password length. .xls rejected."""
-    if not MSOFFCRYPTO_OK:
-        raise UnsupportedOperation("protect_excel", "msoffcrypto-tool")
-
-    pw  = ctx.params.get("password",  "")
-    pw2 = ctx.params.get("password2", "")
-    _validate_password(pw)
-    if pw != pw2:
-        raise ValidationError("Passwords do not match")
-
-    ext = Path(ctx.input_path).suffix.lower()
-    if ext == ".xls":
-        raise ValidationError(
-            ".xls format does not support AES encryption — "
-            "convert to .xlsx first, then protect"
-        )
-
-    _validate_office_magic(ctx.input_path)
-
-    try:
-        with open(ctx.input_path, "rb") as fp:
-            of = msoffcrypto.OfficeFile(fp)
-            try:
-                of.encrypt(pw, ctx.output_path, cipher_algorithm="AES")
-            except TypeError:
-                of.encrypt(pw, ctx.output_path)
-    except Exception as ex:
-        raise ProcessingError(f"Encryption failed: {ex}")
-
-    _validate_output(ctx.output_path, "protect_excel", min_bytes=1000)
-    return {}
+    """Encrypt Excel file with a password (see _protect_office)."""
+    return _protect_office(ctx, "protect_excel", ".xls")
 
 
 @register("excel_to_jpg")
@@ -1485,43 +1462,8 @@ def unlock_ppt(ctx: JobContext) -> dict:
 
 @register("protect_ppt")
 def protect_ppt(ctx: JobContext) -> dict:
-    """
-    Encrypt PowerPoint file with a password.
-    M5: was unimplemented.
-    S2: enforces password length limit.
-    V3: .ppt (legacy OLE) rejected — msoffcrypto only handles .pptx.
-    """
-    if not MSOFFCRYPTO_OK:
-        raise UnsupportedOperation("protect_ppt", "msoffcrypto-tool")
-
-    pw  = ctx.params.get("password",  "")
-    pw2 = ctx.params.get("password2", "")
-    _validate_password(pw)
-    if pw != pw2:
-        raise ValidationError("Passwords do not match")
-
-    ext = Path(ctx.input_path).suffix.lower()
-    if ext == ".ppt":
-        raise ValidationError(
-            ".ppt format does not support AES encryption — "
-            "convert to .pptx first, then protect"
-        )
-
-    _validate_office_magic(ctx.input_path)
-
-    try:
-        with open(ctx.input_path, "rb") as fp:
-            of = msoffcrypto.OfficeFile(fp)
-            try:
-                of.encrypt(pw, ctx.output_path, cipher_algorithm="AES")
-            except TypeError:
-                of.encrypt(pw, ctx.output_path)
-    except Exception as ex:
-        raise ProcessingError(f"Encryption failed: {ex}")
-
-    _validate_output(ctx.output_path, "protect_ppt", min_bytes=1000)
-    log.info(f"[{ctx.job_id}] protect_ppt: encrypted {os.path.getsize(ctx.output_path)} bytes")
-    return {}
+    """Encrypt PowerPoint file with a password (see _protect_office)."""
+    return _protect_office(ctx, "protect_ppt", ".ppt")
 
 # ── Excel format aliases ──────────────────────────────────────────────────
 
