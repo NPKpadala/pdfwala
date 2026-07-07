@@ -35,6 +35,13 @@ _base: &base
   comparison_links: []
   industry_links: []
 
+# Per-output processing variants. processing.output_ext is the SINGLE source
+# of truth for the produced extension (build.py rejects top-level output_ext).
+_p_pdf:  &ip_pdf  { field: file, multi: false, output_ext: pdf,  async: false, max_mb: 10, queue: fast }
+_p_xlsx: &ip_xlsx { field: file, multi: false, output_ext: xlsx, async: false, max_mb: 10, queue: fast }
+_p_docx: &ip_docx { field: file, multi: false, output_ext: docx, async: false, max_mb: 10, queue: fast }
+_p_png:  &ip_png  { field: file, multi: false, output_ext: png,  async: false, max_mb: 10, queue: fast }
+
 tools:
 # ---- COMPRESS / RESIZE -------------------------------------------------------
 - { <<: *base, id: compress_image, slug: compress-image, route: /compress, category: compress, engine: compress_image, priority: 10, search_volume: high, aliases: [reduce image size, shrink image], success_msg: Image compressed }
@@ -42,12 +49,12 @@ tools:
 
 # ---- CONVERT -----------------------------------------------------------------
 - { <<: *base, id: convert_image, slug: convert-image, route: /convert, category: convert, engine: convert_image, success_msg: Image converted, aliases: [image converter], processing: { field: file, multi: false, output_ext: jpg, output_ext_from: format, async: false, max_mb: 10, queue: fast }, output_extensions: [jpg, png, webp, bmp, tiff] }
-- { <<: *base, id: image_to_pdf,  slug: image-to-pdf,  route: /to-pdf,  category: convert, engine: image_to_pdf,  priority: 12, search_volume: high, aliases: [jpg to pdf, picture to pdf], success_msg: Image converted to PDF, output_ext: pdf, output_extensions: [pdf] }
+- { <<: *base, id: image_to_pdf,  slug: image-to-pdf,  route: /to-pdf,  category: convert, engine: image_to_pdf,  priority: 12, search_volume: high, aliases: [jpg to pdf, picture to pdf], success_msg: Image converted to PDF, processing: *ip_pdf, output_extensions: [pdf] }
 - { <<: *base, id: images_to_pdf, slug: images-to-pdf, route: /to-pdf/multiple, category: convert, engine: images_to_pdf, success_msg: Images merged to PDF, processing: { field: files, multi: true, output_ext: pdf, async: false, max_mb: 10, queue: fast }, output_extensions: [pdf] }
 - { <<: *base, id: png_to_jpg,    slug: png-to-jpg,    route: /png-to-jpg,  category: convert, engine: png_to_jpg,    success_msg: PNG converted to JPG, supported_extensions: [png], output_extensions: [jpg] }
 - { <<: *base, id: webp_to_jpg,   slug: webp-to-jpg,   route: /webp-to-jpg, category: convert, engine: webp_to_jpg,   success_msg: WebP converted to JPG, supported_extensions: [webp], output_extensions: [jpg] }
-- { <<: *base, id: image_to_excel, slug: image-to-excel, route: /to-excel, category: convert, engine: image_to_excel, success_msg: "Image OCR to Excel", output_ext: xlsx, output_extensions: [xlsx] }
-- { <<: *base, id: image_to_word,  slug: image-to-word,  route: /to-word,  category: convert, engine: image_to_word,  success_msg: "Image OCR to Word", output_ext: docx, output_extensions: [docx] }
+- { <<: *base, id: image_to_excel, slug: image-to-excel, route: /to-excel, category: convert, engine: image_to_excel, success_msg: "Image OCR to Excel", processing: *ip_xlsx, output_extensions: [xlsx] }
+- { <<: *base, id: image_to_word,  slug: image-to-word,  route: /to-word,  category: convert, engine: image_to_word,  success_msg: "Image OCR to Word", processing: *ip_docx, output_extensions: [docx] }
 
 # ---- EDIT --------------------------------------------------------------------
 - { <<: *base, id: crop_image,      slug: crop-image,      route: /crop,      category: edit, engine: crop_image,      success_msg: Image cropped }
@@ -60,7 +67,7 @@ tools:
 - { <<: *base, id: merge_images,    slug: merge-images,    route: /merge,     category: edit, engine: merge_images,    success_msg: Images merged, processing: { field: files, multi: true, output_ext: jpg, async: false, max_mb: 10, queue: fast } }
 
 # ---- AI ----------------------------------------------------------------------
-- { <<: *base, id: remove_bg, slug: remove-background, route: /remove-bg, category: ai, engine: remove_bg, priority: 13, search_volume: high, aliases: [background remover, remove image background], success_msg: Background removed, output_ext: png, output_extensions: [png], flags: { supports_api: true, supports_batch: false, supports_ai: true, supports_mobile: true, premium: false } }
+- { <<: *base, id: remove_bg, slug: remove-background, route: /remove-bg, category: ai, engine: remove_bg, priority: 13, search_volume: high, aliases: [background remover, remove image background], success_msg: Background removed, processing: *ip_png, output_extensions: [png], flags: { supports_api: true, supports_batch: false, supports_ai: true, supports_mobile: true, premium: false } }
 
 categories:
   convert:  { label: Convert,  order: 1, icon: refresh,  description: "Convert images to and from other formats." }

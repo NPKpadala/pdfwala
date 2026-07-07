@@ -39,44 +39,56 @@ _word:  &word  { <<: *base, category: word,       supported_extensions: [docx, d
 _excel: &excel { <<: *base, category: excel,      supported_extensions: [xlsx, xls] }
 _ppt:   &ppt   { <<: *base, category: powerpoint, supported_extensions: [pptx, ppt] }
 
+# Per-output processing variants. processing.output_ext is the SINGLE source
+# of truth for the produced extension (build.py rejects top-level output_ext).
+_p_pdf:  &op_pdf  { field: file, multi: false, output_ext: pdf,  async: false, max_mb: 10, queue: office }
+_p_txt:  &op_txt  { field: file, multi: false, output_ext: txt,  async: false, max_mb: 10, queue: office }
+_p_html: &op_html { field: file, multi: false, output_ext: html, async: false, max_mb: 10, queue: office }
+_p_json: &op_json { field: file, multi: false, output_ext: json, async: false, max_mb: 10, queue: office }
+_p_csv:  &op_csv  { field: file, multi: false, output_ext: csv,  async: false, max_mb: 10, queue: office }
+_p_zip:  &op_zip  { field: file, multi: false, output_ext: zip,  async: false, max_mb: 10, queue: office }
+_p_docx: &op_docx { field: file, multi: false, output_ext: docx, async: false, max_mb: 10, queue: office }
+_p_xlsx: &op_xlsx { field: file, multi: false, output_ext: xlsx, async: false, max_mb: 10, queue: office }
+_p_pptx: &op_pptx { field: file, multi: false, output_ext: pptx, async: false, max_mb: 10, queue: office }
+
 tools:
 # ---- WORD --------------------------------------------------------------------
-- { <<: *word, id: word_to_pdf,   slug: word-to-pdf,   route: /word/to-pdf,   engine: word_to_pdf,   priority: 20, search_volume: high, aliases: [doc to pdf, docx to pdf], success_msg: Word converted to PDF, output_ext: pdf,  output_extensions: [pdf] }
-- { <<: *word, id: word_to_txt,   slug: word-to-txt,   route: /word/to-txt,   engine: word_to_txt,   success_msg: Word converted to text,        output_ext: txt,  output_extensions: [txt] }
-- { <<: *word, id: word_to_html,  slug: word-to-html,  route: /word/to-html,  engine: word_to_html,  success_msg: Word converted to HTML,        output_ext: html, output_extensions: [html] }
-- { <<: *word, id: word_to_json,  slug: word-to-json,  route: /word/to-json,  engine: word_to_json,  success_msg: Word converted to JSON,        output_ext: json, output_extensions: [json] }
-- { <<: *word, id: word_to_excel, slug: word-to-excel, route: /word/to-excel, engine: word_to_excel, success_msg: Word converted to Excel,       output_ext: xlsx, output_extensions: [xlsx] }
-- { <<: *word, id: word_to_ppt,   slug: word-to-ppt,   route: /word/to-ppt,   engine: word_to_ppt,   success_msg: Word converted to PowerPoint,  output_ext: pptx, output_extensions: [pptx] }
-- { <<: *word, id: word_to_jpg,   slug: word-to-jpg,   route: /word/to-jpg,   engine: word_to_jpg,   success_msg: Word converted to JPG,         output_ext: zip,  output_extensions: [zip] }
-- { <<: *word, id: word_to_png,   slug: word-to-png,   route: /word/to-png,   engine: word_to_png,   success_msg: Word converted to PNG,         output_ext: zip,  output_extensions: [zip] }
-- { <<: *word, id: edit_word,     slug: edit-word,     route: /word/edit,     engine: edit_word,     success_msg: Word document edited,          output_ext: docx, output_extensions: [docx] }
-- { <<: *word, id: compress_word, slug: compress-word, route: /word/compress, engine: compress_word, success_msg: Word compressed,               output_ext: docx, output_extensions: [docx] }
-- { <<: *word, id: unlock_word,   slug: unlock-word,   route: /word/unlock,   engine: unlock_word,   category: word, success_msg: Word unlocked,   output_ext: docx, output_extensions: [docx] }
-- { <<: *word, id: protect_word,  slug: protect-word,  route: /word/protect,  engine: protect_word,  success_msg: Word protected,                output_ext: docx, output_extensions: [docx] }
+- { <<: *word, id: word_to_pdf,   slug: word-to-pdf,   route: /word/to-pdf,   engine: word_to_pdf,   priority: 20, search_volume: high, aliases: [doc to pdf, docx to pdf], success_msg: Word converted to PDF, processing: *op_pdf,  output_extensions: [pdf] }
+- { <<: *word, id: word_to_txt,   slug: word-to-txt,   route: /word/to-txt,   engine: word_to_txt,   success_msg: Word converted to text,        processing: *op_txt,  output_extensions: [txt] }
+- { <<: *word, id: word_to_html,  slug: word-to-html,  route: /word/to-html,  engine: word_to_html,  success_msg: Word converted to HTML,        processing: *op_html, output_extensions: [html] }
+- { <<: *word, id: word_to_json,  slug: word-to-json,  route: /word/to-json,  engine: word_to_json,  success_msg: Word converted to JSON,        processing: *op_json, output_extensions: [json] }
+- { <<: *word, id: word_to_excel, slug: word-to-excel, route: /word/to-excel, engine: word_to_excel, success_msg: Word converted to Excel,       processing: *op_xlsx, output_extensions: [xlsx] }
+- { <<: *word, id: word_to_ppt,   slug: word-to-ppt,   route: /word/to-ppt,   engine: word_to_ppt,   success_msg: Word converted to PowerPoint,  processing: *op_pptx, output_extensions: [pptx] }
+- { <<: *word, id: word_to_jpg,   slug: word-to-jpg,   route: /word/to-jpg,   engine: word_to_jpg,   success_msg: Word converted to JPG,         processing: *op_zip,  output_extensions: [zip] }
+- { <<: *word, id: word_to_png,   slug: word-to-png,   route: /word/to-png,   engine: word_to_png,   success_msg: Word converted to PNG,         processing: *op_zip,  output_extensions: [zip] }
+- { <<: *word, id: edit_word,     slug: edit-word,     route: /word/edit,     engine: edit_word,     success_msg: Word document edited,          processing: *op_docx, output_extensions: [docx] }
+- { <<: *word, id: compress_word, slug: compress-word, route: /word/compress, engine: compress_word, success_msg: Word compressed,               processing: *op_docx, output_extensions: [docx] }
+- { <<: *word, id: unlock_word,   slug: unlock-word,   route: /word/unlock,   engine: unlock_word,   category: word, success_msg: Word unlocked,   processing: *op_docx, output_extensions: [docx] }
+- { <<: *word, id: protect_word,  slug: protect-word,  route: /word/protect,  engine: protect_word,  success_msg: Word protected,                processing: *op_docx, output_extensions: [docx] }
 
 # ---- EXCEL -------------------------------------------------------------------
-- { <<: *excel, id: excel_to_pdf,  slug: excel-to-pdf,  route: /excel/to-pdf,  engine: excel_to_pdf,  priority: 21, search_volume: high, aliases: [xlsx to pdf], success_msg: Excel converted to PDF, output_ext: pdf,  output_extensions: [pdf] }
-- { <<: *excel, id: excel_to_csv,  slug: excel-to-csv,  route: /excel/to-csv,  engine: excel_to_csv,  success_msg: Excel converted to CSV,   output_ext: csv,  output_extensions: [csv] }
-- { <<: *excel, id: excel_to_word, slug: excel-to-word, route: /excel/to-word, engine: excel_to_word, success_msg: Excel converted to Word,  output_ext: docx, output_extensions: [docx] }
-- { <<: *excel, id: excel_to_json, slug: excel-to-json, route: /excel/to-json, engine: excel_to_json, success_msg: Excel converted to JSON,  output_ext: json, output_extensions: [json] }
-- { <<: *excel, id: excel_to_html, slug: excel-to-html, route: /excel/to-html, engine: excel_to_html, success_msg: Excel converted to HTML,  output_ext: html, output_extensions: [html] }
-- { <<: *excel, id: excel_to_png,  slug: excel-to-png,  route: /excel/to-png,  engine: excel_to_png,  success_msg: Excel converted to PNG,   output_ext: zip,  output_extensions: [zip] }
-- { <<: *excel, id: excel_to_jpg,  slug: excel-to-jpg,  route: /excel/to-jpg,  engine: excel_to_jpg,  success_msg: Excel converted to JPG,   output_ext: zip,  output_extensions: [zip] }
-- { <<: *excel, id: excel_to_ppt,  slug: excel-to-ppt,  route: /excel/to-ppt,  engine: excel_to_ppt,  success_msg: Excel converted to PowerPoint, output_ext: pptx, output_extensions: [pptx] }
-- { <<: *excel, id: compress_excel, slug: compress-excel, route: /excel/compress, engine: compress_excel, success_msg: Excel compressed,    output_ext: xlsx, output_extensions: [xlsx] }
-- { <<: *excel, id: unlock_excel,  slug: unlock-excel,  route: /excel/unlock,  engine: unlock_excel,  success_msg: Excel unlocked,          output_ext: xlsx, output_extensions: [xlsx] }
-- { <<: *excel, id: protect_excel, slug: protect-excel, route: /excel/protect, engine: protect_excel, success_msg: Excel protected,         output_ext: xlsx, output_extensions: [xlsx] }
-- { <<: *excel, id: repair_excel,  slug: repair-excel,  route: /excel/repair,  engine: repair_excel,  success_msg: Excel repaired,          output_ext: xlsx, output_extensions: [xlsx] }
+- { <<: *excel, id: excel_to_pdf,  slug: excel-to-pdf,  route: /excel/to-pdf,  engine: excel_to_pdf,  priority: 21, search_volume: high, aliases: [xlsx to pdf], success_msg: Excel converted to PDF, processing: *op_pdf,  output_extensions: [pdf] }
+- { <<: *excel, id: excel_to_csv,  slug: excel-to-csv,  route: /excel/to-csv,  engine: excel_to_csv,  success_msg: Excel converted to CSV,   processing: *op_csv,  output_extensions: [csv] }
+- { <<: *excel, id: excel_to_word, slug: excel-to-word, route: /excel/to-word, engine: excel_to_word, success_msg: Excel converted to Word,  processing: *op_docx, output_extensions: [docx] }
+- { <<: *excel, id: excel_to_json, slug: excel-to-json, route: /excel/to-json, engine: excel_to_json, success_msg: Excel converted to JSON,  processing: *op_json, output_extensions: [json] }
+- { <<: *excel, id: excel_to_html, slug: excel-to-html, route: /excel/to-html, engine: excel_to_html, success_msg: Excel converted to HTML,  processing: *op_html, output_extensions: [html] }
+- { <<: *excel, id: excel_to_png,  slug: excel-to-png,  route: /excel/to-png,  engine: excel_to_png,  success_msg: Excel converted to PNG,   processing: *op_zip,  output_extensions: [zip] }
+- { <<: *excel, id: excel_to_jpg,  slug: excel-to-jpg,  route: /excel/to-jpg,  engine: excel_to_jpg,  success_msg: Excel converted to JPG,   processing: *op_zip,  output_extensions: [zip] }
+- { <<: *excel, id: excel_to_ppt,  slug: excel-to-ppt,  route: /excel/to-ppt,  engine: excel_to_ppt,  success_msg: Excel converted to PowerPoint, processing: *op_pptx, output_extensions: [pptx] }
+- { <<: *excel, id: compress_excel, slug: compress-excel, route: /excel/compress, engine: compress_excel, success_msg: Excel compressed,    processing: *op_xlsx, output_extensions: [xlsx] }
+- { <<: *excel, id: unlock_excel,  slug: unlock-excel,  route: /excel/unlock,  engine: unlock_excel,  success_msg: Excel unlocked,          processing: *op_xlsx, output_extensions: [xlsx] }
+- { <<: *excel, id: protect_excel, slug: protect-excel, route: /excel/protect, engine: protect_excel, success_msg: Excel protected,         processing: *op_xlsx, output_extensions: [xlsx] }
+- { <<: *excel, id: repair_excel,  slug: repair-excel,  route: /excel/repair,  engine: repair_excel,  success_msg: Excel repaired,          processing: *op_xlsx, output_extensions: [xlsx] }
 
 # ---- POWERPOINT --------------------------------------------------------------
-- { <<: *ppt, id: ppt_to_pdf,   slug: ppt-to-pdf,   route: /ppt/to-pdf,   engine: ppt_to_pdf,   priority: 22, search_volume: high, aliases: [powerpoint to pdf, pptx to pdf], success_msg: PowerPoint converted to PDF, output_ext: pdf,  output_extensions: [pdf] }
-- { <<: *ppt, id: ppt_to_jpg,   slug: ppt-to-jpg,   route: /ppt/to-jpg,   engine: ppt_to_jpg,   success_msg: PowerPoint converted to JPG,  output_ext: zip,  output_extensions: [zip] }
-- { <<: *ppt, id: compress_ppt, slug: compress-ppt, route: /ppt/compress, engine: compress_ppt, success_msg: PowerPoint compressed,         output_ext: pptx, output_extensions: [pptx] }
-- { <<: *ppt, id: unlock_ppt,   slug: unlock-ppt,   route: /ppt/unlock,   engine: unlock_ppt,   success_msg: PowerPoint unlocked,          output_ext: pptx, output_extensions: [pptx] }
-- { <<: *ppt, id: protect_ppt,  slug: protect-ppt,  route: /ppt/protect,  engine: protect_ppt,  success_msg: PowerPoint protected,         output_ext: pptx, output_extensions: [pptx] }
+- { <<: *ppt, id: ppt_to_pdf,   slug: ppt-to-pdf,   route: /ppt/to-pdf,   engine: ppt_to_pdf,   priority: 22, search_volume: high, aliases: [powerpoint to pdf, pptx to pdf], success_msg: PowerPoint converted to PDF, processing: *op_pdf,  output_extensions: [pdf] }
+- { <<: *ppt, id: ppt_to_jpg,   slug: ppt-to-jpg,   route: /ppt/to-jpg,   engine: ppt_to_jpg,   success_msg: PowerPoint converted to JPG,  processing: *op_zip,  output_extensions: [zip] }
+- { <<: *ppt, id: compress_ppt, slug: compress-ppt, route: /ppt/compress, engine: compress_ppt, success_msg: PowerPoint compressed,         processing: *op_pptx, output_extensions: [pptx] }
+- { <<: *ppt, id: unlock_ppt,   slug: unlock-ppt,   route: /ppt/unlock,   engine: unlock_ppt,   success_msg: PowerPoint unlocked,          processing: *op_pptx, output_extensions: [pptx] }
+- { <<: *ppt, id: protect_ppt,  slug: protect-ppt,  route: /ppt/protect,  engine: protect_ppt,  success_msg: PowerPoint protected,         processing: *op_pptx, output_extensions: [pptx] }
 
 # ---- WEB ---------------------------------------------------------------------
-- { <<: *base, id: html_to_pdf, slug: html-to-pdf, route: /html/to-pdf, category: web, engine: html_to_pdf, success_msg: HTML converted to PDF, supported_extensions: [html, htm], output_ext: pdf, output_extensions: [pdf] }
+- { <<: *base, id: html_to_pdf, slug: html-to-pdf, route: /html/to-pdf, category: web, engine: html_to_pdf, success_msg: HTML converted to PDF, supported_extensions: [html, htm], processing: *op_pdf, output_extensions: [pdf] }
 
 categories:
   word:       { label: Word,       order: 1, icon: file-text, description: "Convert, edit and secure Word documents." }

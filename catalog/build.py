@@ -128,6 +128,22 @@ def validate(tools, modules):
                 if not EXT_RE.match(str(e)):
                     errs.append(f"{tid}: invalid extension '{e}' in {group}")
 
+        # output extension: processing.output_ext is the ONLY source of truth
+        # (the registry, routes, download names and MIME types all read it)
+        if "output_ext" in t:
+            errs.append(f"{tid}: top-level 'output_ext' is not allowed — "
+                        "set processing.output_ext instead")
+        proc = t.get("processing") or {}
+        oext = proc.get("output_ext")
+        if not oext:
+            errs.append(f"{tid}: processing.output_ext is required")
+        elif not EXT_RE.match(str(oext)):
+            errs.append(f"{tid}: invalid processing.output_ext '{oext}'")
+        outs = t.get("output_extensions") or []
+        if oext and outs and oext not in outs:
+            errs.append(f"{tid}: processing.output_ext '{oext}' not listed in "
+                        f"output_extensions {outs}")
+
         # engine must exist (when we can check)
         if engines is not None and t.get("engine") not in engines:
             errs.append(f"{tid}: engine '{t.get('engine')}' is not registered")

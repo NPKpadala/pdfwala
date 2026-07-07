@@ -1,8 +1,8 @@
 {
  "version": {
   "schema_version": "1.0",
-  "generated_at": "2026-07-04T20:11:26.920720Z",
-  "git_sha": "0be2d3d",
+  "generated_at": "2026-07-07T17:03:01.010095Z",
+  "git_sha": "263aa8c",
   "module_versions": {
    "image": "1.0.0",
    "office": "1.0.0",
@@ -332,7 +332,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "jpg",
+    "output_ext": "pdf",
     "async": false,
     "max_mb": 10,
     "queue": "fast"
@@ -365,8 +365,7 @@
    "route": "/to-pdf",
    "category": "convert",
    "engine": "image_to_pdf",
-   "success_msg": "Image converted to PDF",
-   "output_ext": "pdf"
+   "success_msg": "Image converted to PDF"
   },
   {
    "module": "image",
@@ -541,7 +540,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "jpg",
+    "output_ext": "xlsx",
     "async": false,
     "max_mb": 10,
     "queue": "fast"
@@ -574,8 +573,7 @@
    "route": "/to-excel",
    "category": "convert",
    "engine": "image_to_excel",
-   "success_msg": "Image OCR to Excel",
-   "output_ext": "xlsx"
+   "success_msg": "Image OCR to Excel"
   },
   {
    "module": "image",
@@ -597,7 +595,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "jpg",
+    "output_ext": "docx",
     "async": false,
     "max_mb": 10,
     "queue": "fast"
@@ -630,8 +628,7 @@
    "route": "/to-word",
    "category": "convert",
    "engine": "image_to_word",
-   "success_msg": "Image OCR to Word",
-   "output_ext": "docx"
+   "success_msg": "Image OCR to Word"
   },
   {
    "module": "image",
@@ -1096,7 +1093,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "jpg",
+    "output_ext": "png",
     "async": false,
     "max_mb": 10,
     "queue": "fast"
@@ -1129,8 +1126,7 @@
    "route": "/remove-bg",
    "category": "ai",
    "engine": "remove_bg",
-   "success_msg": "Background removed",
-   "output_ext": "png"
+   "success_msg": "Background removed"
   },
   {
    "module": "office",
@@ -1183,8 +1179,7 @@
    "slug": "word-to-pdf",
    "route": "/word/to-pdf",
    "engine": "word_to_pdf",
-   "success_msg": "Word converted to PDF",
-   "output_ext": "pdf"
+   "success_msg": "Word converted to PDF"
   },
   {
    "module": "office",
@@ -1206,7 +1201,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "txt",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1234,8 +1229,7 @@
    "slug": "word-to-txt",
    "route": "/word/to-txt",
    "engine": "word_to_txt",
-   "success_msg": "Word converted to text",
-   "output_ext": "txt"
+   "success_msg": "Word converted to text"
   },
   {
    "module": "office",
@@ -1257,7 +1251,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "html",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1285,8 +1279,7 @@
    "slug": "word-to-html",
    "route": "/word/to-html",
    "engine": "word_to_html",
-   "success_msg": "Word converted to HTML",
-   "output_ext": "html"
+   "success_msg": "Word converted to HTML"
   },
   {
    "module": "office",
@@ -1308,7 +1301,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "json",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1336,8 +1329,7 @@
    "slug": "word-to-json",
    "route": "/word/to-json",
    "engine": "word_to_json",
-   "success_msg": "Word converted to JSON",
-   "output_ext": "json"
+   "success_msg": "Word converted to JSON"
   },
   {
    "module": "office",
@@ -1359,7 +1351,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "xlsx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1387,8 +1379,7 @@
    "slug": "word-to-excel",
    "route": "/word/to-excel",
    "engine": "word_to_excel",
-   "success_msg": "Word converted to Excel",
-   "output_ext": "xlsx"
+   "success_msg": "Word converted to Excel"
   },
   {
    "module": "office",
@@ -1410,7 +1401,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "pptx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1438,8 +1429,7 @@
    "slug": "word-to-ppt",
    "route": "/word/to-ppt",
    "engine": "word_to_ppt",
-   "success_msg": "Word converted to PowerPoint",
-   "output_ext": "pptx"
+   "success_msg": "Word converted to PowerPoint"
   },
   {
    "module": "office",
@@ -1461,7 +1451,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "zip",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1489,8 +1479,7 @@
    "slug": "word-to-jpg",
    "route": "/word/to-jpg",
    "engine": "word_to_jpg",
-   "success_msg": "Word converted to JPG",
-   "output_ext": "zip"
+   "success_msg": "Word converted to JPG"
   },
   {
    "module": "office",
@@ -1512,7 +1501,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "zip",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1540,8 +1529,7 @@
    "slug": "word-to-png",
    "route": "/word/to-png",
    "engine": "word_to_png",
-   "success_msg": "Word converted to PNG",
-   "output_ext": "zip"
+   "success_msg": "Word converted to PNG"
   },
   {
    "module": "office",
@@ -1563,7 +1551,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "docx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1591,8 +1579,7 @@
    "slug": "edit-word",
    "route": "/word/edit",
    "engine": "edit_word",
-   "success_msg": "Word document edited",
-   "output_ext": "docx"
+   "success_msg": "Word document edited"
   },
   {
    "module": "office",
@@ -1614,7 +1601,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "docx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1642,8 +1629,7 @@
    "slug": "compress-word",
    "route": "/word/compress",
    "engine": "compress_word",
-   "success_msg": "Word compressed",
-   "output_ext": "docx"
+   "success_msg": "Word compressed"
   },
   {
    "module": "office",
@@ -1665,7 +1651,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "docx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1693,8 +1679,7 @@
    "slug": "unlock-word",
    "route": "/word/unlock",
    "engine": "unlock_word",
-   "success_msg": "Word unlocked",
-   "output_ext": "docx"
+   "success_msg": "Word unlocked"
   },
   {
    "module": "office",
@@ -1716,7 +1701,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "docx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1744,8 +1729,7 @@
    "slug": "protect-word",
    "route": "/word/protect",
    "engine": "protect_word",
-   "success_msg": "Word protected",
-   "output_ext": "docx"
+   "success_msg": "Word protected"
   },
   {
    "module": "office",
@@ -1797,8 +1781,7 @@
    "slug": "excel-to-pdf",
    "route": "/excel/to-pdf",
    "engine": "excel_to_pdf",
-   "success_msg": "Excel converted to PDF",
-   "output_ext": "pdf"
+   "success_msg": "Excel converted to PDF"
   },
   {
    "module": "office",
@@ -1820,7 +1803,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "csv",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1848,8 +1831,7 @@
    "slug": "excel-to-csv",
    "route": "/excel/to-csv",
    "engine": "excel_to_csv",
-   "success_msg": "Excel converted to CSV",
-   "output_ext": "csv"
+   "success_msg": "Excel converted to CSV"
   },
   {
    "module": "office",
@@ -1871,7 +1853,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "docx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1899,8 +1881,7 @@
    "slug": "excel-to-word",
    "route": "/excel/to-word",
    "engine": "excel_to_word",
-   "success_msg": "Excel converted to Word",
-   "output_ext": "docx"
+   "success_msg": "Excel converted to Word"
   },
   {
    "module": "office",
@@ -1922,7 +1903,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "json",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -1950,8 +1931,7 @@
    "slug": "excel-to-json",
    "route": "/excel/to-json",
    "engine": "excel_to_json",
-   "success_msg": "Excel converted to JSON",
-   "output_ext": "json"
+   "success_msg": "Excel converted to JSON"
   },
   {
    "module": "office",
@@ -1973,7 +1953,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "html",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -2001,8 +1981,7 @@
    "slug": "excel-to-html",
    "route": "/excel/to-html",
    "engine": "excel_to_html",
-   "success_msg": "Excel converted to HTML",
-   "output_ext": "html"
+   "success_msg": "Excel converted to HTML"
   },
   {
    "module": "office",
@@ -2024,7 +2003,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "zip",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -2052,8 +2031,7 @@
    "slug": "excel-to-png",
    "route": "/excel/to-png",
    "engine": "excel_to_png",
-   "success_msg": "Excel converted to PNG",
-   "output_ext": "zip"
+   "success_msg": "Excel converted to PNG"
   },
   {
    "module": "office",
@@ -2075,7 +2053,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "zip",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -2103,8 +2081,7 @@
    "slug": "excel-to-jpg",
    "route": "/excel/to-jpg",
    "engine": "excel_to_jpg",
-   "success_msg": "Excel converted to JPG",
-   "output_ext": "zip"
+   "success_msg": "Excel converted to JPG"
   },
   {
    "module": "office",
@@ -2126,7 +2103,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "pptx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -2154,8 +2131,7 @@
    "slug": "excel-to-ppt",
    "route": "/excel/to-ppt",
    "engine": "excel_to_ppt",
-   "success_msg": "Excel converted to PowerPoint",
-   "output_ext": "pptx"
+   "success_msg": "Excel converted to PowerPoint"
   },
   {
    "module": "office",
@@ -2177,7 +2153,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "xlsx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -2205,8 +2181,7 @@
    "slug": "compress-excel",
    "route": "/excel/compress",
    "engine": "compress_excel",
-   "success_msg": "Excel compressed",
-   "output_ext": "xlsx"
+   "success_msg": "Excel compressed"
   },
   {
    "module": "office",
@@ -2228,7 +2203,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "xlsx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -2256,8 +2231,7 @@
    "slug": "unlock-excel",
    "route": "/excel/unlock",
    "engine": "unlock_excel",
-   "success_msg": "Excel unlocked",
-   "output_ext": "xlsx"
+   "success_msg": "Excel unlocked"
   },
   {
    "module": "office",
@@ -2279,7 +2253,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "xlsx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -2307,8 +2281,7 @@
    "slug": "protect-excel",
    "route": "/excel/protect",
    "engine": "protect_excel",
-   "success_msg": "Excel protected",
-   "output_ext": "xlsx"
+   "success_msg": "Excel protected"
   },
   {
    "module": "office",
@@ -2330,7 +2303,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "xlsx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -2358,8 +2331,7 @@
    "slug": "repair-excel",
    "route": "/excel/repair",
    "engine": "repair_excel",
-   "success_msg": "Excel repaired",
-   "output_ext": "xlsx"
+   "success_msg": "Excel repaired"
   },
   {
    "module": "office",
@@ -2412,8 +2384,7 @@
    "slug": "ppt-to-pdf",
    "route": "/ppt/to-pdf",
    "engine": "ppt_to_pdf",
-   "success_msg": "PowerPoint converted to PDF",
-   "output_ext": "pdf"
+   "success_msg": "PowerPoint converted to PDF"
   },
   {
    "module": "office",
@@ -2435,7 +2406,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "zip",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -2463,8 +2434,7 @@
    "slug": "ppt-to-jpg",
    "route": "/ppt/to-jpg",
    "engine": "ppt_to_jpg",
-   "success_msg": "PowerPoint converted to JPG",
-   "output_ext": "zip"
+   "success_msg": "PowerPoint converted to JPG"
   },
   {
    "module": "office",
@@ -2486,7 +2456,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "pptx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -2514,8 +2484,7 @@
    "slug": "compress-ppt",
    "route": "/ppt/compress",
    "engine": "compress_ppt",
-   "success_msg": "PowerPoint compressed",
-   "output_ext": "pptx"
+   "success_msg": "PowerPoint compressed"
   },
   {
    "module": "office",
@@ -2537,7 +2506,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "pptx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -2565,8 +2534,7 @@
    "slug": "unlock-ppt",
    "route": "/ppt/unlock",
    "engine": "unlock_ppt",
-   "success_msg": "PowerPoint unlocked",
-   "output_ext": "pptx"
+   "success_msg": "PowerPoint unlocked"
   },
   {
    "module": "office",
@@ -2588,7 +2556,7 @@
    "processing": {
     "field": "file",
     "multi": false,
-    "output_ext": "pdf",
+    "output_ext": "pptx",
     "async": false,
     "max_mb": 10,
     "queue": "office"
@@ -2616,8 +2584,7 @@
    "slug": "protect-ppt",
    "route": "/ppt/protect",
    "engine": "protect_ppt",
-   "success_msg": "PowerPoint protected",
-   "output_ext": "pptx"
+   "success_msg": "PowerPoint protected"
   },
   {
    "module": "office",
@@ -2667,8 +2634,7 @@
    "route": "/html/to-pdf",
    "category": "web",
    "engine": "html_to_pdf",
-   "success_msg": "HTML converted to PDF",
-   "output_ext": "pdf"
+   "success_msg": "HTML converted to PDF"
   },
   {
    "module": "pdf",
