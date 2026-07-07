@@ -1838,24 +1838,6 @@ def ocr_pdf(ctx: JobContext) -> dict:
             "Split the PDF first or contact support for bulk processing."
         )
 
-    # Pre-render all pages directly to PIL images — no PNG round-trip.
-    page_images: list[tuple[int, float, float, "Image.Image"]] = []
-    try:
-        for page_num, src_page in enumerate(src_doc):
-            pw, ph = src_page.rect.width, src_page.rect.height
-            mat    = fitz.Matrix(dpi / 72, dpi / 72)
-            pix    = src_page.get_pixmap(matrix=mat, alpha=False, colorspace=fitz.csGRAY)
-            # Zero-copy handoff: pix.samples is a raw byte buffer Tesseract
-            # accepts via PIL. Avoids PNG encode + decode (was ~40% of total
-            # time for dense pages).
-            mode = "L" if pix.n == 1 else ("RGB" if pix.n == 3 else "RGBA")
-            img  = Image.frombytes(mode, (pix.width, pix.height), pix.samples)
-            page_images.append((page_num, pw, ph, img))
-    finally:
-        src_doc.close()
-
-    ctx.set_progress(15)
-
     def _ocr_page(args: tuple) -> tuple[int, float, float, Optional[dict]]:
         """Worker: run Tesseract on one page image. Returns (page_num, pw, ph, hocr|None)."""
         page_num, pw, ph, img = args
@@ -1870,15 +1852,41 @@ def ocr_pdf(ctx: JobContext) -> dict:
             hocr = None
         return (page_num, pw, ph, hocr)
 
+    # Render → OCR in bounded chunks. Rendering stays in the main thread
+    # (PyMuPDF is not thread-safe); only Tesseract runs in the pool. Peak RAM
+    # is ONE chunk of page images instead of the whole document — a 500-page
+    # scan previously pre-rendered ~1 GB of pixmaps before OCR even started.
+    # Zero-copy handoff per page: pix.samples goes straight to PIL (no PNG
+    # round-trip, which was ~40% of total time for dense pages).
+    chunk_size = max(workers * 4, 8)
     hocr_results: dict[int, tuple] = {}
     completed = 0
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(_ocr_page, item): item[0] for item in page_images}
-        for future in as_completed(futures):
-            page_num, pw, ph, hocr = future.result()
-            hocr_results[page_num] = (pw, ph, hocr)
-            completed += 1
-            ctx.set_progress(15 + int(completed / total * 70))
+    ctx.set_progress(15)
+    try:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            for start in range(0, total, chunk_size):
+                chunk: list[tuple[int, float, float, "Image.Image"]] = []
+                for page_num in range(start, min(start + chunk_size, total)):
+                    src_page = src_doc[page_num]
+                    pw, ph = src_page.rect.width, src_page.rect.height
+                    mat    = fitz.Matrix(dpi / 72, dpi / 72)
+                    pix    = src_page.get_pixmap(matrix=mat, alpha=False,
+                                                 colorspace=fitz.csGRAY)
+                    mode = "L" if pix.n == 1 else ("RGB" if pix.n == 3 else "RGBA")
+                    img  = Image.frombytes(mode, (pix.width, pix.height), pix.samples)
+                    chunk.append((page_num, pw, ph, img))
+                try:
+                    futures = [pool.submit(_ocr_page, item) for item in chunk]
+                    for future in as_completed(futures):
+                        page_num, pw, ph, hocr = future.result()
+                        hocr_results[page_num] = (pw, ph, hocr)
+                        completed += 1
+                        ctx.set_progress(15 + int(completed / total * 70))
+                finally:
+                    for _, _, _, img in chunk:
+                        img.close()
+    finally:
+        src_doc.close()
 
     ctx.set_progress(85)
 

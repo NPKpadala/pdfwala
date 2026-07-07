@@ -946,27 +946,33 @@ def merge_images(ctx: JobContext) -> dict:
     if direction not in ("horizontal", "vertical"):
         raise ValidationError("direction must be 'horizontal' or 'vertical'")
 
-    # Pass 1: open images and optionally cap dimensions
-    images: list[Image.Image] = []
+    # Pass 1: measure one image at a time (EXIF-aware) and record the capped
+    # target size. Nothing stays loaded — peak RAM is canvas + ONE image, not
+    # canvas + every input simultaneously.
+    entries: list[tuple[str, int, int]] = []
     for p in ctx.input_paths:
         try:
-            img = _open_image(p).convert("RGBA")
-            if img.width > MAX_DIMENSION or img.height > MAX_DIMENSION:
-                img.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.LANCZOS)
-            images.append(img)
+            img = _open_image(p)
+            w, h = img.size
+            img.close()
         except Exception as ex:
             log.warning(f"Skipping '{p}': {ex}")
+            continue
+        if w > MAX_DIMENSION or h > MAX_DIMENSION:
+            ratio = min(MAX_DIMENSION / w, MAX_DIMENSION / h)
+            w, h = max(1, int(w * ratio)), max(1, int(h * ratio))
+        entries.append((p, w, h))
 
-    if not images:
+    if not entries:
         raise ProcessingError("No valid images could be opened")
 
     # Pass 2: calculate canvas size and enforce cap BEFORE allocation
     if direction == "horizontal":
-        total_w = sum(img.width  for img in images)
-        total_h = max(img.height for img in images)
+        total_w = sum(w for _, w, _ in entries)
+        total_h = max(h for _, _, h in entries)
     else:
-        total_w = max(img.width  for img in images)
-        total_h = sum(img.height for img in images)
+        total_w = max(w for _, w, _ in entries)
+        total_h = sum(h for _, _, h in entries)
 
     if total_w > MAX_DIMENSION * 4 or total_h > MAX_DIMENSION * 4:
         raise ValidationError(
@@ -976,21 +982,30 @@ def merge_images(ctx: JobContext) -> dict:
 
     # Transparent canvas (not white) so alpha is preserved (BUG #28)
     canvas = Image.new("RGBA", (total_w, total_h), (0, 0, 0, 0))
+    try:
+        # Pass 3: re-open, resize to the recorded size, paste, release — one
+        # image in memory at a time, closed even if a paste fails.
+        offset = 0
+        for p, w, h in entries:
+            img = _open_image(p).convert("RGBA")
+            try:
+                if img.size != (w, h):
+                    img = img.resize((w, h), Image.LANCZOS)
+                pos = (offset, 0) if direction == "horizontal" else (0, offset)
+                # Use img itself as mask to honour alpha channels (BUG #18)
+                canvas.paste(img, pos, mask=img)
+                offset += w if direction == "horizontal" else h
+            finally:
+                img.close()
 
-    offset = 0
-    for img in images:
-        pos = (offset, 0) if direction == "horizontal" else (0, offset)
-        # Use img itself as mask to honour alpha channels (BUG #18)
-        canvas.paste(img, pos, mask=img)
-        offset += img.width if direction == "horizontal" else img.height
-        img.close()
-
-    ext = _ext_from_path(ctx.output_path, "PNG")
-    # Flatten to RGB for formats that don't support alpha
-    out_img = canvas if ext in ("PNG", "WEBP") else canvas.convert("RGB")
-    _save(out_img, ctx.output_path, ext)
+        ext = _ext_from_path(ctx.output_path, "PNG")
+        # Flatten to RGB for formats that don't support alpha
+        out_img = canvas if ext in ("PNG", "WEBP") else canvas.convert("RGB")
+        _save(out_img, ctx.output_path, ext)
+    finally:
+        canvas.close()
     _check_output(ctx.output_path)
-    return {"merged_count": len(images), "direction": direction}
+    return {"merged_count": len(entries), "direction": direction}
 
 # ── Format aliases ────────────────────────────────────────────────────────
 
