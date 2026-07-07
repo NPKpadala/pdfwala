@@ -151,6 +151,16 @@ try:
 except ImportError:
     TESSERACT_OK = False
 
+# OpenCV + numpy power the OCR preprocessing pipeline (denoise/deskew/threshold).
+# Both are already present (pulled in by rembg and pinned in requirements); OCR
+# still works without them via a plain-grayscale fallback.
+try:
+    import cv2
+    import numpy as _np
+    CV2_OK = True
+except Exception:
+    CV2_OK = False
+
 # ── qpdf availability (linearization) ────────────────────────────────────────
 def _qpdf_available() -> bool:
     try:
@@ -1834,28 +1844,111 @@ def pdf_to_pdfa(ctx: JobContext) -> dict:
     return {"pdfa_version": f"{pdfa_val}b"}
 
 
+def _estimate_skew_angle(gray) -> float:
+    """
+    Estimate the rotation (degrees) that straightens a skewed document, using a
+    projection-profile search: binarize, then for each candidate angle rotate a
+    downscaled copy and score how "peaky" the row-ink profile is (sum of squared
+    differences between adjacent rows). Text lines produce the sharpest profile
+    when horizontal, so the best-scoring angle is the correction to apply.
+
+    This is markedly more reliable than a min-area-rect on sparse text (which
+    barely moves for small skews). Returns the rotation to APPLY, in (-15, 15),
+    or 0.0 when nothing beats "no rotation".
+    """
+    try:
+        h, w = gray.shape
+        # Downscale for speed — skew is a global property, fine detail is noise.
+        scale = 800.0 / max(w, 1)
+        if scale < 1.0:
+            gray = cv2.resize(gray, (int(w * scale), int(h * scale)),
+                              interpolation=cv2.INTER_AREA)
+        binimg = cv2.threshold(gray, 0, 255,
+                               cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        sh, sw = binimg.shape
+        center = (sw / 2.0, sh / 2.0)
+
+        def _score(angle: float) -> float:
+            m = cv2.getRotationMatrix2D(center, angle, 1.0)
+            rot = cv2.warpAffine(binimg, m, (sw, sh),
+                                 flags=cv2.INTER_NEAREST,
+                                 borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+            proj = rot.sum(axis=1, dtype=_np.float64)
+            diff = _np.diff(proj)
+            return float((diff * diff).sum())
+
+        base = _score(0.0)
+        best_angle, best_score = 0.0, base
+        for a in _np.arange(-8.0, 8.01, 0.5):
+            if abs(a) < 1e-6:
+                continue
+            s = _score(float(a))
+            if s > best_score:
+                best_score, best_angle = s, float(a)
+        # Require a clear improvement over "no rotation" to avoid chasing noise.
+        if best_score < base * 1.05:
+            return 0.0
+        return best_angle if -15.0 < best_angle < 15.0 else 0.0
+    except Exception:
+        return 0.0
+
+
+def _preprocess_for_ocr(pil_img):
+    """
+    Clean a rendered page for Tesseract: grayscale → light denoise → deskew →
+    Otsu binarize. Returns (processed_PIL_L_image, inv_affine_or_None) where the
+    inverse affine maps a point in the DESKEWED image back to the ORIGINAL
+    rendered pixel space (so the invisible text layer can be positioned to match
+    the un-rotated raster we actually display). Falls back to plain grayscale if
+    OpenCV is unavailable.
+    """
+    if not CV2_OK:
+        return pil_img.convert("L"), None
+    try:
+        gray = _np.array(pil_img.convert("L"))
+        # Light denoise — removes scanner speckle without smearing glyph edges.
+        gray = cv2.fastNlMeansDenoising(gray, None, h=7,
+                                        templateWindowSize=7, searchWindowSize=21)
+        inv = None
+        angle = _estimate_skew_angle(gray)
+        if abs(angle) > 0.3:
+            h, w = gray.shape
+            center = (w / 2.0, h / 2.0)
+            m = cv2.getRotationMatrix2D(center, angle, 1.0)
+            gray = cv2.warpAffine(gray, m, (w, h), flags=cv2.INTER_CUBIC,
+                                  borderMode=cv2.BORDER_REPLICATE)
+            inv = cv2.invertAffineTransform(m)
+        # Otsu global threshold — Tesseract is most accurate on clean bi-level.
+        gray = cv2.threshold(gray, 0, 255,
+                             cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+        return Image.fromarray(gray), inv
+    except Exception:
+        return pil_img.convert("L"), None
+
+
 @register("ocr_pdf")
 def ocr_pdf(ctx: JobContext) -> dict:
     """
-    OCR a scanned PDF using Tesseract.
+    OCR a scanned PDF using Tesseract, producing a searchable PDF.
 
-    Tuned for the small-infra free-tier:
-    - Default DPI 150 (Tesseract is accurate ≥150 DPI for most scans;
-      previously 200 was 2× the data per page for no measurable accuracy gain).
-    - Direct pixmap→PIL handoff (no PNG round-trip → big speedup; the old
-      path did fitz pixmap → PNG encode → BytesIO → PIL decode for every
-      page, which was the dominant cost for dense scans).
-    - Worker-slow Celery queue handles up to 2 concurrent OCRs; we
-      deliberately do NOT spawn extra threads here (worker concurrency
-      already provides page-level parallelism via the queue, and ganging
-      4 tesseracts on 4 cores per job thrashes the CPU).
-    - lang/psm/oem are whitelist-sanitised. Chunked progress reporting
-      lets the polling UI show real movement.
+    Quality-tuned:
+    - Pages that ALREADY carry a digital text layer are copied through
+      unchanged (insert_pdf) — we never rasterize real, selectable text into a
+      lossy image + approximate OCR layer. Only image-only pages are OCR'd.
+    - Image-only pages render at 300 DPI (Tesseract's documented optimum; 150
+      measurably loses accuracy on small type) and pass through an OpenCV
+      pipeline (denoise → deskew → Otsu threshold) before OCR.
+    - The invisible text layer is positioned with the inverse of the deskew
+      transform so it aligns with the un-rotated raster we display.
+
+    Infra-aware: worker-slow Celery runs 2 concurrent OCRs; we do NOT spawn
+    extra threads per job. Rendering is chunked (peak RAM = one chunk).
+    lang/psm/oem are whitelist-sanitised; chunked progress drives the UI.
     """
     _require(TESSERACT_OK and FITZ_OK, "ocr_pdf", "pytesseract + PyMuPDF")
     lang_raw = ctx.params.get("lang", "eng")
     lang     = _sanitise_tesseract_lang(lang_raw)
-    dpi      = int(ctx.params.get("dpi", 150))          # 150 default (was 200)
+    dpi      = int(ctx.params.get("dpi", getattr(Config, "OCR_DPI", 300)))
     dpi      = max(72, min(dpi, 600))
 
     psm_raw = int(ctx.params.get("psm", 3))
@@ -1884,50 +1977,61 @@ def ocr_pdf(ctx: JobContext) -> dict:
             "Split the PDF first or contact support for bulk processing."
         )
 
-    def _ocr_page(args: tuple) -> tuple[int, float, float, Optional[dict]]:
-        """Worker: run Tesseract on one page image. Returns (page_num, pw, ph, hocr|None)."""
-        page_num, pw, ph, img = args
+    # Classify pages: those that already have a real text layer are preserved
+    # verbatim (never rasterized); only image-only pages are sent to Tesseract.
+    text_pages = set()
+    for i in range(total):
         try:
+            if src_doc[i].get_text("text").strip():
+                text_pages.add(i)
+        except Exception:
+            pass
+    ocr_targets = [i for i in range(total) if i not in text_pages]
+
+    def _ocr_page(args: tuple):
+        """Worker: preprocess + Tesseract one page. Returns (page_num, pw, ph, hocr, inv)."""
+        page_num, pw, ph, img = args
+        inv = None
+        try:
+            proc, inv = _preprocess_for_ocr(img)
             hocr = pytesseract.image_to_data(
-                img, lang=lang,
+                proc, lang=lang,
                 output_type=TesseractOutput.DICT,
                 config=f"--psm {psm} --oem {oem}",
             )
+            proc.close()
         except Exception as ex:
             log.warning(f"OCR page {page_num + 1}: {ex}")
             hocr = None
-        return (page_num, pw, ph, hocr)
+        return (page_num, pw, ph, hocr, inv)
 
     # Render → OCR in bounded chunks. Rendering stays in the main thread
     # (PyMuPDF is not thread-safe); only Tesseract runs in the pool. Peak RAM
-    # is ONE chunk of page images instead of the whole document — a 500-page
-    # scan previously pre-rendered ~1 GB of pixmaps before OCR even started.
-    # Zero-copy handoff per page: pix.samples goes straight to PIL (no PNG
-    # round-trip, which was ~40% of total time for dense pages).
+    # is ONE chunk of page images instead of the whole document.
     chunk_size = max(workers * 4, 8)
-    hocr_results: dict[int, tuple] = {}
+    ocr_results: dict[int, tuple] = {}
     completed = 0
+    n_targets = len(ocr_targets)
     ctx.set_progress(15)
     try:
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            for start in range(0, total, chunk_size):
-                chunk: list[tuple[int, float, float, "Image.Image"]] = []
-                for page_num in range(start, min(start + chunk_size, total)):
+            for start in range(0, n_targets, chunk_size):
+                chunk = []
+                for page_num in ocr_targets[start:start + chunk_size]:
                     src_page = src_doc[page_num]
                     pw, ph = src_page.rect.width, src_page.rect.height
                     mat    = fitz.Matrix(dpi / 72, dpi / 72)
                     pix    = src_page.get_pixmap(matrix=mat, alpha=False,
                                                  colorspace=fitz.csGRAY)
-                    mode = "L" if pix.n == 1 else ("RGB" if pix.n == 3 else "RGBA")
-                    img  = Image.frombytes(mode, (pix.width, pix.height), pix.samples)
+                    img  = Image.frombytes("L", (pix.width, pix.height), pix.samples)
                     chunk.append((page_num, pw, ph, img))
                 try:
                     futures = [pool.submit(_ocr_page, item) for item in chunk]
                     for future in as_completed(futures):
-                        page_num, pw, ph, hocr = future.result()
-                        hocr_results[page_num] = (pw, ph, hocr)
+                        page_num, pw, ph, hocr, inv = future.result()
+                        ocr_results[page_num] = (pw, ph, hocr, inv)
                         completed += 1
-                        ctx.set_progress(15 + int(completed / total * 70))
+                        ctx.set_progress(15 + int(completed / max(n_targets, 1) * 70))
                 finally:
                     for _, _, _, img in chunk:
                         img.close()
@@ -1936,34 +2040,33 @@ def ocr_pdf(ctx: JobContext) -> dict:
 
     ctx.set_progress(85)
 
-    # Reassemble in page order
+    # Reassemble in page order: preserve text pages, overlay OCR on image pages.
     src_doc2 = fitz.open(ctx.input_path)
     out_doc  = fitz.open()
     pages_processed = 0
-    img_scale_x = img_scale_y = 1.0  # recomputed per page below
+    scale = 72.0 / dpi              # rendered-pixel → PDF-point
 
     try:
         for page_num in range(total):
-            pw, ph, hocr = hocr_results[page_num]
-            src_page     = src_doc2[page_num]
-            new_page     = out_doc.new_page(width=pw, height=ph)
-            # Copy original raster into new page
+            if page_num in text_pages:
+                # Preserve the original page (keeps its selectable text intact).
+                out_doc.insert_pdf(src_doc2, from_page=page_num, to_page=page_num)
+                pages_processed += 1
+                continue
+
+            pw, ph, hocr, inv = ocr_results.get(page_num, (None, None, None, None))
+            if pw is None:
+                src_page = src_doc2[page_num]
+                pw, ph = src_page.rect.width, src_page.rect.height
+            new_page = out_doc.new_page(width=pw, height=ph)
             new_page.show_pdf_page(
                 fitz.Rect(0, 0, pw, ph), src_doc2, page_num, overlay=False
             )
 
             if hocr:
-                # Compute scale from actual rendered image size
-                pix_w = dpi / 72 * pw
-                pix_h = dpi / 72 * ph
-                img_sx = pw / pix_w
-                img_sy = ph / pix_h
-
-                # Per-page word cap — mirrors the char cap used elsewhere so a
-                # pathological page (e.g. OCR noise on a photo) can't insert a
-                # runaway number of text objects and bloat the output PDF.
                 words_on_page = 0
-                for i in range(len(hocr.get("text", []))):
+                n = len(hocr.get("text", []))
+                for i in range(n):
                     word = (hocr["text"][i] or "").strip()
                     conf = int(hocr["conf"][i]) if hocr["conf"][i] != -1 else 0
                     if not word or conf < 30:
@@ -1974,9 +2077,18 @@ def ocr_pdf(ctx: JobContext) -> dict:
                             f"{_OCR_MAX_WORDS_PER_PAGE}-word cap; remaining words skipped"
                         )
                         break
-                    x0 = hocr["left"][i]   * img_sx
-                    y1 = (hocr["top"][i] + hocr["height"][i]) * img_sy
-                    fs = max(4.0, hocr["height"][i] * img_sy * 0.85)
+                    # Word anchor (bottom-left) in deskewed-pixel space.
+                    px = float(hocr["left"][i])
+                    py = float(hocr["top"][i] + hocr["height"][i])
+                    if inv is not None:
+                        # Map back through the inverse deskew so the invisible
+                        # text lines up with the un-rotated raster we display.
+                        ox = inv[0][0] * px + inv[0][1] * py + inv[0][2]
+                        oy = inv[1][0] * px + inv[1][1] * py + inv[1][2]
+                        px, py = ox, oy
+                    x0 = px * scale
+                    y1 = py * scale
+                    fs = max(4.0, hocr["height"][i] * scale * 0.85)
                     new_page.insert_text(
                         (x0, y1 - 1), word + " ",
                         fontsize=fs, fontname="helv",
@@ -1994,8 +2106,10 @@ def ocr_pdf(ctx: JobContext) -> dict:
         src_doc2.close()
 
     ctx.set_progress(100)
-    log.info(f"[{ctx.job_id}] ocr_pdf: {pages_processed}/{total} pages, lang={lang}, dpi={dpi}")
-    return {"pages_processed": pages_processed, "lang": lang, "dpi": dpi}
+    log.info(f"[{ctx.job_id}] ocr_pdf: {pages_processed}/{total} pages "
+             f"({len(text_pages)} preserved, {n_targets} OCR'd), lang={lang}, dpi={dpi}")
+    return {"pages_processed": pages_processed, "pages_ocred": n_targets,
+            "pages_preserved": len(text_pages), "lang": lang, "dpi": dpi}
 
 
 @register("compare_pdf")
