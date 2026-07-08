@@ -284,6 +284,69 @@ def _pdf_renders_ok(path: str, sample: int = 3) -> bool:
             doc.close()
 
 
+def _qpdf_pack(src: str, out: str, timeout: int = 120) -> bool:
+    """
+    Structural (lossless) optimization with qpdf: pack every object into
+    compressed object streams, recompress all flate streams at max level, and
+    drop unreferenced objects. This is the single biggest win on text/vector
+    PDFs (where there are no images to downsample) and is fidelity-perfect —
+    text, fonts, forms, links, annotations and bookmarks are all preserved
+    exactly. Returns True on a non-empty result.
+    """
+    if not QPDF_OK:
+        return False
+    try:
+        r = subprocess.run(
+            ["qpdf", "--object-streams=generate", "--compress-streams=y",
+             "--recompress-flate", "--compression-level=9",
+             "--deterministic-id", src, out],
+            capture_output=True, timeout=timeout,
+        )
+        # qpdf exit 0 = clean, 3 = warnings-but-wrote-output; both are usable.
+        if r.returncode in (0, 3) and os.path.exists(out) and os.path.getsize(out) > 0:
+            return True
+    except (subprocess.SubprocessError, OSError):
+        pass
+    return False
+
+
+def _pdf_feature_count(path: str) -> dict:
+    """
+    Count the interactive/structural features a compressor must not silently
+    destroy: form widgets, link annotations, other annotations, and bookmarks.
+    Ghostscript's pdfwrite flattens AcroForm fields (widgets → 0), so a
+    candidate that drops them is disqualified for form documents.
+    """
+    out = {"widgets": 0, "links": 0, "annots": 0, "bookmarks": 0}
+    if not FITZ_OK:
+        return out
+    doc = None
+    try:
+        doc = fitz.open(path)
+        for pg in doc:
+            try: out["widgets"] += len(list(pg.widgets() or []))
+            except Exception: pass
+            try: out["links"] += len(pg.get_links())
+            except Exception: pass
+            try: out["annots"] += len(list(pg.annots() or []))
+            except Exception: pass
+        out["bookmarks"] = len(doc.get_toc(simple=True))
+    except Exception:
+        pass
+    finally:
+        if doc is not None:
+            doc.close()
+    return out
+
+
+def _feature_preserved(orig: dict, cand_path: str) -> bool:
+    """A candidate is acceptable only if it keeps every form widget and bookmark
+    the original had (links/annots are advisory). This is what stops us shipping
+    a smaller file that has silently lost the user's form fields."""
+    c = _pdf_feature_count(cand_path)
+    return c["widgets"] >= orig["widgets"] and c["bookmarks"] >= orig["bookmarks"]
+
+
 def _open_zip_writer(output_path: str, page_count: int):
     """
     Return a ZipFile that writes to disk (large) or BytesIO (small).
@@ -547,133 +610,160 @@ def extract_pages(ctx: JobContext) -> dict:
 # PDF OPTIMIZE
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@register("compress_pdf")
-def compress_pdf(ctx: JobContext) -> dict:
-    """
-    Two-stage compression: PyMuPDF image downsampling → Ghostscript on ORIGINAL.
-    Picks the smallest result from: {GS-on-original, stage1, original}.
-    Skips images >5 MB to guard against RAM exhaustion.
-    """
-    _require(FITZ_OK and PIL_OK, "compress_pdf", "PyMuPDF + Pillow")
-    quality = ctx.params.get("quality", "medium")
-    # Every level must produce REAL compression. The old "low"/"medium" used
-    # /printer, whose default 1.5x downsample threshold means images just under
-    # ~1.5x the target DPI are left untouched → 0% on many PDFs. We now use
-    # /ebook–/screen and force a 1.0 downsample threshold (below), so images
-    # above the target DPI are always downsampled.
-    cfg = {
-        "maximum": {"dpi": 72,  "quality": 40, "gs": "/screen"},  # smallest
-        "high":    {"dpi": 100, "quality": 55, "gs": "/screen"},
-        "medium":  {"dpi": 120, "quality": 70, "gs": "/ebook"},   # default balance
-        "low":     {"dpi": 144, "quality": 82, "gs": "/ebook"},   # gentle, high quality
-    }.get(quality, {"dpi": 120, "quality": 70, "gs": "/ebook"})
+# Compression level → image downsample target (DPI) + JPEG quality. Levels are
+# normalised from the various front-end labels. Object-stream/flate packing
+# (qpdf) is applied at every level; these knobs only govern LOSSY image
+# downsampling in the Ghostscript / PyMuPDF candidates.
+_COMPRESS_LEVELS = {
+    "maximum": {"dpi": 72,  "quality": 45},   # smallest — aggressive
+    "high":    {"dpi": 100, "quality": 60},
+    "medium":  {"dpi": 150, "quality": 75},   # balanced default
+    "low":     {"dpi": 200, "quality": 85},   # gentle, near-lossless images
+}
+_COMPRESS_LEVEL_ALIASES = {
+    "extreme": "maximum", "strong": "maximum", "smallest": "maximum",
+    "recommended": "medium", "balanced": "medium", "default": "medium",
+    "high quality": "low", "high-quality": "low", "less": "low",
+    "lossless": "low", "gentle": "low",
+}
 
-    _guard_empty(ctx.input_path)
-    orig = os.path.getsize(ctx.input_path)
-    ctx.set_progress(5)
 
-    # Stage 1: PyMuPDF image downsampling (on a copy — ORIGINAL stays pristine for GS)
-    stage1 = ctx.output_path + "_s1.pdf"
-    doc = None
+def _gs_compress(src: str, out: str, cfg: dict) -> bool:
+    """Ghostscript downsample+recompress candidate (lossy). Uses /screen as the
+    base object model (most reliable) with the image resolution overridden per
+    level. Deliberately NOT linearized — FastWebView/linearization adds hint
+    tables that *bloat* small text PDFs, which is what made the old pipeline
+    return files larger than the input."""
     try:
-        doc = fitz.open(ctx.input_path)
-        modified = compress_pdf_images(
-            doc, cfg["dpi"], cfg["quality"],
-        )
-        if modified:
-            doc.save(stage1, deflate=True, deflate_images=True,
-                     deflate_fonts=True, garbage=3, clean=False)
-        else:
-            shutil.copy(ctx.input_path, stage1)
-        doc.close()
-        doc = None
-    except Exception as ex:
-        log.warning(f"[{ctx.job_id}] compress stage1 failed: {ex}")
-        if doc is not None:
-            try:
-                doc.close()
-            except Exception:
-                pass
-        shutil.copy(ctx.input_path, stage1)
-    ctx.set_progress(40)
-
-    stage1_size = os.path.getsize(stage1)
-
-    # Stage 2: Ghostscript — ALWAYS on the ORIGINAL (not stage1)
-    gs_out = ctx.output_path + "_gs.pdf"
-    gs_ok  = False
-    try:
-        gs_ok = _ghostscript(
-            ctx.input_path,   # ← original, not stage1
-            gs_out,
-            cfg["gs"],
+        return _ghostscript(
+            src, out, "/screen",
             extra_flags=[
-                "-dDownsampleColorImages=true",
-                "-dDownsampleGrayImages=true",
+                "-dDownsampleColorImages=true", "-dDownsampleGrayImages=true",
                 "-dColorImageDownsampleType=/Bicubic",
                 "-dGrayImageDownsampleType=/Bicubic",
-                # Force downsampling of any image above the target DPI (default
-                # 1.5x threshold is why the old presets did nothing).
                 "-dColorImageDownsampleThreshold=1.0",
                 "-dGrayImageDownsampleThreshold=1.0",
                 f"-dColorImageResolution={cfg['dpi']}",
                 f"-dGrayImageResolution={cfg['dpi']}",
                 f"-dJPEGQ={cfg['quality']}",
-                # Font handling — subset + compress + keep everything embedded so
-                # text still renders on machines without the original fonts
-                # (matches Acrobat/iLovePDF output; smaller than full embedding).
-                "-dSubsetFonts=true",
-                "-dCompressFonts=true",
-                "-dEmbedAllFonts=true",
-                # Collapse byte-identical images that appear on many pages.
-                "-dDetectDuplicateImages=true",
-                # Linearize for "Fast Web View" — first page renders before the
-                # whole file downloads, exactly like Acrobat's web-optimized PDFs.
-                "-dFastWebView=true",
+                "-dSubsetFonts=true", "-dCompressFonts=true", "-dEmbedAllFonts=true",
             ],
         )
     except OperationTimeoutError:
-        log.warning(f"[{ctx.job_id}] GS timed out during compress")
-    ctx.set_progress(80)
+        return False
 
-    # Pick the smallest candidate that still RENDERS. A recompression bug could
-    # otherwise produce a tiny but corrupt file that wins on size alone; the
-    # original is always valid and is the guaranteed fallback.
-    candidates = []
-    if gs_ok and os.path.exists(gs_out) and os.path.getsize(gs_out) > 0:
-        candidates.append((os.path.getsize(gs_out), gs_out))
-    if stage1_size > 0:
-        candidates.append((stage1_size, stage1))
-    candidates.append((orig, ctx.input_path))
-    candidates.sort(key=lambda x: x[0])
 
-    chosen = ctx.input_path
-    for _sz, cand in candidates:
-        if cand == ctx.input_path or _pdf_renders_ok(cand):
-            chosen = cand
-            break
+@register("compress_pdf")
+def compress_pdf(ctx: JobContext) -> dict:
+    """
+    Adaptive, feature-preserving PDF compression.
+
+    We generate several candidates and keep the smallest one that both RENDERS
+    and preserves the document's interactive features, then never return a file
+    larger than the original:
+
+      • qpdf  — lossless object-stream + flate repack. Wins text/vector PDFs
+                (where there is nothing to downsample) and preserves everything
+                exactly. This is the candidate that beats iLovePDF on text docs.
+      • PyMuPDF effective-DPI image downsample → qpdf. Compresses images while
+                keeping form fields intact (unlike Ghostscript).
+      • Ghostscript downsample → qpdf. Best on scanned/photo/transparency PDFs,
+                but Ghostscript flattens AcroForm fields, so it is only eligible
+                when it does not drop widgets/bookmarks the original had.
+
+    Selection is by measured output size among candidates that pass a render
+    check and a feature-retention check — no single pipeline is trusted blindly.
+    """
+    _require(FITZ_OK and PIL_OK, "compress_pdf", "PyMuPDF + Pillow")
+    raw_q = str(ctx.params.get("quality", "medium")).strip().lower()
+    level = _COMPRESS_LEVEL_ALIASES.get(raw_q, raw_q)
+    cfg   = _COMPRESS_LEVELS.get(level, _COMPRESS_LEVELS["medium"])
+
+    _guard_empty(ctx.input_path)
+    orig       = os.path.getsize(ctx.input_path)
+    orig_feats = _pdf_feature_count(ctx.input_path)
+    ctx.set_progress(5)
+
+    work = tempfile.mkdtemp(prefix="cpdf_")
+    # candidates: list of (size, path, label, lossy)
+    candidates: list[tuple[int, str, str, bool]] = []
+
+    def _add(path: str, label: str, lossy: bool):
+        if path and os.path.exists(path) and os.path.getsize(path) > 0:
+            candidates.append((os.path.getsize(path), path, label, lossy))
 
     try:
+        # ── Candidate A: lossless qpdf repack of the ORIGINAL ────────────────
+        qorig = os.path.join(work, "qpdf_orig.pdf")
+        if _qpdf_pack(ctx.input_path, qorig):
+            _add(qorig, "qpdf", False)
+        ctx.set_progress(25)
+
+        # ── Candidate B: PyMuPDF effective-DPI image downsample → qpdf ────────
+        # Feature-safe (keeps form fields), so this is how form PDFs still get
+        # their images compressed.
+        stage1 = os.path.join(work, "stage1.pdf")
+        doc = None
+        try:
+            doc = fitz.open(ctx.input_path)
+            modified = compress_pdf_images(doc, cfg["dpi"], cfg["quality"])
+            if modified:
+                doc.save(stage1, deflate=True, deflate_images=True,
+                         deflate_fonts=True, garbage=3, clean=False)
+            doc.close(); doc = None
+            if modified and os.path.exists(stage1):
+                s1q = os.path.join(work, "stage1_q.pdf")
+                if _qpdf_pack(stage1, s1q):
+                    _add(s1q, "pymupdf+qpdf", True)
+                else:
+                    _add(stage1, "pymupdf", True)
+        except Exception as ex:
+            log.warning(f"[{ctx.job_id}] compress stage1 failed: {ex}")
+            if doc is not None:
+                try: doc.close()
+                except Exception: pass
+        ctx.set_progress(55)
+
+        # ── Candidate C: Ghostscript downsample → qpdf ───────────────────────
+        gs_out = os.path.join(work, "gs.pdf")
+        if _gs_compress(ctx.input_path, gs_out, cfg):
+            gsq = os.path.join(work, "gs_q.pdf")
+            if _qpdf_pack(gs_out, gsq):
+                _add(gsq, "ghostscript+qpdf", True)
+            else:
+                _add(gs_out, "ghostscript", True)
+        ctx.set_progress(80)
+
+        # ── Selection: smallest candidate that RENDERS and keeps features ────
+        candidates.sort(key=lambda x: x[0])
+        chosen, chosen_label = ctx.input_path, "original"
+        for _sz, cand, label, _lossy in candidates:
+            if _sz >= orig:
+                continue                      # never grow the file
+            if not _pdf_renders_ok(cand):
+                log.warning(f"[{ctx.job_id}] compress: candidate {label} failed render gate")
+                continue
+            if not _feature_preserved(orig_feats, cand):
+                log.info(f"[{ctx.job_id}] compress: candidate {label} dropped a form/bookmark — skipped")
+                continue
+            chosen, chosen_label = cand, label
+            break
+
         shutil.copy(chosen, ctx.output_path)
     finally:
-        # Always clean up temp files — even if copy raises (disk full, permissions)
-        for tmp in [stage1, gs_out]:
-            try:
-                os.remove(tmp)
-            except OSError:
-                pass
+        shutil.rmtree(work, ignore_errors=True)
 
     new_size  = os.path.getsize(ctx.output_path)
     reduction = round((1 - new_size / orig) * 100, 1) if orig else 0
-    # When a file is already optimized, no honest tool can shrink it further.
-    # Flag it so the UI can say "already optimized" instead of a weak "1.9%".
     already_optimized = reduction < 3.0
     ctx.set_progress(100)
-    log.info(f"[{ctx.job_id}] compress_pdf: {orig} → {new_size} bytes ({reduction}% reduction)")
+    log.info(f"[{ctx.job_id}] compress_pdf: {orig} → {new_size} bytes "
+             f"({reduction}%, via {chosen_label}, level={level})")
     return {
         "reduction_pct":          reduction,
         "original_size_bytes":    orig,
         "compressed_size_bytes":  new_size,
+        "method":                 chosen_label,
         "already_optimized":      already_optimized,
         "note": ("This PDF is already well-optimized, so we kept it at its "
                  "original quality and size rather than degrade it for a "
