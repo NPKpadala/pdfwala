@@ -684,7 +684,10 @@ def compress_pdf(ctx: JobContext) -> dict:
     orig_feats = _pdf_feature_count(ctx.input_path)
     ctx.set_progress(5)
 
-    work = tempfile.mkdtemp(prefix="cpdf_")
+    # Candidates live alongside the final output (inside OUTPUT_FOLDER) so the
+    # Ghostscript path passes _safe_output_path, which only permits the
+    # configured output/temp dirs.
+    work = tempfile.mkdtemp(prefix="cpdf_", dir=os.path.dirname(ctx.output_path) or None)
     # candidates: list of (size, path, label, lossy)
     candidates: list[tuple[int, str, str, bool]] = []
 
