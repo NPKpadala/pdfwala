@@ -1505,7 +1505,9 @@ def pdf_to_image(ctx: JobContext) -> dict:
     """
     _require(FITZ_OK and PIL_OK, "pdf_to_image", "PyMuPDF + Pillow")
     fmt = ctx.params.get("format", "jpg").lower()
-    dpi = int(ctx.params.get("dpi", 150))
+    # 200 DPI default (was 150): noticeably crisper page images while staying
+    # well within memory limits; still overridable and clamped.
+    dpi = int(ctx.params.get("dpi", 200))
     if fmt not in ("jpg", "png"):
         fmt = "jpg"
     dpi = max(72, min(dpi, 600))   # clamp
@@ -1518,25 +1520,33 @@ def pdf_to_image(ctx: JobContext) -> dict:
         try:
             for i, page in enumerate(doc):
                 mat = fitz.Matrix(dpi / 72, dpi / 72)
-                pix = page.get_pixmap(matrix=mat, alpha=True)
+                # alpha=False renders the page opaque on white — PDF pages are
+                # opaque, so this is correct and lets us hand pixmap bytes
+                # straight to PIL (no PNG encode→decode round-trip, which was
+                # the dominant per-page cost and a RAM spike at high DPI).
+                pix = page.get_pixmap(matrix=mat, alpha=False)
+                pil = None
+                ib  = None
                 try:
-                    pil = Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGBA")
-                    bg  = Image.new("RGB", pil.size, (255, 255, 255))
-                    bg.paste(pil, mask=pil.split()[3])
-                    ib = io.BytesIO()
+                    mode = "RGB" if pix.n >= 3 else "L"
+                    pil  = Image.frombytes(mode, (pix.width, pix.height), pix.samples)
+                    ib   = io.BytesIO()
                     if fmt == "jpg":
-                        bg.save(ib, "JPEG", quality=85, optimize=True)
+                        if pil.mode != "RGB":
+                            pil = pil.convert("RGB")
+                        pil.save(ib, "JPEG", quality=90, optimize=True,
+                                 progressive=True)
                     else:
-                        bg.save(ib, "PNG", optimize=True)
+                        pil.save(ib, "PNG", optimize=True)
                     zf.writestr(f"page_{i + 1:04d}.{fmt}", ib.getvalue())
                 finally:
                     # Explicit cleanup — prevents RAM accumulation at high DPI
-                    try: pil.close()
-                    except Exception: pass
-                    try: bg.close()
-                    except Exception: pass
-                    try: ib.close()
-                    except Exception: pass
+                    if pil is not None:
+                        try: pil.close()
+                        except Exception: pass
+                    if ib is not None:
+                        try: ib.close()
+                        except Exception: pass
                     del pix
                 if i % 10 == 0:
                     ctx.set_progress(int(i / count * 95))
