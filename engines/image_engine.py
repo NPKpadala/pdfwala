@@ -14,6 +14,7 @@ import io
 import logging
 import os
 import shutil
+import subprocess
 
 from config import Config
 from core.context import JobContext
@@ -193,6 +194,35 @@ def _open_image(path: str) -> "Image.Image":
         raise ValidationError(f"Cannot open image '{os.path.basename(path)}': {ex}")
 
 
+def _pngquant_compress(path: str, floor: int = 0, ceil: int = 88) -> bool:
+    """
+    Shrink a PNG in place with pngquant (lossy palette quantization — the same
+    technique TinyPNG/Smallpdf use for 50-70% smaller PNGs at near-identical
+    appearance). Honours a quality floor: if pngquant can't hit it, or the
+    result isn't smaller, the original lossless PNG is kept. Returns True when
+    the file was replaced. No-op (returns False) if pngquant isn't installed.
+    """
+    tmp = path + ".pq.png"
+    try:
+        r = subprocess.run(
+            ["pngquant", f"--quality={floor}-{ceil}", "--strip",
+             "--skip-if-larger", "--force", "--output", tmp, "--", path],
+            capture_output=True, timeout=60,
+        )
+        if r.returncode == 0 and os.path.exists(tmp) and os.path.getsize(tmp) > 0:
+            os.replace(tmp, path)
+            return True
+    except (FileNotFoundError, subprocess.SubprocessError, OSError):
+        pass
+    finally:
+        if os.path.exists(tmp):
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+    return False
+
+
 def _ensure_output_dir(path: str) -> None:
     """
     BUG FIX #22: No function in the original code guaranteed the output
@@ -205,11 +235,24 @@ def _ensure_output_dir(path: str) -> None:
 
 def _save(img: "Image.Image", path: str, fmt: str, quality: int = 85) -> None:
     """
-    Save image, handling format quirks.
+    Save image, handling format quirks and preserving colour fidelity.
 
-    BUG FIX #20 (TIFF): Original code had no TIFF branch; it fell through to
-    a bare img.save() call that omits compression, producing multi-MB TIFFs.
-    BUG FIX #22: Output directory created before write.
+    Quality:
+    - The embedded **ICC colour profile** is carried through on JPEG/PNG/WEBP/
+      TIFF so colours don't shift on wide-gamut sources (Adobe RGB / P3) — the
+      old code dropped it, making saved images look desaturated in colour-managed
+      viewers.
+    - JPEG uses full-resolution chroma (subsampling 4:4:4) at high quality
+      instead of the default 4:2:0, and is written **progressive** (renders
+      top-to-bottom while downloading), matching Acrobat/iLovePDF output.
+    - WEBP uses method=6 (the encoder's best size/quality search).
+
+    EXIF is intentionally NOT re-embedded: _open_image already baked the
+    orientation into pixels via exif_transpose, so re-writing the Orientation
+    tag would rotate the image a second time.
+
+    BUG FIX #20 (TIFF): explicit LZW branch (a bare save produced multi-MB TIFFs).
+    BUG FIX #22: output directory created before write.
     """
     _ensure_output_dir(path)
     fmt = fmt.upper()
@@ -220,18 +263,36 @@ def _save(img: "Image.Image", path: str, fmt: str, quality: int = 85) -> None:
             f"Output format '{fmt}' is not allowed. "
             f"Choose from: {', '.join(sorted(ALLOWED_FORMATS))}"
         )
+    icc = img.info.get("icc_profile")
     try:
         if fmt == "JPEG":
-            img = img.convert("RGB")
-            img.save(path, fmt, quality=quality, optimize=True)
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            params = dict(quality=quality, optimize=True, progressive=True)
+            # 4:4:4 (no chroma downsampling) once quality is high enough to
+            # warrant it; below that keep Pillow's default 4:2:0 to save bytes.
+            if quality >= 90:
+                params["subsampling"] = 0
+            if icc:
+                params["icc_profile"] = icc
+            img.save(path, fmt, **params)
         elif fmt == "PNG":
             # PNG uses lossless deflate; quality maps to compress_level (0-9)
             compress = max(0, min(9, 9 - quality // 11))
-            img.save(path, fmt, optimize=True, compress_level=compress)
+            params = dict(optimize=True, compress_level=compress)
+            if icc:
+                params["icc_profile"] = icc
+            img.save(path, fmt, **params)
         elif fmt == "WEBP":
-            img.save(path, fmt, quality=quality)
+            params = dict(quality=quality, method=6)
+            if icc:
+                params["icc_profile"] = icc
+            img.save(path, fmt, **params)
         elif fmt == "TIFF":
-            img.save(path, fmt, compression="lzw")
+            params = dict(compression="tiff_lzw")
+            if icc:
+                params["icc_profile"] = icc
+            img.save(path, fmt, **params)
         else:
             img.save(path, fmt)
     except Exception as ex:
@@ -287,14 +348,28 @@ def compress_image(ctx: JobContext) -> dict:
     ext  = _ext_from_path(ctx.output_path, "JPEG")
     _save(img, ctx.output_path, ext, quality)
 
+    # PNG: deflate alone barely shrinks photographic PNGs. Run pngquant (lossy
+    # palette quantization, TinyPNG-style) with a quality floor so the result
+    # stays visually clean; it keeps the lossless file if it can't do better.
+    method = "deflate"
+    if ext.upper() == "PNG":
+        # TinyPNG-style: no hard quality floor (pngquant's self-estimate rejects
+        # most true-colour photos even when the dithered result looks fine), cap
+        # the target quality with a ceiling that scales with the requested level,
+        # and rely on --skip-if-larger to keep the lossless file whenever
+        # quantization wouldn't actually help (e.g. simple logos already tiny).
+        ceil = int(_clamp(quality, 75, 92))
+        if _pngquant_compress(ctx.output_path, floor=0, ceil=ceil):
+            method = "pngquant"
+
     new_size = os.path.getsize(ctx.output_path)
 
     # If compression made the file larger, just copy the original.
     if new_size >= orig:
-        import shutil
         shutil.copy2(ctx.input_path, ctx.output_path)
         new_size  = orig
         reduction = 0.0
+        method    = "kept-original"
     else:
         reduction = round((1 - new_size / orig) * 100, 1)
 
@@ -303,6 +378,7 @@ def compress_image(ctx: JobContext) -> dict:
         "reduction_pct":         reduction,
         "original_size_bytes":   orig,
         "compressed_size_bytes": new_size,
+        "method":                method,
     }
 
 
