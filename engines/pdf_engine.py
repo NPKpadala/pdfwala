@@ -1675,6 +1675,13 @@ def pdf_to_png(ctx: JobContext) -> dict:
 # the result is a real word — so correct text is never touched.
 _WORDS: set | None = None
 _LIGATURES = ("fi", "fl", "ff", "ffi", "ffl", "ft")
+# Word-final fragments that are pure suffixes (never a standalone compound
+# member), so "develop-ment"/"informa-tion" are safe to rejoin even though the
+# left stem ("develop") is itself a real word.
+_REJOIN_SUFFIXES = (
+    "ment", "ments", "tion", "tions", "sion", "sions", "ing", "ings",
+    "ity", "ities", "ness", "ance", "ence", "able", "ible", "ful", "less",
+)
 # Genuine hyphenated compounds that must NOT be de-hyphenated.
 _KEEP_HYPHEN = {
     "enterprise-scale", "on-premises", "end-to-end", "real-time", "self-hosted",
@@ -1707,6 +1714,19 @@ def _valid_word(w: str) -> bool:
     return w.lower() in _load_wordlist()
 
 
+def _should_rejoin(a: str, b: str, whole: str) -> bool:
+    """Decide if a hyphenated 'a-b' is a soft line-wrap break (rejoin) vs a real
+    compound (keep). Rejoin only when the joined form is a real word AND either
+    the left stem is not a word (rou-tine, secur-ing) or the right part is a pure
+    suffix (develop-ment). Keeps explicit compounds and re-*/co-* meaning-change
+    cases (re-cover, co-worker) where the stem is itself a word."""
+    if whole.lower() in _KEEP_HYPHEN:
+        return False
+    if not _valid_word(a + b):
+        return False
+    return (not _valid_word(a)) or b.lower() in _REJOIN_SUFFIXES
+
+
 def _repair_ligature_token(tok: str) -> str:
     """If a token is not a real word but becomes one by re-inserting a dropped
     fi/fl/ffi ligature, return the repaired token. Only fires when exactly the
@@ -1714,7 +1734,9 @@ def _repair_ligature_token(tok: str) -> str:
     core = re.sub(r"[^A-Za-z]", "", tok)
     if len(core) < 4 or _valid_word(core):
         return tok
-    for i in range(1, len(core)):
+    # Try every insertion point INCLUDING 0, so words whose dropped ligature was
+    # at the very start are recovered too ("elds"→"fields", "nal"→"final").
+    for i in range(0, len(core)):
         for lig in _LIGATURES:
             cand = core[:i] + lig + core[i:]
             if _valid_word(cand):
@@ -1742,10 +1764,8 @@ def _repair_text(text: str) -> str:
     #    stem alone is not (i.e. it was a line-wrap break, not a compound).
     def _dehyph(m):
         whole, a, b = m.group(0), m.group(1), m.group(2)
-        if whole.lower() in _KEEP_HYPHEN:
-            return whole
-        joined = a + b
-        if _valid_word(joined) and not _valid_word(a):
+        if _should_rejoin(a, b, whole):
+            joined = a + b
             return joined.capitalize() if a[:1].isupper() else joined
         return whole
     text = re.sub(r"([A-Za-z]{2,})-([a-z]{2,})", _dehyph, text)
@@ -1788,10 +1808,8 @@ def _repair_docx(path: str) -> dict:
                 nxt = re.match(r"([a-z]{2,})", runs[i + 1].text)
                 if not nxt:
                     continue
-                joined = stem + nxt.group(1)
-                if joined.lower() in _KEEP_HYPHEN:
-                    continue
-                if _valid_word(joined) and not _valid_word(stem):
+                cont = nxt.group(1)
+                if _should_rejoin(stem, cont, stem + "-" + cont):
                     runs[i].text = runs[i].text[:-1]   # drop the hyphen
                     stats["changed"] += 1
             for run in runs:
