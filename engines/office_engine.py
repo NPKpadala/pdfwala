@@ -298,6 +298,40 @@ def _finalise_zip(
     # disk-backed ZipFile already wrote to output_path — nothing more to do
 
 
+# LibreOffice PDF-export filter per source application family. Getting the
+# filter right matters — Calc/Impress reject writer_pdf_Export.
+_LIBRE_PDF_FILTERS = {
+    ".docx": "writer_pdf_Export", ".doc": "writer_pdf_Export",
+    ".odt":  "writer_pdf_Export", ".rtf": "writer_pdf_Export",
+    ".txt":  "writer_pdf_Export", ".html": "writer_pdf_Export",
+    ".htm":  "writer_pdf_Export",
+    ".xlsx": "calc_pdf_Export",   ".xls": "calc_pdf_Export",
+    ".ods":  "calc_pdf_Export",   ".csv": "calc_pdf_Export",
+    ".pptx": "impress_pdf_Export", ".ppt": "impress_pdf_Export",
+    ".odp":  "impress_pdf_Export",
+}
+
+
+def _libre_convert_token(input_path: str, fmt: str) -> str:
+    """
+    Build the LibreOffice --convert-to token. For <app>→PDF, append the correct
+    per-app export filter with quality options (JPEG quality 95, no forced image
+    downsampling) so embedded images/charts stay sharp — the CLI default is q90
+    with image downsampling on. For every other target, return the bare format.
+    """
+    if fmt != "pdf":
+        return fmt
+    filt = _LIBRE_PDF_FILTERS.get(Path(input_path).suffix.lower())
+    if not filt:
+        return fmt
+    opts = {
+        "Quality":               {"type": "long",    "value": "95"},
+        "ReduceImageResolution": {"type": "boolean", "value": "false"},
+        "UseLosslessCompression":{"type": "boolean", "value": "false"},
+    }
+    return f"pdf:{filt}:{json.dumps(opts)}"
+
+
 def _libre(
     input_path: str,
     fmt: str,
@@ -338,39 +372,62 @@ def _libre(
         # LibreOffice 24+ replaced `--user-installation=PATH` with the bootstrap
         # variable `-env:UserInstallation=file://PATH`. The old form errors out
         # with "Error in option" and rc=1 on 24+, breaking every conversion.
-        result = subprocess.run(
-            [
-                Config.LIBREOFFICE,
-                "--headless",
-                "--norestore",
-                "--nologo",
-                "--nofirststartwizard",
-                f"-env:UserInstallation=file://{profile_dir}",
-                "--convert-to", fmt,
-                "--outdir", safe_out_dir,
-                input_path,
-            ],
-            capture_output=True,
-            timeout=timeout,
-            env=lo_env,
-        )
-        if result.returncode != 0:
+        #
+        # For <app>→PDF we pass a tuned export filter (higher JPEG quality, no
+        # forced image downsampling) so embedded graphics stay crisp. The token
+        # is <ext>:<filter>:<json-opts>; output is still located by the bare
+        # extension. If the filtered form fails on this LibreOffice build we
+        # retry once with the plain extension so a conversion never regresses.
+        def _run(convert_to: str):
+            return subprocess.run(
+                [
+                    Config.LIBREOFFICE,
+                    "--headless",
+                    "--norestore",
+                    "--nologo",
+                    "--nofirststartwizard",
+                    f"-env:UserInstallation=file://{profile_dir}",
+                    "--convert-to", convert_to,
+                    "--outdir", safe_out_dir,
+                    input_path,
+                ],
+                capture_output=True,
+                timeout=timeout,
+                env=lo_env,
+            )
+
+        def _locate():
+            base    = Path(input_path).stem
+            pattern = os.path.join(safe_out_dir, f"{base}.{fmt}")
+            if os.path.exists(pattern) and os.path.getsize(pattern) > 0:
+                return pattern
+            # LibreOffice sometimes mangles the stem — find any matching extension
+            matches = [
+                p for p in Path(safe_out_dir).glob(f"*.{fmt}")
+                if os.path.getsize(str(p)) > 0
+            ]
+            return str(matches[0]) if matches else None
+
+        token = _libre_convert_token(input_path, fmt)
+        result = _run(token)
+        found  = _locate() if result.returncode == 0 else None
+        if found is None and token != fmt:
+            # Filtered form failed — fall back to the plain, known-good token.
+            log.warning(
+                f"LibreOffice filtered convert '{token}' failed "
+                f"(rc={result.returncode}); retrying as '{fmt}'"
+            )
+            for p in Path(safe_out_dir).glob(f"*.{fmt}"):
+                try: p.unlink()
+                except OSError: pass
+            result = _run(fmt)
+            found  = _locate() if result.returncode == 0 else None
+        if found is None:
             log.error(
                 f"LibreOffice rc={result.returncode}: "
                 f"{result.stderr.decode(errors='replace')[:400]}"
             )
-            return None
-        # Locate output
-        base    = Path(input_path).stem
-        pattern = os.path.join(safe_out_dir, f"{base}.{fmt}")
-        if os.path.exists(pattern) and os.path.getsize(pattern) > 0:
-            return pattern
-        # LibreOffice sometimes mangles the stem — find any matching extension
-        matches = [
-            p for p in Path(safe_out_dir).glob(f"*.{fmt}")
-            if os.path.getsize(str(p)) > 0
-        ]
-        return str(matches[0]) if matches else None
+        return found
     except subprocess.TimeoutExpired:
         log.error(f"LibreOffice timed out after {timeout}s converting {input_path}")
         return None

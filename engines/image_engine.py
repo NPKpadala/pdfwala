@@ -970,7 +970,19 @@ def remove_bg(ctx: JobContext) -> dict:
     with open(ctx.input_path, "rb") as f:
         data = f.read()
 
-    result = rembg_remove(data)
+    # Opt-in alpha matting: markedly cleaner edges on hair/fur/fine detail, at
+    # the cost of extra CPU/RAM. Off by default so the common path stays fast.
+    alpha_matting = _parse_bool(ctx.params.get("alpha_matting"), default=False)
+    if alpha_matting:
+        result = rembg_remove(
+            data,
+            alpha_matting=True,
+            alpha_matting_foreground_threshold=240,
+            alpha_matting_background_threshold=10,
+            alpha_matting_erode_size=10,
+        )
+    else:
+        result = rembg_remove(data)
 
     ext = _ext_from_path(ctx.output_path, "PNG").upper()
     warnings = []
