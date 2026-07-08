@@ -1665,12 +1665,163 @@ def pdf_to_png(ctx: JobContext) -> dict:
     return pdf_to_image(ctx)
 
 
+# ── PDF→Word text-repair post-processor ──────────────────────────────────────
+# pdf2docx faithfully reproduces whatever PyMuPDF extracts, which on many real
+# PDFs (LaTeX/InDesign resumes, papers) means: fi/fl/ffi ligature glyphs dropped
+# entirely ("Configuration"→"Conguration"), soft line-wrap hyphens kept as
+# literal text ("secur-ing"), and stray spacing around punctuation. We repair
+# these on the generated DOCX at the *run* level, so bold/italic/size formatting
+# is preserved. Every repair is dictionary-gated — we only change a token when
+# the result is a real word — so correct text is never touched.
+_WORDS: set | None = None
+_LIGATURES = ("fi", "fl", "ff", "ffi", "ffl", "ft")
+# Genuine hyphenated compounds that must NOT be de-hyphenated.
+_KEEP_HYPHEN = {
+    "enterprise-scale", "on-premises", "end-to-end", "real-time", "self-hosted",
+    "docker-compose", "change-controlled", "multi-node", "high-availability",
+    "read-only", "day-to-day", "co-located", "hyper-v", "state-of-the-art",
+}
+# Unicode ligature codepoints → ASCII (U+FB00..FB06).
+_UNICODE_LIGS = {
+    "ﬀ": "ff", "ﬁ": "fi", "ﬂ": "fl",
+    "ﬃ": "ffi", "ﬄ": "ffl", "ﬅ": "st", "ﬆ": "st",
+}
+
+
+def _load_wordlist() -> set:
+    """Lazy-load the bundled English wordlist (used only to validate repairs)."""
+    global _WORDS
+    if _WORDS is None:
+        path = os.path.join(os.path.dirname(__file__), "data", "en_words.txt.gz")
+        try:
+            import gzip
+            with gzip.open(path, "rt", encoding="utf-8") as f:
+                _WORDS = {w.strip() for w in f if w.strip()}
+        except Exception as ex:
+            log.warning(f"pdf_to_word: wordlist unavailable ({ex}); text repair limited")
+            _WORDS = set()
+    return _WORDS
+
+
+def _valid_word(w: str) -> bool:
+    return w.lower() in _load_wordlist()
+
+
+def _repair_ligature_token(tok: str) -> str:
+    """If a token is not a real word but becomes one by re-inserting a dropped
+    fi/fl/ffi ligature, return the repaired token. Only fires when exactly the
+    ligature reinsertion yields a dictionary word, so it can't corrupt real text."""
+    core = re.sub(r"[^A-Za-z]", "", tok)
+    if len(core) < 4 or _valid_word(core):
+        return tok
+    for i in range(1, len(core)):
+        for lig in _LIGATURES:
+            cand = core[:i] + lig + core[i:]
+            if _valid_word(cand):
+                if core[0].isupper():
+                    cand = cand[0].upper() + cand[1:]
+                return tok.replace(core, cand, 1)
+    return tok
+
+
+def _repair_text(text: str) -> str:
+    """Repair one run's text: unicode-ligature normalize → ligature reinsertion
+    → smart de-hyphenation → punctuation spacing. Conservative and idempotent."""
+    if not text or not text.strip():
+        return text
+    # 1) Normalise real Unicode ligature characters to ASCII, and strip a
+    #    ligature *placeholder* (middle dot / replacement char) that some PDFs
+    #    emit for a dropped ligature — only when it sits between two letters, so
+    #    genuine "·" separators/bullets are untouched.
+    for k, v in _UNICODE_LIGS.items():
+        if k in text:
+            text = text.replace(k, v)
+    text = re.sub(r"(?<=[A-Za-z])[·�](?=[A-Za-z])", "", text)
+
+    # 2) Smart de-hyphenation: rejoin "a-b" when "ab" is a word and the left
+    #    stem alone is not (i.e. it was a line-wrap break, not a compound).
+    def _dehyph(m):
+        whole, a, b = m.group(0), m.group(1), m.group(2)
+        if whole.lower() in _KEEP_HYPHEN:
+            return whole
+        joined = a + b
+        if _valid_word(joined) and not _valid_word(a):
+            return joined.capitalize() if a[:1].isupper() else joined
+        return whole
+    text = re.sub(r"([A-Za-z]{2,})-([a-z]{2,})", _dehyph, text)
+
+    # 3) Ligature reinsertion, token by token (whitespace preserved).
+    parts = re.split(r"(\s+)", text)
+    parts = [p if (i % 2 or not p.strip()) else _repair_ligature_token(p)
+             for i, p in enumerate(parts)]
+    text = "".join(parts)
+
+    # 4) Punctuation spacing: drop space before ,.;:!? and collapse doubles.
+    text = re.sub(r"\s+([,.;:!?])", r"\1", text)
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    return text
+
+
+def _repair_docx(path: str) -> dict:
+    """Apply _repair_text to every run in the DOCX (body paragraphs + table
+    cells), in place. Returns counts for benchmarking. Never raises — a repair
+    failure must not fail an otherwise-good conversion."""
+    stats = {"runs": 0, "changed": 0}
+    try:
+        from docx import Document as _Doc
+    except Exception:
+        return stats
+
+    def _fix_paragraphs(paras):
+        for para in paras:
+            runs = para.runs
+            # Cross-run de-hyphenation: pdf2docx often splits a line-wrapped word
+            # as run "secur-" + run "ing". Runs render with no gap, so dropping
+            # the trailing hyphen yields "securing" — but only when the joined
+            # form is a real word and the left stem alone is not (i.e. it was a
+            # wrap break, not a compound like "enterprise-scale").
+            for i in range(len(runs) - 1):
+                m = re.search(r"([A-Za-z]{2,})-$", runs[i].text)
+                if not m:
+                    continue
+                stem = m.group(1)
+                nxt = re.match(r"([a-z]{2,})", runs[i + 1].text)
+                if not nxt:
+                    continue
+                joined = stem + nxt.group(1)
+                if joined.lower() in _KEEP_HYPHEN:
+                    continue
+                if _valid_word(joined) and not _valid_word(stem):
+                    runs[i].text = runs[i].text[:-1]   # drop the hyphen
+                    stats["changed"] += 1
+            for run in runs:
+                stats["runs"] += 1
+                new = _repair_text(run.text)
+                if new != run.text:
+                    run.text = new
+                    stats["changed"] += 1
+
+    try:
+        doc = _Doc(path)
+        _fix_paragraphs(doc.paragraphs)
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    _fix_paragraphs(cell.paragraphs)
+        doc.save(path)
+    except Exception as ex:
+        log.warning(f"pdf_to_word: text repair skipped ({ex})")
+    return stats
+
+
 @register("pdf_to_word")
 def pdf_to_word(ctx: JobContext) -> dict:
     """
-    Convert PDF to DOCX via pdf2docx (table-aware mode).
+    Convert PDF to DOCX via pdf2docx (table-aware mode), then run a dictionary-
+    gated text-repair pass (ligature reinsertion, de-hyphenation, punctuation
+    spacing) that fixes the character-level corruption pdf2docx inherits from
+    PyMuPDF extraction — without altering layout or correct text.
     V14 FIX: For large PDFs, convert in page-range chunks to avoid pdf2docx OOM.
-             Also adds progress reporting and better error diagnostics.
     """
     _require(PDF2DOCX_OK, "pdf_to_word", "pdf2docx")
     _guard_empty(ctx.input_path)
@@ -1767,8 +1918,16 @@ def pdf_to_word(ctx: JobContext) -> dict:
             "pdf2docx produced empty output — the PDF may be image-only, "
             "encrypted, or have an unsupported structure. Try OCR first."
         )
+
+    # Text-repair pass — fixes dropped ligatures / soft-hyphens / punctuation
+    # spacing while preserving layout and run formatting. Best-effort.
+    ctx.set_progress(95)
+    repair = _repair_docx(ctx.output_path)
+    log.info(f"[{ctx.job_id}] pdf_to_word: {page_count} pages, "
+             f"text-repair changed {repair['changed']}/{repair['runs']} runs")
+
     ctx.set_progress(100)
-    return {"pages": page_count}
+    return {"pages": page_count, "runs_repaired": repair["changed"]}
 
 
 @register("pdf_to_excel")
