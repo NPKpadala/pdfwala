@@ -346,18 +346,11 @@ def compress_image(ctx: JobContext) -> dict:
     orig = os.path.getsize(ctx.input_path)
     img  = _open_image(ctx.input_path)
     ext  = _ext_from_path(ctx.output_path, "JPEG")
+    # For PNG output, pngquant (TinyPNG-style lossy palette) shrinks photographic
+    # PNGs far more than deflate; it self-skips when it can't beat lossless.
     _save(img, ctx.output_path, ext, quality)
-
-    # PNG: deflate alone barely shrinks photographic PNGs. Run pngquant (lossy
-    # palette quantization, TinyPNG-style) with a quality floor so the result
-    # stays visually clean; it keeps the lossless file if it can't do better.
     method = "deflate"
     if ext.upper() == "PNG":
-        # TinyPNG-style: no hard quality floor (pngquant's self-estimate rejects
-        # most true-colour photos even when the dithered result looks fine), cap
-        # the target quality with a ceiling that scales with the requested level,
-        # and rely on --skip-if-larger to keep the lossless file whenever
-        # quantization wouldn't actually help (e.g. simple logos already tiny).
         ceil = int(_clamp(quality, 75, 92))
         if _pngquant_compress(ctx.output_path, floor=0, ceil=ceil):
             method = "pngquant"
