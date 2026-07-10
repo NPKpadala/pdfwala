@@ -113,3 +113,35 @@ Implementation steps (each independently testable, commit per step):
 - Test assets from today: `/tmp/p2w/pdfwala.docx` (real resume), corpus builder
   approach in `/tmp/p2w/`. Build the labeled corpus + harness first.
 - Deploy/verify per [[pdfwala-test-deploy]]; async job polling; SNI curl.
+
+---
+
+## Phases 2–5 (post-processing stages, validated; on feat branch)
+Isolated, removable stages that run after pdf2docx, each additive/high-confidence.
+- **Phase 2 — Document intelligence** (`_reflow_docx`): heading promotion to Heading
+  styles (0 FP across 16 cross-genre cases, denylist for stamps), consistent heading
+  spacing, conservative wrapped-line merge (11 guards, 0 wrong-merges).
+- **Phase 3 — Semantic lists** (`_semantic_docx`/`_reconstruct_lists`): literal
+  bullets/numbers → real editable numbering.xml lists (numPr). 23 items/5 groups on
+  the resume, 0 false conversions, renders as real bullets.
+- **Phase 4A — List geometry**: Word-native Symbol bullets (removed serif
+  contamination), indent matched to source (bullet x 78→48pt vs original 49pt),
+  tightened list spacing. Zero regressions.
+- **Phase 4B — Hyperlink/contact recovery** (`_recover_hyperlinks`): reads dropped
+  linked text (email/LinkedIn/GitHub) from the source PDF annotations, re-inserts real
+  clickable hyperlinks. No dups, idempotent, formatting preserved.
+- **Phase 5 — Word-native font mapping** (`_map_fonts_docx`): remaps Linux/open fonts
+  (Noto/Liberation/DejaVu/Carlito/Caladea/Nimbus/Latin Modern) to Word-native families
+  so MS Word stops substituting. Compact normaliser handles subset prefixes/CamelCase/
+  style suffixes; 24/24 unit cases pass; generalises across 4 doc types; **no reflow
+  (page count unchanged)**; Word-native + bullet fonts never touched.
+
+**Composite validation (resume):** bold 24 / italic 5 / runs 120 preserved; body font
+Arial; bullet fonts Symbol/Wingdings/Courier intact; 3 hyperlinks, 23 list items, 5
+headings. Test suite 41/41.
+
+**Known open (out of scope / future):** 2→3 page overflow — root-caused (forensic) to
+pdf2docx's spurious multi-column section breaks faking two-column "Company … Date" rows;
+naive removal → 2 pages but collapses the date alignment AND would break genuine
+multi-column docs (papers/newspapers), so it must NOT be a blind heuristic. Needs a
+targeted two-column-row reconstruction phase, measured in both LibreOffice and MS Word.

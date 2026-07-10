@@ -1832,6 +1832,575 @@ def _repair_docx(path: str) -> dict:
     return stats
 
 
+# ── PDF→Word Phase 2: document-intelligence layer (structure, not text) ───────
+# Runs AFTER the Phase-1 text repair, on the same DOCX. Every transform is
+# high-confidence and additive; when a signal is absent it does nothing (so it
+# can never regress a document it doesn't understand). Isolated from pdf2docx.
+_BULLET_RE = re.compile(r"^\s*([•‣●◦∙·]|[-*]\s|\d+[.)]|[A-Za-z][.)]|[ivxIVX]+[.)])\s*")
+
+
+def _emu(v):
+    return int(v) if v is not None else 0
+
+
+def _body_font_size(paras):
+    """Median explicit run font size across body paragraphs (EMU), or None."""
+    sizes = []
+    for p in paras:
+        for r in p.runs:
+            if r.font.size and r.text.strip():
+                sizes.append(int(r.font.size))
+    if not sizes:
+        return None
+    sizes.sort()
+    return sizes[len(sizes) // 2]
+
+
+# All-caps document stamps / footers that read like headings but are not.
+_NON_HEADING_CAPS = {
+    "ALL RIGHTS RESERVED", "CONFIDENTIAL", "PROPRIETARY AND CONFIDENTIAL",
+    "PRIVATE AND CONFIDENTIAL", "DRAFT", "VOID", "PAID", "UNPAID", "OVERDUE",
+    "COPY", "DUPLICATE", "ORIGINAL", "SAMPLE", "SPECIMEN", "DO NOT COPY",
+    "FOR INTERNAL USE ONLY", "INTERNAL USE ONLY", "CONTINUED",
+}
+
+
+def _norm_caps(t: str) -> str:
+    return re.sub(r"[^A-Z0-9 ]", "", t.upper()).strip()
+
+
+def _looks_like_contact(t: str) -> bool:
+    """Contact/address/date lines that must never become headings."""
+    return ("@" in t or "|" in t or "/" in t
+            or bool(re.search(r"\d{4,}", t))          # phones, years, PINs
+            or bool(re.search(r"\bhttps?:|www\.", t)))
+
+
+def _is_heading(para, body_size) -> bool:
+    """High-confidence heading test: a short, standalone line that is either
+    ALL-CAPS or bold-and-larger-than-body. Excludes bullets, contact/date lines,
+    wrapped/multi-line paragraphs and anything ending like a sentence."""
+    t = (para.text or "").strip()
+    if not t or "\n" in para.text:
+        return False
+    if _BULLET_RE.match(t) or _looks_like_contact(t):
+        return False
+    words = t.split()
+    if len(words) > 8 or len(t) > 64:
+        return False
+    if t.endswith((".", ",", ";")):        # section titles don't end like prose
+        return False
+    runs = [r for r in para.runs if r.text.strip()]
+    if not runs:
+        return False
+    has_alpha = any(c.isalpha() for c in t)
+    allcaps = has_alpha and t == t.upper()
+    allbold = all(bool(r.bold) for r in runs)
+    sizes = [int(r.font.size) for r in runs if r.font.size]
+    larger = bool(sizes) and bool(body_size) and max(sizes) > body_size * 1.15
+    # Known all-caps stamps/footers read like headings but are not.
+    if _norm_caps(t) in _NON_HEADING_CAPS:
+        return False
+    # Two independent high-confidence routes.
+    if allcaps and len(words) <= 8:
+        return True
+    if allbold and larger:
+        return True
+    return False
+
+
+def _merge_wrapped_lines(paras) -> int:
+    """Merge paragraph N into N-1 ONLY when every guard says they are the same
+    wrapped paragraph. Extremely conservative: pdf2docx already groups most
+    wrapped lines, so this fires rarely and must never fuse distinct blocks
+    (dates, list items, headings, address lines). Returns merges performed."""
+    from docx.oxml.ns import qn
+    merged = 0
+    i = 1
+    while i < len(paras):
+        prev, cur = paras[i - 1], paras[i]
+        tp, tc = (prev.text or "").strip(), (cur.text or "").strip()
+        ok = bool(tp) and bool(tc)
+        if ok and ("\n" in prev.text or "\n" in cur.text):        ok = False
+        if ok and (_BULLET_RE.match(tp) or _BULLET_RE.match(tc)):  ok = False
+        if ok and (prev.style.name != cur.style.name):            ok = False
+        if ok and prev.style.name.lower().startswith("heading"):  ok = False
+        if ok and prev.alignment != cur.alignment:                ok = False
+        if ok and tp.endswith(SENT_END_CHARS):                    ok = False
+        if ok and not tc[:1].islower():                           ok = False   # continuation is lowercase
+        if ok and (_looks_like_contact(tp) or _looks_like_contact(tc)): ok = False
+        li_p = _emu(prev.paragraph_format.left_indent)
+        li_c = _emu(cur.paragraph_format.left_indent)
+        if ok and abs(li_p - li_c) > 9144:                        ok = False   # >0.1"
+        if ok and _emu(cur.paragraph_format.space_before) > 40640: ok = False  # >3.2pt gap
+        if ok:
+            # Move cur's runs into prev with a joining space, then delete cur.
+            if not prev.runs or not prev.runs[-1].text.endswith(" "):
+                prev.add_run(" ")
+            for r in list(cur.runs):
+                prev._p.append(r._r)
+            cur._p.getparent().remove(cur._p)
+            paras.pop(i)
+            merged += 1
+            continue
+        i += 1
+    return merged
+
+
+SENT_END_CHARS = (".", "?", "!", ":", ";")
+
+
+def _reflow_docx(path: str) -> dict:
+    """Phase 2 structural pass: heading promotion + consistent heading spacing +
+    conservative wrapped-line merge. Additive and high-confidence; never raises
+    (must not fail a good conversion)."""
+    stats = {"headings_promoted": 0, "lines_merged": 0}
+    try:
+        from docx import Document as _Doc
+        from docx.shared import Pt
+    except Exception:
+        return stats
+    try:
+        doc = _Doc(path)
+        body = doc.paragraphs
+        body_size = _body_font_size(body)
+        # 1) Promote section headings. We set the Heading STYLE (semantic: nav
+        # pane / TOC / accessibility) but keep each run's explicit font size/
+        # bold/colour, so visual appearance is preserved — structure without
+        # restyling. Promoted headings also get consistent spacing so sections
+        # read evenly (normalization applied only to what we changed).
+        for p in body:
+            if p.style.name == "Normal" and _is_heading(p, body_size):
+                try:
+                    p.style = doc.styles["Heading 1"]
+                    p.paragraph_format.space_before = Pt(12)
+                    p.paragraph_format.space_after = Pt(4)
+                    stats["headings_promoted"] += 1
+                except Exception:
+                    pass
+        # 2) Conservative wrapped-line merge (usually a no-op on pdf2docx output).
+        stats["lines_merged"] = _merge_wrapped_lines(doc.paragraphs)
+        doc.save(path)
+    except Exception as ex:
+        log.warning(f"pdf_to_word: reflow skipped ({ex})")
+    return stats
+
+
+# ── PDF→Word Phase 3: semantic reconstruction layer ──────────────────────────
+# Transforms pdf2docx's visually-approximated output into real Word semantics:
+# genuine editable lists (numbering.xml) and real hyperlinks. Isolated, additive,
+# high-confidence; runs after Phase 1 (text) and Phase 2 (structure).
+_LIST_BULLET_RE = re.compile(r"^\s*([•‣●◦∙])\s+")
+_LIST_NUMBER_RE = re.compile(r"^\s*(\d{1,3})[.)]\s+")
+_LIST_ALPHA_RE  = re.compile(r"^\s*([a-zA-Z]|[ivxIVX]{1,4})[.)]\s+")
+
+
+def _make_bullet_abstract(num_id_abs: int):
+    """Build a 3-level bullet <w:abstractNum> (Symbol • ○ ▪)."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    absn = OxmlElement("w:abstractNum")
+    absn.set(qn("w:abstractNumId"), str(num_id_abs))
+    mlt = OxmlElement("w:multiLevelType"); mlt.set(qn("w:val"), "hybridMultilevel")
+    absn.append(mlt)
+    # Word-native bullet glyphs + their fonts (Symbol / Courier New / Wingdings).
+    # Using the Symbol-font bullet (U+F0B7) is exactly what Microsoft Word emits,
+    # so it renders as a real bullet in Word AND LibreOffice — this removes the
+    # serif-fallback contamination we saw with a bare "•".
+    glyphs = ["", "o", ""]
+    gfonts = ["Symbol", "Courier New", "Wingdings"]
+    # Geometry matched to the source resume (measured): text ~11pt (≈220 twips)
+    # from the margin, bullet hanging ~5pt to its left, ~0.125" per nest level.
+    base_left, step, hanging = 220, 180, 100
+    for ilvl in range(3):
+        lvl = OxmlElement("w:lvl"); lvl.set(qn("w:ilvl"), str(ilvl))
+        for tag, val in (("w:start", "1"), ("w:numFmt", "bullet"),
+                         ("w:lvlText", glyphs[ilvl]), ("w:lvlJc", "left")):
+            e = OxmlElement(tag); e.set(qn("w:val"), val); lvl.append(e)
+        pPr = OxmlElement("w:pPr"); ind = OxmlElement("w:ind")
+        ind.set(qn("w:left"), str(base_left + step * ilvl))
+        ind.set(qn("w:hanging"), str(hanging))
+        pPr.append(ind); lvl.append(pPr)
+        rPr = OxmlElement("w:rPr"); rf = OxmlElement("w:rFonts")
+        rf.set(qn("w:ascii"), gfonts[ilvl]); rf.set(qn("w:hAnsi"), gfonts[ilvl])
+        rPr.append(rf); lvl.append(rPr)
+        absn.append(lvl)
+    return absn
+
+
+def _make_decimal_abstract(num_id_abs: int):
+    """Build a 3-level decimal/alpha/roman <w:abstractNum> (1. a. i.)."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    absn = OxmlElement("w:abstractNum")
+    absn.set(qn("w:abstractNumId"), str(num_id_abs))
+    mlt = OxmlElement("w:multiLevelType"); mlt.set(qn("w:val"), "hybridMultilevel")
+    absn.append(mlt)
+    fmts = ["decimal", "lowerLetter", "lowerRoman"]
+    texts = ["%1.", "%2.", "%3."]
+    for ilvl in range(3):
+        lvl = OxmlElement("w:lvl"); lvl.set(qn("w:ilvl"), str(ilvl))
+        for tag, val in (("w:start", "1"), ("w:numFmt", fmts[ilvl]),
+                         ("w:lvlText", texts[ilvl]), ("w:lvlJc", "left")):
+            e = OxmlElement(tag); e.set(qn("w:val"), val); lvl.append(e)
+        pPr = OxmlElement("w:pPr"); ind = OxmlElement("w:ind")
+        ind.set(qn("w:left"), str(260 + 200 * ilvl)); ind.set(qn("w:hanging"), "260")
+        pPr.append(ind); lvl.append(pPr)
+        absn.append(lvl)
+    return absn
+
+
+def _register_numbering(numbering_el, make_abstract):
+    """Append a new abstractNum + num to the numbering part with collision-free
+    ids, keeping the required order (all abstractNum before all num). Returns the
+    concrete numId."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    abs_ids = [int(a.get(qn("w:abstractNumId"))) for a in numbering_el.findall(qn("w:abstractNum"))]
+    num_ids = [int(n.get(qn("w:numId"))) for n in numbering_el.findall(qn("w:num"))]
+    new_abs = (max(abs_ids) + 1) if abs_ids else 0
+    new_num = (max(num_ids) + 1) if num_ids else 1
+    absn = make_abstract(new_abs)
+    nums = numbering_el.findall(qn("w:num"))
+    if nums:
+        nums[0].addprevious(absn)       # abstractNum must precede num elements
+    else:
+        numbering_el.append(absn)
+    num = OxmlElement("w:num"); num.set(qn("w:numId"), str(new_num))
+    an = OxmlElement("w:abstractNumId"); an.set(qn("w:val"), str(new_abs))
+    num.append(an); numbering_el.append(num)
+    return new_num
+
+
+def _apply_numpr(para, ilvl: int, num_id: int):
+    """Attach <w:numPr> (ilvl + numId) to a paragraph and clear its absolute
+    left indent so the list level's indentation governs (clean, editable)."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    pPr = para._p.get_or_add_pPr()
+    for old in pPr.findall(qn("w:numPr")):
+        pPr.remove(old)
+    numPr = OxmlElement("w:numPr")
+    il = OxmlElement("w:ilvl"); il.set(qn("w:val"), str(ilvl)); numPr.append(il)
+    ni = OxmlElement("w:numId"); ni.set(qn("w:val"), str(num_id)); numPr.append(ni)
+    pPr.append(numPr)
+    para.paragraph_format.left_indent = None      # let the list level indent apply
+    # Tighten list-item spacing to a small, consistent value. pdf2docx leaves a
+    # varying per-item space_before (up to ~8pt) that accumulates over a list and
+    # inflates the document vertically (a self-inflicted cause of page overflow).
+    from docx.shared import Pt as _Pt
+    para.paragraph_format.space_before = _Pt(2)
+    para.paragraph_format.space_after = _Pt(0)
+
+
+def _strip_marker(para, marker_re):
+    """Remove the leading list marker (e.g. "• " or "1. ") from a paragraph,
+    preserving run formatting. The marker is often split across runs (pdf2docx
+    puts "•" and the following space in different runs), so we match on the full
+    paragraph text and delete that many leading characters run by run."""
+    m = marker_re.match(para.text or "")
+    if not m:
+        return
+    n = m.end()
+    for run in para.runs:
+        if n <= 0:
+            break
+        if not run.text:
+            continue
+        take = min(n, len(run.text))
+        run.text = run.text[take:]
+        n -= take
+
+
+def _reconstruct_lists(doc) -> dict:
+    """Convert contiguous literal-marker paragraphs into real editable Word
+    lists. Bullets always convert (unambiguous). Numbered/alpha convert only in
+    runs of >=2 to avoid mistaking a lone "1. Introduction" heading for a list.
+    Nesting via distinct left-indent tiers. Returns counts."""
+    stats = {"list_items": 0, "list_groups": 0}
+    numbering_el = doc.part.numbering_part.element
+    bullet_num = decimal_num = None
+    paras = doc.paragraphs
+
+    def indent_level(p, base_indent):
+        # Real nesting indents ~0.3"+ deeper. Small left-indent differences in
+        # pdf2docx output are justification artifacts, NOT nesting, so only count
+        # a level per 0.3" step above the group's minimum indent.
+        li = _emu(p.paragraph_format.left_indent)
+        step = 274320                    # 0.3 inch in EMU
+        return min(max(0, (li - base_indent) // step), 2)
+
+    # Identify contiguous groups of same-kind list paragraphs.
+    i = 0
+    while i < len(paras):
+        p = paras[i]
+        t = (p.text or "").strip()
+        kind = None
+        if _LIST_BULLET_RE.match(t):
+            kind = "bullet"
+        elif _LIST_NUMBER_RE.match(t) or _LIST_ALPHA_RE.match(t):
+            kind = "ordered"
+        if kind is None:
+            i += 1
+            continue
+        j = i
+        group = []
+        while j < len(paras):
+            tj = (paras[j].text or "").strip()
+            kj = ("bullet" if _LIST_BULLET_RE.match(tj)
+                  else "ordered" if (_LIST_NUMBER_RE.match(tj) or _LIST_ALPHA_RE.match(tj))
+                  else None)
+            if kj != kind:
+                break
+            group.append(paras[j]); j += 1
+        # Ordered lists need >=2 items to be a real list (guard against headings)
+        if kind == "ordered" and len(group) < 2:
+            i = j
+            continue
+        base_indent = min(_emu(g.paragraph_format.left_indent) for g in group)
+        if kind == "bullet":
+            if bullet_num is None:
+                bullet_num = _register_numbering(numbering_el, _make_bullet_abstract)
+            num_id = bullet_num
+            mre = _LIST_BULLET_RE
+        else:
+            if decimal_num is None:
+                decimal_num = _register_numbering(numbering_el, _make_decimal_abstract)
+            num_id = decimal_num
+            mre = _LIST_NUMBER_RE if _LIST_NUMBER_RE.match((group[0].text or "").strip()) else _LIST_ALPHA_RE
+        for g in group:
+            # Pick the exact marker regex present on THIS paragraph so the
+            # correct number of leading chars is stripped.
+            if kind == "bullet":
+                gmre = _LIST_BULLET_RE
+            else:
+                gt = (g.text or "")
+                gmre = _LIST_NUMBER_RE if _LIST_NUMBER_RE.match(gt) else _LIST_ALPHA_RE
+            _strip_marker(g, gmre)
+            _apply_numpr(g, indent_level(g, base_indent), num_id)
+            stats["list_items"] += 1
+        stats["list_groups"] += 1
+        i = j
+    return stats
+
+
+def _add_hyperlink_run(paragraph, url: str, text: str, template_run=None):
+    """Append a real, clickable Word hyperlink (w:hyperlink + external rel) to a
+    paragraph, copying font size/name from a template run so it matches the
+    surrounding contact text. Returns the created element."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    from docx.opc.constants import RELATIONSHIP_TYPE as RT
+    r_id = paragraph.part.relate_to(url, RT.HYPERLINK, is_external=True)
+    hl = OxmlElement("w:hyperlink"); hl.set(qn("r:id"), r_id)
+    r = OxmlElement("w:r"); rPr = OxmlElement("w:rPr")
+    # Match the contact line's font (size/name) so it blends in; add link colour.
+    if template_run is not None and template_run.font is not None:
+        if template_run.font.size:
+            sz = OxmlElement("w:sz"); sz.set(qn("w:val"), str(int(template_run.font.size.pt * 2))); rPr.append(sz)
+        if template_run.font.name:
+            rf = OxmlElement("w:rFonts")
+            rf.set(qn("w:ascii"), template_run.font.name); rf.set(qn("w:hAnsi"), template_run.font.name)
+            rPr.append(rf)
+    col = OxmlElement("w:color"); col.set(qn("w:val"), "0563C1"); rPr.append(col)
+    u = OxmlElement("w:u"); u.set(qn("w:val"), "single"); rPr.append(u)
+    r.append(rPr)
+    t = OxmlElement("w:t"); t.text = text; t.set(qn("xml:space"), "preserve"); r.append(t)
+    hl.append(r); paragraph._p.append(hl)
+    return hl
+
+
+def _recover_hyperlinks(docx_path: str, pdf_path: str) -> dict:
+    """Phase 4B — recover contact/hyperlink TEXT that pdf2docx drops.
+
+    pdf2docx frequently emits an orphan hyperlink relationship but omits the
+    visible display text of linked spans (email / LinkedIn / GitHub vanish). We
+    read each link's URI + display text from the SOURCE PDF, and for any whose
+    text is missing from the DOCX we append a real clickable hyperlink to the
+    contact paragraph. Never duplicates existing links, never edits existing
+    runs. Best-effort; never raises."""
+    stats = {"links_recovered": 0}
+    try:
+        import fitz as _fitz
+        from docx import Document as _Doc
+    except Exception:
+        return stats
+    try:
+        doc = _Doc(docx_path)
+        body_text = "\n".join(p.text for p in doc.paragraphs)
+        pdf = _fitz.open(pdf_path)
+        pg = pdf[0]
+        # Collect (uri, display_text) for links in the top contact band.
+        missing = []
+        seen_uri = set()
+        for lk in pg.get_links():
+            uri = lk.get("uri")
+            if not uri or uri in seen_uri:
+                continue
+            rect = _fitz.Rect(lk["from"])
+            if rect.y0 > 200:                      # contact band only
+                continue
+            disp = pg.get_textbox(rect).strip().strip("|").strip()
+            # keep the most link-like token from the box
+            for tok in disp.replace("|", " ").split():
+                if "@" in tok or "." in tok and len(tok) > 4:
+                    disp = tok
+                    break
+            if not disp or disp in body_text:
+                continue                            # already present → skip (no dup)
+            missing.append((uri, disp)); seen_uri.add(uri)
+        pdf.close()
+        if not missing:
+            return stats
+        # Find the contact paragraph: near the top, contains a phone/"|"/comma.
+        contact = None
+        for p in doc.paragraphs[:8]:
+            t = p.text
+            if ("|" in t or re.search(r"\d{6,}", t)) and p.runs:
+                contact = p
+        if contact is None:
+            return stats
+        tmpl = contact.runs[-1] if contact.runs else None
+        for uri, disp in missing:
+            if contact.runs and not contact.text.rstrip().endswith(("|", "·", "•")):
+                contact.add_run("  |  ")
+            elif not contact.text.endswith(" "):
+                contact.add_run(" ")
+            _add_hyperlink_run(contact, uri, disp, tmpl)
+            stats["links_recovered"] += 1
+        doc.save(docx_path)
+    except Exception as ex:
+        log.warning(f"pdf_to_word: hyperlink recovery skipped ({ex})")
+    return stats
+
+
+# ── PDF→Word Phase 5: Word-native font mapping ───────────────────────────────
+# pdf2docx recovers the CORRECT font name from the PDF, but on a Linux stack
+# those are metric clones / open fonts (Noto, Liberation, DejaVu, Carlito,
+# Caladea, Nimbus, Latin Modern) that Microsoft Word does not ship — so Word
+# silently substitutes them and the layout drifts. We remap each to its
+# Word-native equivalent. The Liberation/Carlito/Caladea/Nimbus families are
+# metric-IDENTICAL clones (drop-in, zero reflow); Noto/DejaVu/LatinModern are
+# the closest metric-compatible Word family. Names already native to Word, and
+# the Symbol/Wingdings fonts used by our bullets, are never touched.
+# Compact (separator-free, lowercase) keys → Word-native family.
+_FONT_MAP = {
+    # metric-identical clones (safest, zero reflow)
+    "carlito": "Calibri", "caladea": "Cambria",
+    "liberationsans": "Arial", "liberationserif": "Times New Roman",
+    "liberationmono": "Courier New",
+    "nimbussans": "Arial", "nimbusroman": "Times New Roman",
+    "nimbusmono": "Courier New",
+    # common Linux/open fonts → closest metric-compatible Word family
+    "notosansmono": "Consolas", "notomono": "Consolas",
+    "notosans": "Arial", "notoserif": "Times New Roman",
+    "dejavusansmono": "Consolas", "dejavusans": "Arial", "dejavuserif": "Georgia",
+    "latinmodernroman": "Times New Roman", "latinmodernsans": "Arial",
+    "lmroman": "Times New Roman", "lmsans": "Arial", "lmmono": "Consolas",
+    "cmr": "Times New Roman", "cmss": "Arial", "cmtt": "Consolas",
+    "freesans": "Arial", "freeserif": "Times New Roman", "freemono": "Courier New",
+    "opensans": "Arial", "roboto": "Arial", "lato": "Arial",
+}
+# Never rewrite: already Word-native, or our bullet glyph fonts.
+_FONT_KEEP = {
+    "arial", "calibri", "cambria", "timesnewroman", "georgia", "verdana",
+    "tahoma", "segoeui", "consolas", "couriernew", "aptos", "trebuchetms",
+    "garamond", "candara", "symbol", "wingdings", "wingdings2", "webdings",
+    "arialnarrow", "bookantiqua", "centurygothic", "franklingothic", "calibrilight",
+}
+_FONT_SUBSET_RE = re.compile(r"^[A-Z]{6}\+")            # "ABCDEF+" subset prefix
+# Weight/style tokens that may trail a family name. Deliberately EXCLUDES
+# roman/sans/serif/mono, which are parts of real family names.
+_FONT_STYLE_TOKENS = (
+    "bolditalic", "boldoblique", "semibold", "extrabold", "demibold",
+    "bold", "italic", "oblique", "regular", "light", "medium", "black",
+    "condensed", "thin", "book", "demi", "heavy", "narrow", "mt", "ps",
+)
+
+
+def _normalize_font(name: str) -> str:
+    """Reduce a raw run font name to a compact base-family key: drop the 6-char
+    subset prefix, remove all separators, strip trailing size digits and
+    weight/style tokens. 'ABCDEF+NotoSans-Bold' -> 'notosans';
+    'DejaVuSans' -> 'dejavusans'; 'Times New Roman' -> 'timesnewroman'."""
+    n = _FONT_SUBSET_RE.sub("", name or "").lower()
+    n = re.sub(r"[^a-z0-9]", "", n)
+    n = re.sub(r"\d+$", "", n)
+    changed = True
+    while changed:
+        changed = False
+        for t in _FONT_STYLE_TOKENS:
+            if n.endswith(t) and len(n) > len(t) + 2:
+                n = n[:-len(t)]; changed = True; break
+    return re.sub(r"\d+$", "", n)
+
+
+def _lookup_font(base: str):
+    """Exact match, then LONGEST-prefix match (so notosansmono beats notosans)."""
+    if base in _FONT_KEEP:
+        return None
+    if base in _FONT_MAP:
+        return _FONT_MAP[base]
+    for k in sorted(_FONT_MAP, key=len, reverse=True):
+        if base.startswith(k):
+            return _FONT_MAP[k]
+    return None
+
+
+def _map_fonts_docx(path: str) -> dict:
+    """Phase 5 — remap non-Word fonts on every run to a Word-native family.
+    Only run.font.name is changed (weight/size/italic untouched); never rewrites
+    Word-native or bullet fonts. Additive, reversible, never raises."""
+    stats = {"runs_remapped": 0, "families": set()}
+    try:
+        from docx import Document as _Doc
+    except Exception:
+        stats["families"] = []
+        return stats
+
+    def _fix(paras):
+        for p in paras:
+            for r in p.runs:
+                name = r.font.name
+                if not name:
+                    continue
+                target = _lookup_font(_normalize_font(name))
+                if target and target != name:
+                    r.font.name = target
+                    stats["runs_remapped"] += 1
+                    stats["families"].add(f"{_normalize_font(name)}->{target}")
+    try:
+        doc = _Doc(path)
+        _fix(doc.paragraphs)
+        for t in doc.tables:
+            for row in t.rows:
+                for cell in row.cells:
+                    _fix(cell.paragraphs)
+        doc.save(path)
+    except Exception as ex:
+        log.warning(f"pdf_to_word: font mapping skipped ({ex})")
+    stats["families"] = sorted(stats["families"])
+    return stats
+
+
+def _semantic_docx(path: str) -> dict:
+    """Phase 3 entry point: semantic list reconstruction (+ future: hyperlinks).
+    Additive, high-confidence, never raises."""
+    stats = {"list_items": 0, "list_groups": 0}
+    try:
+        from docx import Document as _Doc
+    except Exception:
+        return stats
+    try:
+        doc = _Doc(path)
+        if getattr(doc.part, "numbering_part", None) is not None:
+            stats.update(_reconstruct_lists(doc))
+        doc.save(path)
+    except Exception as ex:
+        log.warning(f"pdf_to_word: semantic pass skipped ({ex})")
+    return stats
+
+
 @register("pdf_to_word")
 def pdf_to_word(ctx: JobContext) -> dict:
     """
@@ -1939,13 +2508,40 @@ def pdf_to_word(ctx: JobContext) -> dict:
 
     # Text-repair pass — fixes dropped ligatures / soft-hyphens / punctuation
     # spacing while preserving layout and run formatting. Best-effort.
-    ctx.set_progress(95)
+    ctx.set_progress(93)
     repair = _repair_docx(ctx.output_path)
+
+    # Phase 2 — document-intelligence layer: heading promotion, consistent
+    # heading spacing, conservative wrapped-line merge. Runs after text repair;
+    # additive/high-confidence, so it can't regress documents it can't read.
+    ctx.set_progress(96)
+    reflow = _reflow_docx(ctx.output_path)
+
+    # Phase 3 — semantic reconstruction: literal bullet/numbered paragraphs
+    # become real editable Word lists (numbering.xml + numPr). Additive.
+    ctx.set_progress(98)
+    semantic = _semantic_docx(ctx.output_path)
+
+    # Phase 4B — recover contact/hyperlink text pdf2docx dropped (email/LinkedIn/
+    # GitHub), reading it back from the source PDF's link annotations.
+    ctx.set_progress(99)
+    links = _recover_hyperlinks(ctx.output_path, ctx.input_path)
+
+    # Phase 5 — remap Linux/open fonts (Noto/Liberation/DejaVu/…) to Word-native
+    # families so Microsoft Word stops substituting them. Deterministic, run-only.
+    fonts = _map_fonts_docx(ctx.output_path)
     log.info(f"[{ctx.job_id}] pdf_to_word: {page_count} pages, "
-             f"text-repair changed {repair['changed']}/{repair['runs']} runs")
+             f"repaired {repair['changed']}/{repair['runs']} runs, "
+             f"{reflow['headings_promoted']} headings, {reflow['lines_merged']} merges, "
+             f"{semantic['list_items']} list items, "
+             f"{links['links_recovered']} links recovered")
 
     ctx.set_progress(100)
-    return {"pages": page_count, "runs_repaired": repair["changed"]}
+    return {"pages": page_count, "runs_repaired": repair["changed"],
+            "headings_promoted": reflow["headings_promoted"],
+            "lines_merged": reflow["lines_merged"],
+            "list_items": semantic["list_items"],
+            "links_recovered": links["links_recovered"]}
 
 
 @register("pdf_to_excel")
