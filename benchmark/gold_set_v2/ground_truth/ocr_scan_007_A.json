@@ -1,0 +1,27 @@
+{
+  "docType": "ocr_scan",
+  "layoutVariant": "A",
+  "scanParams": {
+    "rotationDeg": 0.55,
+    "blurPx": 0.15,
+    "fontFamily": "Courier New",
+    "noiseDots": 131
+  },
+  "content": {
+    "company": "Northwind Services",
+    "documentKind": "interoffice memorandum",
+    "date": "2021-05-17",
+    "to": "Olivia Patel",
+    "from": "Priya Weber",
+    "subject": "Facility maintenance notice",
+    "paragraphs": [
+      "Quarterly reviews keep your goals front and center throughout the engagement. Founded in 2006, we have grown into a trusted partner for clients across the region.",
+      "We combine practical experience with modern tooling to keep projects on time and on budget. Quarterly reviews keep your goals front and center throughout the engagement. Clients rely on us for clear communication, transparent pricing, and dependable delivery.",
+      "Flexible service plans let you scale support up or down as your needs change. We combine practical experience with modern tooling to keep projects on time and on budget.",
+      "Every engagement starts with a detailed assessment of your current operations. Our team works with organizations of every size to deliver measurable results on schedule. We maintain a 92% on-time completion rate across all active accounts. We combine practical experience with modern tooling to keep projects on time and on budget.",
+      "We maintain a 95% on-time completion rate across all active accounts. Clients rely on us for clear communication, transparent pricing, and dependable delivery. We combine practical experience with modern tooling to keep projects on time and on budget."
+    ]
+  },
+  "sourceFile": "ocr_scan_007_A.pdf",
+  "seed": 20260711
+}

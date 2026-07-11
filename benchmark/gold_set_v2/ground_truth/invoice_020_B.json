@@ -1,0 +1,75 @@
+{
+  "docType": "invoice",
+  "layoutVariant": "B",
+  "invoiceNumber": "INV-31550",
+  "issueDate": "2024-02-12",
+  "dueDate": "2024-02-09",
+  "vendor": {
+    "name": "Granite Holdings",
+    "address": "1522 Franklin St, Seattle, WA 98101",
+    "phone": "(818) 628-0827",
+    "email": "granite.holdings@corp.example"
+  },
+  "customer": {
+    "name": "Delta Partners",
+    "contact": "Carlos Silva",
+    "address": "1596 Elm St, Chicago, IL 60601"
+  },
+  "lineItems": [
+    {
+      "description": "Consulting hours",
+      "qty": 12,
+      "unitPrice": 920.6,
+      "lineTotal": 11047.2
+    },
+    {
+      "description": "Data migration",
+      "qty": 11,
+      "unitPrice": 476.36,
+      "lineTotal": 5239.96
+    },
+    {
+      "description": "Consulting hours",
+      "qty": 4,
+      "unitPrice": 823.89,
+      "lineTotal": 3295.56
+    },
+    {
+      "description": "Bearing assembly",
+      "qty": 10,
+      "unitPrice": 456.84,
+      "lineTotal": 4568.4
+    },
+    {
+      "description": "Widget A-200",
+      "qty": 8,
+      "unitPrice": 343.72,
+      "lineTotal": 2749.76
+    },
+    {
+      "description": "Thermal sensor unit",
+      "qty": 8,
+      "unitPrice": 556.29,
+      "lineTotal": 4450.32
+    },
+    {
+      "description": "Hardware installation",
+      "qty": 5,
+      "unitPrice": 336.6,
+      "lineTotal": 1683
+    },
+    {
+      "description": "Cable assembly 5m",
+      "qty": 4,
+      "unitPrice": 822.36,
+      "lineTotal": 3289.44
+    }
+  ],
+  "subtotal": 36323.64,
+  "taxRatePercent": 10,
+  "taxAmount": 3632.36,
+  "total": 39956,
+  "currency": "USD",
+  "sourceFile": "invoice_020_B.pdf",
+  "seed": 20260711
+}

@@ -1,0 +1,61 @@
+{
+  "docType": "form",
+  "layoutVariant": "B",
+  "formTitle": "Employee Information Form",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Aisha Garcia"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1969-01-10"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(406) 627-8444"
+    },
+    {
+      "label": "Email Address",
+      "value": "aisha.garcia@mailbox.test"
+    },
+    {
+      "label": "Street Address",
+      "value": "5373 Pine Rd"
+    },
+    {
+      "label": "City",
+      "value": "Boston"
+    },
+    {
+      "label": "State",
+      "value": "MA"
+    },
+    {
+      "label": "ZIP Code",
+      "value": "02108"
+    },
+    {
+      "label": "Employer",
+      "value": "Orchard Services"
+    },
+    {
+      "label": "Occupation",
+      "value": "Supply Chain Analyst"
+    },
+    {
+      "label": "Emergency Contact",
+      "value": "Diego Chen"
+    },
+    {
+      "label": "Emergency Phone",
+      "value": "(904) 781-1286"
+    },
+    {
+      "label": "Date Signed",
+      "value": "2026-02-18"
+    }
+  ],
+  "sourceFile": "form_023_B.pdf",
+  "seed": 20260711
+}

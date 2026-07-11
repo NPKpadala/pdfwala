@@ -1,0 +1,133 @@
+{
+  "docType": "table_heavy",
+  "layoutVariant": "A",
+  "title": "Quarterly Operations Report",
+  "tables": [
+    {
+      "title": "Quarterly Operations Report",
+      "columns": [
+        "Score",
+        "Owner",
+        "Total",
+        "Date",
+        "Company"
+      ],
+      "rows": [
+        [
+          "1.04",
+          "Aisha Kowalski",
+          "$5,682.79",
+          "2023-08-02",
+          "Granite Dynamics"
+        ],
+        [
+          "8.18",
+          "Grace Rossi",
+          "$7,518.97",
+          "2023-05-05",
+          "Northwind Labs"
+        ],
+        [
+          "1.48",
+          "Olivia Smith",
+          "$3,772.26",
+          "2026-05-21",
+          "Quartz Analytics"
+        ],
+        [
+          "4.96",
+          "Ravi Okafor",
+          "$1,295.86",
+          "2025-02-09",
+          "Northwind Works"
+        ],
+        [
+          "7.18",
+          "Nina Dubois",
+          "$4,664.08",
+          "2025-01-23",
+          "Vanguard Industries"
+        ],
+        [
+          "1.79",
+          "Diego Kim",
+          "$4,432.65",
+          "2023-11-13",
+          "Granite Manufacturing"
+        ],
+        [
+          "1.16",
+          "Omar Weber",
+          "$6,824.09",
+          "2025-09-16",
+          "Northwind Holdings"
+        ],
+        [
+          "6.12",
+          "Kenji O'Brien",
+          "$3,344.12",
+          "2023-02-03",
+          "Redwood Logistics"
+        ],
+        [
+          "7.21",
+          "Grace Fischer",
+          "$7,512.82",
+          "2023-05-06",
+          "Keystone Consulting"
+        ],
+        [
+          "1.40",
+          "James Johnson",
+          "$335.32",
+          "2023-11-18",
+          "Vanguard Consulting"
+        ],
+        [
+          "3.42",
+          "Ravi Kowalski",
+          "$8,188.25",
+          "2026-06-06",
+          "Delta Logistics"
+        ],
+        [
+          "8.19",
+          "Aisha Yamamoto",
+          "$1,379.67",
+          "2024-01-21",
+          "Lakeshore Services"
+        ],
+        [
+          "4.26",
+          "Sofia Smith",
+          "$775.45",
+          "2024-02-02",
+          "Meridian Analytics"
+        ],
+        [
+          "3.91",
+          "Felix Patel",
+          "$3,287.43",
+          "2026-04-27",
+          "Westgate Works"
+        ],
+        [
+          "1.69",
+          "Elena Khan",
+          "$203.21",
+          "2026-04-08",
+          "Apex Group"
+        ],
+        [
+          "5.60",
+          "Diego Santos",
+          "$5,898.74",
+          "2026-07-16",
+          "Fulcrum Industries"
+        ]
+      ]
+    }
+  ],
+  "sourceFile": "table_heavy_004_A.pdf",
+  "seed": 20260711
+}

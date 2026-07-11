@@ -1,0 +1,26 @@
+{
+  "docType": "ocr_scan",
+  "layoutVariant": "A",
+  "scanParams": {
+    "rotationDeg": -0.39,
+    "blurPx": 0.05,
+    "fontFamily": "Georgia",
+    "noiseDots": 87
+  },
+  "content": {
+    "company": "Vanguard Ventures",
+    "documentKind": "interoffice memorandum",
+    "date": "2022-09-26",
+    "to": "Ingrid Müller",
+    "from": "Hannah Kim",
+    "subject": "Meeting follow-up",
+    "paragraphs": [
+      "We maintain a 90% on-time completion rate across all active accounts. Flexible service plans let you scale support up or down as your needs change.",
+      "Every engagement starts with a detailed assessment of your current operations. Flexible service plans let you scale support up or down as your needs change. From initial planning through final handoff, a dedicated coordinator manages every detail. Our certified staff bring an average of 24 years of hands-on industry experience.",
+      "We maintain a 94% on-time completion rate across all active accounts. Clients rely on us for clear communication, transparent pricing, and dependable delivery. Every engagement starts with a detailed assessment of your current operations.",
+      "From initial planning through final handoff, a dedicated coordinator manages every detail. Clients rely on us for clear communication, transparent pricing, and dependable delivery."
+    ]
+  },
+  "sourceFile": "ocr_scan_016_A.pdf",
+  "seed": 20260711
+}

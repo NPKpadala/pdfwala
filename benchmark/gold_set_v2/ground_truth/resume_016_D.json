@@ -1,0 +1,59 @@
+{
+  "docType": "resume",
+  "layoutVariant": "D",
+  "name": "Ethan Kim",
+  "email": "ethan.kim@mailbox.test",
+  "phone": "(679) 855-3945",
+  "location": "Phoenix, AZ",
+  "skills": [
+    "SQL",
+    "Project Management",
+    "Budget Planning",
+    "Excel",
+    "Process Improvement",
+    "Communication"
+  ],
+  "experience": [
+    {
+      "title": "Marketing Specialist",
+      "company": "Summit Technologies",
+      "startDate": "Sep 2016",
+      "endDate": "Present",
+      "bullets": [
+        "Streamlined weekly stakeholder reviews, cutting costs by 14%.",
+        "Negotiated a customer retention initiative, cutting costs by 41%."
+      ]
+    },
+    {
+      "title": "Project Manager",
+      "company": "Vanguard Industries",
+      "startDate": "Oct 2019",
+      "endDate": "Oct 2022",
+      "bullets": [
+        "Led the regional sales strategy, cutting costs by 45%.",
+        "Coordinated the quarterly reporting pipeline, reducing errors by 29%.",
+        "Negotiated a cross-functional team of 25 people, growing revenue 22% year over year."
+      ]
+    },
+    {
+      "title": "Financial Analyst",
+      "company": "Lakeshore Works",
+      "startDate": "Feb 2021",
+      "endDate": "Jun 2023",
+      "bullets": [
+        "Automated procurement processes for 36 product lines, increasing satisfaction scores by 40%.",
+        "Implemented an automated QA workflow, growing revenue 10% year over year.",
+        "Reduced a budget of $95K across 28 projects, growing revenue 30% year over year."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Computer Science",
+      "school": "Mountain View College",
+      "year": 2016
+    }
+  ],
+  "sourceFile": "resume_016_D.pdf",
+  "seed": 20260711
+}

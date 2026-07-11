@@ -1,0 +1,61 @@
+{
+  "docType": "form",
+  "layoutVariant": "A",
+  "formTitle": "Rental Application",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Maria Rossi"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1982-12-01"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(632) 502-3062"
+    },
+    {
+      "label": "Email Address",
+      "value": "maria.rossi@corp.example"
+    },
+    {
+      "label": "Street Address",
+      "value": "8235 Park Pl"
+    },
+    {
+      "label": "City",
+      "value": "Chicago"
+    },
+    {
+      "label": "State",
+      "value": "IL"
+    },
+    {
+      "label": "ZIP Code",
+      "value": "60601"
+    },
+    {
+      "label": "Employer",
+      "value": "Redwood Logistics"
+    },
+    {
+      "label": "Occupation",
+      "value": "Content Strategist"
+    },
+    {
+      "label": "Emergency Contact",
+      "value": "Aisha Johnson"
+    },
+    {
+      "label": "Emergency Phone",
+      "value": "(920) 522-7732"
+    },
+    {
+      "label": "Date Signed",
+      "value": "2024-06-17"
+    }
+  ],
+  "sourceFile": "form_016_A.pdf",
+  "seed": 20260711
+}

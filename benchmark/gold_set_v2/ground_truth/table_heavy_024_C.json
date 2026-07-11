@@ -1,0 +1,210 @@
+{
+  "docType": "table_heavy",
+  "layoutVariant": "C",
+  "title": "Project Tracking Sheet",
+  "tables": [
+    {
+      "title": "Table 1: Summary",
+      "columns": [
+        "Category",
+        "ID",
+        "Region",
+        "Total",
+        "Score"
+      ],
+      "rows": [
+        [
+          "C",
+          "R-5190",
+          "Central",
+          "$7,506.22",
+          "5.53"
+        ],
+        [
+          "D",
+          "R-1141",
+          "South",
+          "$8,373.52",
+          "1.16"
+        ],
+        [
+          "A",
+          "R-7417",
+          "West",
+          "$621.14",
+          "5.16"
+        ],
+        [
+          "A",
+          "R-2350",
+          "West",
+          "$4,052.88",
+          "8.64"
+        ],
+        [
+          "B",
+          "R-6438",
+          "East",
+          "$4,732.84",
+          "5.92"
+        ],
+        [
+          "D",
+          "R-9492",
+          "Central",
+          "$3,492.02",
+          "6.81"
+        ],
+        [
+          "B",
+          "R-1354",
+          "North",
+          "$2,453.71",
+          "1.36"
+        ],
+        [
+          "B",
+          "R-7684",
+          "East",
+          "$7,584.58",
+          "2.28"
+        ],
+        [
+          "D",
+          "R-3461",
+          "West",
+          "$6,426.63",
+          "9.65"
+        ]
+      ]
+    },
+    {
+      "title": "Table 2: Detail",
+      "columns": [
+        "Date",
+        "Rate %",
+        "Company",
+        "Name",
+        "Total",
+        "Qty",
+        "Priority",
+        "Unit Cost",
+        "Status"
+      ],
+      "rows": [
+        [
+          "2023-11-17",
+          "19.4%",
+          "Lakeshore Manufacturing",
+          "David Anderson",
+          "$3,908.06",
+          "128",
+          "High",
+          "$169.64",
+          "Pending"
+        ],
+        [
+          "2025-12-01",
+          "7.9%",
+          "Quartz Solutions",
+          "Emma Moreau",
+          "$3,512.22",
+          "286",
+          "High",
+          "$191.77",
+          "Pending"
+        ],
+        [
+          "2025-01-24",
+          "16.6%",
+          "Vanguard Partners",
+          "Omar Hassan",
+          "$6,866.69",
+          "339",
+          "Medium",
+          "$278.46",
+          "On hold"
+        ],
+        [
+          "2024-03-20",
+          "2.6%",
+          "Westgate Consulting",
+          "Chloe Hassan",
+          "$6,153.46",
+          "280",
+          "Critical",
+          "$296.66",
+          "Closed"
+        ],
+        [
+          "2024-06-28",
+          "22.3%",
+          "Vanguard Consulting",
+          "Maria Hassan",
+          "$3,530.38",
+          "354",
+          "Critical",
+          "$50.74",
+          "Open"
+        ],
+        [
+          "2024-12-23",
+          "10.8%",
+          "Quartz Works",
+          "Priya Silva",
+          "$4,097.37",
+          "323",
+          "Low",
+          "$275.60",
+          "Open"
+        ],
+        [
+          "2024-05-18",
+          "4.4%",
+          "Ironwood Technologies",
+          "Maria Kowalski",
+          "$2,828.66",
+          "13",
+          "Medium",
+          "$249.92",
+          "Open"
+        ],
+        [
+          "2023-01-09",
+          "19.3%",
+          "Apex Services",
+          "Sofia Yamamoto",
+          "$7,996.47",
+          "477",
+          "Low",
+          "$318.97",
+          "Closed"
+        ],
+        [
+          "2025-06-25",
+          "11.7%",
+          "Junction Analytics",
+          "Sofia Patel",
+          "$827.28",
+          "404",
+          "Low",
+          "$373.63",
+          "Pending"
+        ],
+        [
+          "2026-04-06",
+          "13.8%",
+          "Orchard Consulting",
+          "Diego Walker",
+          "$1,444.55",
+          "231",
+          "High",
+          "$9.85",
+          "Open"
+        ]
+      ]
+    }
+  ],
+  "sourceFile": "table_heavy_024_C.pdf",
+  "seed": 20260711
+}

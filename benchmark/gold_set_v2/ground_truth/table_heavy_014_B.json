@@ -1,0 +1,211 @@
+{
+  "docType": "table_heavy",
+  "layoutVariant": "B",
+  "title": "Inventory Ledger",
+  "tables": [
+    {
+      "title": "Inventory Ledger",
+      "columnGroups": [
+        {
+          "label": "Record Info",
+          "span": 4
+        },
+        {
+          "label": "Performance",
+          "span": 5
+        }
+      ],
+      "columns": [
+        "Total",
+        "Owner",
+        "Category",
+        "Qty",
+        "Company",
+        "Rate %",
+        "ID",
+        "Status",
+        "Name"
+      ],
+      "rows": [
+        [
+          "$1,165.28",
+          "Omar Johnson",
+          "D",
+          "30",
+          "Delta Services",
+          "2.3%",
+          "R-1131",
+          "On hold",
+          "Julia Fischer"
+        ],
+        [
+          "$8,915.30",
+          "Felix Larsen",
+          "B",
+          "266",
+          "Delta Solutions",
+          "17.7%",
+          "R-5257",
+          "Pending",
+          "Priya Nguyen"
+        ],
+        [
+          "$1,070.24",
+          "Diego Yamamoto",
+          "B",
+          "364",
+          "Ironwood Group",
+          "4.0%",
+          "R-1299",
+          "Closed",
+          "Grace Taylor"
+        ],
+        [
+          "$5,332.59",
+          "Ingrid Okafor",
+          "B",
+          "159",
+          "Keystone Group",
+          "0.6%",
+          "R-9671",
+          "Pending",
+          "Maria Dubois"
+        ],
+        [
+          "$4,376.95",
+          "Felix Moreau",
+          "C",
+          "255",
+          "Granite Solutions",
+          "14.9%",
+          "R-4492",
+          "On hold",
+          "Lucas Kowalski"
+        ],
+        [
+          "$1,157.06",
+          "Maria Taylor",
+          "A",
+          "257",
+          "Orchard Manufacturing",
+          "7.6%",
+          "R-7151",
+          "Open",
+          "Kenji Novak"
+        ],
+        [
+          "$926.88",
+          "Carlos Fischer",
+          "D",
+          "178",
+          "Delta Consulting",
+          "22.5%",
+          "R-2975",
+          "Open",
+          "Omar O'Brien"
+        ],
+        [
+          "$8,248.72",
+          "Ingrid Costa",
+          "A",
+          "88",
+          "Northwind Analytics",
+          "23.6%",
+          "R-7923",
+          "Closed",
+          "Nina Moreau"
+        ],
+        [
+          "$196.06",
+          "Nina Fischer",
+          "A",
+          "318",
+          "Horizon Holdings",
+          "9.9%",
+          "R-1658",
+          "On hold",
+          "Wei Patel"
+        ],
+        [
+          "$6,281.97",
+          "Noah Weber",
+          "D",
+          "432",
+          "Fulcrum Logistics",
+          "21.4%",
+          "R-1046",
+          "Closed",
+          "Kenji Lee"
+        ],
+        [
+          "$1,212.75",
+          "Maria O'Brien",
+          "B",
+          "19",
+          "Summit Manufacturing",
+          "14.2%",
+          "R-7546",
+          "On hold",
+          "Marcus Silva"
+        ],
+        [
+          "$2,123.65",
+          "Omar O'Brien",
+          "D",
+          "69",
+          "Lakeshore Partners",
+          "12.2%",
+          "R-5293",
+          "On hold",
+          "Kenji Kowalski"
+        ],
+        [
+          "$1,628.18",
+          "Sofia Kim",
+          "D",
+          "244",
+          "Apex Industries",
+          "2.3%",
+          "R-8876",
+          "Open",
+          "Fatima Müller"
+        ],
+        [
+          "$2,139.20",
+          "Ingrid O'Brien",
+          "C",
+          "52",
+          "Junction Labs",
+          "10.1%",
+          "R-7586",
+          "Pending",
+          "Elena Novak"
+        ],
+        [
+          "$2,023.65",
+          "Elena Costa",
+          "A",
+          "64",
+          "Pinnacle Holdings",
+          "20.7%",
+          "R-8107",
+          "Open",
+          "Chloe Ivanov"
+        ],
+        [
+          "$1,131.89",
+          "Julia Yamamoto",
+          "B",
+          "210",
+          "Junction Group",
+          "19.1%",
+          "R-6841",
+          "Pending",
+          "James Kim"
+        ]
+      ]
+    }
+  ],
+  "sourceFile": "table_heavy_014_B.pdf",
+  "seed": 20260711
+}

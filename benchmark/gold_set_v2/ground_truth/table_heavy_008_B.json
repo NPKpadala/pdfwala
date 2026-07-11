@@ -1,0 +1,134 @@
+{
+  "docType": "table_heavy",
+  "layoutVariant": "B",
+  "title": "Quarterly Operations Report",
+  "tables": [
+    {
+      "title": "Quarterly Operations Report",
+      "columnGroups": [
+        {
+          "label": "Record Info",
+          "span": 4
+        },
+        {
+          "label": "Performance",
+          "span": 4
+        }
+      ],
+      "columns": [
+        "Name",
+        "Score",
+        "Status",
+        "Category",
+        "Qty",
+        "Date",
+        "ID",
+        "Total"
+      ],
+      "rows": [
+        [
+          "Hannah Johnson",
+          "4.60",
+          "Pending",
+          "C",
+          "19",
+          "2024-05-13",
+          "R-8885",
+          "$5,178.50"
+        ],
+        [
+          "Ingrid Rossi",
+          "5.15",
+          "On hold",
+          "A",
+          "470",
+          "2026-11-23",
+          "R-4096",
+          "$7,388.31"
+        ],
+        [
+          "James Ivanov",
+          "2.21",
+          "Pending",
+          "B",
+          "106",
+          "2024-02-12",
+          "R-6053",
+          "$3,116.19"
+        ],
+        [
+          "Julia Anderson",
+          "4.91",
+          "On hold",
+          "A",
+          "227",
+          "2024-11-04",
+          "R-5602",
+          "$633.87"
+        ],
+        [
+          "Liam Rossi",
+          "7.07",
+          "Pending",
+          "D",
+          "91",
+          "2025-11-05",
+          "R-8030",
+          "$8,748.52"
+        ],
+        [
+          "Ravi Johnson",
+          "3.73",
+          "Open",
+          "D",
+          "315",
+          "2025-01-03",
+          "R-1083",
+          "$4,575.16"
+        ],
+        [
+          "Marcus Müller",
+          "4.50",
+          "Pending",
+          "C",
+          "486",
+          "2026-07-06",
+          "R-5184",
+          "$8,681.94"
+        ],
+        [
+          "Wei Novak",
+          "3.97",
+          "Pending",
+          "D",
+          "350",
+          "2023-01-02",
+          "R-7996",
+          "$2,504.92"
+        ],
+        [
+          "Sofia O'Brien",
+          "6.21",
+          "Open",
+          "D",
+          "353",
+          "2024-07-04",
+          "R-2213",
+          "$7,080.86"
+        ],
+        [
+          "Elena Weber",
+          "9.63",
+          "Closed",
+          "B",
+          "324",
+          "2024-07-27",
+          "R-4341",
+          "$4,520.50"
+        ]
+      ]
+    }
+  ],
+  "sourceFile": "table_heavy_008_B.pdf",
+  "seed": 20260711
+}

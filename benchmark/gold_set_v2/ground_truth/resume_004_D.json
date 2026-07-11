@@ -1,0 +1,55 @@
+{
+  "docType": "resume",
+  "layoutVariant": "D",
+  "name": "Olivia Dubois",
+  "email": "olivia.dubois@corp.example",
+  "phone": "(457) 324-9300",
+  "location": "Denver, CO",
+  "skills": [
+    "Docker",
+    "Python",
+    "Salesforce",
+    "Communication",
+    "Forecasting",
+    "Public Speaking",
+    "Tableau"
+  ],
+  "experience": [
+    {
+      "title": "Supply Chain Analyst",
+      "company": "Summit Consulting",
+      "startDate": "Oct 2015",
+      "endDate": "Present",
+      "bullets": [
+        "Developed weekly stakeholder reviews, cutting costs by 34%.",
+        "Designed internal documentation standards, growing revenue 16% year over year.",
+        "Analyzed the annual planning cycle, growing revenue 20% year over year."
+      ]
+    },
+    {
+      "title": "Content Strategist",
+      "company": "Horizon Systems",
+      "startDate": "May 2019",
+      "endDate": "Dec 2020",
+      "bullets": [
+        "Led the quarterly reporting pipeline, cutting costs by 13%.",
+        "Analyzed an automated QA workflow, growing revenue 42% year over year.",
+        "Negotiated a budget of $546K across 25 projects, cutting costs by 11%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.A. Communications",
+      "school": "University of the Lakes",
+      "year": 2018
+    },
+    {
+      "degree": "B.A. Economics",
+      "school": "Mountain View College",
+      "year": 2020
+    }
+  ],
+  "sourceFile": "resume_004_D.pdf",
+  "seed": 20260711
+}

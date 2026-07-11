@@ -1,0 +1,45 @@
+{
+  "docType": "form",
+  "layoutVariant": "A",
+  "formTitle": "Event Registration Form",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Wei Nguyen"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1989-02-04"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(673) 472-9229"
+    },
+    {
+      "label": "Email Address",
+      "value": "wei.nguyen@example.com"
+    },
+    {
+      "label": "Street Address",
+      "value": "6268 Pine Rd"
+    },
+    {
+      "label": "City",
+      "value": "Nashville"
+    },
+    {
+      "label": "State",
+      "value": "TN"
+    },
+    {
+      "label": "ZIP Code",
+      "value": "37201"
+    },
+    {
+      "label": "Employer",
+      "value": "Delta Ventures"
+    }
+  ],
+  "sourceFile": "form_007_A.pdf",
+  "seed": 20260711
+}

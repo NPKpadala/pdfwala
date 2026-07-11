@@ -1,0 +1,68 @@
+{
+  "docType": "contract",
+  "layoutVariant": "C",
+  "title": "MASTER SERVICES AGREEMENT",
+  "parties": [
+    {
+      "role": "Client",
+      "name": "Cascade Analytics",
+      "location": "Minneapolis, MN",
+      "signer": "Priya Yamamoto"
+    },
+    {
+      "role": "Provider",
+      "name": "Vanguard Analytics",
+      "location": "Atlanta, GA",
+      "signer": "Wei Khan"
+    }
+  ],
+  "effectiveDate": "2025-09-27",
+  "termMonths": 6,
+  "noticeDays": 45,
+  "maxFeeUsd": 92000,
+  "governingLawState": "New York",
+  "clauses": [
+    {
+      "label": null,
+      "title": "Limitation of Liability",
+      "text": "Except for breaches of confidentiality, neither party shall be liable for any indirect, incidental, special, or consequential damages arising out of this Agreement. Each party's aggregate liability shall not exceed the total fees paid or payable by Cascade Analytics in the twelve months preceding the claim."
+    },
+    {
+      "label": null,
+      "title": "Independent Contractor",
+      "text": "Vanguard Analytics is an independent contractor and nothing in this Agreement creates a partnership, joint venture, agency, or employment relationship between the parties. Vanguard Analytics is solely responsible for its own taxes, insurance, and employee obligations."
+    },
+    {
+      "label": null,
+      "title": "Scope of Services",
+      "text": "Vanguard Analytics shall provide the services described in Exhibit A (the \"Services\") to Cascade Analytics in a professional and workmanlike manner, consistent with industry standards. Any changes to the scope of the Services must be agreed in writing by both parties before work begins."
+    },
+    {
+      "label": null,
+      "title": "Termination",
+      "text": "Either party may terminate this Agreement upon 45 days' written notice to the other party. Either party may terminate immediately upon a material breach by the other party that remains uncured 45 days after written notice of the breach."
+    },
+    {
+      "label": null,
+      "title": "Term and Renewal",
+      "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 6 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 45 days before the end of the then-current term."
+    },
+    {
+      "label": null,
+      "title": "Intellectual Property",
+      "text": "All work product created by Vanguard Analytics specifically for Cascade Analytics under this Agreement shall be the sole property of Cascade Analytics upon full payment of the applicable fees. Vanguard Analytics retains ownership of its pre-existing materials, tools, and methodologies."
+    },
+    {
+      "label": null,
+      "title": "Compensation",
+      "text": "In consideration of the Services, Cascade Analytics shall pay Vanguard Analytics fees not to exceed $92,000 per invoice period. All invoices are payable within 45 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
+    },
+    {
+      "label": null,
+      "title": "Entire Agreement",
+      "text": "This Agreement, together with its exhibits, constitutes the entire agreement between Cascade Analytics and Vanguard Analytics with respect to its subject matter and supersedes all prior or contemporaneous understandings. Any amendment must be in writing and signed by both parties."
+    }
+  ],
+  "sourceFile": "contract_006_C.pdf",
+  "seed": 20260711
+}

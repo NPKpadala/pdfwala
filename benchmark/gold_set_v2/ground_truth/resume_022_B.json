@@ -1,0 +1,63 @@
+{
+  "docType": "resume",
+  "layoutVariant": "B",
+  "name": "Grace Weber",
+  "email": "grace.weber@mailbox.test",
+  "phone": "(399) 547-6777",
+  "location": "Portland, OR",
+  "skills": [
+    "Tableau",
+    "Statistical Analysis",
+    "Customer Relations",
+    "AWS",
+    "Budget Planning",
+    "Communication"
+  ],
+  "experience": [
+    {
+      "title": "Product Designer",
+      "company": "Meridian Group",
+      "startDate": "Aug 2015",
+      "endDate": "Present",
+      "bullets": [
+        "Streamlined vendor onboarding for 17 suppliers, growing revenue 41% year over year.",
+        "Automated vendor onboarding for 21 suppliers, saving roughly 40 hours per month.",
+        "Launched the quarterly reporting pipeline, improving turnaround time by 45%."
+      ]
+    },
+    {
+      "title": "Marketing Specialist",
+      "company": "Keystone Partners",
+      "startDate": "Jan 2019",
+      "endDate": "Oct 2024",
+      "bullets": [
+        "Led the quarterly reporting pipeline, reducing errors by 11%.",
+        "Developed the annual planning cycle, increasing satisfaction scores by 41%."
+      ]
+    },
+    {
+      "title": "Software Engineer",
+      "company": "Westgate Logistics",
+      "startDate": "Oct 2022",
+      "endDate": "Mar 2022",
+      "bullets": [
+        "Led the annual planning cycle, saving roughly 20 hours per month.",
+        "Designed the migration to a new CRM platform, growing revenue 9% year over year."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Accounting",
+      "school": "State University of Ohio",
+      "year": 2021
+    },
+    {
+      "degree": "M.S. Data Science",
+      "school": "Bayfield University",
+      "year": 2015
+    }
+  ],
+  "sourceFile": "resume_022_B.pdf",
+  "seed": 20260711
+}

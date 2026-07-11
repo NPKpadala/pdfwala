@@ -1,0 +1,119 @@
+{
+  "docType": "form",
+  "layoutVariant": "C",
+  "formTitle": "Rental Application",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Priya Larsen"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1961-08-13"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(615) 325-8566"
+    },
+    {
+      "label": "Email Address",
+      "value": "priya.larsen@mailbox.test"
+    },
+    {
+      "label": "Street Address",
+      "value": "6810 River Rd"
+    }
+  ],
+  "checkboxGroups": [
+    {
+      "group": "Preferred Contact Method",
+      "options": [
+        {
+          "label": "Email",
+          "checked": true
+        },
+        {
+          "label": "Phone",
+          "checked": false
+        },
+        {
+          "label": "Text message",
+          "checked": false
+        },
+        {
+          "label": "Postal mail",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "group": "Insurance Type",
+      "options": [
+        {
+          "label": "Private",
+          "checked": false
+        },
+        {
+          "label": "Employer plan",
+          "checked": false
+        },
+        {
+          "label": "Government",
+          "checked": true
+        },
+        {
+          "label": "None",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "group": "Marital Status",
+      "options": [
+        {
+          "label": "Single",
+          "checked": false
+        },
+        {
+          "label": "Married",
+          "checked": true
+        },
+        {
+          "label": "Divorced",
+          "checked": false
+        },
+        {
+          "label": "Widowed",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "group": "Employment Status",
+      "options": [
+        {
+          "label": "Full-time",
+          "checked": false
+        },
+        {
+          "label": "Part-time",
+          "checked": false
+        },
+        {
+          "label": "Self-employed",
+          "checked": false
+        },
+        {
+          "label": "Retired",
+          "checked": true
+        },
+        {
+          "label": "Student",
+          "checked": false
+        }
+      ]
+    }
+  ],
+  "sourceFile": "form_012_C.pdf",
+  "seed": 20260711
+}

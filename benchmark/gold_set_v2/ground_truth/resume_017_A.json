@@ -1,0 +1,63 @@
+{
+  "docType": "resume",
+  "layoutVariant": "A",
+  "name": "Maria Johnson",
+  "email": "maria.johnson@corp.example",
+  "phone": "(507) 367-7732",
+  "location": "Austin, TX",
+  "skills": [
+    "Copywriting",
+    "React",
+    "Tableau",
+    "Java",
+    "Project Management",
+    "Public Speaking",
+    "Excel",
+    "SQL",
+    "Statistical Analysis",
+    "Communication"
+  ],
+  "experience": [
+    {
+      "title": "Content Strategist",
+      "company": "Pinnacle Systems",
+      "startDate": "Mar 2014",
+      "endDate": "Present",
+      "bullets": [
+        "Launched procurement processes for 5 product lines, improving turnaround time by 25%.",
+        "Analyzed the regional sales strategy, saving roughly 36 hours per month.",
+        "Negotiated an automated QA workflow, reducing errors by 21%."
+      ]
+    },
+    {
+      "title": "HR Generalist",
+      "company": "Summit Analytics",
+      "startDate": "May 2018",
+      "endDate": "Oct 2021",
+      "bullets": [
+        "Implemented weekly stakeholder reviews, reducing errors by 44%.",
+        "Led procurement processes for 21 product lines, increasing satisfaction scores by 17%.",
+        "Led the annual planning cycle, increasing satisfaction scores by 24%."
+      ]
+    },
+    {
+      "title": "DevOps Engineer",
+      "company": "Meridian Holdings",
+      "startDate": "Apr 2022",
+      "endDate": "Aug 2023",
+      "bullets": [
+        "Reduced weekly stakeholder reviews, increasing satisfaction scores by 23%.",
+        "Managed a customer retention initiative, saving roughly 100 hours per month."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.A. Psychology",
+      "school": "Northgate University",
+      "year": 2013
+    }
+  ],
+  "sourceFile": "resume_017_A.pdf",
+  "seed": 20260711
+}

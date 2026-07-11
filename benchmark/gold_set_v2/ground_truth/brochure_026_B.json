@@ -1,0 +1,36 @@
+{
+  "docType": "brochure",
+  "layoutVariant": "B",
+  "layout": {
+    "imagePosition": "top",
+    "textColumns": 2
+  },
+  "company": "Granite Partners",
+  "headline": "Solutions That Scale With You",
+  "sections": [
+    {
+      "heading": "What We Do",
+      "body": "Our team works with organizations of every size to deliver measurable results on schedule. From initial planning through final handoff, a dedicated coordinator manages every detail."
+    },
+    {
+      "heading": "Why Choose Us",
+      "body": "Flexible service plans let you scale support up or down as your needs change. Our team works with organizations of every size to deliver measurable results on schedule. Clients rely on us for clear communication, transparent pricing, and dependable delivery."
+    },
+    {
+      "heading": "Who We Serve",
+      "body": "Quarterly reviews keep your goals front and center throughout the engagement. Our team works with organizations of every size to deliver measurable results on schedule."
+    }
+  ],
+  "bullets": [
+    "Clients rely on us for clear communication, transparent pricing, and dependable delivery.",
+    "Flexible service plans let you scale support up or down as your needs change.",
+    "Flexible service plans let you scale support up or down as your needs change.",
+    "We maintain a 94% on-time completion rate across all active accounts."
+  ],
+  "contact": {
+    "phone": "(832) 634-9060",
+    "address": "9126 Maple Dr, Columbus, OH 43004"
+  },
+  "sourceFile": "brochure_026_B.pdf",
+  "seed": 20260711
+}

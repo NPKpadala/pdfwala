@@ -1,0 +1,36 @@
+{
+  "docType": "brochure",
+  "layoutVariant": "A",
+  "layout": {
+    "imagePosition": "top",
+    "textColumns": 1
+  },
+  "company": "Trailhead Partners",
+  "headline": "Smarter Workflows Start Here",
+  "sections": [
+    {
+      "heading": "Why Choose Us",
+      "body": "Clients rely on us for clear communication, transparent pricing, and dependable delivery. Our team works with organizations of every size to deliver measurable results on schedule. From initial planning through final handoff, a dedicated coordinator manages every detail."
+    },
+    {
+      "heading": "What We Do",
+      "body": "Our team works with organizations of every size to deliver measurable results on schedule. Every engagement starts with a detailed assessment of your current operations. Founded in 1988, we have grown into a trusted partner for clients across the region."
+    },
+    {
+      "heading": "Our Track Record",
+      "body": "We combine practical experience with modern tooling to keep projects on time and on budget. We maintain a 96% on-time completion rate across all active accounts."
+    }
+  ],
+  "bullets": [
+    "Quarterly reviews keep your goals front and center throughout the engagement.",
+    "We combine practical experience with modern tooling to keep projects on time and on budget.",
+    "Our certified staff bring an average of 11 years of hands-on industry experience.",
+    "Every engagement starts with a detailed assessment of your current operations."
+  ],
+  "contact": {
+    "phone": "(985) 672-5546",
+    "address": "5499 Maple Dr, Portland, OR 97201"
+  },
+  "sourceFile": "brochure_013_A.pdf",
+  "seed": 20260711
+}

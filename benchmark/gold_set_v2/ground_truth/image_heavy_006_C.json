@@ -1,0 +1,73 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "C",
+  "title": "Operations Dashboard Export",
+  "imageCount": 3,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "line",
+      "title": "Monthly Revenue",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul"
+      ],
+      "values": [
+        82,
+        67,
+        89,
+        66,
+        61,
+        28,
+        86
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "line",
+      "title": "Units Shipped",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun"
+      ],
+      "values": [
+        22,
+        80,
+        91,
+        46,
+        32,
+        82
+      ]
+    },
+    {
+      "figure": 3,
+      "chartType": "line",
+      "title": "Website Traffic",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May"
+      ],
+      "values": [
+        53,
+        76,
+        89,
+        67,
+        38
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_006_C.pdf",
+  "seed": 20260711
+}

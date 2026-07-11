@@ -1,0 +1,37 @@
+{
+  "docType": "brochure",
+  "layoutVariant": "C",
+  "layout": {
+    "imagePosition": "side",
+    "textColumns": 1
+  },
+  "company": "Evergreen Consulting",
+  "headline": "Building Better Operations Together",
+  "sections": [
+    {
+      "heading": "Our Approach",
+      "body": "From initial planning through final handoff, a dedicated coordinator manages every detail. Our team works with organizations of every size to deliver measurable results on schedule. Every engagement starts with a detailed assessment of your current operations."
+    },
+    {
+      "heading": "Getting Started",
+      "body": "Quarterly reviews keep your goals front and center throughout the engagement. Every engagement starts with a detailed assessment of your current operations."
+    },
+    {
+      "heading": "Our Track Record",
+      "body": "Flexible service plans let you scale support up or down as your needs change. Our certified staff bring an average of 23 years of hands-on industry experience."
+    }
+  ],
+  "bullets": [
+    "We maintain a 91% on-time completion rate across all active accounts.",
+    "From initial planning through final handoff, a dedicated coordinator manages every detail.",
+    "Our team works with organizations of every size to deliver measurable results on schedule.",
+    "We maintain a 92% on-time completion rate across all active accounts.",
+    "Our team works with organizations of every size to deliver measurable results on schedule."
+  ],
+  "contact": {
+    "phone": "(720) 212-5439",
+    "address": "443 River Rd, Phoenix, AZ 85001"
+  },
+  "sourceFile": "brochure_011_C.pdf",
+  "seed": 20260711
+}

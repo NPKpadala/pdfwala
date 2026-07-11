@@ -1,0 +1,59 @@
+{
+  "docType": "resume",
+  "layoutVariant": "C",
+  "name": "Grace Khan",
+  "email": "grace.khan@example.com",
+  "phone": "(808) 815-9128",
+  "location": "Seattle, WA",
+  "skills": [
+    "Agile / Scrum",
+    "Public Speaking",
+    "Data Visualization",
+    "Customer Relations",
+    "Project Management",
+    "Budget Planning",
+    "Tableau"
+  ],
+  "experience": [
+    {
+      "title": "Product Designer",
+      "company": "Westgate Holdings",
+      "startDate": "Apr 2014",
+      "endDate": "Present",
+      "bullets": [
+        "Launched procurement processes for 28 product lines, saving roughly 113 hours per month.",
+        "Streamlined the regional sales strategy, improving turnaround time by 32%."
+      ]
+    },
+    {
+      "title": "Product Designer",
+      "company": "Quartz Labs",
+      "startDate": "Nov 2017",
+      "endDate": "Nov 2021",
+      "bullets": [
+        "Designed weekly stakeholder reviews, growing revenue 42% year over year.",
+        "Coordinated the regional sales strategy, cutting costs by 44%.",
+        "Led the annual planning cycle, reducing errors by 29%."
+      ]
+    },
+    {
+      "title": "Marketing Specialist",
+      "company": "Junction Consulting",
+      "startDate": "Apr 2022",
+      "endDate": "Mar 2022",
+      "bullets": [
+        "Analyzed a cross-functional team of 30 people, growing revenue 26% year over year.",
+        "Managed internal documentation standards, improving turnaround time by 13%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.A. Communications",
+      "school": "Harborview State University",
+      "year": 2010
+    }
+  ],
+  "sourceFile": "resume_019_C.pdf",
+  "seed": 20260711
+}

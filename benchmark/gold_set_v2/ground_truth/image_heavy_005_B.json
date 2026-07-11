@@ -1,0 +1,119 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "B",
+  "title": "KPI Snapshot",
+  "imageCount": 5,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "bar",
+      "title": "Support Tickets by Region",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul"
+      ],
+      "values": [
+        65,
+        59,
+        79,
+        31,
+        61,
+        55,
+        69
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "bar",
+      "title": "Customer Satisfaction Trend",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May"
+      ],
+      "values": [
+        62,
+        50,
+        35,
+        74,
+        33
+      ]
+    },
+    {
+      "figure": 3,
+      "chartType": "line",
+      "title": "Budget Allocation",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May"
+      ],
+      "values": [
+        79,
+        90,
+        82,
+        70,
+        83
+      ]
+    },
+    {
+      "figure": 4,
+      "chartType": "line",
+      "title": "Budget Allocation",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug"
+      ],
+      "values": [
+        80,
+        86,
+        87,
+        20,
+        49,
+        33,
+        81,
+        84
+      ]
+    },
+    {
+      "figure": 5,
+      "chartType": "line",
+      "title": "Headcount by Department",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul"
+      ],
+      "values": [
+        82,
+        66,
+        39,
+        54,
+        47,
+        19,
+        86
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_005_B.pdf",
+  "seed": 20260711
+}

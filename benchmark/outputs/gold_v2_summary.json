@@ -1,0 +1,1447 @@
+{
+  "macro": 0.9548,
+  "by_category": {
+    "brochure": {
+      "n": 32,
+      "ok": 32,
+      "recall": 0.9002
+    },
+    "contract": {
+      "n": 24,
+      "ok": 24,
+      "recall": 0.9657
+    },
+    "form": {
+      "n": 24,
+      "ok": 24,
+      "recall": 1.0
+    },
+    "image_heavy": {
+      "n": 24,
+      "ok": 24,
+      "recall": 1.0
+    },
+    "invoice": {
+      "n": 24,
+      "ok": 24,
+      "recall": 0.8954
+    },
+    "ocr_scan": {
+      "n": 24,
+      "ok": 24,
+      "recall": 0.9223
+    },
+    "resume": {
+      "n": 24,
+      "ok": 24,
+      "recall": 1.0
+    },
+    "table_heavy": {
+      "n": 24,
+      "ok": 24,
+      "recall": 0.9727
+    }
+  },
+  "docs": [
+    {
+      "file": "brochure_001_A",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_002_B",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_003_C",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_004_D",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 0.6667,
+      "error": null
+    },
+    {
+      "file": "brochure_005_A",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_006_B",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_007_C",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_008_D",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 0.6667,
+      "error": null
+    },
+    {
+      "file": "brochure_009_A",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_010_B",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_011_C",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_012_D",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 0.6,
+      "error": null
+    },
+    {
+      "file": "brochure_013_A",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_014_B",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_015_C",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_016_D",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 0.6923,
+      "error": null
+    },
+    {
+      "file": "brochure_017_A",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_018_B",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_019_C",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_020_D",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 0.5385,
+      "error": null
+    },
+    {
+      "file": "brochure_021_A",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_022_B",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_023_C",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_024_D",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 0.5714,
+      "error": null
+    },
+    {
+      "file": "brochure_025_A",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_026_B",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_027_C",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_028_D",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 0.5714,
+      "error": null
+    },
+    {
+      "file": "brochure_029_A",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_030_B",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_031_C",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "brochure_032_D",
+      "class": "brochure",
+      "ok": true,
+      "gt_recall": 0.5,
+      "error": null
+    },
+    {
+      "file": "contract_001_A",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "contract_002_B",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9643,
+      "error": null
+    },
+    {
+      "file": "contract_003_C",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "contract_004_A",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9231,
+      "error": null
+    },
+    {
+      "file": "contract_005_B",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "contract_006_C",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9643,
+      "error": null
+    },
+    {
+      "file": "contract_007_A",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "contract_008_B",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "contract_009_C",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9643,
+      "error": null
+    },
+    {
+      "file": "contract_010_A",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9167,
+      "error": null
+    },
+    {
+      "file": "contract_011_B",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9615,
+      "error": null
+    },
+    {
+      "file": "contract_012_C",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9583,
+      "error": null
+    },
+    {
+      "file": "contract_013_A",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9615,
+      "error": null
+    },
+    {
+      "file": "contract_014_B",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9643,
+      "error": null
+    },
+    {
+      "file": "contract_015_C",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9583,
+      "error": null
+    },
+    {
+      "file": "contract_016_A",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9615,
+      "error": null
+    },
+    {
+      "file": "contract_017_B",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "contract_018_C",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9231,
+      "error": null
+    },
+    {
+      "file": "contract_019_A",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9583,
+      "error": null
+    },
+    {
+      "file": "contract_020_B",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9615,
+      "error": null
+    },
+    {
+      "file": "contract_021_C",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "contract_022_A",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9167,
+      "error": null
+    },
+    {
+      "file": "contract_023_B",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9615,
+      "error": null
+    },
+    {
+      "file": "contract_024_C",
+      "class": "contract",
+      "ok": true,
+      "gt_recall": 0.9583,
+      "error": null
+    },
+    {
+      "file": "form_001_A",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_002_B",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_003_C",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_004_A",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_005_B",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_006_C",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_007_A",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_008_B",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_009_C",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_010_A",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_011_B",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_012_C",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_013_A",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_014_B",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_015_C",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_016_A",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_017_B",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_018_C",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_019_A",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_020_B",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_021_C",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_022_A",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_023_B",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "form_024_C",
+      "class": "form",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_001_A",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_002_B",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_003_C",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_004_A",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_005_B",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_006_C",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_007_A",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_008_B",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_009_C",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_010_A",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_011_B",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_012_C",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_013_A",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_014_B",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_015_C",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_016_A",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_017_B",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_018_C",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_019_A",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_020_B",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_021_C",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_022_A",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_023_B",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "image_heavy_024_C",
+      "class": "image_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_001_A",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_002_B",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 0.6818,
+      "error": null
+    },
+    {
+      "file": "invoice_003_C",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_004_A",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_005_B",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 0.6667,
+      "error": null
+    },
+    {
+      "file": "invoice_006_C",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_007_A",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_008_B",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 0.7059,
+      "error": null
+    },
+    {
+      "file": "invoice_009_C",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_010_A",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_011_B",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 0.7143,
+      "error": null
+    },
+    {
+      "file": "invoice_012_C",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_013_A",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_014_B",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 0.6765,
+      "error": null
+    },
+    {
+      "file": "invoice_015_C",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_016_A",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_017_B",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 0.6667,
+      "error": null
+    },
+    {
+      "file": "invoice_018_C",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_019_A",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_020_B",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 0.6757,
+      "error": null
+    },
+    {
+      "file": "invoice_021_C",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_022_A",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "invoice_023_B",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 0.7027,
+      "error": null
+    },
+    {
+      "file": "invoice_024_C",
+      "class": "invoice",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_001_A",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_002_B",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_003_C",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 0.5455,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_004_A",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_005_B",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_006_C",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_007_A",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_008_B",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_009_C",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 0.7778,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_010_A",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_011_B",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_012_C",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 0.5455,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_013_A",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_014_B",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 0.9,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_015_C",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_016_A",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 0.9,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_017_B",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 0.9,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_018_C",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_019_A",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_020_B",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 0.9,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_021_C",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 0.7778,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_022_A",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_023_B",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 0.8889,
+      "error": null
+    },
+    {
+      "file": "ocr_scan_024_C",
+      "class": "ocr_scan",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_001_A",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_002_B",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_003_C",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_004_D",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_005_A",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_006_B",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_007_C",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_008_D",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_009_A",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_010_B",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_011_C",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_012_D",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_013_A",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_014_B",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_015_C",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_016_D",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_017_A",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_018_B",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_019_C",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_020_D",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_021_A",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_022_B",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_023_C",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "resume_024_D",
+      "class": "resume",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "table_heavy_001_A",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "table_heavy_002_B",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.9651,
+      "error": null
+    },
+    {
+      "file": "table_heavy_003_C",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "table_heavy_004_A",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "table_heavy_005_B",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "table_heavy_006_C",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.9618,
+      "error": null
+    },
+    {
+      "file": "table_heavy_007_A",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "table_heavy_008_B",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.9873,
+      "error": null
+    },
+    {
+      "file": "table_heavy_009_C",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.9485,
+      "error": null
+    },
+    {
+      "file": "table_heavy_010_A",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "table_heavy_011_B",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "table_heavy_012_C",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "table_heavy_013_A",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "table_heavy_014_B",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.9701,
+      "error": null
+    },
+    {
+      "file": "table_heavy_015_C",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.9805,
+      "error": null
+    },
+    {
+      "file": "table_heavy_016_A",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 1.0,
+      "error": null
+    },
+    {
+      "file": "table_heavy_017_B",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.9344,
+      "error": null
+    },
+    {
+      "file": "table_heavy_018_C",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.932,
+      "error": null
+    },
+    {
+      "file": "table_heavy_019_A",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.9474,
+      "error": null
+    },
+    {
+      "file": "table_heavy_020_B",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.9122,
+      "error": null
+    },
+    {
+      "file": "table_heavy_021_C",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.9792,
+      "error": null
+    },
+    {
+      "file": "table_heavy_022_A",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.9474,
+      "error": null
+    },
+    {
+      "file": "table_heavy_023_B",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.9085,
+      "error": null
+    },
+    {
+      "file": "table_heavy_024_C",
+      "class": "table_heavy",
+      "ok": true,
+      "gt_recall": 0.9716,
+      "error": null
+    }
+  ]
+}

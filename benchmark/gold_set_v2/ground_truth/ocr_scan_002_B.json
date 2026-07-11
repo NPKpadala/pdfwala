@@ -1,0 +1,25 @@
+{
+  "docType": "ocr_scan",
+  "layoutVariant": "B",
+  "scanParams": {
+    "rotationDeg": 1.49,
+    "blurPx": 0.78,
+    "fontFamily": "Georgia",
+    "noiseDots": 477
+  },
+  "content": {
+    "company": "Orchard Logistics",
+    "documentKind": "interoffice memorandum",
+    "date": "2024-10-22",
+    "to": "Tariq Chen",
+    "from": "Chloe Garcia",
+    "subject": "Facility maintenance notice",
+    "paragraphs": [
+      "Founded in 1998, we have grown into a trusted partner for clients across the region. We maintain a 92% on-time completion rate across all active accounts. Clients rely on us for clear communication, transparent pricing, and dependable delivery.",
+      "Our team works with organizations of every size to deliver measurable results on schedule. We maintain a 90% on-time completion rate across all active accounts.",
+      "We maintain a 90% on-time completion rate across all active accounts. Every engagement starts with a detailed assessment of your current operations. From initial planning through final handoff, a dedicated coordinator manages every detail."
+    ]
+  },
+  "sourceFile": "ocr_scan_002_B.pdf",
+  "seed": 20260711
+}

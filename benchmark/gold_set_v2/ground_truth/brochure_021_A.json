@@ -1,0 +1,35 @@
+{
+  "docType": "brochure",
+  "layoutVariant": "A",
+  "layout": {
+    "imagePosition": "top",
+    "textColumns": 1
+  },
+  "company": "Summit Dynamics",
+  "headline": "Smarter Workflows Start Here",
+  "sections": [
+    {
+      "heading": "Our Track Record",
+      "body": "From initial planning through final handoff, a dedicated coordinator manages every detail. We combine practical experience with modern tooling to keep projects on time and on budget."
+    },
+    {
+      "heading": "Getting Started",
+      "body": "Every engagement starts with a detailed assessment of your current operations. Founded in 1985, we have grown into a trusted partner for clients across the region."
+    },
+    {
+      "heading": "Our Approach",
+      "body": "Quarterly reviews keep your goals front and center throughout the engagement. Flexible service plans let you scale support up or down as your needs change."
+    }
+  ],
+  "bullets": [
+    "Our team works with organizations of every size to deliver measurable results on schedule.",
+    "Every engagement starts with a detailed assessment of your current operations.",
+    "Founded in 2007, we have grown into a trusted partner for clients across the region."
+  ],
+  "contact": {
+    "phone": "(283) 437-4704",
+    "address": "2484 Sunset Blvd, Minneapolis, MN 55401"
+  },
+  "sourceFile": "brochure_021_A.pdf",
+  "seed": 20260711
+}

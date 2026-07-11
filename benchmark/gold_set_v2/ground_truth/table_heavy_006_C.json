@@ -1,0 +1,231 @@
+{
+  "docType": "table_heavy",
+  "layoutVariant": "C",
+  "title": "Regional Sales Summary",
+  "tables": [
+    {
+      "title": "Table 1: Summary",
+      "columns": [
+        "Score",
+        "Region",
+        "Category",
+        "Company",
+        "ID",
+        "Priority"
+      ],
+      "rows": [
+        [
+          "4.63",
+          "North",
+          "B",
+          "Orchard Systems",
+          "R-1118",
+          "Medium"
+        ],
+        [
+          "6.57",
+          "South",
+          "A",
+          "Ironwood Holdings",
+          "R-8393",
+          "Low"
+        ],
+        [
+          "8.00",
+          "West",
+          "C",
+          "Westgate Group",
+          "R-7230",
+          "Low"
+        ],
+        [
+          "9.21",
+          "West",
+          "C",
+          "Redwood Dynamics",
+          "R-4696",
+          "Medium"
+        ],
+        [
+          "2.73",
+          "West",
+          "A",
+          "Granite Logistics",
+          "R-7551",
+          "Critical"
+        ],
+        [
+          "9.57",
+          "West",
+          "A",
+          "Horizon Labs",
+          "R-7180",
+          "Medium"
+        ],
+        [
+          "5.57",
+          "West",
+          "A",
+          "Fulcrum Consulting",
+          "R-5491",
+          "Critical"
+        ],
+        [
+          "6.61",
+          "South",
+          "C",
+          "Redwood Systems",
+          "R-9969",
+          "Critical"
+        ]
+      ]
+    },
+    {
+      "title": "Table 2: Detail",
+      "columns": [
+        "Total",
+        "Category",
+        "Region",
+        "Status",
+        "ID",
+        "Owner",
+        "Date",
+        "Score",
+        "Unit Cost",
+        "Rate %",
+        "Qty",
+        "Name"
+      ],
+      "rows": [
+        [
+          "$7,897.03",
+          "A",
+          "Central",
+          "Pending",
+          "R-7061",
+          "Amara Hassan",
+          "2025-12-16",
+          "9.46",
+          "$195.81",
+          "2.2%",
+          "454",
+          "Carlos Santos"
+        ],
+        [
+          "$8,375.49",
+          "A",
+          "Central",
+          "On hold",
+          "R-4417",
+          "Tariq Walker",
+          "2026-12-14",
+          "2.83",
+          "$309.17",
+          "5.6%",
+          "263",
+          "Priya Kowalski"
+        ],
+        [
+          "$724.82",
+          "B",
+          "South",
+          "Open",
+          "R-6614",
+          "Priya Silva",
+          "2026-07-03",
+          "5.26",
+          "$250.99",
+          "17.4%",
+          "323",
+          "Amara Silva"
+        ],
+        [
+          "$4,228.40",
+          "B",
+          "South",
+          "Pending",
+          "R-9290",
+          "Chloe Patel",
+          "2026-01-07",
+          "8.52",
+          "$47.68",
+          "21.8%",
+          "288",
+          "Sofia Walker"
+        ],
+        [
+          "$1,795.49",
+          "D",
+          "South",
+          "Closed",
+          "R-4138",
+          "Sofia Larsen",
+          "2023-06-19",
+          "2.87",
+          "$177.32",
+          "8.6%",
+          "331",
+          "Diego Hassan"
+        ],
+        [
+          "$2,322.43",
+          "C",
+          "West",
+          "Closed",
+          "R-7268",
+          "Ingrid Chen",
+          "2025-12-26",
+          "6.66",
+          "$349.74",
+          "13.2%",
+          "342",
+          "Emma Yamamoto"
+        ],
+        [
+          "$2,372.91",
+          "A",
+          "East",
+          "Open",
+          "R-3313",
+          "Carlos Kim",
+          "2026-01-09",
+          "8.61",
+          "$284.58",
+          "1.7%",
+          "389",
+          "Liam Brown"
+        ],
+        [
+          "$8,123.44",
+          "B",
+          "Central",
+          "On hold",
+          "R-3787",
+          "Tariq Ivanov",
+          "2023-12-28",
+          "2.06",
+          "$374.49",
+          "9.0%",
+          "208",
+          "James Yamamoto"
+        ],
+        [
+          "$1,105.53",
+          "C",
+          "South",
+          "Closed",
+          "R-2802",
+          "Sofia Novak",
+          "2026-12-27",
+          "7.58",
+          "$289.52",
+          "21.1%",
+          "9",
+          "Ravi Smith"
+        ]
+      ]
+    }
+  ],
+  "sourceFile": "table_heavy_006_C.pdf",
+  "seed": 20260711
+}

@@ -1,0 +1,94 @@
+{
+  "docType": "form",
+  "layoutVariant": "C",
+  "formTitle": "Employee Information Form",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Nina Brown"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1991-09-09"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(705) 664-7085"
+    },
+    {
+      "label": "Email Address",
+      "value": "nina.brown@corp.example"
+    },
+    {
+      "label": "Street Address",
+      "value": "533 Sunset Blvd"
+    }
+  ],
+  "checkboxGroups": [
+    {
+      "group": "Insurance Type",
+      "options": [
+        {
+          "label": "Private",
+          "checked": false
+        },
+        {
+          "label": "Employer plan",
+          "checked": true
+        },
+        {
+          "label": "Government",
+          "checked": false
+        },
+        {
+          "label": "None",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "group": "Marital Status",
+      "options": [
+        {
+          "label": "Single",
+          "checked": true
+        },
+        {
+          "label": "Married",
+          "checked": false
+        },
+        {
+          "label": "Divorced",
+          "checked": false
+        },
+        {
+          "label": "Widowed",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "group": "How did you hear about us?",
+      "options": [
+        {
+          "label": "Referral",
+          "checked": false
+        },
+        {
+          "label": "Online search",
+          "checked": true
+        },
+        {
+          "label": "Advertisement",
+          "checked": false
+        },
+        {
+          "label": "Other",
+          "checked": false
+        }
+      ]
+    }
+  ],
+  "sourceFile": "form_024_C.pdf",
+  "seed": 20260711
+}

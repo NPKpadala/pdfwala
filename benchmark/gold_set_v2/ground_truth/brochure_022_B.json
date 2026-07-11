@@ -1,0 +1,36 @@
+{
+  "docType": "brochure",
+  "layoutVariant": "B",
+  "layout": {
+    "imagePosition": "top",
+    "textColumns": 2
+  },
+  "company": "Keystone Ventures",
+  "headline": "Smarter Workflows Start Here",
+  "sections": [
+    {
+      "heading": "What We Do",
+      "body": "Our team works with organizations of every size to deliver measurable results on schedule. Founded in 1988, we have grown into a trusted partner for clients across the region. From initial planning through final handoff, a dedicated coordinator manages every detail."
+    },
+    {
+      "heading": "Who We Serve",
+      "body": "Flexible service plans let you scale support up or down as your needs change. Our team works with organizations of every size to deliver measurable results on schedule. We combine practical experience with modern tooling to keep projects on time and on budget."
+    },
+    {
+      "heading": "Getting Started",
+      "body": "Every engagement starts with a detailed assessment of your current operations. Our certified staff bring an average of 12 years of hands-on industry experience. We combine practical experience with modern tooling to keep projects on time and on budget."
+    }
+  ],
+  "bullets": [
+    "Our certified staff bring an average of 21 years of hands-on industry experience.",
+    "Flexible service plans let you scale support up or down as your needs change.",
+    "Founded in 2003, we have grown into a trusted partner for clients across the region.",
+    "Founded in 2003, we have grown into a trusted partner for clients across the region."
+  ],
+  "contact": {
+    "phone": "(398) 283-7434",
+    "address": "7178 Highland Ave, Austin, TX 73301"
+  },
+  "sourceFile": "brochure_022_B.pdf",
+  "seed": 20260711
+}

@@ -1,0 +1,228 @@
+{
+  "docType": "table_heavy",
+  "layoutVariant": "C",
+  "title": "Vendor Performance Data",
+  "tables": [
+    {
+      "title": "Table 1: Summary",
+      "columns": [
+        "Priority",
+        "Total",
+        "Status",
+        "Company",
+        "Category"
+      ],
+      "rows": [
+        [
+          "Critical",
+          "$3,203.40",
+          "Open",
+          "Vanguard Group",
+          "D"
+        ],
+        [
+          "Medium",
+          "$6,195.81",
+          "On hold",
+          "Apex Logistics",
+          "D"
+        ],
+        [
+          "High",
+          "$79.57",
+          "On hold",
+          "Keystone Consulting",
+          "A"
+        ],
+        [
+          "Critical",
+          "$8,277.79",
+          "On hold",
+          "Summit Solutions",
+          "B"
+        ],
+        [
+          "Medium",
+          "$6,237.67",
+          "Closed",
+          "Ironwood Solutions",
+          "A"
+        ],
+        [
+          "Critical",
+          "$7,744.66",
+          "Closed",
+          "Meridian Systems",
+          "D"
+        ],
+        [
+          "Medium",
+          "$5,935.48",
+          "Closed",
+          "Evergreen Manufacturing",
+          "D"
+        ],
+        [
+          "Critical",
+          "$3,932.42",
+          "On hold",
+          "Redwood Works",
+          "D"
+        ],
+        [
+          "High",
+          "$2,709.35",
+          "Closed",
+          "Delta Solutions",
+          "B"
+        ],
+        [
+          "Medium",
+          "$4,369.08",
+          "Closed",
+          "Northwind Ventures",
+          "D"
+        ]
+      ]
+    },
+    {
+      "title": "Table 2: Detail",
+      "columns": [
+        "Score",
+        "ID",
+        "Category",
+        "Owner",
+        "Unit Cost",
+        "Priority",
+        "Status",
+        "Company",
+        "Name"
+      ],
+      "rows": [
+        [
+          "4.15",
+          "R-1938",
+          "B",
+          "Marcus Dubois",
+          "$207.06",
+          "Low",
+          "Open",
+          "Summit Dynamics",
+          "Fatima Garcia"
+        ],
+        [
+          "1.30",
+          "R-9995",
+          "A",
+          "Julia Santos",
+          "$311.59",
+          "Low",
+          "On hold",
+          "Ironwood Labs",
+          "Omar Moreau"
+        ],
+        [
+          "9.96",
+          "R-3491",
+          "C",
+          "Lucas Brown",
+          "$123.81",
+          "Critical",
+          "Pending",
+          "Quartz Partners",
+          "Tariq Müller"
+        ],
+        [
+          "5.18",
+          "R-3575",
+          "D",
+          "Diego O'Brien",
+          "$133.36",
+          "Critical",
+          "On hold",
+          "Blue Ridge Services",
+          "Felix O'Brien"
+        ],
+        [
+          "7.83",
+          "R-4350",
+          "B",
+          "Ethan Hassan",
+          "$349.45",
+          "Low",
+          "Closed",
+          "Cascade Dynamics",
+          "Amara O'Brien"
+        ],
+        [
+          "6.99",
+          "R-2200",
+          "A",
+          "Ethan Okafor",
+          "$177.33",
+          "Low",
+          "Pending",
+          "Delta Ventures",
+          "Emma Smith"
+        ],
+        [
+          "7.95",
+          "R-3084",
+          "A",
+          "Aisha Taylor",
+          "$31.83",
+          "Critical",
+          "On hold",
+          "Lakeshore Labs",
+          "James Lee"
+        ],
+        [
+          "6.59",
+          "R-9633",
+          "C",
+          "Tariq Rossi",
+          "$108.17",
+          "High",
+          "Pending",
+          "Orchard Dynamics",
+          "Noah Kowalski"
+        ],
+        [
+          "7.96",
+          "R-8164",
+          "D",
+          "Emma Okafor",
+          "$297.71",
+          "High",
+          "On hold",
+          "Evergreen Logistics",
+          "Julia Dubois"
+        ],
+        [
+          "6.05",
+          "R-1855",
+          "A",
+          "Lucas Ivanov",
+          "$339.68",
+          "Critical",
+          "Pending",
+          "Meridian Group",
+          "Marcus Garcia"
+        ],
+        [
+          "9.85",
+          "R-5759",
+          "C",
+          "Maria Garcia",
+          "$294.48",
+          "Critical",
+          "Open",
+          "Blue Ridge Partners",
+          "Emma Ivanov"
+        ]
+      ]
+    }
+  ],
+  "sourceFile": "table_heavy_021_C.pdf",
+  "seed": 20260711
+}

@@ -1,0 +1,107 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "C",
+  "title": "Operations Dashboard Export",
+  "imageCount": 5,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "bar",
+      "title": "Customer Satisfaction Trend",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May"
+      ],
+      "values": [
+        42,
+        45,
+        81,
+        53,
+        35
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "pie",
+      "title": "Customer Satisfaction Trend",
+      "labels": [
+        "Sales",
+        "Finance",
+        "Eng",
+        "HR"
+      ],
+      "values": [
+        10,
+        31,
+        17,
+        51
+      ]
+    },
+    {
+      "figure": 3,
+      "chartType": "pie",
+      "title": "Monthly Revenue",
+      "labels": [
+        "Finance",
+        "HR",
+        "Eng",
+        "Sales",
+        "Ops"
+      ],
+      "values": [
+        28,
+        24,
+        30,
+        23,
+        16
+      ]
+    },
+    {
+      "figure": 4,
+      "chartType": "line",
+      "title": "Website Traffic",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr"
+      ],
+      "values": [
+        46,
+        26,
+        49,
+        15
+      ]
+    },
+    {
+      "figure": 5,
+      "chartType": "line",
+      "title": "Customer Satisfaction Trend",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug"
+      ],
+      "values": [
+        31,
+        90,
+        22,
+        70,
+        30,
+        22,
+        59,
+        31
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_021_C.pdf",
+  "seed": 20260711
+}

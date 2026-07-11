@@ -1,0 +1,45 @@
+{
+  "docType": "form",
+  "layoutVariant": "A",
+  "formTitle": "Rental Application",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Elena Brown"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1960-03-17"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(814) 808-1295"
+    },
+    {
+      "label": "Email Address",
+      "value": "elena.brown@mailbox.test"
+    },
+    {
+      "label": "Street Address",
+      "value": "4833 Maple Dr"
+    },
+    {
+      "label": "City",
+      "value": "Chicago"
+    },
+    {
+      "label": "State",
+      "value": "IL"
+    },
+    {
+      "label": "ZIP Code",
+      "value": "60601"
+    },
+    {
+      "label": "Employer",
+      "value": "Granite Services"
+    }
+  ],
+  "sourceFile": "form_019_A.pdf",
+  "seed": 20260711
+}

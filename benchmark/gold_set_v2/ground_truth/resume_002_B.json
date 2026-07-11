@@ -1,0 +1,47 @@
+{
+  "docType": "resume",
+  "layoutVariant": "B",
+  "name": "Marcus Silva",
+  "email": "marcus.silva@example.com",
+  "phone": "(214) 815-1544",
+  "location": "Boston, MA",
+  "skills": [
+    "React",
+    "Python",
+    "Agile / Scrum",
+    "Public Speaking",
+    "Salesforce",
+    "Process Improvement"
+  ],
+  "experience": [
+    {
+      "title": "Content Strategist",
+      "company": "Meridian Labs",
+      "startDate": "May 2014",
+      "endDate": "Present",
+      "bullets": [
+        "Analyzed procurement processes for 29 product lines, improving turnaround time by 37%.",
+        "Analyzed a cross-functional team of 40 people, improving turnaround time by 35%."
+      ]
+    },
+    {
+      "title": "Content Strategist",
+      "company": "Pinnacle Holdings",
+      "startDate": "Apr 2018",
+      "endDate": "Oct 2021",
+      "bullets": [
+        "Streamlined procurement processes for 24 product lines, growing revenue 44% year over year.",
+        "Developed a customer retention initiative, cutting costs by 45%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Accounting",
+      "school": "Riverside College",
+      "year": 2019
+    }
+  ],
+  "sourceFile": "resume_002_B.pdf",
+  "seed": 20260711
+}

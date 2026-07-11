@@ -1,0 +1,75 @@
+{
+  "docType": "invoice",
+  "layoutVariant": "A",
+  "invoiceNumber": "INV-69101",
+  "issueDate": "2026-09-25",
+  "dueDate": "2026-10-01",
+  "vendor": {
+    "name": "Westgate Logistics",
+    "address": "5007 Park Pl, Nashville, TN 37201",
+    "phone": "(254) 423-2895",
+    "email": "westgate.logistics@corp.example"
+  },
+  "customer": {
+    "name": "Evergreen Consulting",
+    "contact": "Ingrid Ivanov",
+    "address": "3113 Highland Ave, Raleigh, NC 27601"
+  },
+  "lineItems": [
+    {
+      "description": "Junction box",
+      "qty": 4,
+      "unitPrice": 385.51,
+      "lineTotal": 1542.04
+    },
+    {
+      "description": "Replacement filter set",
+      "qty": 9,
+      "unitPrice": 810.57,
+      "lineTotal": 7295.13
+    },
+    {
+      "description": "On-site training session",
+      "qty": 10,
+      "unitPrice": 582.79,
+      "lineTotal": 5827.9
+    },
+    {
+      "description": "Consulting hours",
+      "qty": 12,
+      "unitPrice": 81.21,
+      "lineTotal": 974.52
+    },
+    {
+      "description": "Custom integration",
+      "qty": 1,
+      "unitPrice": 64.89,
+      "lineTotal": 64.89
+    },
+    {
+      "description": "Valve actuator",
+      "qty": 5,
+      "unitPrice": 271.29,
+      "lineTotal": 1356.45
+    },
+    {
+      "description": "Thermal sensor unit",
+      "qty": 7,
+      "unitPrice": 910.68,
+      "lineTotal": 6374.76
+    },
+    {
+      "description": "Valve actuator",
+      "qty": 4,
+      "unitPrice": 131.68,
+      "lineTotal": 526.72
+    }
+  ],
+  "subtotal": 23962.41,
+  "taxRatePercent": 7,
+  "taxAmount": 1677.37,
+  "total": 25639.78,
+  "currency": "USD",
+  "sourceFile": "invoice_010_A.pdf",
+  "seed": 20260711
+}

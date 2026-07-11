@@ -1,0 +1,57 @@
+{
+  "docType": "resume",
+  "layoutVariant": "D",
+  "name": "Felix Costa",
+  "email": "felix.costa@example.com",
+  "phone": "(778) 984-6869",
+  "location": "Seattle, WA",
+  "skills": [
+    "Java",
+    "Forecasting",
+    "Tableau",
+    "Agile / Scrum",
+    "SQL",
+    "React"
+  ],
+  "experience": [
+    {
+      "title": "Financial Analyst",
+      "company": "Keystone Ventures",
+      "startDate": "Aug 2016",
+      "endDate": "Present",
+      "bullets": [
+        "Managed procurement processes for 28 product lines, cutting costs by 20%.",
+        "Automated a cross-functional team of 21 people, saving roughly 56 hours per month."
+      ]
+    },
+    {
+      "title": "Software Engineer",
+      "company": "Ironwood Systems",
+      "startDate": "Oct 2019",
+      "endDate": "Jun 2024",
+      "bullets": [
+        "Led a cross-functional team of 40 people, cutting costs by 33%.",
+        "Coordinated the regional sales strategy, growing revenue 19% year over year."
+      ]
+    },
+    {
+      "title": "Customer Success Manager",
+      "company": "Summit Group",
+      "startDate": "Jan 2021",
+      "endDate": "Aug 2022",
+      "bullets": [
+        "Developed an automated QA workflow, reducing errors by 16%.",
+        "Led procurement processes for 23 product lines, cutting costs by 21%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "M.B.A.",
+      "school": "Mountain View College",
+      "year": 2020
+    }
+  ],
+  "sourceFile": "resume_020_D.pdf",
+  "seed": 20260711
+}

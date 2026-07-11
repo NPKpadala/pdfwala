@@ -1,0 +1,52 @@
+{
+  "docType": "resume",
+  "layoutVariant": "C",
+  "name": "Hannah Nguyen",
+  "email": "hannah.nguyen@mailbox.test",
+  "phone": "(437) 640-7611",
+  "location": "Denver, CO",
+  "skills": [
+    "Tableau",
+    "Salesforce",
+    "Copywriting",
+    "Negotiation",
+    "Statistical Analysis",
+    "Python",
+    "Docker",
+    "Public Speaking",
+    "AWS",
+    "Excel"
+  ],
+  "experience": [
+    {
+      "title": "Customer Success Manager",
+      "company": "Apex Manufacturing",
+      "startDate": "May 2015",
+      "endDate": "Present",
+      "bullets": [
+        "Negotiated a cross-functional team of 35 people, increasing satisfaction scores by 34%.",
+        "Automated vendor onboarding for 33 suppliers, increasing satisfaction scores by 39%."
+      ]
+    },
+    {
+      "title": "Software Engineer",
+      "company": "Summit Ventures",
+      "startDate": "Jul 2018",
+      "endDate": "Nov 2023",
+      "bullets": [
+        "Negotiated the migration to a new CRM platform, improving turnaround time by 20%.",
+        "Implemented a cross-functional team of 19 people, reducing errors by 15%.",
+        "Led the quarterly reporting pipeline, cutting costs by 10%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Marketing",
+      "school": "University of the Lakes",
+      "year": 2018
+    }
+  ],
+  "sourceFile": "resume_023_C.pdf",
+  "seed": 20260711
+}

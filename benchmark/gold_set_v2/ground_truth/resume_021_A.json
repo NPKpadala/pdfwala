@@ -1,0 +1,50 @@
+{
+  "docType": "resume",
+  "layoutVariant": "A",
+  "name": "Liam Brown",
+  "email": "liam.brown@postbox.example",
+  "phone": "(318) 802-0811",
+  "location": "Atlanta, GA",
+  "skills": [
+    "Customer Relations",
+    "Process Improvement",
+    "Java",
+    "Project Management",
+    "Forecasting",
+    "Salesforce",
+    "Docker",
+    "AWS"
+  ],
+  "experience": [
+    {
+      "title": "Customer Success Manager",
+      "company": "Westgate Consulting",
+      "startDate": "Jan 2016",
+      "endDate": "Present",
+      "bullets": [
+        "Automated procurement processes for 40 product lines, reducing errors by 29%.",
+        "Reduced the regional sales strategy, increasing satisfaction scores by 44%."
+      ]
+    },
+    {
+      "title": "Account Executive",
+      "company": "Junction Works",
+      "startDate": "Feb 2019",
+      "endDate": "Aug 2020",
+      "bullets": [
+        "Implemented the migration to a new CRM platform, reducing errors by 41%.",
+        "Implemented a cross-functional team of 33 people, growing revenue 11% year over year.",
+        "Designed an automated QA workflow, increasing satisfaction scores by 41%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Computer Science",
+      "school": "State University of Ohio",
+      "year": 2010
+    }
+  ],
+  "sourceFile": "resume_021_A.pdf",
+  "seed": 20260711
+}

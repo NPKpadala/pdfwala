@@ -1,0 +1,78 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "C",
+  "title": "Operations Dashboard Export",
+  "imageCount": 4,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "pie",
+      "title": "Budget Allocation",
+      "labels": [
+        "Central",
+        "South",
+        "West",
+        "East",
+        "North"
+      ],
+      "values": [
+        12,
+        20,
+        27,
+        15,
+        20
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "line",
+      "title": "Units Shipped",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr"
+      ],
+      "values": [
+        47,
+        46,
+        52,
+        69
+      ]
+    },
+    {
+      "figure": 3,
+      "chartType": "pie",
+      "title": "Customer Satisfaction Trend",
+      "labels": [
+        "Sales",
+        "Finance",
+        "HR"
+      ],
+      "values": [
+        14,
+        51,
+        50
+      ]
+    },
+    {
+      "figure": 4,
+      "chartType": "pie",
+      "title": "Support Tickets by Region",
+      "labels": [
+        "Central",
+        "South",
+        "North",
+        "East"
+      ],
+      "values": [
+        34,
+        54,
+        36,
+        23
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_024_C.pdf",
+  "seed": 20260711
+}

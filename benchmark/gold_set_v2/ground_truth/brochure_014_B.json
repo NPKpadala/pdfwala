@@ -1,0 +1,37 @@
+{
+  "docType": "brochure",
+  "layoutVariant": "B",
+  "layout": {
+    "imagePosition": "top",
+    "textColumns": 2
+  },
+  "company": "Blue Ridge Holdings",
+  "headline": "Solutions That Scale With You",
+  "sections": [
+    {
+      "heading": "What We Do",
+      "body": "From initial planning through final handoff, a dedicated coordinator manages every detail. Flexible service plans let you scale support up or down as your needs change. Founded in 2002, we have grown into a trusted partner for clients across the region."
+    },
+    {
+      "heading": "Who We Serve",
+      "body": "Quarterly reviews keep your goals front and center throughout the engagement. We combine practical experience with modern tooling to keep projects on time and on budget."
+    },
+    {
+      "heading": "Why Choose Us",
+      "body": "We maintain a 93% on-time completion rate across all active accounts. Every engagement starts with a detailed assessment of your current operations."
+    }
+  ],
+  "bullets": [
+    "We maintain a 95% on-time completion rate across all active accounts.",
+    "Quarterly reviews keep your goals front and center throughout the engagement.",
+    "Our certified staff bring an average of 20 years of hands-on industry experience.",
+    "Quarterly reviews keep your goals front and center throughout the engagement.",
+    "We combine practical experience with modern tooling to keep projects on time and on budget."
+  ],
+  "contact": {
+    "phone": "(879) 300-2977",
+    "address": "2841 2nd St, Atlanta, GA 30301"
+  },
+  "sourceFile": "brochure_014_B.pdf",
+  "seed": 20260711
+}

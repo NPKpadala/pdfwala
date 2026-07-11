@@ -1,0 +1,25 @@
+{
+  "docType": "ocr_scan",
+  "layoutVariant": "B",
+  "scanParams": {
+    "rotationDeg": -2.01,
+    "blurPx": 0.88,
+    "fontFamily": "Arial",
+    "noiseDots": 494
+  },
+  "content": {
+    "company": "Delta Solutions",
+    "documentKind": "interoffice memorandum",
+    "date": "2021-03-03",
+    "to": "Emma Taylor",
+    "from": "Grace O'Brien",
+    "subject": "Facility maintenance notice",
+    "paragraphs": [
+      "Every engagement starts with a detailed assessment of your current operations. Clients rely on us for clear communication, transparent pricing, and dependable delivery. Quarterly reviews keep your goals front and center throughout the engagement. From initial planning through final handoff, a dedicated coordinator manages every detail.",
+      "We maintain a 96% on-time completion rate across all active accounts. Founded in 1996, we have grown into a trusted partner for clients across the region.",
+      "Our team works with organizations of every size to deliver measurable results on schedule. Our certified staff bring an average of 9 years of hands-on industry experience. Every engagement starts with a detailed assessment of your current operations."
+    ]
+  },
+  "sourceFile": "ocr_scan_011_B.pdf",
+  "seed": 20260711
+}

@@ -1,0 +1,57 @@
+{
+  "docType": "form",
+  "layoutVariant": "B",
+  "formTitle": "Event Registration Form",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Amara Taylor"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1999-05-25"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(574) 408-9854"
+    },
+    {
+      "label": "Email Address",
+      "value": "amara.taylor@postbox.example"
+    },
+    {
+      "label": "Street Address",
+      "value": "6238 River Rd"
+    },
+    {
+      "label": "City",
+      "value": "Raleigh"
+    },
+    {
+      "label": "State",
+      "value": "NC"
+    },
+    {
+      "label": "ZIP Code",
+      "value": "27601"
+    },
+    {
+      "label": "Employer",
+      "value": "Cascade Industries"
+    },
+    {
+      "label": "Occupation",
+      "value": "Account Executive"
+    },
+    {
+      "label": "Emergency Contact",
+      "value": "Liam Walker"
+    },
+    {
+      "label": "Emergency Phone",
+      "value": "(829) 917-9946"
+    }
+  ],
+  "sourceFile": "form_014_B.pdf",
+  "seed": 20260711
+}

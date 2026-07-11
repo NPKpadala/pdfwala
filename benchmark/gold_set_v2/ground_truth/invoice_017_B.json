@@ -1,0 +1,51 @@
+{
+  "docType": "invoice",
+  "layoutVariant": "B",
+  "invoiceNumber": "INV-14949",
+  "issueDate": "2024-12-24",
+  "dueDate": "2026-01-11",
+  "vendor": {
+    "name": "Pinnacle Analytics",
+    "address": "8852 Main St, Seattle, WA 98101",
+    "phone": "(811) 903-2353",
+    "email": "pinnacle.analytics@corp.example"
+  },
+  "customer": {
+    "name": "Lakeshore Services",
+    "contact": "Carlos Larsen",
+    "address": "3649 Main St, Seattle, WA 98101"
+  },
+  "lineItems": [
+    {
+      "description": "Support plan (tier 2)",
+      "qty": 4,
+      "unitPrice": 771.19,
+      "lineTotal": 3084.76
+    },
+    {
+      "description": "Mounting kit",
+      "qty": 9,
+      "unitPrice": 225.68,
+      "lineTotal": 2031.12
+    },
+    {
+      "description": "Cable assembly 5m",
+      "qty": 10,
+      "unitPrice": 754.29,
+      "lineTotal": 7542.9
+    },
+    {
+      "description": "Security audit",
+      "qty": 11,
+      "unitPrice": 350.49,
+      "lineTotal": 3855.39
+    }
+  ],
+  "subtotal": 16514.17,
+  "taxRatePercent": 0,
+  "taxAmount": 0,
+  "total": 16514.17,
+  "currency": "USD",
+  "sourceFile": "invoice_017_B.pdf",
+  "seed": 20260711
+}

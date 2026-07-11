@@ -1,0 +1,63 @@
+{
+  "docType": "contract",
+  "layoutVariant": "B",
+  "title": "SERVICE CONTRACT",
+  "parties": [
+    {
+      "role": "Client",
+      "name": "Redwood Technologies",
+      "location": "Atlanta, GA",
+      "signer": "Aisha Lee"
+    },
+    {
+      "role": "Provider",
+      "name": "Summit Works",
+      "location": "Austin, TX",
+      "signer": "Julia Kim"
+    }
+  ],
+  "effectiveDate": "2024-01-23",
+  "termMonths": 6,
+  "noticeDays": 30,
+  "maxFeeUsd": 43000,
+  "governingLawState": "Illinois",
+  "clauses": [
+    {
+      "label": "A",
+      "title": "Scope of Services",
+      "text": "Summit Works shall provide the services described in Exhibit A (the \"Services\") to Redwood Technologies in a professional and workmanlike manner, consistent with industry standards. Any changes to the scope of the Services must be agreed in writing by both parties before work begins."
+    },
+    {
+      "label": "B",
+      "title": "Term and Renewal",
+      "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 6 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 30 days before the end of the then-current term."
+    },
+    {
+      "label": "C",
+      "title": "Termination",
+      "text": "Either party may terminate this Agreement upon 30 days' written notice to the other party. Either party may terminate immediately upon a material breach by the other party that remains uncured 30 days after written notice of the breach."
+    },
+    {
+      "label": "D",
+      "title": "Confidentiality",
+      "text": "Each party agrees to hold in strict confidence all non-public information disclosed by the other party in connection with this Agreement, and to use such information solely to perform its obligations hereunder. This obligation survives termination of this Agreement for a period of 6 months."
+    },
+    {
+      "label": "E",
+      "title": "Independent Contractor",
+      "text": "Summit Works is an independent contractor and nothing in this Agreement creates a partnership, joint venture, agency, or employment relationship between the parties. Summit Works is solely responsible for its own taxes, insurance, and employee obligations."
+    },
+    {
+      "label": "F",
+      "title": "Compensation",
+      "text": "In consideration of the Services, Redwood Technologies shall pay Summit Works fees not to exceed $43,000 per invoice period. All invoices are payable within 30 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
+    },
+    {
+      "label": "G",
+      "title": "Intellectual Property",
+      "text": "All work product created by Summit Works specifically for Redwood Technologies under this Agreement shall be the sole property of Redwood Technologies upon full payment of the applicable fees. Summit Works retains ownership of its pre-existing materials, tools, and methodologies."
+    }
+  ],
+  "sourceFile": "contract_011_B.pdf",
+  "seed": 20260711
+}

@@ -1,0 +1,27 @@
+{
+  "docType": "ocr_scan",
+  "layoutVariant": "B",
+  "scanParams": {
+    "rotationDeg": 2.11,
+    "blurPx": 0.78,
+    "fontFamily": "Courier New",
+    "noiseDots": 448
+  },
+  "content": {
+    "company": "Apex Technologies",
+    "documentKind": "interoffice memorandum",
+    "date": "2023-05-01",
+    "to": "Diego Silva",
+    "from": "Ingrid Brown",
+    "subject": "Policy change notification",
+    "paragraphs": [
+      "Every engagement starts with a detailed assessment of your current operations. Our certified staff bring an average of 25 years of hands-on industry experience.",
+      "Our team works with organizations of every size to deliver measurable results on schedule. Flexible service plans let you scale support up or down as your needs change.",
+      "We combine practical experience with modern tooling to keep projects on time and on budget. We maintain a 98% on-time completion rate across all active accounts. Founded in 2018, we have grown into a trusted partner for clients across the region. Quarterly reviews keep your goals front and center throughout the engagement.",
+      "Our team works with organizations of every size to deliver measurable results on schedule. Flexible service plans let you scale support up or down as your needs change.",
+      "Our certified staff bring an average of 22 years of hands-on industry experience. From initial planning through final handoff, a dedicated coordinator manages every detail. We combine practical experience with modern tooling to keep projects on time and on budget."
+    ]
+  },
+  "sourceFile": "ocr_scan_008_B.pdf",
+  "seed": 20260711
+}

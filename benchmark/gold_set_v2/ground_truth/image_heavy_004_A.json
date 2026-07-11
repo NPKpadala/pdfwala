@@ -1,0 +1,130 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "A",
+  "title": "Operations Dashboard Export",
+  "imageCount": 6,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "pie",
+      "title": "Support Tickets by Region",
+      "labels": [
+        "Finance",
+        "Eng",
+        "HR",
+        "Sales"
+      ],
+      "values": [
+        12,
+        39,
+        11,
+        47
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "bar",
+      "title": "Units Shipped",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug"
+      ],
+      "values": [
+        20,
+        34,
+        24,
+        62,
+        51,
+        20,
+        43,
+        18
+      ]
+    },
+    {
+      "figure": 3,
+      "chartType": "line",
+      "title": "Customer Satisfaction Trend",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May"
+      ],
+      "values": [
+        17,
+        83,
+        55,
+        46,
+        19
+      ]
+    },
+    {
+      "figure": 4,
+      "chartType": "bar",
+      "title": "Support Tickets by Region",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun"
+      ],
+      "values": [
+        78,
+        17,
+        58,
+        23,
+        24,
+        90
+      ]
+    },
+    {
+      "figure": 5,
+      "chartType": "line",
+      "title": "Units Shipped",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr"
+      ],
+      "values": [
+        35,
+        89,
+        72,
+        55
+      ]
+    },
+    {
+      "figure": 6,
+      "chartType": "bar",
+      "title": "Monthly Revenue",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun"
+      ],
+      "values": [
+        37,
+        25,
+        95,
+        40,
+        75,
+        84
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_004_A.pdf",
+  "seed": 20260711
+}

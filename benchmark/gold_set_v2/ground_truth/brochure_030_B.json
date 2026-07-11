@@ -1,0 +1,35 @@
+{
+  "docType": "brochure",
+  "layoutVariant": "B",
+  "layout": {
+    "imagePosition": "top",
+    "textColumns": 2
+  },
+  "company": "Ironwood Logistics",
+  "headline": "Your Partner in Sustainable Growth",
+  "sections": [
+    {
+      "heading": "Our Track Record",
+      "body": "From initial planning through final handoff, a dedicated coordinator manages every detail. Clients rely on us for clear communication, transparent pricing, and dependable delivery. We combine practical experience with modern tooling to keep projects on time and on budget."
+    },
+    {
+      "heading": "Why Choose Us",
+      "body": "Founded in 1991, we have grown into a trusted partner for clients across the region. We maintain a 94% on-time completion rate across all active accounts."
+    },
+    {
+      "heading": "Getting Started",
+      "body": "From initial planning through final handoff, a dedicated coordinator manages every detail. We maintain a 98% on-time completion rate across all active accounts. Clients rely on us for clear communication, transparent pricing, and dependable delivery."
+    }
+  ],
+  "bullets": [
+    "Clients rely on us for clear communication, transparent pricing, and dependable delivery.",
+    "We combine practical experience with modern tooling to keep projects on time and on budget.",
+    "Clients rely on us for clear communication, transparent pricing, and dependable delivery."
+  ],
+  "contact": {
+    "phone": "(662) 603-2894",
+    "address": "3470 Highland Ave, Atlanta, GA 30301"
+  },
+  "sourceFile": "brochure_030_B.pdf",
+  "seed": 20260711
+}

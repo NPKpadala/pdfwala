@@ -1,0 +1,68 @@
+{
+  "docType": "contract",
+  "layoutVariant": "A",
+  "title": "PROFESSIONAL SERVICES AGREEMENT",
+  "parties": [
+    {
+      "role": "Client",
+      "name": "Redwood Analytics",
+      "location": "Portland, OR",
+      "signer": "Diego Larsen"
+    },
+    {
+      "role": "Provider",
+      "name": "Delta Technologies",
+      "location": "Columbus, OH",
+      "signer": "Ravi Chen"
+    }
+  ],
+  "effectiveDate": "2023-11-26",
+  "termMonths": 36,
+  "noticeDays": 60,
+  "maxFeeUsd": 217000,
+  "governingLawState": "Illinois",
+  "clauses": [
+    {
+      "label": "1",
+      "title": "Limitation of Liability",
+      "text": "Except for breaches of confidentiality, neither party shall be liable for any indirect, incidental, special, or consequential damages arising out of this Agreement. Each party's aggregate liability shall not exceed the total fees paid or payable by Redwood Analytics in the twelve months preceding the claim."
+    },
+    {
+      "label": "2",
+      "title": "Confidentiality",
+      "text": "Each party agrees to hold in strict confidence all non-public information disclosed by the other party in connection with this Agreement, and to use such information solely to perform its obligations hereunder. This obligation survives termination of this Agreement for a period of 36 months."
+    },
+    {
+      "label": "3",
+      "title": "Entire Agreement",
+      "text": "This Agreement, together with its exhibits, constitutes the entire agreement between Redwood Analytics and Delta Technologies with respect to its subject matter and supersedes all prior or contemporaneous understandings. Any amendment must be in writing and signed by both parties."
+    },
+    {
+      "label": "4",
+      "title": "Governing Law",
+      "text": "This Agreement shall be governed by and construed in accordance with the laws of the State of Illinois, without regard to its conflict of laws principles. The parties consent to the exclusive jurisdiction of the state and federal courts located in Illinois."
+    },
+    {
+      "label": "5",
+      "title": "Scope of Services",
+      "text": "Delta Technologies shall provide the services described in Exhibit A (the \"Services\") to Redwood Analytics in a professional and workmanlike manner, consistent with industry standards. Any changes to the scope of the Services must be agreed in writing by both parties before work begins."
+    },
+    {
+      "label": "6",
+      "title": "Intellectual Property",
+      "text": "All work product created by Delta Technologies specifically for Redwood Analytics under this Agreement shall be the sole property of Redwood Analytics upon full payment of the applicable fees. Delta Technologies retains ownership of its pre-existing materials, tools, and methodologies."
+    },
+    {
+      "label": "7",
+      "title": "Compensation",
+      "text": "In consideration of the Services, Redwood Analytics shall pay Delta Technologies fees not to exceed $217,000 per invoice period. All invoices are payable within 60 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
+    },
+    {
+      "label": "8",
+      "title": "Term and Renewal",
+      "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 36 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 60 days before the end of the then-current term."
+    }
+  ],
+  "sourceFile": "contract_007_A.pdf",
+  "seed": 20260711
+}

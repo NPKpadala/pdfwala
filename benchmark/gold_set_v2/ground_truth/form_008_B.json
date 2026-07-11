@@ -1,0 +1,57 @@
+{
+  "docType": "form",
+  "layoutVariant": "B",
+  "formTitle": "Employee Information Form",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Carlos Walker"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1985-03-20"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(878) 590-6906"
+    },
+    {
+      "label": "Email Address",
+      "value": "carlos.walker@example.com"
+    },
+    {
+      "label": "Street Address",
+      "value": "9342 Maple Dr"
+    },
+    {
+      "label": "City",
+      "value": "Atlanta"
+    },
+    {
+      "label": "State",
+      "value": "GA"
+    },
+    {
+      "label": "ZIP Code",
+      "value": "30301"
+    },
+    {
+      "label": "Employer",
+      "value": "Redwood Logistics"
+    },
+    {
+      "label": "Occupation",
+      "value": "Financial Analyst"
+    },
+    {
+      "label": "Emergency Contact",
+      "value": "Lucas Santos"
+    },
+    {
+      "label": "Emergency Phone",
+      "value": "(228) 743-2980"
+    }
+  ],
+  "sourceFile": "form_008_B.pdf",
+  "seed": 20260711
+}

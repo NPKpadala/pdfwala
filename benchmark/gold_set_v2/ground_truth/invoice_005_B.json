@@ -1,0 +1,75 @@
+{
+  "docType": "invoice",
+  "layoutVariant": "B",
+  "invoiceNumber": "INV-88907",
+  "issueDate": "2026-05-24",
+  "dueDate": "2026-09-11",
+  "vendor": {
+    "name": "Evergreen Partners",
+    "address": "8757 Cedar Ln, Seattle, WA 98101",
+    "phone": "(228) 891-1758",
+    "email": "evergreen.partners@mailbox.test"
+  },
+  "customer": {
+    "name": "Evergreen Labs",
+    "contact": "Marcus Chen",
+    "address": "6575 Maple Dr, Minneapolis, MN 55401"
+  },
+  "lineItems": [
+    {
+      "description": "Steel bracket (10-pack)",
+      "qty": 9,
+      "unitPrice": 126.24,
+      "lineTotal": 1136.16
+    },
+    {
+      "description": "Steel bracket (10-pack)",
+      "qty": 8,
+      "unitPrice": 191.47,
+      "lineTotal": 1531.76
+    },
+    {
+      "description": "Power supply 450W",
+      "qty": 7,
+      "unitPrice": 470.6,
+      "lineTotal": 3294.2
+    },
+    {
+      "description": "Mounting kit",
+      "qty": 2,
+      "unitPrice": 508.74,
+      "lineTotal": 1017.48
+    },
+    {
+      "description": "Thermal sensor unit",
+      "qty": 11,
+      "unitPrice": 594.49,
+      "lineTotal": 6539.39
+    },
+    {
+      "description": "Replacement filter set",
+      "qty": 5,
+      "unitPrice": 680.6,
+      "lineTotal": 3403
+    },
+    {
+      "description": "Mounting kit",
+      "qty": 8,
+      "unitPrice": 291.69,
+      "lineTotal": 2333.52
+    },
+    {
+      "description": "Industrial adhesive 1L",
+      "qty": 2,
+      "unitPrice": 633.17,
+      "lineTotal": 1266.34
+    }
+  ],
+  "subtotal": 20521.85,
+  "taxRatePercent": 0,
+  "taxAmount": 0,
+  "total": 20521.85,
+  "currency": "USD",
+  "sourceFile": "invoice_005_B.pdf",
+  "seed": 20260711
+}

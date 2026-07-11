@@ -1,0 +1,204 @@
+{
+  "docType": "table_heavy",
+  "layoutVariant": "A",
+  "title": "Project Tracking Sheet",
+  "tables": [
+    {
+      "title": "Project Tracking Sheet",
+      "columns": [
+        "Priority",
+        "Score",
+        "Company",
+        "Status",
+        "Qty",
+        "Rate %",
+        "Unit Cost",
+        "Category"
+      ],
+      "rows": [
+        [
+          "High",
+          "4.14",
+          "Summit Group",
+          "Pending",
+          "13",
+          "20.6%",
+          "$384.91",
+          "A"
+        ],
+        [
+          "High",
+          "5.60",
+          "Apex Partners",
+          "On hold",
+          "484",
+          "20.0%",
+          "$28.87",
+          "C"
+        ],
+        [
+          "High",
+          "2.22",
+          "Vanguard Solutions",
+          "Pending",
+          "277",
+          "19.9%",
+          "$280.60",
+          "C"
+        ],
+        [
+          "Low",
+          "2.11",
+          "Delta Partners",
+          "Closed",
+          "352",
+          "1.7%",
+          "$199.34",
+          "B"
+        ],
+        [
+          "Low",
+          "4.20",
+          "Ironwood Systems",
+          "On hold",
+          "280",
+          "19.2%",
+          "$288.93",
+          "D"
+        ],
+        [
+          "Critical",
+          "2.61",
+          "Westgate Analytics",
+          "Pending",
+          "218",
+          "2.5%",
+          "$380.95",
+          "A"
+        ],
+        [
+          "Low",
+          "5.27",
+          "Keystone Industries",
+          "Closed",
+          "482",
+          "9.7%",
+          "$216.27",
+          "C"
+        ],
+        [
+          "High",
+          "3.52",
+          "Northwind Holdings",
+          "Pending",
+          "461",
+          "8.0%",
+          "$15.62",
+          "A"
+        ],
+        [
+          "High",
+          "8.07",
+          "Orchard Dynamics",
+          "Pending",
+          "404",
+          "16.0%",
+          "$205.58",
+          "A"
+        ],
+        [
+          "Low",
+          "2.91",
+          "Vanguard Solutions",
+          "On hold",
+          "468",
+          "21.4%",
+          "$208.80",
+          "A"
+        ],
+        [
+          "High",
+          "6.20",
+          "Trailhead Works",
+          "Closed",
+          "471",
+          "15.0%",
+          "$175.23",
+          "A"
+        ],
+        [
+          "Low",
+          "6.86",
+          "Junction Systems",
+          "Open",
+          "427",
+          "18.1%",
+          "$289.24",
+          "B"
+        ],
+        [
+          "Medium",
+          "5.69",
+          "Redwood Dynamics",
+          "Open",
+          "165",
+          "23.6%",
+          "$395.49",
+          "D"
+        ],
+        [
+          "Critical",
+          "4.21",
+          "Pinnacle Dynamics",
+          "Pending",
+          "152",
+          "7.7%",
+          "$292.30",
+          "C"
+        ],
+        [
+          "Medium",
+          "3.83",
+          "Evergreen Group",
+          "On hold",
+          "41",
+          "21.7%",
+          "$120.98",
+          "D"
+        ],
+        [
+          "Low",
+          "4.90",
+          "Redwood Dynamics",
+          "Closed",
+          "259",
+          "10.5%",
+          "$292.87",
+          "D"
+        ],
+        [
+          "High",
+          "1.96",
+          "Delta Dynamics",
+          "Pending",
+          "29",
+          "11.8%",
+          "$121.42",
+          "C"
+        ],
+        [
+          "High",
+          "6.03",
+          "Northwind Works",
+          "Open",
+          "137",
+          "14.7%",
+          "$308.32",
+          "C"
+        ]
+      ]
+    }
+  ],
+  "sourceFile": "table_heavy_022_A.pdf",
+  "seed": 20260711
+}

@@ -1,0 +1,50 @@
+{
+  "docType": "resume",
+  "layoutVariant": "A",
+  "name": "Diego Hassan",
+  "email": "diego.hassan@corp.example",
+  "phone": "(541) 941-7354",
+  "location": "Raleigh, NC",
+  "skills": [
+    "Salesforce",
+    "Customer Relations",
+    "Copywriting",
+    "Excel",
+    "Docker",
+    "Process Improvement",
+    "Python",
+    "AWS",
+    "Statistical Analysis"
+  ],
+  "experience": [
+    {
+      "title": "Customer Success Manager",
+      "company": "Summit Systems",
+      "startDate": "Nov 2016",
+      "endDate": "Present",
+      "bullets": [
+        "Reduced a budget of $750K across 19 projects, increasing satisfaction scores by 44%.",
+        "Streamlined weekly stakeholder reviews, reducing errors by 33%."
+      ]
+    },
+    {
+      "title": "Product Designer",
+      "company": "Delta Technologies",
+      "startDate": "Nov 2017",
+      "endDate": "Dec 2020",
+      "bullets": [
+        "Negotiated an automated QA workflow, improving turnaround time by 23%.",
+        "Developed the quarterly reporting pipeline, cutting costs by 42%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.A. Communications",
+      "school": "Bayfield University",
+      "year": 2010
+    }
+  ],
+  "sourceFile": "resume_009_A.pdf",
+  "seed": 20260711
+}

@@ -1,0 +1,49 @@
+{
+  "docType": "form",
+  "layoutVariant": "B",
+  "formTitle": "Rental Application",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Amara Smith"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1975-05-10"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(765) 504-8281"
+    },
+    {
+      "label": "Email Address",
+      "value": "amara.smith@postbox.example"
+    },
+    {
+      "label": "Street Address",
+      "value": "8440 River Rd"
+    },
+    {
+      "label": "City",
+      "value": "Atlanta"
+    },
+    {
+      "label": "State",
+      "value": "GA"
+    },
+    {
+      "label": "ZIP Code",
+      "value": "30301"
+    },
+    {
+      "label": "Employer",
+      "value": "Ironwood Holdings"
+    },
+    {
+      "label": "Occupation",
+      "value": "Operations Coordinator"
+    }
+  ],
+  "sourceFile": "form_002_B.pdf",
+  "seed": 20260711
+}

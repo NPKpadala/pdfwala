@@ -1,0 +1,45 @@
+{
+  "docType": "form",
+  "layoutVariant": "A",
+  "formTitle": "Event Registration Form",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Marcus Smith"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1978-08-10"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(697) 649-1163"
+    },
+    {
+      "label": "Email Address",
+      "value": "marcus.smith@postbox.example"
+    },
+    {
+      "label": "Street Address",
+      "value": "5735 Highland Ave"
+    },
+    {
+      "label": "City",
+      "value": "Boston"
+    },
+    {
+      "label": "State",
+      "value": "MA"
+    },
+    {
+      "label": "ZIP Code",
+      "value": "02108"
+    },
+    {
+      "label": "Employer",
+      "value": "Granite Ventures"
+    }
+  ],
+  "sourceFile": "form_004_A.pdf",
+  "seed": 20260711
+}

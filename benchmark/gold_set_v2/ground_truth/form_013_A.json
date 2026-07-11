@@ -1,0 +1,49 @@
+{
+  "docType": "form",
+  "layoutVariant": "A",
+  "formTitle": "Event Registration Form",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Sofia Larsen"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1974-03-17"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(274) 221-0091"
+    },
+    {
+      "label": "Email Address",
+      "value": "sofia.larsen@example.com"
+    },
+    {
+      "label": "Street Address",
+      "value": "4161 Cedar Ln"
+    },
+    {
+      "label": "City",
+      "value": "Columbus"
+    },
+    {
+      "label": "State",
+      "value": "OH"
+    },
+    {
+      "label": "ZIP Code",
+      "value": "43004"
+    },
+    {
+      "label": "Employer",
+      "value": "Junction Labs"
+    },
+    {
+      "label": "Occupation",
+      "value": "Financial Analyst"
+    }
+  ],
+  "sourceFile": "form_013_A.pdf",
+  "seed": 20260711
+}

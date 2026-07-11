@@ -1,0 +1,37 @@
+{
+  "docType": "brochure",
+  "layoutVariant": "A",
+  "layout": {
+    "imagePosition": "top",
+    "textColumns": 1
+  },
+  "company": "Redwood Holdings",
+  "headline": "Building Better Operations Together",
+  "sections": [
+    {
+      "heading": "Getting Started",
+      "body": "From initial planning through final handoff, a dedicated coordinator manages every detail. Quarterly reviews keep your goals front and center throughout the engagement."
+    },
+    {
+      "heading": "Who We Serve",
+      "body": "From initial planning through final handoff, a dedicated coordinator manages every detail. Every engagement starts with a detailed assessment of your current operations."
+    },
+    {
+      "heading": "Why Choose Us",
+      "body": "We maintain a 93% on-time completion rate across all active accounts. From initial planning through final handoff, a dedicated coordinator manages every detail."
+    }
+  ],
+  "bullets": [
+    "Our certified staff bring an average of 10 years of hands-on industry experience.",
+    "Every engagement starts with a detailed assessment of your current operations.",
+    "Founded in 1990, we have grown into a trusted partner for clients across the region.",
+    "Every engagement starts with a detailed assessment of your current operations.",
+    "We maintain a 96% on-time completion rate across all active accounts."
+  ],
+  "contact": {
+    "phone": "(896) 449-9687",
+    "address": "2579 2nd St, Phoenix, AZ 85001"
+  },
+  "sourceFile": "brochure_009_A.pdf",
+  "seed": 20260711
+}

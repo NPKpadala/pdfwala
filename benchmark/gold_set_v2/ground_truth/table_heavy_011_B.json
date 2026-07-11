@@ -1,0 +1,200 @@
+{
+  "docType": "table_heavy",
+  "layoutVariant": "B",
+  "title": "Inventory Ledger",
+  "tables": [
+    {
+      "title": "Inventory Ledger",
+      "columnGroups": [
+        {
+          "label": "Record Info",
+          "span": 4
+        },
+        {
+          "label": "Metrics",
+          "span": 5
+        }
+      ],
+      "columns": [
+        "Qty",
+        "Score",
+        "Priority",
+        "Category",
+        "ID",
+        "Name",
+        "Owner",
+        "Date",
+        "Region"
+      ],
+      "rows": [
+        [
+          "410",
+          "7.34",
+          "Low",
+          "B",
+          "R-6515",
+          "Priya Anderson",
+          "Hannah Chen",
+          "2025-06-25",
+          "Central"
+        ],
+        [
+          "426",
+          "5.16",
+          "High",
+          "D",
+          "R-7353",
+          "Noah Novak",
+          "Chloe Müller",
+          "2024-02-15",
+          "East"
+        ],
+        [
+          "219",
+          "9.36",
+          "Medium",
+          "B",
+          "R-2498",
+          "Fatima Kowalski",
+          "Grace Khan",
+          "2024-09-20",
+          "Central"
+        ],
+        [
+          "464",
+          "2.12",
+          "Low",
+          "D",
+          "R-8380",
+          "Maria Walker",
+          "Amara Nguyen",
+          "2025-05-20",
+          "West"
+        ],
+        [
+          "441",
+          "8.74",
+          "High",
+          "B",
+          "R-8345",
+          "Tariq Kowalski",
+          "Lucas Garcia",
+          "2024-06-04",
+          "South"
+        ],
+        [
+          "343",
+          "5.25",
+          "Medium",
+          "A",
+          "R-7290",
+          "Nina Moreau",
+          "Liam Costa",
+          "2024-03-20",
+          "North"
+        ],
+        [
+          "308",
+          "9.07",
+          "High",
+          "A",
+          "R-4703",
+          "Kenji Johnson",
+          "Emma Lee",
+          "2024-06-25",
+          "East"
+        ],
+        [
+          "192",
+          "7.24",
+          "Low",
+          "D",
+          "R-4407",
+          "Nina Ivanov",
+          "Hannah Moreau",
+          "2025-09-25",
+          "West"
+        ],
+        [
+          "223",
+          "9.49",
+          "Critical",
+          "A",
+          "R-8031",
+          "Chloe Santos",
+          "Diego Rossi",
+          "2026-09-26",
+          "North"
+        ],
+        [
+          "313",
+          "4.96",
+          "Critical",
+          "B",
+          "R-5897",
+          "Priya Okafor",
+          "Hannah Weber",
+          "2023-12-19",
+          "South"
+        ],
+        [
+          "172",
+          "1.88",
+          "Critical",
+          "A",
+          "R-5998",
+          "Amara Khan",
+          "Chloe Khan",
+          "2023-10-28",
+          "West"
+        ],
+        [
+          "329",
+          "4.93",
+          "Low",
+          "D",
+          "R-9588",
+          "Felix Ivanov",
+          "Felix Moreau",
+          "2026-03-05",
+          "West"
+        ],
+        [
+          "346",
+          "1.97",
+          "Medium",
+          "A",
+          "R-4955",
+          "Priya Santos",
+          "Diego Khan",
+          "2025-02-10",
+          "West"
+        ],
+        [
+          "461",
+          "7.28",
+          "Medium",
+          "D",
+          "R-7172",
+          "Ethan Müller",
+          "Omar Chen",
+          "2023-01-05",
+          "West"
+        ],
+        [
+          "224",
+          "6.93",
+          "Low",
+          "D",
+          "R-9460",
+          "Omar Patel",
+          "Omar Anderson",
+          "2026-07-17",
+          "East"
+        ]
+      ]
+    }
+  ],
+  "sourceFile": "table_heavy_011_B.pdf",
+  "seed": 20260711
+}

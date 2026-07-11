@@ -1,0 +1,52 @@
+{
+  "docType": "resume",
+  "layoutVariant": "B",
+  "name": "Sofia Dubois",
+  "email": "sofia.dubois@example.com",
+  "phone": "(334) 940-7542",
+  "location": "Atlanta, GA",
+  "skills": [
+    "Data Visualization",
+    "Budget Planning",
+    "Vendor Management",
+    "Copywriting",
+    "Negotiation",
+    "Statistical Analysis"
+  ],
+  "experience": [
+    {
+      "title": "Project Manager",
+      "company": "Granite Works",
+      "startDate": "Mar 2016",
+      "endDate": "Present",
+      "bullets": [
+        "Led the quarterly reporting pipeline, reducing errors by 29%.",
+        "Negotiated weekly stakeholder reviews, increasing satisfaction scores by 40%."
+      ]
+    },
+    {
+      "title": "QA Engineer",
+      "company": "Delta Analytics",
+      "startDate": "Jan 2019",
+      "endDate": "Apr 2022",
+      "bullets": [
+        "Analyzed vendor onboarding for 9 suppliers, increasing satisfaction scores by 37%.",
+        "Managed a customer retention initiative, growing revenue 40% year over year."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "M.B.A.",
+      "school": "University of the Lakes",
+      "year": 2011
+    },
+    {
+      "degree": "B.S. Accounting",
+      "school": "Central Polytechnic Institute",
+      "year": 2006
+    }
+  ],
+  "sourceFile": "resume_014_B.pdf",
+  "seed": 20260711
+}

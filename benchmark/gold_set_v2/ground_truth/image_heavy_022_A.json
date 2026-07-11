@@ -1,0 +1,130 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "A",
+  "title": "Operations Dashboard Export",
+  "imageCount": 6,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "pie",
+      "title": "Units Shipped",
+      "labels": [
+        "South",
+        "West",
+        "Central",
+        "East"
+      ],
+      "values": [
+        24,
+        36,
+        12,
+        22
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "pie",
+      "title": "Website Traffic",
+      "labels": [
+        "Sales",
+        "HR",
+        "Finance",
+        "Ops",
+        "Eng"
+      ],
+      "values": [
+        24,
+        36,
+        43,
+        13,
+        36
+      ]
+    },
+    {
+      "figure": 3,
+      "chartType": "line",
+      "title": "Units Shipped",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May"
+      ],
+      "values": [
+        56,
+        53,
+        32,
+        61,
+        84
+      ]
+    },
+    {
+      "figure": 4,
+      "chartType": "line",
+      "title": "Units Shipped",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun"
+      ],
+      "values": [
+        85,
+        55,
+        58,
+        85,
+        19,
+        87
+      ]
+    },
+    {
+      "figure": 5,
+      "chartType": "bar",
+      "title": "Headcount by Department",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug"
+      ],
+      "values": [
+        19,
+        43,
+        88,
+        75,
+        40,
+        73,
+        29,
+        18
+      ]
+    },
+    {
+      "figure": 6,
+      "chartType": "pie",
+      "title": "Market Share",
+      "labels": [
+        "West",
+        "South",
+        "Central",
+        "North",
+        "East"
+      ],
+      "values": [
+        10,
+        42,
+        35,
+        45,
+        37
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_022_A.pdf",
+  "seed": 20260711
+}

@@ -1,0 +1,98 @@
+{
+  "docType": "form",
+  "layoutVariant": "C",
+  "formTitle": "New Account Application",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Marcus Taylor"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1986-10-16"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(539) 718-0023"
+    },
+    {
+      "label": "Email Address",
+      "value": "marcus.taylor@corp.example"
+    },
+    {
+      "label": "Street Address",
+      "value": "1228 Birch Blvd"
+    }
+  ],
+  "checkboxGroups": [
+    {
+      "group": "Employment Status",
+      "options": [
+        {
+          "label": "Full-time",
+          "checked": false
+        },
+        {
+          "label": "Part-time",
+          "checked": false
+        },
+        {
+          "label": "Self-employed",
+          "checked": false
+        },
+        {
+          "label": "Retired",
+          "checked": true
+        },
+        {
+          "label": "Student",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "group": "How did you hear about us?",
+      "options": [
+        {
+          "label": "Referral",
+          "checked": false
+        },
+        {
+          "label": "Online search",
+          "checked": false
+        },
+        {
+          "label": "Advertisement",
+          "checked": false
+        },
+        {
+          "label": "Other",
+          "checked": true
+        }
+      ]
+    },
+    {
+      "group": "Preferred Contact Method",
+      "options": [
+        {
+          "label": "Email",
+          "checked": true
+        },
+        {
+          "label": "Phone",
+          "checked": false
+        },
+        {
+          "label": "Text message",
+          "checked": false
+        },
+        {
+          "label": "Postal mail",
+          "checked": false
+        }
+      ]
+    }
+  ],
+  "sourceFile": "form_003_C.pdf",
+  "seed": 20260711
+}

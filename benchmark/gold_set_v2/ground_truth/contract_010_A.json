@@ -1,0 +1,58 @@
+{
+  "docType": "contract",
+  "layoutVariant": "A",
+  "title": "MASTER SERVICES AGREEMENT",
+  "parties": [
+    {
+      "role": "Client",
+      "name": "Trailhead Solutions",
+      "location": "Seattle, WA",
+      "signer": "Ingrid Fischer"
+    },
+    {
+      "role": "Provider",
+      "name": "Keystone Partners",
+      "location": "Seattle, WA",
+      "signer": "Diego Kowalski"
+    }
+  ],
+  "effectiveDate": "2025-10-26",
+  "termMonths": 12,
+  "noticeDays": 30,
+  "maxFeeUsd": 208000,
+  "governingLawState": "Delaware",
+  "clauses": [
+    {
+      "label": "1",
+      "title": "Confidentiality",
+      "text": "Each party agrees to hold in strict confidence all non-public information disclosed by the other party in connection with this Agreement, and to use such information solely to perform its obligations hereunder. This obligation survives termination of this Agreement for a period of 12 months."
+    },
+    {
+      "label": "2",
+      "title": "Intellectual Property",
+      "text": "All work product created by Keystone Partners specifically for Trailhead Solutions under this Agreement shall be the sole property of Trailhead Solutions upon full payment of the applicable fees. Keystone Partners retains ownership of its pre-existing materials, tools, and methodologies."
+    },
+    {
+      "label": "3",
+      "title": "Independent Contractor",
+      "text": "Keystone Partners is an independent contractor and nothing in this Agreement creates a partnership, joint venture, agency, or employment relationship between the parties. Keystone Partners is solely responsible for its own taxes, insurance, and employee obligations."
+    },
+    {
+      "label": "4",
+      "title": "Term and Renewal",
+      "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 12 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 30 days before the end of the then-current term."
+    },
+    {
+      "label": "5",
+      "title": "Limitation of Liability",
+      "text": "Except for breaches of confidentiality, neither party shall be liable for any indirect, incidental, special, or consequential damages arising out of this Agreement. Each party's aggregate liability shall not exceed the total fees paid or payable by Trailhead Solutions in the twelve months preceding the claim."
+    },
+    {
+      "label": "6",
+      "title": "Termination",
+      "text": "Either party may terminate this Agreement upon 30 days' written notice to the other party. Either party may terminate immediately upon a material breach by the other party that remains uncured 30 days after written notice of the breach."
+    }
+  ],
+  "sourceFile": "contract_010_A.pdf",
+  "seed": 20260711
+}

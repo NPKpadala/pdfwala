@@ -1,0 +1,119 @@
+{
+  "docType": "form",
+  "layoutVariant": "C",
+  "formTitle": "Employee Information Form",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Omar Dubois"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1989-05-13"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(657) 455-2257"
+    },
+    {
+      "label": "Email Address",
+      "value": "omar.dubois@example.com"
+    },
+    {
+      "label": "Street Address",
+      "value": "9608 Park Pl"
+    }
+  ],
+  "checkboxGroups": [
+    {
+      "group": "How did you hear about us?",
+      "options": [
+        {
+          "label": "Referral",
+          "checked": false
+        },
+        {
+          "label": "Online search",
+          "checked": false
+        },
+        {
+          "label": "Advertisement",
+          "checked": false
+        },
+        {
+          "label": "Other",
+          "checked": true
+        }
+      ]
+    },
+    {
+      "group": "Insurance Type",
+      "options": [
+        {
+          "label": "Private",
+          "checked": false
+        },
+        {
+          "label": "Employer plan",
+          "checked": true
+        },
+        {
+          "label": "Government",
+          "checked": false
+        },
+        {
+          "label": "None",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "group": "Employment Status",
+      "options": [
+        {
+          "label": "Full-time",
+          "checked": false
+        },
+        {
+          "label": "Part-time",
+          "checked": false
+        },
+        {
+          "label": "Self-employed",
+          "checked": true
+        },
+        {
+          "label": "Retired",
+          "checked": false
+        },
+        {
+          "label": "Student",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "group": "Preferred Contact Method",
+      "options": [
+        {
+          "label": "Email",
+          "checked": true
+        },
+        {
+          "label": "Phone",
+          "checked": false
+        },
+        {
+          "label": "Text message",
+          "checked": false
+        },
+        {
+          "label": "Postal mail",
+          "checked": false
+        }
+      ]
+    }
+  ],
+  "sourceFile": "form_018_C.pdf",
+  "seed": 20260711
+}

@@ -1,0 +1,119 @@
+{
+  "docType": "form",
+  "layoutVariant": "C",
+  "formTitle": "New Account Application",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Felix Moreau"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1984-01-09"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(769) 499-4619"
+    },
+    {
+      "label": "Email Address",
+      "value": "felix.moreau@postbox.example"
+    },
+    {
+      "label": "Street Address",
+      "value": "7376 Pine Rd"
+    }
+  ],
+  "checkboxGroups": [
+    {
+      "group": "Preferred Contact Method",
+      "options": [
+        {
+          "label": "Email",
+          "checked": true
+        },
+        {
+          "label": "Phone",
+          "checked": false
+        },
+        {
+          "label": "Text message",
+          "checked": false
+        },
+        {
+          "label": "Postal mail",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "group": "How did you hear about us?",
+      "options": [
+        {
+          "label": "Referral",
+          "checked": false
+        },
+        {
+          "label": "Online search",
+          "checked": false
+        },
+        {
+          "label": "Advertisement",
+          "checked": true
+        },
+        {
+          "label": "Other",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "group": "Insurance Type",
+      "options": [
+        {
+          "label": "Private",
+          "checked": false
+        },
+        {
+          "label": "Employer plan",
+          "checked": false
+        },
+        {
+          "label": "Government",
+          "checked": false
+        },
+        {
+          "label": "None",
+          "checked": true
+        }
+      ]
+    },
+    {
+      "group": "Employment Status",
+      "options": [
+        {
+          "label": "Full-time",
+          "checked": false
+        },
+        {
+          "label": "Part-time",
+          "checked": true
+        },
+        {
+          "label": "Self-employed",
+          "checked": false
+        },
+        {
+          "label": "Retired",
+          "checked": false
+        },
+        {
+          "label": "Student",
+          "checked": false
+        }
+      ]
+    }
+  ],
+  "sourceFile": "form_006_C.pdf",
+  "seed": 20260711
+}

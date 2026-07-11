@@ -1,0 +1,109 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "A",
+  "title": "Annual Performance Report",
+  "imageCount": 5,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "bar",
+      "title": "Customer Satisfaction Trend",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr"
+      ],
+      "values": [
+        91,
+        39,
+        44,
+        23
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "bar",
+      "title": "Headcount by Department",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May"
+      ],
+      "values": [
+        55,
+        39,
+        59,
+        23,
+        23
+      ]
+    },
+    {
+      "figure": 3,
+      "chartType": "line",
+      "title": "Website Traffic",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul"
+      ],
+      "values": [
+        34,
+        55,
+        57,
+        94,
+        16,
+        18,
+        89
+      ]
+    },
+    {
+      "figure": 4,
+      "chartType": "bar",
+      "title": "Headcount by Department",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May"
+      ],
+      "values": [
+        17,
+        55,
+        54,
+        82,
+        31
+      ]
+    },
+    {
+      "figure": 5,
+      "chartType": "line",
+      "title": "Website Traffic",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun"
+      ],
+      "values": [
+        85,
+        81,
+        26,
+        16,
+        33,
+        79
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_007_A.pdf",
+  "seed": 20260711
+}

@@ -1,0 +1,63 @@
+{
+  "docType": "contract",
+  "layoutVariant": "B",
+  "title": "MASTER SERVICES AGREEMENT",
+  "parties": [
+    {
+      "role": "Client",
+      "name": "Evergreen Manufacturing",
+      "location": "Raleigh, NC",
+      "signer": "James Fischer"
+    },
+    {
+      "role": "Provider",
+      "name": "Orchard Manufacturing",
+      "location": "Austin, TX",
+      "signer": "Emma Patel"
+    }
+  ],
+  "effectiveDate": "2025-07-07",
+  "termMonths": 24,
+  "noticeDays": 45,
+  "maxFeeUsd": 143000,
+  "governingLawState": "Illinois",
+  "clauses": [
+    {
+      "label": "A",
+      "title": "Confidentiality",
+      "text": "Each party agrees to hold in strict confidence all non-public information disclosed by the other party in connection with this Agreement, and to use such information solely to perform its obligations hereunder. This obligation survives termination of this Agreement for a period of 24 months."
+    },
+    {
+      "label": "B",
+      "title": "Compensation",
+      "text": "In consideration of the Services, Evergreen Manufacturing shall pay Orchard Manufacturing fees not to exceed $143,000 per invoice period. All invoices are payable within 45 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
+    },
+    {
+      "label": "C",
+      "title": "Intellectual Property",
+      "text": "All work product created by Orchard Manufacturing specifically for Evergreen Manufacturing under this Agreement shall be the sole property of Evergreen Manufacturing upon full payment of the applicable fees. Orchard Manufacturing retains ownership of its pre-existing materials, tools, and methodologies."
+    },
+    {
+      "label": "D",
+      "title": "Termination",
+      "text": "Either party may terminate this Agreement upon 45 days' written notice to the other party. Either party may terminate immediately upon a material breach by the other party that remains uncured 45 days after written notice of the breach."
+    },
+    {
+      "label": "E",
+      "title": "Governing Law",
+      "text": "This Agreement shall be governed by and construed in accordance with the laws of the State of Illinois, without regard to its conflict of laws principles. The parties consent to the exclusive jurisdiction of the state and federal courts located in Illinois."
+    },
+    {
+      "label": "F",
+      "title": "Scope of Services",
+      "text": "Orchard Manufacturing shall provide the services described in Exhibit A (the \"Services\") to Evergreen Manufacturing in a professional and workmanlike manner, consistent with industry standards. Any changes to the scope of the Services must be agreed in writing by both parties before work begins."
+    },
+    {
+      "label": "G",
+      "title": "Independent Contractor",
+      "text": "Orchard Manufacturing is an independent contractor and nothing in this Agreement creates a partnership, joint venture, agency, or employment relationship between the parties. Orchard Manufacturing is solely responsible for its own taxes, insurance, and employee obligations."
+    }
+  ],
+  "sourceFile": "contract_005_B.pdf",
+  "seed": 20260711
+}

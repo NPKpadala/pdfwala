@@ -1,0 +1,35 @@
+{
+  "docType": "brochure",
+  "layoutVariant": "A",
+  "layout": {
+    "imagePosition": "top",
+    "textColumns": 1
+  },
+  "company": "Apex Systems",
+  "headline": "Your Partner in Sustainable Growth",
+  "sections": [
+    {
+      "heading": "Our Track Record",
+      "body": "Our team works with organizations of every size to deliver measurable results on schedule. From initial planning through final handoff, a dedicated coordinator manages every detail. Founded in 1998, we have grown into a trusted partner for clients across the region."
+    },
+    {
+      "heading": "Getting Started",
+      "body": "Our team works with organizations of every size to deliver measurable results on schedule. Clients rely on us for clear communication, transparent pricing, and dependable delivery. Quarterly reviews keep your goals front and center throughout the engagement."
+    },
+    {
+      "heading": "Our Approach",
+      "body": "Quarterly reviews keep your goals front and center throughout the engagement. We maintain a 94% on-time completion rate across all active accounts."
+    }
+  ],
+  "bullets": [
+    "From initial planning through final handoff, a dedicated coordinator manages every detail.",
+    "From initial planning through final handoff, a dedicated coordinator manages every detail.",
+    "From initial planning through final handoff, a dedicated coordinator manages every detail."
+  ],
+  "contact": {
+    "phone": "(792) 488-3921",
+    "address": "5188 Birch Blvd, Austin, TX 73301"
+  },
+  "sourceFile": "brochure_025_A.pdf",
+  "seed": 20260711
+}

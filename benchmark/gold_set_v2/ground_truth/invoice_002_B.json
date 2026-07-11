@@ -1,0 +1,45 @@
+{
+  "docType": "invoice",
+  "layoutVariant": "B",
+  "invoiceNumber": "INV-76219",
+  "issueDate": "2026-01-18",
+  "dueDate": "2026-05-22",
+  "vendor": {
+    "name": "Apex Industries",
+    "address": "1409 Pine Rd, Portland, OR 97201",
+    "phone": "(795) 576-0816",
+    "email": "apex.industries@corp.example"
+  },
+  "customer": {
+    "name": "Ironwood Technologies",
+    "contact": "Liam Müller",
+    "address": "7266 Washington Ave, Phoenix, AZ 85001"
+  },
+  "lineItems": [
+    {
+      "description": "Thermal sensor unit",
+      "qty": 3,
+      "unitPrice": 508.84,
+      "lineTotal": 1526.52
+    },
+    {
+      "description": "Maintenance retainer",
+      "qty": 5,
+      "unitPrice": 323.71,
+      "lineTotal": 1618.55
+    },
+    {
+      "description": "Control module v3",
+      "qty": 11,
+      "unitPrice": 898.76,
+      "lineTotal": 9886.36
+    }
+  ],
+  "subtotal": 13031.43,
+  "taxRatePercent": 7,
+  "taxAmount": 912.2,
+  "total": 13943.63,
+  "currency": "USD",
+  "sourceFile": "invoice_002_B.pdf",
+  "seed": 20260711
+}

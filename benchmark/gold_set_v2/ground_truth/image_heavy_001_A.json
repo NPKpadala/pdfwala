@@ -1,0 +1,46 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "A",
+  "title": "Annual Performance Report",
+  "imageCount": 2,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "pie",
+      "title": "Monthly Revenue",
+      "labels": [
+        "Sales",
+        "HR",
+        "Finance",
+        "Eng",
+        "Ops"
+      ],
+      "values": [
+        19,
+        51,
+        25,
+        39,
+        23
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "line",
+      "title": "Customer Satisfaction Trend",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr"
+      ],
+      "values": [
+        34,
+        42,
+        42,
+        83
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_001_A.pdf",
+  "seed": 20260711
+}

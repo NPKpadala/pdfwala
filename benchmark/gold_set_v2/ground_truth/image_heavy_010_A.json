@@ -1,0 +1,82 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "A",
+  "title": "KPI Snapshot",
+  "imageCount": 4,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "line",
+      "title": "Website Traffic",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul"
+      ],
+      "values": [
+        40,
+        68,
+        94,
+        42,
+        61,
+        74,
+        57
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "line",
+      "title": "Monthly Revenue",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr"
+      ],
+      "values": [
+        38,
+        17,
+        56,
+        70
+      ]
+    },
+    {
+      "figure": 3,
+      "chartType": "pie",
+      "title": "Customer Satisfaction Trend",
+      "labels": [
+        "North",
+        "East",
+        "South"
+      ],
+      "values": [
+        56,
+        19,
+        13
+      ]
+    },
+    {
+      "figure": 4,
+      "chartType": "pie",
+      "title": "Website Traffic",
+      "labels": [
+        "Central",
+        "East",
+        "West",
+        "North"
+      ],
+      "values": [
+        26,
+        51,
+        40,
+        28
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_010_A.pdf",
+  "seed": 20260711
+}
