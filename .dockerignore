@@ -10,3 +10,13 @@ log_archives/*
 monitor_*
 .env
 .git
+
+# Test/benchmark corpus — not needed at runtime, keeps the prod image lean
+benchmark/
+
+# Stray backup files and loose root PDFs (image hygiene)
+*.bak
+*.bak.*
+nginx/*.bak
+nginx/*.bak.*
+NetxcellLinuxAdminResume_compressed_*.pdf
