@@ -14,12 +14,16 @@ OUT = os.path.join(BASE, "outputs", "gold")
 # Excluded from scoring entirely (neither numerator nor denominator), key+subtree.
 # Universal across all 8 categories: docType/layoutVariant/sourceFile/seed.
 # Per-schema non-content: currency (ISO code, PDF prints the symbol), scanParams
-# (ocr_scan degradation params), layout (brochure layout directives). This is a
-# schema-level filter, NOT an invoice special-case. It does NOT exclude
-# GT-vs-PDF "layout-omitted" content (e.g. _B customer block / unit-price column):
-# those stay scored as failures — a documented GT/template authoring gap.
+# (ocr_scan degradation params), layout (brochure layout directives), chartType
+# (image_heavy descriptor of which chart to draw — "pie"/"bar"/"line" is never
+# rendered as text OR pixels; confirmed absent from PDF text and OCR of the
+# render). NB documentKind (ocr_scan) is deliberately NOT here — it IS rendered
+# (the memo banner) and stays scored. This is a schema-level filter, NOT an
+# invoice special-case. It does NOT exclude GT-vs-PDF "layout-omitted" content
+# (e.g. _B customer block / unit-price column): those stay scored as failures —
+# a documented GT/template authoring gap.
 _META_KEYS = {"docType", "layoutVariant", "sourceFile", "seed",
-              "currency", "scanParams", "layout"}
+              "currency", "scanParams", "layout", "chartType"}
 
 # GT keys holding long free-text paragraph content, where exact-string match
 # over-penalises single-character OCR noise ("maintain a" -> "maintain @"). ONLY
