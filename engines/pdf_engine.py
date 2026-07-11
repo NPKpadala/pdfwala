@@ -2210,6 +2210,61 @@ def _add_hyperlink_run(paragraph, url: str, text: str, template_run=None):
     return hl
 
 
+def _split_header_docx(path: str) -> dict:
+    """Split a top-of-document paragraph that glues a large NAME/title run onto
+    the same line as a much smaller subtitle run. pdf2docx merges e.g.
+    'PRAVEEN KUMAR PADALA  Linux Infrastructure & Systems Administrator' into one
+    centered paragraph; in MS Word the large name wraps and OVERLAPS the subtitle.
+    We split at the first big->small font-size drop in the first few paragraphs.
+    Conservative (large name required, clear size drop) + additive; never raises."""
+    stats = {"headers_split": 0}
+    try:
+        from docx import Document as _Doc
+        from docx.oxml.ns import qn
+        import copy
+    except Exception:
+        return stats
+    try:
+        doc = _Doc(path)
+        for p in doc.paragraphs[:3]:
+            runs = list(p.runs)
+            if len(runs) < 2:
+                continue
+            big = None
+            split_idx = None
+            for i, r in enumerate(runs):
+                sz = r.font.size.pt if r.font.size else None
+                if sz is None:
+                    continue
+                if big is None:
+                    big = sz
+                    if big < 16:                 # header name must be genuinely large
+                        break
+                    continue
+                if sz <= big * 0.7 and sz <= 14:  # clear drop to a subtitle
+                    split_idx = i
+                    break
+            if big is None or big < 16 or split_idx is None:
+                continue
+            # move runs[split_idx:] into a NEW paragraph right after p (same pPr).
+            move = [runs[j]._r for j in range(split_idx, len(runs))]
+            new_p = copy.deepcopy(p._p)
+            for child in list(new_p):
+                if child.tag == qn("w:r"):
+                    new_p.remove(child)          # keep pPr (alignment), drop runs
+            for r_el in move:
+                p._p.remove(r_el)
+                new_p.append(r_el)
+            p._p.addnext(new_p)
+            stats["headers_split"] += 1
+            break                                # only the header block, once
+        if stats["headers_split"]:
+            doc.save(path)
+    except Exception as ex:
+        log.warning(f"pdf_to_word: header split skipped ({ex})")
+    return stats
+
+
 def _recover_hyperlinks(docx_path: str, pdf_path: str) -> dict:
     """Phase 4B — recover contact/hyperlink TEXT that pdf2docx drops.
 
@@ -2226,8 +2281,22 @@ def _recover_hyperlinks(docx_path: str, pdf_path: str) -> dict:
     except Exception:
         return stats
     try:
+        from docx.oxml.ns import qn
         doc = _Doc(docx_path)
-        body_text = "\n".join(p.text for p in doc.paragraphs)
+        # Full visible text INCLUDING hyperlink runs. python-docx's Paragraph.text
+        # silently DROPS text inside <w:hyperlink> elements, so a plain
+        # "\n".join(p.text ...) is blind to links pdf2docx already created — which
+        # made this pass re-add them as duplicates. Read every <w:t> instead.
+        body_text = "".join((t.text or "") for t in doc.element.iter(qn("w:t")))
+        # URIs pdf2docx already linked — the reliable dedup key (display text can
+        # differ in form, but a matching target means the link already exists).
+        existing_uris = set()
+        try:
+            for rel in doc.part.rels.values():
+                if "hyperlink" in (rel.reltype or ""):
+                    existing_uris.add((rel.target_ref or "").rstrip("/").lower())
+        except Exception:
+            pass
         pdf = _fitz.open(pdf_path)
         pg = pdf[0]
         # Collect (uri, display_text) for links in the top contact band.
@@ -2237,6 +2306,8 @@ def _recover_hyperlinks(docx_path: str, pdf_path: str) -> dict:
             uri = lk.get("uri")
             if not uri or uri in seen_uri:
                 continue
+            if (uri or "").rstrip("/").lower() in existing_uris:
+                continue                            # pdf2docx already linked it → skip (no dup)
             rect = _fitz.Rect(lk["from"])
             if rect.y0 > 200:                      # contact band only
                 continue
@@ -2247,7 +2318,7 @@ def _recover_hyperlinks(docx_path: str, pdf_path: str) -> dict:
                     disp = tok
                     break
             if not disp or disp in body_text:
-                continue                            # already present → skip (no dup)
+                continue                            # display text already visible → skip (no dup)
             missing.append((uri, disp)); seen_uri.add(uri)
         pdf.close()
         if not missing:
@@ -2597,6 +2668,10 @@ def pdf_to_word(ctx: JobContext) -> dict:
     # additive/high-confidence, so it can't regress documents it can't read.
     ctx.set_progress(96)
     reflow = _reflow_docx(ctx.output_path)
+
+    # Split a merged 'NAME  subtitle' header line (pdf2docx glues the large name
+    # onto the smaller tagline; MS Word then overlaps them). Conservative.
+    header = _split_header_docx(ctx.output_path)
 
     # Phase 3 — semantic reconstruction: literal bullet/numbered paragraphs
     # become real editable Word lists (numbering.xml + numPr). Additive.
