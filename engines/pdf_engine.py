@@ -2217,15 +2217,26 @@ def _split_header_docx(path: str) -> dict:
     centered paragraph; in MS Word the large name wraps and OVERLAPS the subtitle.
     We split at the first big->small font-size drop in the first few paragraphs.
     Conservative (large name required, clear size drop) + additive; never raises."""
-    stats = {"headers_split": 0}
+    stats = {"headers_split": 0, "indents_cleared": 0}
     try:
         from docx import Document as _Doc
         from docx.oxml.ns import qn
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
         import copy
     except Exception:
         return stats
     try:
         doc = _Doc(path)
+        # Clear spurious left/right indents on centered header lines. pdf2docx
+        # sets absolute EMU indents (e.g. 94pt/101pt) that shrink the centring box
+        # so a large name wraps to two lines even though the page has room. A
+        # centered header should use the full page width.
+        for p in doc.paragraphs[:6]:
+            if p.alignment == WD_ALIGN_PARAGRAPH.CENTER and \
+               (p.paragraph_format.left_indent or p.paragraph_format.right_indent):
+                p.paragraph_format.left_indent = None
+                p.paragraph_format.right_indent = None
+                stats["indents_cleared"] += 1
         for p in doc.paragraphs[:3]:
             runs = list(p.runs)
             if len(runs) < 2:
@@ -2258,7 +2269,7 @@ def _split_header_docx(path: str) -> dict:
             p._p.addnext(new_p)
             stats["headers_split"] += 1
             break                                # only the header block, once
-        if stats["headers_split"]:
+        if stats["headers_split"] or stats["indents_cleared"]:
             doc.save(path)
     except Exception as ex:
         log.warning(f"pdf_to_word: header split skipped ({ex})")
