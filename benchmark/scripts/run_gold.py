@@ -55,6 +55,9 @@ def gt_fields(obj, acc, para=False):
     elif isinstance(obj, list):
         for v in obj:
             gt_fields(v, acc, para)
+    elif isinstance(obj, bool):
+        pass  # booleans are state (e.g. checkbox `checked`), never rendered as
+              # document text; exclude BEFORE the int check since bool subclasses int
     elif isinstance(obj, (str, int, float)):
         s = str(obj).strip()
         if len(s) >= 3:
