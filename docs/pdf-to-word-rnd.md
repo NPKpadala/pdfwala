@@ -173,6 +173,8 @@ regresses the other mode.
 reading-order scramble affects **2/114 docs** (both brochure `_D`). Brochure recall 0.898,
 would reach ~1.0 if resolved (**macro +0.006**). Low corpus impact for the reading-order
 half; the overflow half is systemic but was already deferred as HIGH regression risk.
+Confirmed at 8x scale via gold_set_v2 (Phase 7.0c): all 8 new brochure `_D` docs reproduce
+the interleaving (0.50–0.69 recall vs 1.0 for A/B/C), 0 new bucket-c defects — still deferred, same reasoning.
 
 **Dependency reality:** pdf2docx **0.5.8 is its final release and is effectively
 unmaintained** (Artifex-hosted, MIT-relicensed, no active development). Any fix means
