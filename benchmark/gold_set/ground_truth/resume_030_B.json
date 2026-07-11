@@ -1,0 +1,59 @@
+{
+  "docType": "resume",
+  "layoutVariant": "B",
+  "name": "Felix Khan",
+  "email": "felix.khan@mailbox.test",
+  "phone": "(306) 334-9518",
+  "location": "Chicago, IL",
+  "skills": [
+    "Docker",
+    "Salesforce",
+    "SQL",
+    "Copywriting",
+    "AWS",
+    "Agile / Scrum"
+  ],
+  "experience": [
+    {
+      "title": "Sales Director",
+      "company": "Redwood Group",
+      "startDate": "May 2015",
+      "endDate": "Present",
+      "bullets": [
+        "Led weekly stakeholder reviews, cutting costs by 10%.",
+        "Coordinated a cross-functional team of 34 people, growing revenue 22% year over year."
+      ]
+    },
+    {
+      "title": "Sales Director",
+      "company": "Northwind Holdings",
+      "startDate": "Jul 2018",
+      "endDate": "Feb 2021",
+      "bullets": [
+        "Analyzed procurement processes for 15 product lines, reducing errors by 35%.",
+        "Negotiated a cross-functional team of 16 people, saving roughly 21 hours per month.",
+        "Automated weekly stakeholder reviews, saving roughly 51 hours per month."
+      ]
+    },
+    {
+      "title": "Project Manager",
+      "company": "Westgate Works",
+      "startDate": "Mar 2021",
+      "endDate": "Mar 2023",
+      "bullets": [
+        "Reduced a customer retention initiative, reducing errors by 34%.",
+        "Managed an automated QA workflow, increasing satisfaction scores by 8%.",
+        "Automated weekly stakeholder reviews, cutting costs by 29%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.A. Economics",
+      "school": "Central Polytechnic Institute",
+      "year": 2013
+    }
+  ],
+  "sourceFile": "resume_030_B.pdf",
+  "seed": 359928
+}

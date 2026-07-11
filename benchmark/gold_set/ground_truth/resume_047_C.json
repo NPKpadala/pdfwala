@@ -1,0 +1,53 @@
+{
+  "docType": "resume",
+  "layoutVariant": "C",
+  "name": "David Ivanov",
+  "email": "david.ivanov@corp.example",
+  "phone": "(596) 789-1126",
+  "location": "Columbus, OH",
+  "skills": [
+    "Vendor Management",
+    "Tableau",
+    "Java",
+    "Budget Planning",
+    "Copywriting",
+    "SQL"
+  ],
+  "experience": [
+    {
+      "title": "Content Strategist",
+      "company": "Junction Analytics",
+      "startDate": "May 2014",
+      "endDate": "Present",
+      "bullets": [
+        "Led a budget of $678K across 39 projects, increasing satisfaction scores by 41%.",
+        "Negotiated a budget of $472K across 36 projects, saving roughly 22 hours per month.",
+        "Launched the annual planning cycle, growing revenue 16% year over year."
+      ]
+    },
+    {
+      "title": "Supply Chain Analyst",
+      "company": "Horizon Labs",
+      "startDate": "Jan 2018",
+      "endDate": "May 2022",
+      "bullets": [
+        "Streamlined weekly stakeholder reviews, saving roughly 31 hours per month.",
+        "Reduced procurement processes for 36 product lines, increasing satisfaction scores by 11%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "M.S. Data Science",
+      "school": "Bayfield University",
+      "year": 2016
+    },
+    {
+      "degree": "B.A. Economics",
+      "school": "University of the Lakes",
+      "year": 2022
+    }
+  ],
+  "sourceFile": "resume_047_C.pdf",
+  "seed": 359928
+}

@@ -1,0 +1,65 @@
+{
+  "docType": "resume",
+  "layoutVariant": "A",
+  "name": "Maria Garcia",
+  "email": "maria.garcia@postbox.example",
+  "phone": "(420) 746-1566",
+  "location": "Nashville, TN",
+  "skills": [
+    "Communication",
+    "Budget Planning",
+    "SQL",
+    "Forecasting",
+    "Excel",
+    "Salesforce",
+    "Copywriting",
+    "AWS",
+    "Statistical Analysis"
+  ],
+  "experience": [
+    {
+      "title": "Product Designer",
+      "company": "Apex Industries",
+      "startDate": "Nov 2016",
+      "endDate": "Present",
+      "bullets": [
+        "Designed a cross-functional team of 15 people, saving roughly 87 hours per month.",
+        "Reduced a customer retention initiative, reducing errors by 45%."
+      ]
+    },
+    {
+      "title": "Project Manager",
+      "company": "Westgate Holdings",
+      "startDate": "Nov 2019",
+      "endDate": "Mar 2023",
+      "bullets": [
+        "Coordinated the quarterly reporting pipeline, increasing satisfaction scores by 28%.",
+        "Managed a customer retention initiative, reducing errors by 24%."
+      ]
+    },
+    {
+      "title": "HR Generalist",
+      "company": "Northwind Analytics",
+      "startDate": "Jul 2022",
+      "endDate": "Mar 2022",
+      "bullets": [
+        "Designed an automated QA workflow, increasing satisfaction scores by 28%.",
+        "Negotiated the quarterly reporting pipeline, saving roughly 108 hours per month."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Mechanical Engineering",
+      "school": "Northgate University",
+      "year": 2009
+    },
+    {
+      "degree": "B.A. Communications",
+      "school": "Northgate University",
+      "year": 2011
+    }
+  ],
+  "sourceFile": "resume_049_A.pdf",
+  "seed": 359928
+}

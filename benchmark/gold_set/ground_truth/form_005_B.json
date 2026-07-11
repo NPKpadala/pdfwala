@@ -1,0 +1,45 @@
+{
+  "docType": "form",
+  "layoutVariant": "B",
+  "formTitle": "Rental Application",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Maria O'Brien"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1967-04-05"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(581) 585-0387"
+    },
+    {
+      "label": "Email Address",
+      "value": "maria.o.brien@corp.example"
+    },
+    {
+      "label": "Street Address",
+      "value": "674 Birch Blvd"
+    },
+    {
+      "label": "City",
+      "value": "Boston"
+    },
+    {
+      "label": "State",
+      "value": "MA"
+    },
+    {
+      "label": "ZIP Code",
+      "value": "02108"
+    },
+    {
+      "label": "Employer",
+      "value": "Pinnacle Ventures"
+    }
+  ],
+  "sourceFile": "form_005_B.pdf",
+  "seed": 359928
+}

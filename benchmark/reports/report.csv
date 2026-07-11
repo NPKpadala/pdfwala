@@ -1,0 +1,5 @@
+class,file,ok,composite_0_10,char_accuracy,word_f1,visual_ssim,phash_dist,page_ratio,word_native_ratio,headings,list_items,tables,hyperlinks_docx,link_recall,seconds,peak_mb
+invoices,invoice_sample,True,8.67,1.0,1.0,0.4015,0.0,1.0,1.0,0,0,0,0,,0.44,73.3
+research-papers,paper_sample,True,8.58,1.0,1.0,0.3592,32.0,1.0,1.0,0,0,0,0,,0.14,0.0
+resumes,resume_infra,True,7.22,0.9025,0.942,0.0637,24.0,1.5,1.0,5,23,0,3,1.0,0.61,0.0
+resumes,resume_simple,True,8.46,0.9949,0.9231,0.3936,32.0,1.0,1.0,0,0,0,0,,0.13,0.0

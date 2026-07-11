@@ -1,0 +1,51 @@
+{
+  "docType": "resume",
+  "layoutVariant": "B",
+  "name": "Liam Rossi",
+  "email": "liam.rossi@mailbox.test",
+  "phone": "(660) 862-0304",
+  "location": "Phoenix, AZ",
+  "skills": [
+    "Forecasting",
+    "Data Visualization",
+    "Statistical Analysis",
+    "Docker",
+    "Agile / Scrum",
+    "Project Management",
+    "Communication",
+    "Tableau"
+  ],
+  "experience": [
+    {
+      "title": "Sales Director",
+      "company": "Trailhead Solutions",
+      "startDate": "Aug 2016",
+      "endDate": "Present",
+      "bullets": [
+        "Designed procurement processes for 26 product lines, saving roughly 113 hours per month.",
+        "Implemented the annual planning cycle, increasing satisfaction scores by 40%.",
+        "Negotiated a cross-functional team of 18 people, saving roughly 11 hours per month."
+      ]
+    },
+    {
+      "title": "Product Designer",
+      "company": "Pinnacle Industries",
+      "startDate": "Feb 2019",
+      "endDate": "Jan 2024",
+      "bullets": [
+        "Managed the annual planning cycle, reducing errors by 21%.",
+        "Analyzed a customer retention initiative, saving roughly 59 hours per month.",
+        "Automated a customer retention initiative, reducing errors by 11%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Accounting",
+      "school": "Harborview State University",
+      "year": 2007
+    }
+  ],
+  "sourceFile": "resume_026_B.pdf",
+  "seed": 359928
+}

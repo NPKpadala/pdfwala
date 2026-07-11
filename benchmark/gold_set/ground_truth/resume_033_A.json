@@ -1,0 +1,57 @@
+{
+  "docType": "resume",
+  "layoutVariant": "A",
+  "name": "Nina Lee",
+  "email": "nina.lee@corp.example",
+  "phone": "(228) 236-9189",
+  "location": "Raleigh, NC",
+  "skills": [
+    "Copywriting",
+    "Statistical Analysis",
+    "Negotiation",
+    "React",
+    "Docker",
+    "Java"
+  ],
+  "experience": [
+    {
+      "title": "HR Generalist",
+      "company": "Horizon Dynamics",
+      "startDate": "Nov 2016",
+      "endDate": "Present",
+      "bullets": [
+        "Reduced procurement processes for 8 product lines, reducing errors by 31%.",
+        "Launched a cross-functional team of 39 people, growing revenue 35% year over year."
+      ]
+    },
+    {
+      "title": "Software Engineer",
+      "company": "Vanguard Logistics",
+      "startDate": "Jul 2017",
+      "endDate": "Aug 2024",
+      "bullets": [
+        "Negotiated a customer retention initiative, growing revenue 33% year over year.",
+        "Implemented an automated QA workflow, reducing errors by 22%."
+      ]
+    },
+    {
+      "title": "Financial Analyst",
+      "company": "Fulcrum Consulting",
+      "startDate": "Jun 2020",
+      "endDate": "Aug 2024",
+      "bullets": [
+        "Streamlined procurement processes for 12 product lines, improving turnaround time by 45%.",
+        "Analyzed weekly stakeholder reviews, saving roughly 48 hours per month."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.A. Communications",
+      "school": "State University of Ohio",
+      "year": 2018
+    }
+  ],
+  "sourceFile": "resume_033_A.pdf",
+  "seed": 359928
+}

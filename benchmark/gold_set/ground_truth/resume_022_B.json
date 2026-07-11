@@ -1,0 +1,48 @@
+{
+  "docType": "resume",
+  "layoutVariant": "B",
+  "name": "Tariq Smith",
+  "email": "tariq.smith@corp.example",
+  "phone": "(827) 781-9016",
+  "location": "Minneapolis, MN",
+  "skills": [
+    "Tableau",
+    "Forecasting",
+    "Public Speaking",
+    "SQL",
+    "Docker",
+    "Python",
+    "Statistical Analysis"
+  ],
+  "experience": [
+    {
+      "title": "Product Designer",
+      "company": "Ironwood Group",
+      "startDate": "Dec 2016",
+      "endDate": "Present",
+      "bullets": [
+        "Negotiated a budget of $77K across 38 projects, improving turnaround time by 30%.",
+        "Streamlined the annual planning cycle, growing revenue 26% year over year."
+      ]
+    },
+    {
+      "title": "Customer Success Manager",
+      "company": "Evergreen Consulting",
+      "startDate": "May 2017",
+      "endDate": "Jul 2021",
+      "bullets": [
+        "Designed the regional sales strategy, increasing satisfaction scores by 16%.",
+        "Led internal documentation standards, saving roughly 86 hours per month."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Marketing",
+      "school": "Bayfield University",
+      "year": 2009
+    }
+  ],
+  "sourceFile": "resume_022_B.pdf",
+  "seed": 359928
+}

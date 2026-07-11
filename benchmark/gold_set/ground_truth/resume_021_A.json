@@ -1,0 +1,61 @@
+{
+  "docType": "resume",
+  "layoutVariant": "A",
+  "name": "Marcus Kowalski",
+  "email": "marcus.kowalski@example.com",
+  "phone": "(947) 841-3318",
+  "location": "Atlanta, GA",
+  "skills": [
+    "Project Management",
+    "Excel",
+    "Negotiation",
+    "Customer Relations",
+    "Docker",
+    "Process Improvement",
+    "Agile / Scrum",
+    "Tableau",
+    "React"
+  ],
+  "experience": [
+    {
+      "title": "Financial Analyst",
+      "company": "Horizon Technologies",
+      "startDate": "Jul 2014",
+      "endDate": "Present",
+      "bullets": [
+        "Implemented vendor onboarding for 22 suppliers, improving turnaround time by 43%.",
+        "Automated a cross-functional team of 37 people, growing revenue 25% year over year."
+      ]
+    },
+    {
+      "title": "DevOps Engineer",
+      "company": "Quartz Partners",
+      "startDate": "May 2018",
+      "endDate": "Oct 2021",
+      "bullets": [
+        "Analyzed the quarterly reporting pipeline, growing revenue 25% year over year.",
+        "Launched the migration to a new CRM platform, growing revenue 42% year over year.",
+        "Implemented weekly stakeholder reviews, reducing errors by 9%."
+      ]
+    },
+    {
+      "title": "Marketing Specialist",
+      "company": "Fulcrum Technologies",
+      "startDate": "Oct 2022",
+      "endDate": "Aug 2024",
+      "bullets": [
+        "Streamlined an automated QA workflow, saving roughly 82 hours per month.",
+        "Designed an automated QA workflow, increasing satisfaction scores by 15%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.A. Psychology",
+      "school": "Central Polytechnic Institute",
+      "year": 2009
+    }
+  ],
+  "sourceFile": "resume_021_A.pdf",
+  "seed": 359928
+}

@@ -1,0 +1,26 @@
+{
+  "docType": "ocr_scan",
+  "layoutVariant": "A",
+  "scanParams": {
+    "rotationDeg": -0.62,
+    "blurPx": 0.38,
+    "fontFamily": "Arial",
+    "noiseDots": 95
+  },
+  "content": {
+    "company": "Ironwood Dynamics",
+    "documentKind": "interoffice memorandum",
+    "date": "2022-05-10",
+    "to": "Maria Kowalski",
+    "from": "Tariq Costa",
+    "subject": "Meeting follow-up",
+    "paragraphs": [
+      "Our team works with organizations of every size to deliver measurable results on schedule. Our certified staff bring an average of 14 years of hands-on industry experience. We combine practical experience with modern tooling to keep projects on time and on budget. Clients rely on us for clear communication, transparent pricing, and dependable delivery.",
+      "Clients rely on us for clear communication, transparent pricing, and dependable delivery. Our certified staff bring an average of 22 years of hands-on industry experience.",
+      "Founded in 2013, we have grown into a trusted partner for clients across the region. Our team works with organizations of every size to deliver measurable results on schedule.",
+      "Quarterly reviews keep your goals front and center throughout the engagement. From initial planning through final handoff, a dedicated coordinator manages every detail."
+    ]
+  },
+  "sourceFile": "ocr_scan_004_A.pdf",
+  "seed": 359928
+}

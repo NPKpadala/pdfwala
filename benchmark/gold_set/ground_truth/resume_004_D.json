@@ -1,0 +1,51 @@
+{
+  "docType": "resume",
+  "layoutVariant": "D",
+  "name": "Hannah Fischer",
+  "email": "hannah.fischer@mailbox.test",
+  "phone": "(936) 917-5724",
+  "location": "Austin, TX",
+  "skills": [
+    "Communication",
+    "Agile / Scrum",
+    "Forecasting",
+    "Budget Planning",
+    "Project Management",
+    "AWS",
+    "Salesforce",
+    "Python",
+    "Process Improvement",
+    "Statistical Analysis"
+  ],
+  "experience": [
+    {
+      "title": "QA Engineer",
+      "company": "Trailhead Systems",
+      "startDate": "Mar 2015",
+      "endDate": "Present",
+      "bullets": [
+        "Developed the annual planning cycle, growing revenue 39% year over year.",
+        "Reduced the migration to a new CRM platform, increasing satisfaction scores by 35%."
+      ]
+    },
+    {
+      "title": "Product Designer",
+      "company": "Orchard Services",
+      "startDate": "Apr 2019",
+      "endDate": "Jul 2022",
+      "bullets": [
+        "Implemented a cross-functional team of 25 people, growing revenue 24% year over year.",
+        "Managed the quarterly reporting pipeline, saving roughly 48 hours per month."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "M.B.A.",
+      "school": "Northgate University",
+      "year": 2011
+    }
+  ],
+  "sourceFile": "resume_004_D.pdf",
+  "seed": 359928
+}

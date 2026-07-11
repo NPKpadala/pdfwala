@@ -1,0 +1,63 @@
+{
+  "docType": "resume",
+  "layoutVariant": "D",
+  "name": "Amara Khan",
+  "email": "amara.khan@example.com",
+  "phone": "(218) 489-2498",
+  "location": "Minneapolis, MN",
+  "skills": [
+    "Communication",
+    "Public Speaking",
+    "SQL",
+    "Tableau",
+    "Copywriting",
+    "Excel",
+    "Agile / Scrum"
+  ],
+  "experience": [
+    {
+      "title": "Operations Coordinator",
+      "company": "Meridian Holdings",
+      "startDate": "Mar 2015",
+      "endDate": "Present",
+      "bullets": [
+        "Analyzed the migration to a new CRM platform, increasing satisfaction scores by 10%.",
+        "Reduced a customer retention initiative, increasing satisfaction scores by 19%."
+      ]
+    },
+    {
+      "title": "Marketing Specialist",
+      "company": "Trailhead Ventures",
+      "startDate": "Apr 2018",
+      "endDate": "May 2019",
+      "bullets": [
+        "Analyzed the regional sales strategy, growing revenue 16% year over year.",
+        "Implemented procurement processes for 29 product lines, cutting costs by 12%."
+      ]
+    },
+    {
+      "title": "Customer Success Manager",
+      "company": "Meridian Holdings",
+      "startDate": "Oct 2022",
+      "endDate": "May 2023",
+      "bullets": [
+        "Coordinated the migration to a new CRM platform, reducing errors by 39%.",
+        "Launched procurement processes for 7 product lines, cutting costs by 26%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "M.B.A.",
+      "school": "Harborview State University",
+      "year": 2018
+    },
+    {
+      "degree": "B.A. Economics",
+      "school": "Riverside College",
+      "year": 2011
+    }
+  ],
+  "sourceFile": "resume_012_D.pdf",
+  "seed": 359928
+}

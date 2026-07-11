@@ -1,0 +1,51 @@
+{
+  "docType": "resume",
+  "layoutVariant": "A",
+  "name": "Tariq Moreau",
+  "email": "tariq.moreau@postbox.example",
+  "phone": "(496) 766-2217",
+  "location": "Austin, TX",
+  "skills": [
+    "Excel",
+    "Salesforce",
+    "Negotiation",
+    "Statistical Analysis",
+    "Python",
+    "Communication",
+    "Copywriting",
+    "Java",
+    "Data Visualization",
+    "AWS"
+  ],
+  "experience": [
+    {
+      "title": "Financial Analyst",
+      "company": "Orchard Dynamics",
+      "startDate": "Jan 2014",
+      "endDate": "Present",
+      "bullets": [
+        "Designed weekly stakeholder reviews, saving roughly 65 hours per month.",
+        "Led internal documentation standards, increasing satisfaction scores by 19%."
+      ]
+    },
+    {
+      "title": "Account Executive",
+      "company": "Westgate Consulting",
+      "startDate": "May 2019",
+      "endDate": "Oct 2021",
+      "bullets": [
+        "Managed vendor onboarding for 36 suppliers, improving turnaround time by 36%.",
+        "Coordinated internal documentation standards, improving turnaround time by 40%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "M.S. Data Science",
+      "school": "Bayfield University",
+      "year": 2007
+    }
+  ],
+  "sourceFile": "resume_001_A.pdf",
+  "seed": 359928
+}

@@ -1,0 +1,55 @@
+{
+  "docType": "resume",
+  "layoutVariant": "B",
+  "name": "James Santos",
+  "email": "james.santos@example.com",
+  "phone": "(918) 623-9675",
+  "location": "Austin, TX",
+  "skills": [
+    "Vendor Management",
+    "React",
+    "Communication",
+    "Salesforce",
+    "Process Improvement",
+    "Negotiation",
+    "Customer Relations",
+    "Forecasting"
+  ],
+  "experience": [
+    {
+      "title": "HR Generalist",
+      "company": "Granite Ventures",
+      "startDate": "Apr 2014",
+      "endDate": "Present",
+      "bullets": [
+        "Developed the annual planning cycle, reducing errors by 41%.",
+        "Reduced a cross-functional team of 5 people, growing revenue 15% year over year."
+      ]
+    },
+    {
+      "title": "Sales Director",
+      "company": "Granite Holdings",
+      "startDate": "Oct 2017",
+      "endDate": "Mar 2023",
+      "bullets": [
+        "Managed a budget of $436K across 30 projects, increasing satisfaction scores by 30%.",
+        "Reduced procurement processes for 29 product lines, improving turnaround time by 16%.",
+        "Automated the annual planning cycle, improving turnaround time by 17%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Computer Science",
+      "school": "University of the Lakes",
+      "year": 2017
+    },
+    {
+      "degree": "B.A. Psychology",
+      "school": "Harborview State University",
+      "year": 2009
+    }
+  ],
+  "sourceFile": "resume_010_B.pdf",
+  "seed": 359928
+}

@@ -1,0 +1,64 @@
+{
+  "docType": "resume",
+  "layoutVariant": "B",
+  "name": "Maria Ivanov",
+  "email": "maria.ivanov@postbox.example",
+  "phone": "(284) 820-3484",
+  "location": "Chicago, IL",
+  "skills": [
+    "Salesforce",
+    "Copywriting",
+    "SQL",
+    "React",
+    "Communication",
+    "Statistical Analysis"
+  ],
+  "experience": [
+    {
+      "title": "DevOps Engineer",
+      "company": "Northwind Dynamics",
+      "startDate": "Jan 2014",
+      "endDate": "Present",
+      "bullets": [
+        "Managed weekly stakeholder reviews, saving roughly 89 hours per month.",
+        "Led procurement processes for 14 product lines, cutting costs by 24%.",
+        "Automated an automated QA workflow, increasing satisfaction scores by 42%."
+      ]
+    },
+    {
+      "title": "Supply Chain Analyst",
+      "company": "Apex Labs",
+      "startDate": "Nov 2018",
+      "endDate": "Jul 2024",
+      "bullets": [
+        "Developed weekly stakeholder reviews, growing revenue 45% year over year.",
+        "Reduced the annual planning cycle, improving turnaround time by 25%."
+      ]
+    },
+    {
+      "title": "DevOps Engineer",
+      "company": "Pinnacle Partners",
+      "startDate": "Jan 2020",
+      "endDate": "Nov 2024",
+      "bullets": [
+        "Automated procurement processes for 31 product lines, saving roughly 48 hours per month.",
+        "Negotiated a budget of $645K across 11 projects, improving turnaround time by 23%.",
+        "Reduced the regional sales strategy, reducing errors by 40%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Accounting",
+      "school": "State University of Ohio",
+      "year": 2006
+    },
+    {
+      "degree": "B.S. Computer Science",
+      "school": "Harborview State University",
+      "year": 2014
+    }
+  ],
+  "sourceFile": "resume_006_B.pdf",
+  "seed": 359928
+}

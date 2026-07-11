@@ -1,0 +1,45 @@
+{
+  "docType": "form",
+  "layoutVariant": "B",
+  "formTitle": "Event Registration Form",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Maria Garcia"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1964-08-09"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(940) 340-7807"
+    },
+    {
+      "label": "Email Address",
+      "value": "maria.garcia@example.com"
+    },
+    {
+      "label": "Street Address",
+      "value": "5056 Oak Ave"
+    },
+    {
+      "label": "City",
+      "value": "Raleigh"
+    },
+    {
+      "label": "State",
+      "value": "NC"
+    },
+    {
+      "label": "ZIP Code",
+      "value": "27601"
+    },
+    {
+      "label": "Employer",
+      "value": "Redwood Solutions"
+    }
+  ],
+  "sourceFile": "form_008_B.pdf",
+  "seed": 359928
+}

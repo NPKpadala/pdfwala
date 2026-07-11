@@ -1,0 +1,136 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "C",
+  "title": "KPI Snapshot",
+  "imageCount": 6,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "bar",
+      "title": "Budget Allocation",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun"
+      ],
+      "values": [
+        48,
+        46,
+        31,
+        65,
+        39,
+        57
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "line",
+      "title": "Market Share",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul"
+      ],
+      "values": [
+        87,
+        81,
+        40,
+        47,
+        46,
+        78,
+        85
+      ]
+    },
+    {
+      "figure": 3,
+      "chartType": "bar",
+      "title": "Customer Satisfaction Trend",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May"
+      ],
+      "values": [
+        92,
+        49,
+        26,
+        39,
+        63
+      ]
+    },
+    {
+      "figure": 4,
+      "chartType": "pie",
+      "title": "Monthly Revenue",
+      "labels": [
+        "West",
+        "South",
+        "East",
+        "North",
+        "Central"
+      ],
+      "values": [
+        59,
+        47,
+        43,
+        57,
+        26
+      ]
+    },
+    {
+      "figure": 5,
+      "chartType": "bar",
+      "title": "Headcount by Department",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun"
+      ],
+      "values": [
+        90,
+        59,
+        43,
+        73,
+        87,
+        92
+      ]
+    },
+    {
+      "figure": 6,
+      "chartType": "line",
+      "title": "Units Shipped",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul"
+      ],
+      "values": [
+        59,
+        43,
+        78,
+        82,
+        54,
+        92,
+        49
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_006_C.pdf",
+  "seed": 359928
+}

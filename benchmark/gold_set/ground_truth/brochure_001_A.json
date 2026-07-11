@@ -1,0 +1,36 @@
+{
+  "docType": "brochure",
+  "layoutVariant": "A",
+  "layout": {
+    "imagePosition": "top",
+    "textColumns": 1
+  },
+  "company": "Summit Systems",
+  "headline": "Building Better Operations Together",
+  "sections": [
+    {
+      "heading": "Our Track Record",
+      "body": "We maintain a 96% on-time completion rate across all active accounts. Flexible service plans let you scale support up or down as your needs change."
+    },
+    {
+      "heading": "Our Approach",
+      "body": "We combine practical experience with modern tooling to keep projects on time and on budget. Our team works with organizations of every size to deliver measurable results on schedule. Quarterly reviews keep your goals front and center throughout the engagement."
+    },
+    {
+      "heading": "Getting Started",
+      "body": "Our team works with organizations of every size to deliver measurable results on schedule. Founded in 2018, we have grown into a trusted partner for clients across the region. Every engagement starts with a detailed assessment of your current operations."
+    }
+  ],
+  "bullets": [
+    "Quarterly reviews keep your goals front and center throughout the engagement.",
+    "Our team works with organizations of every size to deliver measurable results on schedule.",
+    "We maintain a 91% on-time completion rate across all active accounts.",
+    "We combine practical experience with modern tooling to keep projects on time and on budget."
+  ],
+  "contact": {
+    "phone": "(581) 881-5386",
+    "address": "9895 Cedar Ln, Atlanta, GA 30301"
+  },
+  "sourceFile": "brochure_001_A.pdf",
+  "seed": 359928
+}

@@ -1,0 +1,82 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "A",
+  "title": "Annual Performance Report",
+  "imageCount": 4,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "bar",
+      "title": "Market Share",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun"
+      ],
+      "values": [
+        47,
+        73,
+        61,
+        60,
+        78,
+        67
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "pie",
+      "title": "Market Share",
+      "labels": [
+        "Finance",
+        "Ops",
+        "Eng"
+      ],
+      "values": [
+        54,
+        46,
+        54
+      ]
+    },
+    {
+      "figure": 3,
+      "chartType": "bar",
+      "title": "Website Traffic",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr"
+      ],
+      "values": [
+        86,
+        50,
+        61,
+        29
+      ]
+    },
+    {
+      "figure": 4,
+      "chartType": "pie",
+      "title": "Units Shipped",
+      "labels": [
+        "Sales",
+        "Eng",
+        "Finance",
+        "Ops",
+        "HR"
+      ],
+      "values": [
+        27,
+        44,
+        54,
+        23,
+        18
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_007_A.pdf",
+  "seed": 359928
+}

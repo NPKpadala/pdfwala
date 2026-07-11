@@ -1,0 +1,40 @@
+{
+  "file": "paper_sample",
+  "class": "research-papers",
+  "ok": true,
+  "seconds": 0.14,
+  "peak_mb": 0.0,
+  "engine_result": {
+    "pages": 1,
+    "runs_repaired": 0,
+    "headings_promoted": 0,
+    "lines_merged": 0,
+    "list_items": 0,
+    "links_recovered": 0
+  },
+  "char_accuracy": 1.0,
+  "word_recall": 1.0,
+  "word_precision": 1.0,
+  "word_f1": 1.0,
+  "pdf_chars": 195,
+  "docx_chars": 195,
+  "headings": 0,
+  "list_items": 0,
+  "tables": 0,
+  "hyperlinks_docx": 0,
+  "hyperlinks_pdf": 0,
+  "link_recall": null,
+  "margin_left_drift": 0.1,
+  "margin_right_drift": 8.2,
+  "margin_top_drift": 1.4,
+  "word_native_ratio": 1.0,
+  "font_families": [
+    "Times New Roman"
+  ],
+  "visual_ssim": 0.3592,
+  "phash_dist": 32.0,
+  "page_ratio": 1.0,
+  "pages_source": 1,
+  "pages_docx": 1,
+  "composite_0_10": 8.58
+}

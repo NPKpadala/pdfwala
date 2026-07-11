@@ -1,0 +1,66 @@
+{
+  "docType": "resume",
+  "layoutVariant": "B",
+  "name": "Ingrid Silva",
+  "email": "ingrid.silva@mailbox.test",
+  "phone": "(529) 330-3272",
+  "location": "Minneapolis, MN",
+  "skills": [
+    "Negotiation",
+    "Java",
+    "Copywriting",
+    "Public Speaking",
+    "Docker",
+    "SQL",
+    "Vendor Management",
+    "AWS",
+    "Communication"
+  ],
+  "experience": [
+    {
+      "title": "HR Generalist",
+      "company": "Apex Industries",
+      "startDate": "Jun 2016",
+      "endDate": "Present",
+      "bullets": [
+        "Automated the annual planning cycle, saving roughly 55 hours per month.",
+        "Launched internal documentation standards, increasing satisfaction scores by 29%."
+      ]
+    },
+    {
+      "title": "Marketing Specialist",
+      "company": "Apex Consulting",
+      "startDate": "Apr 2017",
+      "endDate": "Dec 2020",
+      "bullets": [
+        "Led an automated QA workflow, improving turnaround time by 25%.",
+        "Analyzed the regional sales strategy, growing revenue 12% year over year."
+      ]
+    },
+    {
+      "title": "QA Engineer",
+      "company": "Evergreen Analytics",
+      "startDate": "Jul 2021",
+      "endDate": "Feb 2024",
+      "bullets": [
+        "Launched weekly stakeholder reviews, improving turnaround time by 42%.",
+        "Implemented a cross-functional team of 34 people, improving turnaround time by 13%.",
+        "Automated the regional sales strategy, saving roughly 111 hours per month."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "M.S. Data Science",
+      "school": "State University of Ohio",
+      "year": 2017
+    },
+    {
+      "degree": "B.S. Accounting",
+      "school": "Central Polytechnic Institute",
+      "year": 2014
+    }
+  ],
+  "sourceFile": "resume_002_B.pdf",
+  "seed": 359928
+}

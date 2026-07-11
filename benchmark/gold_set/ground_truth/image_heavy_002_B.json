@@ -1,0 +1,42 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "B",
+  "title": "KPI Snapshot",
+  "imageCount": 2,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "pie",
+      "title": "Monthly Revenue",
+      "labels": [
+        "HR",
+        "Finance",
+        "Eng"
+      ],
+      "values": [
+        25,
+        30,
+        21
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "pie",
+      "title": "Support Tickets by Region",
+      "labels": [
+        "Finance",
+        "Eng",
+        "HR",
+        "Ops"
+      ],
+      "values": [
+        45,
+        41,
+        58,
+        11
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_002_B.pdf",
+  "seed": 359928
+}

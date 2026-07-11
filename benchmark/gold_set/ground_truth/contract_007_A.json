@@ -1,0 +1,68 @@
+{
+  "docType": "contract",
+  "layoutVariant": "A",
+  "title": "PROFESSIONAL SERVICES AGREEMENT",
+  "parties": [
+    {
+      "role": "Client",
+      "name": "Vanguard Dynamics",
+      "location": "Chicago, IL",
+      "signer": "Ingrid Taylor"
+    },
+    {
+      "role": "Provider",
+      "name": "Delta Dynamics",
+      "location": "Boston, MA",
+      "signer": "Amara Anderson"
+    }
+  ],
+  "effectiveDate": "2025-07-21",
+  "termMonths": 12,
+  "noticeDays": 60,
+  "maxFeeUsd": 170000,
+  "governingLawState": "California",
+  "clauses": [
+    {
+      "label": "1",
+      "title": "Entire Agreement",
+      "text": "This Agreement, together with its exhibits, constitutes the entire agreement between Vanguard Dynamics and Delta Dynamics with respect to its subject matter and supersedes all prior or contemporaneous understandings. Any amendment must be in writing and signed by both parties."
+    },
+    {
+      "label": "2",
+      "title": "Limitation of Liability",
+      "text": "Except for breaches of confidentiality, neither party shall be liable for any indirect, incidental, special, or consequential damages arising out of this Agreement. Each party's aggregate liability shall not exceed the total fees paid or payable by Vanguard Dynamics in the twelve months preceding the claim."
+    },
+    {
+      "label": "3",
+      "title": "Independent Contractor",
+      "text": "Delta Dynamics is an independent contractor and nothing in this Agreement creates a partnership, joint venture, agency, or employment relationship between the parties. Delta Dynamics is solely responsible for its own taxes, insurance, and employee obligations."
+    },
+    {
+      "label": "4",
+      "title": "Scope of Services",
+      "text": "Delta Dynamics shall provide the services described in Exhibit A (the \"Services\") to Vanguard Dynamics in a professional and workmanlike manner, consistent with industry standards. Any changes to the scope of the Services must be agreed in writing by both parties before work begins."
+    },
+    {
+      "label": "5",
+      "title": "Compensation",
+      "text": "In consideration of the Services, Vanguard Dynamics shall pay Delta Dynamics fees not to exceed $170,000 per invoice period. All invoices are payable within 60 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
+    },
+    {
+      "label": "6",
+      "title": "Term and Renewal",
+      "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 12 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 60 days before the end of the then-current term."
+    },
+    {
+      "label": "7",
+      "title": "Governing Law",
+      "text": "This Agreement shall be governed by and construed in accordance with the laws of the State of California, without regard to its conflict of laws principles. The parties consent to the exclusive jurisdiction of the state and federal courts located in California."
+    },
+    {
+      "label": "8",
+      "title": "Termination",
+      "text": "Either party may terminate this Agreement upon 60 days' written notice to the other party. Either party may terminate immediately upon a material breach by the other party that remains uncured 60 days after written notice of the breach."
+    }
+  ],
+  "sourceFile": "contract_007_A.pdf",
+  "seed": 359928
+}

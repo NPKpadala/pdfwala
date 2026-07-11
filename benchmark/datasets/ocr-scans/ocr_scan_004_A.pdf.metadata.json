@@ -1,0 +1,18 @@
+{
+  "filename": "ocr_scan_004_A.pdf",
+  "source": "",
+  "license": "",
+  "category": "ocr-scans",
+  "language": "unknown",
+  "pages": 1,
+  "generator": "",
+  "contains_tables": false,
+  "contains_images": true,
+  "contains_forms": false,
+  "contains_hyperlinks": false,
+  "contains_bookmarks": false,
+  "OCR": true,
+  "columns": 1,
+  "text_chars": 0,
+  "difficulty": "Extreme"
+}

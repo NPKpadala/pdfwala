@@ -1,0 +1,49 @@
+{
+  "docType": "resume",
+  "layoutVariant": "B",
+  "name": "Kenji Dubois",
+  "email": "kenji.dubois@postbox.example",
+  "phone": "(658) 747-9915",
+  "location": "Phoenix, AZ",
+  "skills": [
+    "Budget Planning",
+    "Excel",
+    "Tableau",
+    "Project Management",
+    "Docker",
+    "Agile / Scrum",
+    "React"
+  ],
+  "experience": [
+    {
+      "title": "Sales Director",
+      "company": "Vanguard Group",
+      "startDate": "Oct 2014",
+      "endDate": "Present",
+      "bullets": [
+        "Implemented a budget of $486K across 11 projects, cutting costs by 27%.",
+        "Negotiated internal documentation standards, growing revenue 21% year over year."
+      ]
+    },
+    {
+      "title": "Product Designer",
+      "company": "Orchard Solutions",
+      "startDate": "Sep 2018",
+      "endDate": "Feb 2024",
+      "bullets": [
+        "Implemented a cross-functional team of 5 people, saving roughly 74 hours per month.",
+        "Reduced the quarterly reporting pipeline, cutting costs by 13%.",
+        "Led a cross-functional team of 13 people, increasing satisfaction scores by 15%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "M.B.A.",
+      "school": "Riverside College",
+      "year": 2007
+    }
+  ],
+  "sourceFile": "resume_050_B.pdf",
+  "seed": 359928
+}

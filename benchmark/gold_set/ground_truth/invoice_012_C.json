@@ -1,0 +1,76 @@
+{
+  "docType": "invoice",
+  "layoutVariant": "C",
+  "invoiceNumber": "INV-38770",
+  "issueDate": "2024-01-13",
+  "dueDate": "2025-01-03",
+  "vendor": {
+    "name": "Vanguard Labs",
+    "address": "9349 Birch Blvd, Denver, CO 80202",
+    "phone": "(542) 383-3312",
+    "email": "vanguard.labs@corp.example"
+  },
+  "customer": {
+    "name": "Meridian Dynamics",
+    "contact": "Marcus Smith",
+    "address": "4486 Birch Blvd, Denver, CO 80202"
+  },
+  "lineItems": [
+    {
+      "description": "Junction box",
+      "qty": 2,
+      "unitPrice": 230.43,
+      "lineTotal": 460.86
+    },
+    {
+      "description": "Widget A-200",
+      "qty": 10,
+      "unitPrice": 608.37,
+      "lineTotal": 6083.7
+    },
+    {
+      "description": "Content production",
+      "qty": 3,
+      "unitPrice": 397.29,
+      "lineTotal": 1191.87
+    },
+    {
+      "description": "Power supply 450W",
+      "qty": 7,
+      "unitPrice": 872.9,
+      "lineTotal": 6110.3
+    },
+    {
+      "description": "Thermal sensor unit",
+      "qty": 9,
+      "unitPrice": 186.05,
+      "lineTotal": 1674.45
+    },
+    {
+      "description": "Industrial adhesive 1L",
+      "qty": 6,
+      "unitPrice": 529.07,
+      "lineTotal": 3174.42
+    },
+    {
+      "description": "Bearing assembly",
+      "qty": 4,
+      "unitPrice": 583.89,
+      "lineTotal": 2335.56
+    },
+    {
+      "description": "Quarterly review workshop",
+      "qty": 8,
+      "unitPrice": 827.87,
+      "lineTotal": 6622.96
+    }
+  ],
+  "subtotal": 27654.12,
+  "taxRatePercent": 0,
+  "taxAmount": 0,
+  "total": 27654.12,
+  "currency": "USD",
+  "terms": "Payment due within 60 days of the invoice date. A late fee of 1.5% per month applies to overdue balances. Please reference the invoice number on all payments.",
+  "sourceFile": "invoice_012_C.pdf",
+  "seed": 359928
+}

@@ -1,0 +1,64 @@
+{
+  "docType": "invoice",
+  "layoutVariant": "C",
+  "invoiceNumber": "INV-26305",
+  "issueDate": "2026-09-10",
+  "dueDate": "2026-11-18",
+  "vendor": {
+    "name": "Ironwood Industries",
+    "address": "473 Elm St, Atlanta, GA 30301",
+    "phone": "(803) 828-1196",
+    "email": "ironwood.industries@postbox.example"
+  },
+  "customer": {
+    "name": "Orchard Group",
+    "contact": "Liam Costa",
+    "address": "4785 Birch Blvd, Seattle, WA 98101"
+  },
+  "lineItems": [
+    {
+      "description": "Equipment rental",
+      "qty": 9,
+      "unitPrice": 205.19,
+      "lineTotal": 1846.71
+    },
+    {
+      "description": "Content production",
+      "qty": 6,
+      "unitPrice": 798.94,
+      "lineTotal": 4793.64
+    },
+    {
+      "description": "Design services",
+      "qty": 11,
+      "unitPrice": 791.43,
+      "lineTotal": 8705.73
+    },
+    {
+      "description": "Power supply 450W",
+      "qty": 7,
+      "unitPrice": 583.77,
+      "lineTotal": 4086.39
+    },
+    {
+      "description": "Mounting kit",
+      "qty": 5,
+      "unitPrice": 145.82,
+      "lineTotal": 729.1
+    },
+    {
+      "description": "Software license (annual)",
+      "qty": 8,
+      "unitPrice": 795.9,
+      "lineTotal": 6367.2
+    }
+  ],
+  "subtotal": 26528.77,
+  "taxRatePercent": 0,
+  "taxAmount": 0,
+  "total": 26528.77,
+  "currency": "USD",
+  "terms": "Payment due within 60 days of the invoice date. A late fee of 1.5% per month applies to overdue balances. Please reference the invoice number on all payments.",
+  "sourceFile": "invoice_003_C.pdf",
+  "seed": 359928
+}

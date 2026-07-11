@@ -1,0 +1,40 @@
+{
+  "file": "resume_infra",
+  "class": "resumes",
+  "ok": true,
+  "seconds": 0.61,
+  "peak_mb": 0.0,
+  "engine_result": {
+    "pages": 2,
+    "runs_repaired": 18,
+    "headings_promoted": 5,
+    "lines_merged": 0,
+    "list_items": 23,
+    "links_recovered": 3
+  },
+  "char_accuracy": 0.9025,
+  "word_recall": 0.9308,
+  "word_precision": 0.9535,
+  "word_f1": 0.942,
+  "pdf_chars": 5052,
+  "docx_chars": 5005,
+  "headings": 5,
+  "list_items": 23,
+  "tables": 0,
+  "hyperlinks_docx": 3,
+  "hyperlinks_pdf": 3,
+  "link_recall": 1.0,
+  "margin_left_drift": 0.1,
+  "margin_right_drift": -4.2,
+  "margin_top_drift": 6.4,
+  "word_native_ratio": 1.0,
+  "font_families": [
+    "Arial"
+  ],
+  "visual_ssim": 0.0637,
+  "phash_dist": 24.0,
+  "page_ratio": 1.5,
+  "pages_source": 2,
+  "pages_docx": 3,
+  "composite_0_10": 7.22
+}

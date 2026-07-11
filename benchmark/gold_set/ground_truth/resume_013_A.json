@@ -1,0 +1,55 @@
+{
+  "docType": "resume",
+  "layoutVariant": "A",
+  "name": "Ethan Ivanov",
+  "email": "ethan.ivanov@mailbox.test",
+  "phone": "(850) 441-3589",
+  "location": "Seattle, WA",
+  "skills": [
+    "Project Management",
+    "Customer Relations",
+    "Statistical Analysis",
+    "SQL",
+    "Vendor Management",
+    "Data Visualization",
+    "Excel",
+    "Process Improvement",
+    "React"
+  ],
+  "experience": [
+    {
+      "title": "Product Designer",
+      "company": "Evergreen Analytics",
+      "startDate": "Dec 2014",
+      "endDate": "Present",
+      "bullets": [
+        "Launched a customer retention initiative, increasing satisfaction scores by 27%.",
+        "Reduced the quarterly reporting pipeline, increasing satisfaction scores by 24%."
+      ]
+    },
+    {
+      "title": "Data Analyst",
+      "company": "Westgate Group",
+      "startDate": "Jul 2018",
+      "endDate": "Nov 2024",
+      "bullets": [
+        "Launched the annual planning cycle, increasing satisfaction scores by 34%.",
+        "Coordinated procurement processes for 21 product lines, reducing errors by 8%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Accounting",
+      "school": "Bayfield University",
+      "year": 2017
+    },
+    {
+      "degree": "B.A. Economics",
+      "school": "Harborview State University",
+      "year": 2006
+    }
+  ],
+  "sourceFile": "resume_013_A.pdf",
+  "seed": 359928
+}

@@ -1,0 +1,94 @@
+{
+  "docType": "form",
+  "layoutVariant": "C",
+  "formTitle": "Patient Intake Form",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Ravi Silva"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1969-07-16"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(597) 457-3920"
+    },
+    {
+      "label": "Email Address",
+      "value": "ravi.silva@corp.example"
+    },
+    {
+      "label": "Street Address",
+      "value": "4325 River Rd"
+    }
+  ],
+  "checkboxGroups": [
+    {
+      "group": "Marital Status",
+      "options": [
+        {
+          "label": "Single",
+          "checked": true
+        },
+        {
+          "label": "Married",
+          "checked": false
+        },
+        {
+          "label": "Divorced",
+          "checked": false
+        },
+        {
+          "label": "Widowed",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "group": "How did you hear about us?",
+      "options": [
+        {
+          "label": "Referral",
+          "checked": true
+        },
+        {
+          "label": "Online search",
+          "checked": false
+        },
+        {
+          "label": "Advertisement",
+          "checked": false
+        },
+        {
+          "label": "Other",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "group": "Insurance Type",
+      "options": [
+        {
+          "label": "Private",
+          "checked": false
+        },
+        {
+          "label": "Employer plan",
+          "checked": false
+        },
+        {
+          "label": "Government",
+          "checked": true
+        },
+        {
+          "label": "None",
+          "checked": false
+        }
+      ]
+    }
+  ],
+  "sourceFile": "form_003_C.pdf",
+  "seed": 359928
+}

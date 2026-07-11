@@ -1,0 +1,192 @@
+{
+  "docType": "table_heavy",
+  "layoutVariant": "B",
+  "title": "Regional Sales Summary",
+  "tables": [
+    {
+      "title": "Regional Sales Summary",
+      "columnGroups": [
+        {
+          "label": "Identification",
+          "span": 5
+        },
+        {
+          "label": "Financials",
+          "span": 5
+        }
+      ],
+      "columns": [
+        "Qty",
+        "Priority",
+        "Date",
+        "Unit Cost",
+        "Name",
+        "Region",
+        "Rate %",
+        "Status",
+        "Total",
+        "Owner"
+      ],
+      "rows": [
+        [
+          "89",
+          "Medium",
+          "2023-06-18",
+          "$115.73",
+          "Aisha Weber",
+          "West",
+          "19.7%",
+          "Closed",
+          "$4,314.93",
+          "Liam Rossi"
+        ],
+        [
+          "120",
+          "High",
+          "2025-11-07",
+          "$180.02",
+          "Fatima O'Brien",
+          "East",
+          "23.3%",
+          "Closed",
+          "$6,140.14",
+          "Olivia Costa"
+        ],
+        [
+          "424",
+          "Low",
+          "2024-02-05",
+          "$177.98",
+          "Grace Silva",
+          "Central",
+          "2.1%",
+          "Closed",
+          "$7,264.39",
+          "Felix Larsen"
+        ],
+        [
+          "304",
+          "Medium",
+          "2023-03-05",
+          "$336.85",
+          "Noah Chen",
+          "South",
+          "18.6%",
+          "On hold",
+          "$4,249.62",
+          "Ravi Fischer"
+        ],
+        [
+          "414",
+          "Medium",
+          "2023-07-08",
+          "$208.82",
+          "Carlos Novak",
+          "East",
+          "5.4%",
+          "Pending",
+          "$6,071.59",
+          "Lucas Kowalski"
+        ],
+        [
+          "411",
+          "High",
+          "2025-05-18",
+          "$333.41",
+          "Grace Taylor",
+          "Central",
+          "21.8%",
+          "Closed",
+          "$4,806.97",
+          "David Larsen"
+        ],
+        [
+          "483",
+          "Low",
+          "2024-09-09",
+          "$344.41",
+          "Wei Dubois",
+          "West",
+          "19.6%",
+          "On hold",
+          "$6,224.85",
+          "Aisha Dubois"
+        ],
+        [
+          "420",
+          "High",
+          "2026-04-25",
+          "$226.14",
+          "Kenji Kowalski",
+          "West",
+          "17.0%",
+          "Closed",
+          "$2,089.66",
+          "Ingrid Walker"
+        ],
+        [
+          "308",
+          "Low",
+          "2023-07-07",
+          "$395.41",
+          "Liam Anderson",
+          "West",
+          "3.3%",
+          "Open",
+          "$65.44",
+          "Olivia Novak"
+        ],
+        [
+          "430",
+          "Low",
+          "2024-04-21",
+          "$335.51",
+          "Carlos Taylor",
+          "East",
+          "23.5%",
+          "Pending",
+          "$3,732.83",
+          "Ingrid Weber"
+        ],
+        [
+          "254",
+          "Low",
+          "2023-10-07",
+          "$262.75",
+          "Kenji Moreau",
+          "Central",
+          "21.1%",
+          "Open",
+          "$2,832.17",
+          "Carlos Yamamoto"
+        ],
+        [
+          "106",
+          "High",
+          "2024-10-03",
+          "$199.08",
+          "Amara O'Brien",
+          "South",
+          "11.1%",
+          "Closed",
+          "$1,224.50",
+          "Marcus Novak"
+        ],
+        [
+          "290",
+          "Medium",
+          "2026-05-16",
+          "$188.63",
+          "Grace Larsen",
+          "East",
+          "4.7%",
+          "Closed",
+          "$6,487.68",
+          "Noah Kim"
+        ]
+      ]
+    }
+  ],
+  "sourceFile": "table_heavy_005_B.pdf",
+  "seed": 359928
+}

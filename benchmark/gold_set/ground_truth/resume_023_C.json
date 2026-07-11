@@ -1,0 +1,48 @@
+{
+  "docType": "resume",
+  "layoutVariant": "C",
+  "name": "Priya Müller",
+  "email": "priya.m.ller@postbox.example",
+  "phone": "(746) 348-9332",
+  "location": "Austin, TX",
+  "skills": [
+    "Communication",
+    "Docker",
+    "Salesforce",
+    "Public Speaking",
+    "Forecasting",
+    "Statistical Analysis"
+  ],
+  "experience": [
+    {
+      "title": "Customer Success Manager",
+      "company": "Fulcrum Logistics",
+      "startDate": "Jun 2015",
+      "endDate": "Present",
+      "bullets": [
+        "Designed the annual planning cycle, growing revenue 41% year over year.",
+        "Designed the quarterly reporting pipeline, cutting costs by 9%."
+      ]
+    },
+    {
+      "title": "Financial Analyst",
+      "company": "Northwind Analytics",
+      "startDate": "Apr 2019",
+      "endDate": "Sep 2020",
+      "bullets": [
+        "Implemented weekly stakeholder reviews, growing revenue 37% year over year.",
+        "Negotiated vendor onboarding for 34 suppliers, saving roughly 46 hours per month.",
+        "Negotiated procurement processes for 15 product lines, growing revenue 9% year over year."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.A. Economics",
+      "school": "Harborview State University",
+      "year": 2021
+    }
+  ],
+  "sourceFile": "resume_023_C.pdf",
+  "seed": 359928
+}

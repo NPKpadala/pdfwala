@@ -1,0 +1,52 @@
+{
+  "docType": "resume",
+  "layoutVariant": "D",
+  "name": "Fatima Santos",
+  "email": "fatima.santos@postbox.example",
+  "phone": "(813) 302-6005",
+  "location": "Columbus, OH",
+  "skills": [
+    "Budget Planning",
+    "Tableau",
+    "Customer Relations",
+    "Forecasting",
+    "Statistical Analysis",
+    "Vendor Management",
+    "Project Management",
+    "Salesforce",
+    "Process Improvement",
+    "Negotiation"
+  ],
+  "experience": [
+    {
+      "title": "Operations Coordinator",
+      "company": "Delta Partners",
+      "startDate": "Aug 2014",
+      "endDate": "Present",
+      "bullets": [
+        "Developed the quarterly reporting pipeline, reducing errors by 17%.",
+        "Designed internal documentation standards, increasing satisfaction scores by 20%."
+      ]
+    },
+    {
+      "title": "Operations Coordinator",
+      "company": "Keystone Analytics",
+      "startDate": "Aug 2017",
+      "endDate": "May 2023",
+      "bullets": [
+        "Designed the regional sales strategy, cutting costs by 11%.",
+        "Designed a customer retention initiative, reducing errors by 38%.",
+        "Implemented a cross-functional team of 33 people, cutting costs by 13%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Mechanical Engineering",
+      "school": "Mountain View College",
+      "year": 2017
+    }
+  ],
+  "sourceFile": "resume_028_D.pdf",
+  "seed": 359928
+}

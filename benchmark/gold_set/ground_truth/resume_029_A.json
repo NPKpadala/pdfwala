@@ -1,0 +1,55 @@
+{
+  "docType": "resume",
+  "layoutVariant": "A",
+  "name": "Lucas Weber",
+  "email": "lucas.weber@mailbox.test",
+  "phone": "(279) 616-3917",
+  "location": "Austin, TX",
+  "skills": [
+    "Project Management",
+    "Copywriting",
+    "Customer Relations",
+    "Java",
+    "AWS",
+    "React",
+    "Negotiation"
+  ],
+  "experience": [
+    {
+      "title": "Supply Chain Analyst",
+      "company": "Vanguard Systems",
+      "startDate": "Feb 2015",
+      "endDate": "Present",
+      "bullets": [
+        "Led the migration to a new CRM platform, saving roughly 64 hours per month.",
+        "Designed procurement processes for 12 product lines, increasing satisfaction scores by 17%.",
+        "Managed a cross-functional team of 9 people, improving turnaround time by 42%."
+      ]
+    },
+    {
+      "title": "Software Engineer",
+      "company": "Meridian Analytics",
+      "startDate": "Apr 2017",
+      "endDate": "Feb 2019",
+      "bullets": [
+        "Designed weekly stakeholder reviews, improving turnaround time by 14%.",
+        "Coordinated the annual planning cycle, reducing errors by 33%.",
+        "Managed the annual planning cycle, cutting costs by 12%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.A. Psychology",
+      "school": "Riverside College",
+      "year": 2018
+    },
+    {
+      "degree": "B.A. Psychology",
+      "school": "Harborview State University",
+      "year": 2016
+    }
+  ],
+  "sourceFile": "resume_029_A.pdf",
+  "seed": 359928
+}

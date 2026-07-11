@@ -1,0 +1,63 @@
+{
+  "docType": "invoice",
+  "layoutVariant": "B",
+  "invoiceNumber": "INV-37657",
+  "issueDate": "2023-09-13",
+  "dueDate": "2026-10-17",
+  "vendor": {
+    "name": "Quartz Solutions",
+    "address": "6024 Lake View Dr, Raleigh, NC 27601",
+    "phone": "(871) 789-0018",
+    "email": "quartz.solutions@example.com"
+  },
+  "customer": {
+    "name": "Meridian Solutions",
+    "contact": "David Costa",
+    "address": "4632 Sunset Blvd, Raleigh, NC 27601"
+  },
+  "lineItems": [
+    {
+      "description": "Power supply 450W",
+      "qty": 1,
+      "unitPrice": 128.85,
+      "lineTotal": 128.85
+    },
+    {
+      "description": "Consulting hours",
+      "qty": 5,
+      "unitPrice": 290.74,
+      "lineTotal": 1453.7
+    },
+    {
+      "description": "Widget A-200",
+      "qty": 10,
+      "unitPrice": 674.52,
+      "lineTotal": 6745.2
+    },
+    {
+      "description": "Security audit",
+      "qty": 3,
+      "unitPrice": 330.07,
+      "lineTotal": 990.21
+    },
+    {
+      "description": "Mounting kit",
+      "qty": 4,
+      "unitPrice": 891.29,
+      "lineTotal": 3565.16
+    },
+    {
+      "description": "Junction box",
+      "qty": 2,
+      "unitPrice": 87.04,
+      "lineTotal": 174.08
+    }
+  ],
+  "subtotal": 13057.2,
+  "taxRatePercent": 10,
+  "taxAmount": 1305.72,
+  "total": 14362.92,
+  "currency": "USD",
+  "sourceFile": "invoice_011_B.pdf",
+  "seed": 359928
+}

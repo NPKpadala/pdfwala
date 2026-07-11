@@ -1,0 +1,150 @@
+{
+  "docType": "table_heavy",
+  "layoutVariant": "A",
+  "title": "Quarterly Operations Report",
+  "tables": [
+    {
+      "title": "Quarterly Operations Report",
+      "columns": [
+        "Name",
+        "Rate %",
+        "Priority",
+        "ID",
+        "Region",
+        "Unit Cost"
+      ],
+      "rows": [
+        [
+          "Elena Silva",
+          "9.3%",
+          "Medium",
+          "R-1694",
+          "West",
+          "$164.05"
+        ],
+        [
+          "Aisha Khan",
+          "11.3%",
+          "Critical",
+          "R-9692",
+          "East",
+          "$22.60"
+        ],
+        [
+          "Julia Johnson",
+          "3.2%",
+          "High",
+          "R-4711",
+          "North",
+          "$381.52"
+        ],
+        [
+          "Priya Hassan",
+          "1.6%",
+          "Medium",
+          "R-4641",
+          "East",
+          "$313.14"
+        ],
+        [
+          "Maria Larsen",
+          "21.1%",
+          "Medium",
+          "R-4430",
+          "West",
+          "$222.86"
+        ],
+        [
+          "Hannah Fischer",
+          "4.9%",
+          "Critical",
+          "R-1067",
+          "East",
+          "$315.97"
+        ],
+        [
+          "Ethan Nguyen",
+          "7.0%",
+          "Medium",
+          "R-6646",
+          "South",
+          "$261.88"
+        ],
+        [
+          "Aisha Novak",
+          "15.7%",
+          "Medium",
+          "R-6886",
+          "West",
+          "$228.79"
+        ],
+        [
+          "Amara Smith",
+          "1.3%",
+          "Critical",
+          "R-4974",
+          "East",
+          "$136.38"
+        ],
+        [
+          "Lucas Santos",
+          "7.1%",
+          "Medium",
+          "R-1327",
+          "North",
+          "$365.69"
+        ],
+        [
+          "Nina Brown",
+          "23.3%",
+          "High",
+          "R-9810",
+          "Central",
+          "$336.56"
+        ],
+        [
+          "Diego Khan",
+          "23.5%",
+          "Low",
+          "R-2187",
+          "South",
+          "$84.84"
+        ],
+        [
+          "Sofia Patel",
+          "21.6%",
+          "Critical",
+          "R-2830",
+          "North",
+          "$385.83"
+        ],
+        [
+          "Priya Costa",
+          "3.7%",
+          "Critical",
+          "R-9347",
+          "East",
+          "$366.43"
+        ],
+        [
+          "Liam Ivanov",
+          "17.7%",
+          "High",
+          "R-1591",
+          "East",
+          "$149.23"
+        ],
+        [
+          "Ravi Kim",
+          "17.0%",
+          "High",
+          "R-8903",
+          "East",
+          "$17.47"
+        ]
+      ]
+    }
+  ],
+  "sourceFile": "table_heavy_001_A.pdf",
+  "seed": 359928
+}

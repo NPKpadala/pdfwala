@@ -1,0 +1,58 @@
+{
+  "docType": "resume",
+  "layoutVariant": "D",
+  "name": "David Khan",
+  "email": "david.khan@postbox.example",
+  "phone": "(263) 626-7612",
+  "location": "Minneapolis, MN",
+  "skills": [
+    "Statistical Analysis",
+    "Tableau",
+    "React",
+    "Communication",
+    "Excel",
+    "AWS"
+  ],
+  "experience": [
+    {
+      "title": "Customer Success Manager",
+      "company": "Northwind Consulting",
+      "startDate": "Nov 2016",
+      "endDate": "Present",
+      "bullets": [
+        "Streamlined vendor onboarding for 18 suppliers, cutting costs by 23%.",
+        "Led vendor onboarding for 18 suppliers, improving turnaround time by 16%."
+      ]
+    },
+    {
+      "title": "Product Designer",
+      "company": "Evergreen Analytics",
+      "startDate": "Jul 2017",
+      "endDate": "Aug 2021",
+      "bullets": [
+        "Streamlined vendor onboarding for 17 suppliers, growing revenue 11% year over year.",
+        "Led the quarterly reporting pipeline, increasing satisfaction scores by 28%.",
+        "Coordinated internal documentation standards, reducing errors by 29%."
+      ]
+    },
+    {
+      "title": "Product Designer",
+      "company": "Granite Logistics",
+      "startDate": "Nov 2022",
+      "endDate": "Aug 2022",
+      "bullets": [
+        "Implemented the quarterly reporting pipeline, cutting costs by 27%.",
+        "Analyzed the migration to a new CRM platform, improving turnaround time by 13%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Computer Science",
+      "school": "University of the Lakes",
+      "year": 2020
+    }
+  ],
+  "sourceFile": "resume_032_D.pdf",
+  "seed": 359928
+}

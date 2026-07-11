@@ -1,0 +1,67 @@
+{
+  "docType": "resume",
+  "layoutVariant": "C",
+  "name": "Hannah Garcia",
+  "email": "hannah.garcia@postbox.example",
+  "phone": "(553) 591-1202",
+  "location": "Nashville, TN",
+  "skills": [
+    "Copywriting",
+    "Process Improvement",
+    "Forecasting",
+    "Excel",
+    "Python",
+    "Communication",
+    "Docker",
+    "SQL",
+    "Negotiation"
+  ],
+  "experience": [
+    {
+      "title": "Marketing Specialist",
+      "company": "Horizon Group",
+      "startDate": "Jun 2015",
+      "endDate": "Present",
+      "bullets": [
+        "Led the annual planning cycle, improving turnaround time by 19%.",
+        "Negotiated the quarterly reporting pipeline, improving turnaround time by 18%."
+      ]
+    },
+    {
+      "title": "Operations Coordinator",
+      "company": "Fulcrum Analytics",
+      "startDate": "Jun 2018",
+      "endDate": "Jun 2022",
+      "bullets": [
+        "Coordinated the annual planning cycle, saving roughly 15 hours per month.",
+        "Negotiated weekly stakeholder reviews, saving roughly 78 hours per month.",
+        "Launched an automated QA workflow, growing revenue 37% year over year."
+      ]
+    },
+    {
+      "title": "Project Manager",
+      "company": "Vanguard Labs",
+      "startDate": "Nov 2021",
+      "endDate": "Jun 2022",
+      "bullets": [
+        "Launched vendor onboarding for 39 suppliers, cutting costs by 38%.",
+        "Developed the regional sales strategy, improving turnaround time by 17%.",
+        "Streamlined internal documentation standards, growing revenue 9% year over year."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Mechanical Engineering",
+      "school": "State University of Ohio",
+      "year": 2008
+    },
+    {
+      "degree": "M.S. Data Science",
+      "school": "University of the Lakes",
+      "year": 2020
+    }
+  ],
+  "sourceFile": "resume_039_C.pdf",
+  "seed": 359928
+}

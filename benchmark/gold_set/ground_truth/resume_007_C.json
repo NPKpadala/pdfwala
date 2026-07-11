@@ -1,0 +1,50 @@
+{
+  "docType": "resume",
+  "layoutVariant": "C",
+  "name": "Sofia Kim",
+  "email": "sofia.kim@mailbox.test",
+  "phone": "(802) 871-1404",
+  "location": "Portland, OR",
+  "skills": [
+    "Excel",
+    "Copywriting",
+    "Statistical Analysis",
+    "Communication",
+    "Salesforce",
+    "AWS",
+    "Vendor Management",
+    "React"
+  ],
+  "experience": [
+    {
+      "title": "Operations Coordinator",
+      "company": "Junction Works",
+      "startDate": "Nov 2014",
+      "endDate": "Present",
+      "bullets": [
+        "Coordinated internal documentation standards, saving roughly 103 hours per month.",
+        "Streamlined a customer retention initiative, reducing errors by 30%."
+      ]
+    },
+    {
+      "title": "DevOps Engineer",
+      "company": "Northwind Partners",
+      "startDate": "Jun 2019",
+      "endDate": "Aug 2022",
+      "bullets": [
+        "Analyzed a budget of $540K across 19 projects, growing revenue 39% year over year.",
+        "Developed the migration to a new CRM platform, reducing errors by 10%.",
+        "Automated a cross-functional team of 38 people, growing revenue 35% year over year."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Accounting",
+      "school": "State University of Ohio",
+      "year": 2010
+    }
+  ],
+  "sourceFile": "resume_007_C.pdf",
+  "seed": 359928
+}

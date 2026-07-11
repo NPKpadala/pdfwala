@@ -1,0 +1,75 @@
+{
+  "docType": "invoice",
+  "layoutVariant": "B",
+  "invoiceNumber": "INV-63267",
+  "issueDate": "2023-11-06",
+  "dueDate": "2023-01-08",
+  "vendor": {
+    "name": "Summit Group",
+    "address": "7827 Maple Dr, Atlanta, GA 30301",
+    "phone": "(249) 696-9099",
+    "email": "summit.group@corp.example"
+  },
+  "customer": {
+    "name": "Evergreen Technologies",
+    "contact": "Kenji Hassan",
+    "address": "9216 Franklin St, Phoenix, AZ 85001"
+  },
+  "lineItems": [
+    {
+      "description": "Cloud hosting (monthly)",
+      "qty": 7,
+      "unitPrice": 490.42,
+      "lineTotal": 3432.94
+    },
+    {
+      "description": "Maintenance retainer",
+      "qty": 7,
+      "unitPrice": 831.66,
+      "lineTotal": 5821.62
+    },
+    {
+      "description": "Equipment rental",
+      "qty": 11,
+      "unitPrice": 355.86,
+      "lineTotal": 3914.46
+    },
+    {
+      "description": "Security audit",
+      "qty": 6,
+      "unitPrice": 768.89,
+      "lineTotal": 4613.34
+    },
+    {
+      "description": "Cloud hosting (monthly)",
+      "qty": 12,
+      "unitPrice": 599.87,
+      "lineTotal": 7198.44
+    },
+    {
+      "description": "Control module v3",
+      "qty": 12,
+      "unitPrice": 121.31,
+      "lineTotal": 1455.72
+    },
+    {
+      "description": "Thermal sensor unit",
+      "qty": 6,
+      "unitPrice": 267.19,
+      "lineTotal": 1603.14
+    },
+    {
+      "description": "Power supply 450W",
+      "qty": 8,
+      "unitPrice": 829.87,
+      "lineTotal": 6638.96
+    }
+  ],
+  "subtotal": 34678.62,
+  "taxRatePercent": 6.5,
+  "taxAmount": 2254.11,
+  "total": 36932.73,
+  "currency": "USD",
+  "sourceFile": "invoice_002_B.pdf",
+  "seed": 359928
+}

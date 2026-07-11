@@ -1,0 +1,65 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "C",
+  "title": "Quarterly Metrics Review",
+  "imageCount": 3,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "pie",
+      "title": "Support Tickets by Region",
+      "labels": [
+        "North",
+        "East",
+        "Central",
+        "South",
+        "West"
+      ],
+      "values": [
+        41,
+        10,
+        54,
+        53,
+        17
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "line",
+      "title": "Customer Satisfaction Trend",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun"
+      ],
+      "values": [
+        48,
+        18,
+        76,
+        22,
+        56,
+        69
+      ]
+    },
+    {
+      "figure": 3,
+      "chartType": "pie",
+      "title": "Support Tickets by Region",
+      "labels": [
+        "Ops",
+        "HR",
+        "Sales"
+      ],
+      "values": [
+        55,
+        46,
+        22
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_003_C.pdf",
+  "seed": 359928
+}

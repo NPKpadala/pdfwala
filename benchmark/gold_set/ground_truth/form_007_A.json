@@ -1,0 +1,49 @@
+{
+  "docType": "form",
+  "layoutVariant": "A",
+  "formTitle": "Rental Application",
+  "fields": [
+    {
+      "label": "Full Name",
+      "value": "Lucas Moreau"
+    },
+    {
+      "label": "Date of Birth",
+      "value": "1978-06-25"
+    },
+    {
+      "label": "Phone Number",
+      "value": "(578) 703-2516"
+    },
+    {
+      "label": "Email Address",
+      "value": "lucas.moreau@mailbox.test"
+    },
+    {
+      "label": "Street Address",
+      "value": "2534 Elm St"
+    },
+    {
+      "label": "City",
+      "value": "Columbus"
+    },
+    {
+      "label": "State",
+      "value": "OH"
+    },
+    {
+      "label": "ZIP Code",
+      "value": "43004"
+    },
+    {
+      "label": "Employer",
+      "value": "Delta Consulting"
+    },
+    {
+      "label": "Occupation",
+      "value": "HR Generalist"
+    }
+  ],
+  "sourceFile": "form_007_A.pdf",
+  "seed": 359928
+}

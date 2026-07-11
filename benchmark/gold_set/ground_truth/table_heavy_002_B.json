@@ -1,0 +1,123 @@
+{
+  "docType": "table_heavy",
+  "layoutVariant": "B",
+  "title": "Quarterly Operations Report",
+  "tables": [
+    {
+      "title": "Quarterly Operations Report",
+      "columnGroups": [
+        {
+          "label": "General",
+          "span": 3
+        },
+        {
+          "label": "Performance",
+          "span": 4
+        }
+      ],
+      "columns": [
+        "ID",
+        "Rate %",
+        "Region",
+        "Name",
+        "Owner",
+        "Unit Cost",
+        "Qty"
+      ],
+      "rows": [
+        [
+          "R-7919",
+          "19.4%",
+          "South",
+          "David Rossi",
+          "Carlos Anderson",
+          "$120.89",
+          "205"
+        ],
+        [
+          "R-3290",
+          "18.5%",
+          "Central",
+          "Lucas Garcia",
+          "Tariq Hassan",
+          "$386.53",
+          "488"
+        ],
+        [
+          "R-1597",
+          "2.5%",
+          "South",
+          "Ingrid Fischer",
+          "Chloe Moreau",
+          "$83.33",
+          "136"
+        ],
+        [
+          "R-7807",
+          "19.3%",
+          "West",
+          "Ingrid Nguyen",
+          "Felix Weber",
+          "$208.57",
+          "285"
+        ],
+        [
+          "R-2955",
+          "18.3%",
+          "North",
+          "Kenji Novak",
+          "Chloe Okafor",
+          "$295.14",
+          "414"
+        ],
+        [
+          "R-9660",
+          "4.1%",
+          "Central",
+          "Carlos Yamamoto",
+          "Omar Hassan",
+          "$364.93",
+          "136"
+        ],
+        [
+          "R-7835",
+          "21.9%",
+          "South",
+          "Sofia Walker",
+          "David Anderson",
+          "$61.64",
+          "364"
+        ],
+        [
+          "R-1060",
+          "4.7%",
+          "North",
+          "David Rossi",
+          "Maria Lee",
+          "$149.53",
+          "433"
+        ],
+        [
+          "R-9297",
+          "14.3%",
+          "West",
+          "Sofia Weber",
+          "Julia Silva",
+          "$331.57",
+          "209"
+        ],
+        [
+          "R-8112",
+          "6.9%",
+          "North",
+          "Ethan Hassan",
+          "Ethan Smith",
+          "$212.18",
+          "248"
+        ]
+      ]
+    }
+  ],
+  "sourceFile": "table_heavy_002_B.pdf",
+  "seed": 359928
+}

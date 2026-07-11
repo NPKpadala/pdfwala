@@ -1,0 +1,51 @@
+{
+  "docType": "resume",
+  "layoutVariant": "B",
+  "name": "Diego Johnson",
+  "email": "diego.johnson@postbox.example",
+  "phone": "(873) 274-9973",
+  "location": "Austin, TX",
+  "skills": [
+    "Negotiation",
+    "Python",
+    "Salesforce",
+    "AWS",
+    "Project Management",
+    "React",
+    "Communication",
+    "Public Speaking"
+  ],
+  "experience": [
+    {
+      "title": "Product Designer",
+      "company": "Meridian Services",
+      "startDate": "Sep 2015",
+      "endDate": "Present",
+      "bullets": [
+        "Coordinated a cross-functional team of 7 people, saving roughly 68 hours per month.",
+        "Streamlined an automated QA workflow, improving turnaround time by 9%.",
+        "Analyzed an automated QA workflow, cutting costs by 14%."
+      ]
+    },
+    {
+      "title": "Marketing Specialist",
+      "company": "Keystone Works",
+      "startDate": "May 2017",
+      "endDate": "Jan 2019",
+      "bullets": [
+        "Negotiated a cross-functional team of 38 people, cutting costs by 30%.",
+        "Led the migration to a new CRM platform, reducing errors by 28%.",
+        "Launched a cross-functional team of 6 people, improving turnaround time by 34%."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "B.S. Computer Science",
+      "school": "Bayfield University",
+      "year": 2010
+    }
+  ],
+  "sourceFile": "resume_018_B.pdf",
+  "seed": 359928
+}

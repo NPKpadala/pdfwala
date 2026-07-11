@@ -1,0 +1,26 @@
+{
+  "docType": "ocr_scan",
+  "layoutVariant": "B",
+  "scanParams": {
+    "rotationDeg": -1.83,
+    "blurPx": 0.8,
+    "fontFamily": "Georgia",
+    "noiseDots": 383
+  },
+  "content": {
+    "company": "Apex Logistics",
+    "documentKind": "interoffice memorandum",
+    "date": "2022-02-14",
+    "to": "Omar Ivanov",
+    "from": "Omar Dubois",
+    "subject": "Policy change notification",
+    "paragraphs": [
+      "Our certified staff bring an average of 23 years of hands-on industry experience. We maintain a 94% on-time completion rate across all active accounts. Quarterly reviews keep your goals front and center throughout the engagement. Founded in 2002, we have grown into a trusted partner for clients across the region.",
+      "From initial planning through final handoff, a dedicated coordinator manages every detail. Our team works with organizations of every size to deliver measurable results on schedule. Clients rely on us for clear communication, transparent pricing, and dependable delivery.",
+      "Founded in 1995, we have grown into a trusted partner for clients across the region. From initial planning through final handoff, a dedicated coordinator manages every detail. We maintain a 91% on-time completion rate across all active accounts. We combine practical experience with modern tooling to keep projects on time and on budget.",
+      "We combine practical experience with modern tooling to keep projects on time and on budget. Quarterly reviews keep your goals front and center throughout the engagement."
+    ]
+  },
+  "sourceFile": "ocr_scan_008_B.pdf",
+  "seed": 359928
+}

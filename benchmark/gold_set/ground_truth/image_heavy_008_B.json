@@ -1,0 +1,54 @@
+{
+  "docType": "image_heavy",
+  "layoutVariant": "B",
+  "title": "KPI Snapshot",
+  "imageCount": 2,
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "bar",
+      "title": "Customer Satisfaction Trend",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul"
+      ],
+      "values": [
+        32,
+        40,
+        42,
+        38,
+        80,
+        77,
+        95
+      ]
+    },
+    {
+      "figure": 2,
+      "chartType": "line",
+      "title": "Monthly Revenue",
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun"
+      ],
+      "values": [
+        57,
+        27,
+        39,
+        36,
+        70,
+        44
+      ]
+    }
+  ],
+  "sourceFile": "image_heavy_008_B.pdf",
+  "seed": 359928
+}

@@ -1,0 +1,26 @@
+{
+  "docType": "ocr_scan",
+  "layoutVariant": "B",
+  "scanParams": {
+    "rotationDeg": -2.2,
+    "blurPx": 0.52,
+    "fontFamily": "Courier New",
+    "noiseDots": 483
+  },
+  "content": {
+    "company": "Junction Dynamics",
+    "documentKind": "interoffice memorandum",
+    "date": "2022-01-24",
+    "to": "Chloe Patel",
+    "from": "Chloe Kowalski",
+    "subject": "Meeting follow-up",
+    "paragraphs": [
+      "From initial planning through final handoff, a dedicated coordinator manages every detail. Clients rely on us for clear communication, transparent pricing, and dependable delivery.",
+      "Flexible service plans let you scale support up or down as your needs change. We combine practical experience with modern tooling to keep projects on time and on budget. Every engagement starts with a detailed assessment of your current operations.",
+      "From initial planning through final handoff, a dedicated coordinator manages every detail. Quarterly reviews keep your goals front and center throughout the engagement. Clients rely on us for clear communication, transparent pricing, and dependable delivery.",
+      "We maintain a 96% on-time completion rate across all active accounts. We combine practical experience with modern tooling to keep projects on time and on budget. Our certified staff bring an average of 11 years of hands-on industry experience. Clients rely on us for clear communication, transparent pricing, and dependable delivery."
+    ]
+  },
+  "sourceFile": "ocr_scan_005_B.pdf",
+  "seed": 359928
+}
