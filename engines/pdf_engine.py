@@ -2528,6 +2528,117 @@ def _ocr_pdf_to_docx(pdf_path: str, docx_path: str, lang: str = "eng",
     return {"pages": n, "chars": total_chars}
 
 
+# ── PDF→Word: Docling layout-engine path (hard docs: multi-column / tables / scans) ─
+# pdf2docx is a geometry-heuristic library with no document-structure model — it
+# scrambles multi-column reading order, barely reconstructs tables, and its OCR
+# fallback garbles hard scans. Docling (IBM, MIT) uses ML layout + table models
+# (DocLayNet / TableFormer) that read structure correctly. We route only the docs
+# pdf2docx architecturally fails on to Docling; simple text docs stay on the fast
+# pdf2docx path. Docling is heavy (torch), so it is imported lazily and the
+# DocumentConverter is cached per worker process (models load once, then reused).
+_DOCLING_CONVERTER = None
+_DOCLING_TRIED = False
+
+
+def _get_docling_converter():
+    """Lazily build + cache a Docling DocumentConverter. Returns None if Docling
+    is not installed in this worker's image (keeps other workers/app lean)."""
+    global _DOCLING_CONVERTER, _DOCLING_TRIED
+    if _DOCLING_TRIED:
+        return _DOCLING_CONVERTER
+    _DOCLING_TRIED = True
+    try:
+        from docling.document_converter import DocumentConverter
+        _DOCLING_CONVERTER = DocumentConverter()
+    except Exception as ex:
+        log.warning(f"pdf_to_word: Docling unavailable ({ex}); using pdf2docx path")
+        _DOCLING_CONVERTER = None
+    return _DOCLING_CONVERTER
+
+
+def _pdf_is_complex(doc) -> bool:
+    """True when a (text-bearing) PDF has layout pdf2docx handles poorly — real
+    tables or multi-column text — so it should route to Docling. Conservative:
+    single-column, table-free docs (most resumes/letters) stay on the fast path."""
+    try:
+        for pno in range(min(len(doc), 3)):
+            page = doc[pno]
+            try:
+                for t in page.find_tables().tables:
+                    if getattr(t, "row_count", 0) >= 2 and getattr(t, "col_count", 0) >= 2:
+                        return True
+            except Exception:
+                pass
+            # multi-column: cluster text-block left edges; >=2 substantial columns
+            # separated by a wide gap indicates true columns (not mere indentation).
+            blocks = [b for b in page.get_text("blocks") if b[6] == 0 and b[4].strip()]
+            if len(blocks) >= 6:
+                xs = sorted(round(b[0]) for b in blocks)
+                regions, cur = [], [xs[0]]
+                for x in xs[1:]:
+                    if x - cur[-1] > 40:
+                        regions.append(cur); cur = [x]
+                    else:
+                        cur.append(x)
+                regions.append(cur)
+                substantial = [r for r in regions if len(r) >= 3]
+                if len(substantial) >= 2 and (substantial[-1][0] - substantial[0][-1]) > 100:
+                    return True
+        return False
+    except Exception:
+        return False
+
+
+def _docling_to_docx(dl_doc, out_path) -> dict:
+    """Bridge: DoclingDocument (headings/paragraphs/lists/TABLES in reading order)
+    → a real .docx via python-docx. Tables become genuine Word tables."""
+    from docx import Document as _Doc
+    from docling_core.types.doc import TableItem
+    stats = {"paras": 0, "tables": 0, "headings": 0}
+    d = _Doc()
+    for item, level in dl_doc.iterate_items():
+        lbl = getattr(getattr(item, "label", None), "value", "")
+        if isinstance(item, TableItem):
+            nr, nc = item.data.num_rows, item.data.num_cols
+            if nr and nc:
+                t = d.add_table(rows=nr, cols=nc); t.style = "Table Grid"
+                grid = item.data.grid
+                for r in range(nr):
+                    for c in range(nc):
+                        try:
+                            t.cell(r, c).text = (grid[r][c].text or "").strip()
+                        except Exception:
+                            pass
+                stats["tables"] += 1
+            continue
+        txt = (getattr(item, "text", "") or "").strip()
+        if not txt:
+            continue
+        if lbl == "title":
+            d.add_heading(txt, level=0); stats["headings"] += 1
+        elif lbl == "section_header":
+            d.add_heading(txt, level=min(max(level, 1), 4)); stats["headings"] += 1
+        elif lbl == "list_item":
+            d.add_paragraph(txt, style="List Bullet"); stats["paras"] += 1
+        elif lbl in ("page_header", "page_footer", "footnote"):
+            continue
+        else:
+            d.add_paragraph(txt); stats["paras"] += 1
+    d.save(out_path)
+    return stats
+
+
+def _convert_with_docling(pdf_path: str, out_path: str) -> Optional[dict]:
+    """Full Docling path: PDF → DoclingDocument → DOCX bridge. Returns stats, or
+    None if Docling is unavailable. Raises on genuine conversion failure (caller
+    falls back to pdf2docx)."""
+    conv = _get_docling_converter()
+    if conv is None:
+        return None
+    dl = conv.convert(pdf_path).document
+    return _docling_to_docx(dl, out_path)
+
+
 @register("pdf_to_word")
 def pdf_to_word(ctx: JobContext) -> dict:
     """
@@ -2544,13 +2655,40 @@ def pdf_to_word(ctx: JobContext) -> dict:
     # (image-only) PDFs while the doc is open.
     page_count = 0
     scanned = False
+    complex_layout = False
     if FITZ_OK:
         doc = fitz.open(ctx.input_path)
         page_count = len(doc)
         scanned = TESSERACT_OK and _pdf_is_scanned(doc)
+        complex_layout = (not scanned) and _pdf_is_complex(doc)
         doc.close()
 
     ctx.set_progress(5)
+
+    # ── Engine router ─────────────────────────────────────────────────────────
+    # Hard docs (scanned / multi-column / real tables) go to the Docling layout
+    # engine, which reads structure correctly where pdf2docx architecturally fails
+    # (scrambled columns, lost tables, garbled OCR). Simple single-column text
+    # stays on the fast pdf2docx path below. Docling unavailability or any failure
+    # falls through to the existing paths, so output is never worse than before.
+    if scanned or complex_layout:
+        try:
+            dl = _convert_with_docling(ctx.input_path, ctx.output_path)
+            if dl is not None and os.path.exists(ctx.output_path) and os.path.getsize(ctx.output_path) > 0:
+                ctx.set_progress(93)
+                repair = _repair_docx(ctx.output_path)      # fi/fl ligature + spacing repair
+                _map_fonts_docx(ctx.output_path)             # Word-native font names
+                log.info(f"[{ctx.job_id}] pdf_to_word (docling): {page_count} pages, "
+                         f"{dl['tables']} tables, {dl['headings']} headings, "
+                         f"repaired {repair['changed']}/{repair['runs']} runs")
+                ctx.set_progress(100)
+                return {"pages": page_count, "engine": "docling",
+                        "tables": dl["tables"], "headings_promoted": dl["headings"],
+                        "runs_repaired": repair["changed"], "lines_merged": 0,
+                        "list_items": 0, "links_recovered": 0}
+        except Exception as ex:
+            log.warning(f"[{ctx.job_id}] Docling path failed ({ex}); falling back to "
+                        f"{'OCR' if scanned else 'pdf2docx'}")
 
     # Scanned/image-only PDF: pdf2docx would embed a page image with no text
     # (empty or unsearchable DOCX). Route through Tesseract instead so the output

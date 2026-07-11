@@ -56,6 +56,21 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # ============================================================================
+# Docling layout engine (hard PDFs: multi-column / tables / scans), CPU/ARM.
+# Only worker processes that actually run pdf_to_word on a hard doc load the
+# models (lazy import + cached converter); other workers just carry the deps.
+# Models are BAKED into the image (HF_HOME) so nothing downloads at runtime,
+# and HF_HUB_OFFLINE=1 keeps it fully local/deterministic in production.
+# ============================================================================
+ENV HF_HOME=/opt/docling-models \
+    HF_HUB_OFFLINE=1
+RUN pip install --no-cache-dir docling
+RUN HF_HUB_OFFLINE=0 python3 -c "import fitz; d=fitz.open(); p=d.new_page(); \
+p.insert_text((72,72),'warmup document for model bake'); d.save('/tmp/w.pdf'); \
+from docling.document_converter import DocumentConverter; DocumentConverter().convert('/tmp/w.pdf')" && \
+    rm -f /tmp/w.pdf && chmod -R a+rX /opt/docling-models
+
+# ============================================================================
 # Copy application code
 # ============================================================================
 COPY . .
