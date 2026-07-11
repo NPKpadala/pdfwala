@@ -2,6 +2,7 @@
 """Gold-set runner: PDF -> current engine -> DOCX -> render -> score with
 GROUND-TRUTH content recall + reference-free metrics. No engine modification."""
 import json, os, sys, time, subprocess, tempfile, resource, glob, re
+from difflib import SequenceMatcher
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(BASE, "scripts")); sys.path.insert(0, "/src")
 import metrics as M
@@ -20,11 +21,41 @@ OUT = os.path.join(BASE, "outputs", "gold")
 _META_KEYS = {"docType", "layoutVariant", "sourceFile", "seed",
               "currency", "scanParams", "layout"}
 
+# GT keys holding long free-text paragraph content, where exact-string match
+# over-penalises single-character OCR noise ("maintain a" -> "maintain @"). ONLY
+# leaves reached under such a key are eligible for fuzzy/edit-distance matching;
+# every other field (names, dates, numbers, headers, short strings) stays exact
+# (post-normalisation). This is scoped by field NAME, not by a blanket similarity
+# pass. Confirmed: "paragraphs" occurs only in the ocr_scan schema, so no other
+# category is affected. Other categories' long-text fields (contract "text",
+# brochure "body", invoice "terms", resume "bullets") are deliberately NOT here —
+# they were not analysed for near-miss behaviour and stay exact.
+_PARA_KEYS = {"paragraphs"}
+_PARA_SIM_THRESHOLD = 0.90
+
 _MONTHS = {m: i for i, m in enumerate(
     ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
 _MONTH_FULL = {"january": 1, "february": 2, "march": 3, "april": 4, "may": 5,
                "june": 6, "july": 7, "august": 8, "september": 9, "october": 10,
                "november": 11, "december": 12}
+
+
+def gt_fields(obj, acc, para=False):
+    """Collect (value, is_paragraph) leaves (len>=3), SKIPPING metadata keys.
+    is_paragraph flags leaves reached under a _PARA_KEYS key (fuzzy-eligible)."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k in _META_KEYS:
+                continue
+            gt_fields(v, acc, para or (k in _PARA_KEYS))
+    elif isinstance(obj, list):
+        for v in obj:
+            gt_fields(v, acc, para)
+    elif isinstance(obj, (str, int, float)):
+        s = str(obj).strip()
+        if len(s) >= 3:
+            acc.append((s, para))
+    return acc
 
 
 def gt_strings(obj, acc):
@@ -127,15 +158,35 @@ def _present(value, text_norm, nums, dates):
     return False
 
 
+def _para_similarity(g, t):
+    """Best LOCAL char-similarity (0..1) of paragraph text `g` within docx text
+    `t` (both normalised). Anchored on the longest common block and scored inside
+    a single len(g)-sized window, so repeated boilerplate cannot stitch a false
+    match across the document. Used ONLY for _PARA_KEYS fields."""
+    if not g or not t:
+        return 0.0
+    m = SequenceMatcher(None, g, t, autojunk=False).find_longest_match(0, len(g), 0, len(t))
+    if m.size == 0:
+        return 0.0
+    start = max(0, m.b - m.a - 5)              # align window to g's start
+    window = t[start:start + len(g) + 10]
+    return SequenceMatcher(None, g, window, autojunk=False).ratio()
+
+
 def content_recall(gt_json, docx_text):
-    strs = gt_strings(gt_json, [])
-    if not strs:
+    fields = gt_fields(gt_json, [])            # [(value, is_paragraph), ...]
+    if not fields:
         return None, 0, 0
     dt = norm(docx_text)
     nums = _nums_in_text(docx_text)
     dates = _dates_in_text(docx_text)
-    found = sum(1 for s in strs if _present(s, dt, nums, dates))
-    return round(found / len(strs), 4), found, len(strs)
+    found = 0
+    for val, is_para in fields:
+        if _present(val, dt, nums, dates):
+            found += 1
+        elif is_para and _para_similarity(norm(val), dt) >= _PARA_SIM_THRESHOLD:
+            found += 1                          # long free-text: tolerate OCR noise
+    return round(found / len(fields), 4), found, len(fields)
 
 
 def render(docx, out_dir):
