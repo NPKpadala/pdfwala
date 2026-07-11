@@ -1,7 +1,7 @@
 {
   "docType": "contract",
   "layoutVariant": "A",
-  "title": "CONSULTING AGREEMENT",
+  "title": "SERVICE CONTRACT",
   "parties": [
     {
       "role": "Client",
@@ -24,18 +24,18 @@
   "clauses": [
     {
       "label": "1",
-      "title": "Confidentiality",
-      "text": "Each party agrees to hold in strict confidence all non-public information disclosed by the other party in connection with this Agreement, and to use such information solely to perform its obligations hereunder. This obligation survives termination of this Agreement for a period of 6 months."
+      "title": "Term and Renewal",
+      "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 6 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 60 days before the end of the then-current term."
     },
     {
       "label": "2",
-      "title": "Independent Contractor",
-      "text": "Meridian Dynamics is an independent contractor and nothing in this Agreement creates a partnership, joint venture, agency, or employment relationship between the parties. Meridian Dynamics is solely responsible for its own taxes, insurance, and employee obligations."
+      "title": "Compensation",
+      "text": "In consideration of the Services, Junction Solutions shall pay Meridian Dynamics fees not to exceed $17,000 per invoice period. All invoices are payable within 60 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
     },
     {
       "label": "3",
-      "title": "Compensation",
-      "text": "In consideration of the Services, Junction Solutions shall pay Meridian Dynamics fees not to exceed $17,000 per invoice period. All invoices are payable within 60 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
+      "title": "Confidentiality",
+      "text": "Each party agrees to hold in strict confidence all non-public information disclosed by the other party in connection with this Agreement, and to use such information solely to perform its obligations hereunder. This obligation survives termination of this Agreement for a period of 6 months."
     },
     {
       "label": "4",
@@ -44,13 +44,13 @@
     },
     {
       "label": "5",
-      "title": "Intellectual Property",
-      "text": "All work product created by Meridian Dynamics specifically for Junction Solutions under this Agreement shall be the sole property of Junction Solutions upon full payment of the applicable fees. Meridian Dynamics retains ownership of its pre-existing materials, tools, and methodologies."
+      "title": "Governing Law",
+      "text": "This Agreement shall be governed by and construed in accordance with the laws of the State of Delaware, without regard to its conflict of laws principles. The parties consent to the exclusive jurisdiction of the state and federal courts located in Delaware."
     },
     {
       "label": "6",
-      "title": "Term and Renewal",
-      "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 6 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 60 days before the end of the then-current term."
+      "title": "Independent Contractor",
+      "text": "Meridian Dynamics is an independent contractor and nothing in this Agreement creates a partnership, joint venture, agency, or employment relationship between the parties. Meridian Dynamics is solely responsible for its own taxes, insurance, and employee obligations."
     }
   ],
   "sourceFile": "contract_019_A.pdf",

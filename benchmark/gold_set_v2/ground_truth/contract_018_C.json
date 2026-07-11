@@ -1,7 +1,7 @@
 {
   "docType": "contract",
   "layoutVariant": "C",
-  "title": "PROFESSIONAL SERVICES AGREEMENT",
+  "title": "SERVICE CONTRACT",
   "parties": [
     {
       "role": "Client",
@@ -24,13 +24,8 @@
   "clauses": [
     {
       "label": null,
-      "title": "Term and Renewal",
-      "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 24 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 45 days before the end of the then-current term."
-    },
-    {
-      "label": null,
-      "title": "Limitation of Liability",
-      "text": "Except for breaches of confidentiality, neither party shall be liable for any indirect, incidental, special, or consequential damages arising out of this Agreement. Each party's aggregate liability shall not exceed the total fees paid or payable by Ironwood Logistics in the twelve months preceding the claim."
+      "title": "Compensation",
+      "text": "In consideration of the Services, Ironwood Logistics shall pay Vanguard Dynamics fees not to exceed $47,000 per invoice period. All invoices are payable within 45 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
     },
     {
       "label": null,
@@ -44,13 +39,18 @@
     },
     {
       "label": null,
+      "title": "Limitation of Liability",
+      "text": "Except for breaches of confidentiality, neither party shall be liable for any indirect, incidental, special, or consequential damages arising out of this Agreement. Each party's aggregate liability shall not exceed the total fees paid or payable by Ironwood Logistics in the twelve months preceding the claim."
+    },
+    {
+      "label": null,
       "title": "Intellectual Property",
       "text": "All work product created by Vanguard Dynamics specifically for Ironwood Logistics under this Agreement shall be the sole property of Ironwood Logistics upon full payment of the applicable fees. Vanguard Dynamics retains ownership of its pre-existing materials, tools, and methodologies."
     },
     {
       "label": null,
-      "title": "Independent Contractor",
-      "text": "Vanguard Dynamics is an independent contractor and nothing in this Agreement creates a partnership, joint venture, agency, or employment relationship between the parties. Vanguard Dynamics is solely responsible for its own taxes, insurance, and employee obligations."
+      "title": "Governing Law",
+      "text": "This Agreement shall be governed by and construed in accordance with the laws of the State of Delaware, without regard to its conflict of laws principles. The parties consent to the exclusive jurisdiction of the state and federal courts located in Delaware."
     },
     {
       "label": null,

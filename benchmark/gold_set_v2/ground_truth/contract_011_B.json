@@ -34,8 +34,8 @@
     },
     {
       "label": "C",
-      "title": "Termination",
-      "text": "Either party may terminate this Agreement upon 30 days' written notice to the other party. Either party may terminate immediately upon a material breach by the other party that remains uncured 30 days after written notice of the breach."
+      "title": "Compensation",
+      "text": "In consideration of the Services, Redwood Technologies shall pay Summit Works fees not to exceed $43,000 per invoice period. All invoices are payable within 30 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
     },
     {
       "label": "D",
@@ -44,18 +44,18 @@
     },
     {
       "label": "E",
-      "title": "Independent Contractor",
-      "text": "Summit Works is an independent contractor and nothing in this Agreement creates a partnership, joint venture, agency, or employment relationship between the parties. Summit Works is solely responsible for its own taxes, insurance, and employee obligations."
+      "title": "Termination",
+      "text": "Either party may terminate this Agreement upon 30 days' written notice to the other party. Either party may terminate immediately upon a material breach by the other party that remains uncured 30 days after written notice of the breach."
     },
     {
       "label": "F",
-      "title": "Compensation",
-      "text": "In consideration of the Services, Redwood Technologies shall pay Summit Works fees not to exceed $43,000 per invoice period. All invoices are payable within 30 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
+      "title": "Intellectual Property",
+      "text": "All work product created by Summit Works specifically for Redwood Technologies under this Agreement shall be the sole property of Redwood Technologies upon full payment of the applicable fees. Summit Works retains ownership of its pre-existing materials, tools, and methodologies."
     },
     {
       "label": "G",
-      "title": "Intellectual Property",
-      "text": "All work product created by Summit Works specifically for Redwood Technologies under this Agreement shall be the sole property of Redwood Technologies upon full payment of the applicable fees. Summit Works retains ownership of its pre-existing materials, tools, and methodologies."
+      "title": "Governing Law",
+      "text": "This Agreement shall be governed by and construed in accordance with the laws of the State of Illinois, without regard to its conflict of laws principles. The parties consent to the exclusive jurisdiction of the state and federal courts located in Illinois."
     }
   ],
   "sourceFile": "contract_011_B.pdf",

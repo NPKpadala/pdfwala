@@ -1,7 +1,7 @@
 {
   "docType": "contract",
   "layoutVariant": "B",
-  "title": "MASTER SERVICES AGREEMENT",
+  "title": "PROFESSIONAL SERVICES AGREEMENT",
   "parties": [
     {
       "role": "Client",
@@ -24,18 +24,18 @@
   "clauses": [
     {
       "label": "A",
-      "title": "Confidentiality",
-      "text": "Each party agrees to hold in strict confidence all non-public information disclosed by the other party in connection with this Agreement, and to use such information solely to perform its obligations hereunder. This obligation survives termination of this Agreement for a period of 24 months."
+      "title": "Term and Renewal",
+      "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 24 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 15 days before the end of the then-current term."
     },
     {
       "label": "B",
-      "title": "Independent Contractor",
-      "text": "Fulcrum Solutions is an independent contractor and nothing in this Agreement creates a partnership, joint venture, agency, or employment relationship between the parties. Fulcrum Solutions is solely responsible for its own taxes, insurance, and employee obligations."
+      "title": "Compensation",
+      "text": "In consideration of the Services, Evergreen Industries shall pay Fulcrum Solutions fees not to exceed $25,000 per invoice period. All invoices are payable within 15 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
     },
     {
       "label": "C",
-      "title": "Term and Renewal",
-      "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 24 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 15 days before the end of the then-current term."
+      "title": "Confidentiality",
+      "text": "Each party agrees to hold in strict confidence all non-public information disclosed by the other party in connection with this Agreement, and to use such information solely to perform its obligations hereunder. This obligation survives termination of this Agreement for a period of 24 months."
     },
     {
       "label": "D",
@@ -44,18 +44,18 @@
     },
     {
       "label": "E",
-      "title": "Compensation",
-      "text": "In consideration of the Services, Evergreen Industries shall pay Fulcrum Solutions fees not to exceed $25,000 per invoice period. All invoices are payable within 15 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
-    },
-    {
-      "label": "F",
       "title": "Limitation of Liability",
       "text": "Except for breaches of confidentiality, neither party shall be liable for any indirect, incidental, special, or consequential damages arising out of this Agreement. Each party's aggregate liability shall not exceed the total fees paid or payable by Evergreen Industries in the twelve months preceding the claim."
     },
     {
-      "label": "G",
+      "label": "F",
       "title": "Intellectual Property",
       "text": "All work product created by Fulcrum Solutions specifically for Evergreen Industries under this Agreement shall be the sole property of Evergreen Industries upon full payment of the applicable fees. Fulcrum Solutions retains ownership of its pre-existing materials, tools, and methodologies."
+    },
+    {
+      "label": "G",
+      "title": "Governing Law",
+      "text": "This Agreement shall be governed by and construed in accordance with the laws of the State of New York, without regard to its conflict of laws principles. The parties consent to the exclusive jurisdiction of the state and federal courts located in New York."
     },
     {
       "label": "H",

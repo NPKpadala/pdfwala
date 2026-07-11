@@ -1,7 +1,7 @@
 {
   "docType": "contract",
   "layoutVariant": "A",
-  "title": "MASTER SERVICES AGREEMENT",
+  "title": "CONSULTING AGREEMENT",
   "parties": [
     {
       "role": "Client",
@@ -24,23 +24,23 @@
   "clauses": [
     {
       "label": "1",
-      "title": "Governing Law",
-      "text": "This Agreement shall be governed by and construed in accordance with the laws of the State of Colorado, without regard to its conflict of laws principles. The parties consent to the exclusive jurisdiction of the state and federal courts located in Colorado."
-    },
-    {
-      "label": "2",
       "title": "Term and Renewal",
       "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 24 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 30 days before the end of the then-current term."
     },
     {
+      "label": "2",
+      "title": "Compensation",
+      "text": "In consideration of the Services, Pinnacle Technologies shall pay Vanguard Labs fees not to exceed $126,000 per invoice period. All invoices are payable within 30 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
+    },
+    {
       "label": "3",
-      "title": "Confidentiality",
-      "text": "Each party agrees to hold in strict confidence all non-public information disclosed by the other party in connection with this Agreement, and to use such information solely to perform its obligations hereunder. This obligation survives termination of this Agreement for a period of 24 months."
+      "title": "Termination",
+      "text": "Either party may terminate this Agreement upon 30 days' written notice to the other party. Either party may terminate immediately upon a material breach by the other party that remains uncured 30 days after written notice of the breach."
     },
     {
       "label": "4",
-      "title": "Termination",
-      "text": "Either party may terminate this Agreement upon 30 days' written notice to the other party. Either party may terminate immediately upon a material breach by the other party that remains uncured 30 days after written notice of the breach."
+      "title": "Limitation of Liability",
+      "text": "Except for breaches of confidentiality, neither party shall be liable for any indirect, incidental, special, or consequential damages arising out of this Agreement. Each party's aggregate liability shall not exceed the total fees paid or payable by Pinnacle Technologies in the twelve months preceding the claim."
     },
     {
       "label": "5",
@@ -49,8 +49,8 @@
     },
     {
       "label": "6",
-      "title": "Limitation of Liability",
-      "text": "Except for breaches of confidentiality, neither party shall be liable for any indirect, incidental, special, or consequential damages arising out of this Agreement. Each party's aggregate liability shall not exceed the total fees paid or payable by Pinnacle Technologies in the twelve months preceding the claim."
+      "title": "Governing Law",
+      "text": "This Agreement shall be governed by and construed in accordance with the laws of the State of Colorado, without regard to its conflict of laws principles. The parties consent to the exclusive jurisdiction of the state and federal courts located in Colorado."
     },
     {
       "label": "7",

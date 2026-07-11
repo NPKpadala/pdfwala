@@ -1,5 +1,5 @@
 {
-  "macro": 0.9548,
+  "macro": 0.9642,
   "by_category": {
     "brochure": {
       "n": 32,
@@ -9,7 +9,7 @@
     "contract": {
       "n": 24,
       "ok": 24,
-      "recall": 0.9657
+      "recall": 1.0
     },
     "form": {
       "n": 24,
@@ -29,7 +29,7 @@
     "ocr_scan": {
       "n": 24,
       "ok": 24,
-      "recall": 0.9223
+      "recall": 0.9669
     },
     "resume": {
       "n": 24,
@@ -278,7 +278,7 @@
       "file": "contract_002_B",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9643,
+      "gt_recall": 1.0,
       "error": null
     },
     {
@@ -292,7 +292,7 @@
       "file": "contract_004_A",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9231,
+      "gt_recall": 1.0,
       "error": null
     },
     {
@@ -306,7 +306,7 @@
       "file": "contract_006_C",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9643,
+      "gt_recall": 1.0,
       "error": null
     },
     {
@@ -327,56 +327,56 @@
       "file": "contract_009_C",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9643,
+      "gt_recall": 1.0,
       "error": null
     },
     {
       "file": "contract_010_A",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9167,
+      "gt_recall": 1.0,
       "error": null
     },
     {
       "file": "contract_011_B",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9615,
+      "gt_recall": 1.0,
       "error": null
     },
     {
       "file": "contract_012_C",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9583,
+      "gt_recall": 1.0,
       "error": null
     },
     {
       "file": "contract_013_A",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9615,
+      "gt_recall": 1.0,
       "error": null
     },
     {
       "file": "contract_014_B",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9643,
+      "gt_recall": 1.0,
       "error": null
     },
     {
       "file": "contract_015_C",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9583,
+      "gt_recall": 1.0,
       "error": null
     },
     {
       "file": "contract_016_A",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9615,
+      "gt_recall": 1.0,
       "error": null
     },
     {
@@ -390,21 +390,21 @@
       "file": "contract_018_C",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9231,
+      "gt_recall": 1.0,
       "error": null
     },
     {
       "file": "contract_019_A",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9583,
+      "gt_recall": 1.0,
       "error": null
     },
     {
       "file": "contract_020_B",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9615,
+      "gt_recall": 1.0,
       "error": null
     },
     {
@@ -418,21 +418,21 @@
       "file": "contract_022_A",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9167,
+      "gt_recall": 1.0,
       "error": null
     },
     {
       "file": "contract_023_B",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9615,
+      "gt_recall": 1.0,
       "error": null
     },
     {
       "file": "contract_024_C",
       "class": "contract",
       "ok": true,
-      "gt_recall": 0.9583,
+      "gt_recall": 1.0,
       "error": null
     },
     {
@@ -957,7 +957,7 @@
       "file": "ocr_scan_003_C",
       "class": "ocr_scan",
       "ok": true,
-      "gt_recall": 0.5455,
+      "gt_recall": 0.9091,
       "error": null
     },
     {
@@ -999,7 +999,7 @@
       "file": "ocr_scan_009_C",
       "class": "ocr_scan",
       "ok": true,
-      "gt_recall": 0.7778,
+      "gt_recall": 1.0,
       "error": null
     },
     {
@@ -1020,7 +1020,7 @@
       "file": "ocr_scan_012_C",
       "class": "ocr_scan",
       "ok": true,
-      "gt_recall": 0.5455,
+      "gt_recall": 0.8182,
       "error": null
     },
     {
@@ -1034,7 +1034,7 @@
       "file": "ocr_scan_014_B",
       "class": "ocr_scan",
       "ok": true,
-      "gt_recall": 0.9,
+      "gt_recall": 1.0,
       "error": null
     },
     {
@@ -1083,7 +1083,7 @@
       "file": "ocr_scan_021_C",
       "class": "ocr_scan",
       "ok": true,
-      "gt_recall": 0.7778,
+      "gt_recall": 0.8889,
       "error": null
     },
     {

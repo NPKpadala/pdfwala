@@ -4,7 +4,7 @@
   "scanParams": {
     "rotationDeg": 2.71,
     "blurPx": 1.56,
-    "fontFamily": "Georgia",
+    "fontFamily": "Arial",
     "noiseDots": 1104
   },
   "content": {

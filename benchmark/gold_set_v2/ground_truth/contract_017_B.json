@@ -1,7 +1,7 @@
 {
   "docType": "contract",
   "layoutVariant": "B",
-  "title": "CONSULTING AGREEMENT",
+  "title": "SERVICE CONTRACT",
   "parties": [
     {
       "role": "Client",
@@ -24,23 +24,23 @@
   "clauses": [
     {
       "label": "A",
-      "title": "Intellectual Property",
-      "text": "All work product created by Pinnacle Industries specifically for Fulcrum Labs under this Agreement shall be the sole property of Fulcrum Labs upon full payment of the applicable fees. Pinnacle Industries retains ownership of its pre-existing materials, tools, and methodologies."
-    },
-    {
-      "label": "B",
       "title": "Scope of Services",
       "text": "Pinnacle Industries shall provide the services described in Exhibit A (the \"Services\") to Fulcrum Labs in a professional and workmanlike manner, consistent with industry standards. Any changes to the scope of the Services must be agreed in writing by both parties before work begins."
     },
     {
+      "label": "B",
+      "title": "Term and Renewal",
+      "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 12 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 15 days before the end of the then-current term."
+    },
+    {
       "label": "C",
-      "title": "Confidentiality",
-      "text": "Each party agrees to hold in strict confidence all non-public information disclosed by the other party in connection with this Agreement, and to use such information solely to perform its obligations hereunder. This obligation survives termination of this Agreement for a period of 12 months."
+      "title": "Compensation",
+      "text": "In consideration of the Services, Fulcrum Labs shall pay Pinnacle Industries fees not to exceed $22,000 per invoice period. All invoices are payable within 15 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
     },
     {
       "label": "D",
-      "title": "Compensation",
-      "text": "In consideration of the Services, Fulcrum Labs shall pay Pinnacle Industries fees not to exceed $22,000 per invoice period. All invoices are payable within 15 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
+      "title": "Confidentiality",
+      "text": "Each party agrees to hold in strict confidence all non-public information disclosed by the other party in connection with this Agreement, and to use such information solely to perform its obligations hereunder. This obligation survives termination of this Agreement for a period of 12 months."
     },
     {
       "label": "E",
@@ -49,8 +49,8 @@
     },
     {
       "label": "F",
-      "title": "Term and Renewal",
-      "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 12 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 15 days before the end of the then-current term."
+      "title": "Intellectual Property",
+      "text": "All work product created by Pinnacle Industries specifically for Fulcrum Labs under this Agreement shall be the sole property of Fulcrum Labs upon full payment of the applicable fees. Pinnacle Industries retains ownership of its pre-existing materials, tools, and methodologies."
     },
     {
       "label": "G",

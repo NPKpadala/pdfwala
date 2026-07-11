@@ -1,7 +1,7 @@
 {
   "docType": "contract",
   "layoutVariant": "A",
-  "title": "SERVICE CONTRACT",
+  "title": "CONSULTING AGREEMENT",
   "parties": [
     {
       "role": "Client",
@@ -24,38 +24,38 @@
   "clauses": [
     {
       "label": "1",
-      "title": "Termination",
-      "text": "Either party may terminate this Agreement upon 15 days' written notice to the other party. Either party may terminate immediately upon a material breach by the other party that remains uncured 15 days after written notice of the breach."
-    },
-    {
-      "label": "2",
-      "title": "Independent Contractor",
-      "text": "Pinnacle Group is an independent contractor and nothing in this Agreement creates a partnership, joint venture, agency, or employment relationship between the parties. Pinnacle Group is solely responsible for its own taxes, insurance, and employee obligations."
-    },
-    {
-      "label": "3",
       "title": "Term and Renewal",
       "text": "This Agreement shall commence on the Effective Date and continue for an initial term of 24 months, unless earlier terminated as provided herein. The Agreement will renew automatically for successive terms of equal length unless either party gives written notice of non-renewal at least 15 days before the end of the then-current term."
     },
     {
-      "label": "4",
-      "title": "Intellectual Property",
-      "text": "All work product created by Pinnacle Group specifically for Summit Consulting under this Agreement shall be the sole property of Summit Consulting upon full payment of the applicable fees. Pinnacle Group retains ownership of its pre-existing materials, tools, and methodologies."
-    },
-    {
-      "label": "5",
-      "title": "Entire Agreement",
-      "text": "This Agreement, together with its exhibits, constitutes the entire agreement between Summit Consulting and Pinnacle Group with respect to its subject matter and supersedes all prior or contemporaneous understandings. Any amendment must be in writing and signed by both parties."
-    },
-    {
-      "label": "6",
+      "label": "2",
       "title": "Compensation",
       "text": "In consideration of the Services, Summit Consulting shall pay Pinnacle Group fees not to exceed $126,000 per invoice period. All invoices are payable within 15 days of receipt. Amounts unpaid after the due date accrue interest at the lesser of 1.5% per month or the maximum rate permitted by law."
     },
     {
-      "label": "7",
+      "label": "3",
+      "title": "Termination",
+      "text": "Either party may terminate this Agreement upon 15 days' written notice to the other party. Either party may terminate immediately upon a material breach by the other party that remains uncured 15 days after written notice of the breach."
+    },
+    {
+      "label": "4",
       "title": "Limitation of Liability",
       "text": "Except for breaches of confidentiality, neither party shall be liable for any indirect, incidental, special, or consequential damages arising out of this Agreement. Each party's aggregate liability shall not exceed the total fees paid or payable by Summit Consulting in the twelve months preceding the claim."
+    },
+    {
+      "label": "5",
+      "title": "Governing Law",
+      "text": "This Agreement shall be governed by and construed in accordance with the laws of the State of Delaware, without regard to its conflict of laws principles. The parties consent to the exclusive jurisdiction of the state and federal courts located in Delaware."
+    },
+    {
+      "label": "6",
+      "title": "Independent Contractor",
+      "text": "Pinnacle Group is an independent contractor and nothing in this Agreement creates a partnership, joint venture, agency, or employment relationship between the parties. Pinnacle Group is solely responsible for its own taxes, insurance, and employee obligations."
+    },
+    {
+      "label": "7",
+      "title": "Entire Agreement",
+      "text": "This Agreement, together with its exhibits, constitutes the entire agreement between Summit Consulting and Pinnacle Group with respect to its subject matter and supersedes all prior or contemporaneous understandings. Any amendment must be in writing and signed by both parties."
     }
   ],
   "sourceFile": "contract_013_A.pdf",
