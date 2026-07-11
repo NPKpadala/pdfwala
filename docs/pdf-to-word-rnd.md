@@ -140,8 +140,51 @@ Isolated, removable stages that run after pdf2docx, each additive/high-confidenc
 Arial; bullet fonts Symbol/Wingdings/Courier intact; 3 hyperlinks, 23 list items, 5
 headings. Test suite 41/41.
 
-**Known open (out of scope / future):** 2→3 page overflow — root-caused (forensic) to
-pdf2docx's spurious multi-column section breaks faking two-column "Company … Date" rows;
-naive removal → 2 pages but collapses the date alignment AND would break genuine
-multi-column docs (papers/newspapers), so it must NOT be a blind heuristic. Needs a
-targeted two-column-row reconstruction phase, measured in both LibreOffice and MS Word.
+---
+
+## Column Detection: Over- and Under-Segmentation (unified)  [Known open — DEFER]
+*(Consolidated 2026-07-11. Merges the earlier "2→3 page overflow" finding with the
+Phase 6.9 brochure reading-order defect — they are ONE issue, two symptoms.)*
+
+**Two failure modes, one root cause.** Both live in the same pdf2docx 0.5.8 heuristic,
+`pdf2docx/page/RawPage.py :: parse_section` — specifically the hardcoded
+`if current_num_col > 2: current_num_col = 1` cap and the adjacent equal-width guard
+(demote a 2-col row to 1 unless the two columns are within a 2:1 width ratio, `f=2.0`):
+
+- **Over-segmentation → page overflow.** Columns *over*-detected: one real column read as
+  two. Root-caused (forensic) to spurious multi-column section breaks faking two-column
+  "Company … Date" rows (e.g. resumes). Creates a bogus Section split → 2→3 page overflow.
+  Naive removal → 2 pages but collapses the date alignment AND would break genuine
+  multi-column docs, so it must NOT be a blind heuristic.
+- **Under-segmentation → reading-order scramble.** Columns *under*-detected: 3 real regions
+  (2 text columns + a side panel) hit the `>2 → 1` cap and collapse to a single full-width
+  column. Elements are then ordered by Y-band then X, so the regions interleave line-by-line
+  into unreadable output (brochure `_D` layouts; content present, not dropped — a
+  reading-order defect). See Phase 6.9 diagnosis + Phase 6.10 mechanism investigation.
+
+**They pull in OPPOSITE directions.** Making detection *more* sensitive to catch the
+3-region case worsens the over-segmentation (more spurious 2-col splits → more overflow);
+making it *less* sensitive to reduce overflow worsens the interleaving. Same knob, opposite
+signs — so any fix MUST address both modes together with a shared two-mode regression
+harness. Do NOT attempt as two separate one-sided patches; a one-sided tweak silently
+regresses the other mode.
+
+**Current impact:** over-segmentation/page-overflow affects **35/114 docs (31%)**;
+reading-order scramble affects **2/114 docs** (both brochure `_D`). Brochure recall 0.898,
+would reach ~1.0 if resolved (**macro +0.006**). Low corpus impact for the reading-order
+half; the overflow half is systemic but was already deferred as HIGH regression risk.
+
+**Dependency reality:** pdf2docx **0.5.8 is its final release and is effectively
+unmaintained** (Artifex-hosted, MIT-relicensed, no active development). Any fix means
+**forking/patching a frozen dependency** — not filing an upstream issue and waiting.
+
+**Revisit conditions (BOTH must hold):**
+1. The gold-set corpus grows enough genuine multi-column/sidebar documents that this is a
+   material fraction of real usage — not 2 synthetic docs.
+2. The fix is scoped as ONE unified column-detection project covering both failure modes,
+   with a two-mode regression harness AND direct MS Word rendering verification (not just
+   LibreOffice) — not attempted piecemeal.
+
+**Refs:** Phase 6.9 (brochure root-cause diagnosis), Phase 6.10 (parse_section mechanism +
+risk assessment), and this entry's predecessor (the original 2→3 page-overflow finding,
+now merged here). Related engine subsystem: `_reflow_docx` / two-column-row reconstruction.
