@@ -591,6 +591,102 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   [data-motion]:hover .pw-mi,[data-motion]:active .pw-mi{transform:none!important;filter:none!important;animation:none!important}
   .pw-edit-wrap::after{transition:none!important}}
 </style>
+<style id="pw-polish">
+/* ── PDFWala visual-polish layer (companion to #pw-motion) ───────────────────
+   Entrance/reveal/focus/press polish. GPU-only (transform/opacity); one-off
+   state transitions; everything killed under prefers-reduced-motion below. */
+
+/* 1 ▸ Hero entrance — staggered rise on page load (pure CSS, no JS needed) */
+@keyframes pw-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.hero-content>.hero-badge{animation:pw-rise .55s cubic-bezier(.22,1,.36,1) .05s both}
+.hero-content>h1{animation:pw-rise .55s cubic-bezier(.22,1,.36,1) .13s both}
+.hero-content>.hero-sub{animation:pw-rise .55s cubic-bezier(.22,1,.36,1) .21s both}
+.hero-content>.trust-row{animation:pw-rise .55s cubic-bezier(.22,1,.36,1) .29s both}
+.hero-content>.search-hero-wrap{animation:pw-rise .55s cubic-bezier(.22,1,.36,1) .37s both}
+.hero-content>.hero-or{animation:pw-rise .55s cubic-bezier(.22,1,.36,1) .45s both}
+.hero-content>.hero-dropzone{animation:pw-rise .55s cubic-bezier(.22,1,.36,1) .52s both}
+
+/* 2 ▸ Hero ambience — add a slow transform drift to the existing mesh opacity
+   drift (keeps the original mesh-drift keyframes; both run together). */
+.hero-mesh{animation:mesh-drift 14s ease-in-out infinite alternate,pw-mesh-sway 22s ease-in-out infinite alternate;transform-origin:50% 0}
+@keyframes pw-mesh-sway{from{transform:translateX(-1.5%) scale(1)}to{transform:translateX(1.5%) scale(1.05)}}
+
+/* 3 ▸ Trust pills — one-time icon pop when scrolled into view (.pw-seen via JS) */
+@keyframes pw-pop{0%{transform:scale(1)}45%{transform:scale(1.35) rotate(-8deg)}100%{transform:scale(1)}}
+.trust-row.pw-seen .trust-pill:nth-child(1) svg{animation:pw-pop .5s ease .75s both}
+.trust-row.pw-seen .trust-pill:nth-child(2) svg{animation:pw-pop .5s ease .93s both}
+.trust-row.pw-seen .trust-pill:nth-child(3) svg{animation:pw-pop .5s ease 1.11s both}
+
+/* 4 ▸ Search focus — gradient glow layer + subtle lift; placeholder dims */
+.search-hero-wrap{transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+.search-hero-wrap::before{content:"";position:absolute;inset:-3px;border-radius:14px;background:linear-gradient(120deg,var(--blue-500),var(--violet-500));filter:blur(12px);opacity:0;transition:opacity .25s ease;z-index:-1;pointer-events:none}
+.search-hero-wrap:focus-within{transform:scale(1.012)}
+.search-hero-wrap:focus-within::before{opacity:.3}
+.search-hero-input::placeholder{transition:opacity .25s ease}
+.search-hero-input:focus::placeholder{opacity:.35}
+
+/* 5 ▸ Chip band — stagger-in after the hero settles; recent chips rise on render */
+.pop-band-chip{animation:pw-rise .4s ease both}
+.pop-band-chip:nth-child(1){animation-delay:.55s}.pop-band-chip:nth-child(2){animation-delay:.61s}
+.pop-band-chip:nth-child(3){animation-delay:.67s}.pop-band-chip:nth-child(4){animation-delay:.73s}
+.pop-band-chip:nth-child(5){animation-delay:.79s}.pop-band-chip:nth-child(6){animation-delay:.85s}
+.pop-band-chip:nth-child(7){animation-delay:.91s}.pop-band-chip:nth-child(n+8){animation-delay:.97s}
+.recent-chip{animation:pw-rise .3s ease both}
+
+/* 6 ▸ Scroll reveals — .reveal/.visible classes are auto-tagged by #pw-polish-js;
+   stagger the why-cards */
+.why-card.reveal:nth-child(2){transition-delay:.08s}
+.why-card.reveal:nth-child(3){transition-delay:.16s}
+.why-card.reveal:nth-child(4){transition-delay:.24s}
+
+/* 7 ▸ Mega-menu links — cascade in when a dropdown opens (menu itself already animates) */
+.mega-drop .mm-link{opacity:0;transform:translateX(-5px);transition:opacity .2s ease,transform .2s ease}
+.nav-item:hover>.mega-drop .mm-link,.nav-item.open>.mega-drop .mm-link{opacity:1;transform:none}
+.nav-item:hover>.mega-drop .mm-link:nth-child(2),.nav-item.open>.mega-drop .mm-link:nth-child(2){transition-delay:.03s}
+.nav-item:hover>.mega-drop .mm-link:nth-child(3),.nav-item.open>.mega-drop .mm-link:nth-child(3){transition-delay:.06s}
+.nav-item:hover>.mega-drop .mm-link:nth-child(4),.nav-item.open>.mega-drop .mm-link:nth-child(4){transition-delay:.09s}
+.nav-item:hover>.mega-drop .mm-link:nth-child(5),.nav-item.open>.mega-drop .mm-link:nth-child(5){transition-delay:.12s}
+.nav-item:hover>.mega-drop .mm-link:nth-child(n+6),.nav-item.open>.mega-drop .mm-link:nth-child(n+6){transition-delay:.15s}
+
+/* 8 ▸ Buttons — press states + Pro-button lift (hover shadow uses its existing transition) */
+@media (hover: hover){
+.nav-pro-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(245,158,11,.5)}
+.theme-btn:hover{transform:rotate(14deg)}
+}
+.nav-pro-btn:active{transform:scale(.95)}
+.spot-cta:active{transform:scale(.97)}
+.mob-all-link:active,.pop-band-chip:active{opacity:.65}
+
+/* 9 ▸ Theme toggle — icon morph (class re-triggered by #pw-polish-js on click) */
+#themeIcon.pw-theming{animation:pw-theme-morph .35s ease}
+@keyframes pw-theme-morph{from{transform:rotate(-100deg) scale(.55);opacity:0}to{transform:rotate(0) scale(1);opacity:1}}
+
+/* 10 ▸ Branded loading states — palette on existing loaders (mechanisms unchanged) */
+.cv-spinner{border-color:rgba(124,58,237,.22);border-top-color:var(--blue-500);border-right-color:var(--violet-500)}
+.tp-dot-loader span{background:var(--blue-500)}
+.tp-dot-loader span:nth-child(2){background:var(--violet-500)}
+.tp-dot-loader span:nth-child(3){background:var(--cyan-500)}
+.skeleton{background:linear-gradient(90deg,var(--bg-3) 25%,rgba(124,58,237,.14) 50%,var(--bg-3) 75%);background-size:200% 100%}
+.tp-progress-fill{position:relative;overflow:hidden}
+.tp-progress-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-100%);animation:pw-sheen 1.4s ease-in-out infinite}
+@keyframes pw-sheen{to{transform:translateX(100%)}}
+
+/* 11 ▸ Hero "processing" float-card — icon pulse sells the live feel */
+.fc5 .fc-icon{animation:pw-proc 1.6s ease-in-out infinite}
+@keyframes pw-proc{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.18)}}
+
+/* 12 ▸ Reduced motion — kill everything in this layer AND the pre-existing hero
+   idle animations; force entrance-hidden elements visible. */
+@media (prefers-reduced-motion: reduce){
+  .hero-content>*,.pop-band-chip,.recent-chip,.trust-row.pw-seen .trust-pill svg,
+  #themeIcon.pw-theming,.fc5 .fc-icon,.tp-progress-fill::after{animation:none!important}
+  .hero-mesh,.float-card,.skeleton{animation:none!important}
+  .mega-drop .mm-link{opacity:1!important;transform:none!important;transition:none!important}
+  .search-hero-wrap{transition:none!important}
+  .search-hero-wrap:focus-within{transform:none!important}
+  .why-card.reveal{transition-delay:0s!important}
+  .reveal{opacity:1!important;transform:none!important;transition:none!important}}
+</style>
 </head>
 <body>
 
@@ -2355,6 +2451,47 @@ document.addEventListener('DOMContentLoaded',()=>{
     var recent = document.getElementById('recentToolsChips');
     if (recent && window.MutationObserver)
       new MutationObserver(function(){ tagAll(recent, null); }).observe(recent, {childList: true});
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+<script id="pw-polish-js">
+/* ── PDFWala polish triggers (companion to #pw-polish CSS) ──────────────────
+   Three tiny jobs: (1) one-time trust-pill pop on scroll-into-view,
+   (2) auto-tag below-fold sections with the existing .reveal/.visible
+   convention + stagger, (3) re-trigger the theme-icon morph on toggle.
+   All animation itself lives in CSS; reduced-motion users skip straight to
+   final states. */
+(function(){
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function init(){
+    /* 1 ▸ trust pills: pop once when 60% visible */
+    var tr = document.querySelector('.trust-row');
+    if (tr){
+      if (reduced || !window.IntersectionObserver) tr.classList.add('pw-seen');
+      else new IntersectionObserver(function(es, io){
+        es.forEach(function(e){ if (e.isIntersecting){ tr.classList.add('pw-seen'); io.disconnect(); } });
+      }, {threshold: .6}).observe(tr);
+    }
+    /* 2 ▸ below-fold reveals: reuse the page's .reveal/.visible convention */
+    var targets = document.querySelectorAll('.spot-inner,.why-card,.footer-grid');
+    if (reduced || !window.IntersectionObserver){
+      targets.forEach(function(el){ el.classList.add('reveal','visible'); });
+    } else {
+      var io = new IntersectionObserver(function(es){
+        es.forEach(function(e){ if (e.isIntersecting){ e.target.classList.add('visible'); io.unobserve(e.target); } });
+      }, {threshold: .15, rootMargin: '0px 0px -40px 0px'});
+      targets.forEach(function(el){
+        if (!el.classList.contains('reveal')) el.classList.add('reveal');
+        io.observe(el);
+      });
+    }
+    /* 3 ▸ theme toggle: re-trigger the icon morph each click */
+    var btn = document.querySelector('.theme-btn'), ic = document.getElementById('themeIcon');
+    if (btn && ic && !reduced) btn.addEventListener('click', function(){
+      ic.classList.remove('pw-theming'); void ic.getBoundingClientRect(); ic.classList.add('pw-theming');
+    });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
