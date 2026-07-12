@@ -557,6 +557,14 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
    Transform/opacity only (GPU-composited); ~200ms; spring overshoot easing
    cubic-bezier(.34,1.56,.64,1) ≈ Framer spring(stiffness 300, damping 20). */
 .pw-mi{transition:transform .2s cubic-bezier(.34,1.56,.64,1);transform-origin:50% 50%;will-change:transform;display:inline-block}
+/* edit-underline base (kept outside the hover gate: harmless at width:0). */
+.pw-edit-wrap{position:relative}
+.pw-edit-wrap::after{content:"";position:absolute;left:14%;bottom:-2px;height:2px;width:0;border-radius:1px;background:currentColor;transition:width .15s ease-out}
+/* Hover buckets are gated to real-hover devices: iOS Safari (and Android
+   Chrome) apply :hover on first TAP and keep it applied — icons froze
+   mid-flip/squash after tapping (verified on-device). Inside (hover:hover)
+   these rules never match on touch, which gets only the :active press-in. */
+@media (hover: hover){
 [data-motion]:hover{cursor:pointer}
 [data-motion="merge"]:hover    .pw-mi{transform:scaleX(.68)}                     /* shapes converge */
 [data-motion="split"]:hover    .pw-mi{transform:scaleX(1.35)}                    /* shapes pull apart */
@@ -568,11 +576,8 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 [data-motion="lock"]:hover     .pw-mi{animation:pw-lock-shake .42s cubic-bezier(.36,.07,.19,.97) both} /* lock clicks shut */
 [data-motion="edit"]:hover     .pw-mi{transform:rotate(-8deg) translateY(-1px)}  /* pencil tilts to write */
 [data-motion="default"]:hover  .pw-mi{transform:scale(1.18);filter:drop-shadow(0 0 5px currentColor)}
-/* edit bucket: underline draws left-to-right under the icon (pseudo-element on
-   the icon's wrapper — svg can't host ::after; width transition is cheapest). */
-.pw-edit-wrap{position:relative}
-.pw-edit-wrap::after{content:"";position:absolute;left:14%;bottom:-2px;height:2px;width:0;border-radius:1px;background:currentColor;transition:width .15s ease-out}
 [data-motion="edit"]:hover .pw-edit-wrap::after{width:72%}
+}
 /* touch fallback: hover never fires on tap — give a subtle press-in on :active.
    ⚠ ORDER-DEPENDENT: this wins over the :hover bucket rules by SOURCE ORDER, not
    specificity (they tie at 0,3,0) — it MUST stay below every [data-motion=...]
