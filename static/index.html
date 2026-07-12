@@ -606,16 +606,14 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 .hero-content>.hero-or{animation:pw-rise .55s cubic-bezier(.22,1,.36,1) .45s both}
 .hero-content>.hero-dropzone{animation:pw-rise .55s cubic-bezier(.22,1,.36,1) .52s both}
 
-/* 2 ▸ Hero ambience — add a slow transform drift to the existing mesh opacity
-   drift (keeps the original mesh-drift keyframes; both run together). */
-.hero-mesh{animation:mesh-drift 14s ease-in-out infinite alternate,pw-mesh-sway 22s ease-in-out infinite alternate;transform-origin:50% 0}
-@keyframes pw-mesh-sway{from{transform:translateX(-1.5%) scale(1)}to{transform:translateX(1.5%) scale(1.05)}}
+/* 2 ▸ Hero ambience — REMOVED after self-review: the hero already had two
+   ambient systems (mesh opacity drift + five bobbing float-cards); a third
+   (transform sway) was motion nobody would miss. Original drift untouched. */
 
-/* 3 ▸ Trust pills — one-time icon pop when scrolled into view (.pw-seen via JS) */
-@keyframes pw-pop{0%{transform:scale(1)}45%{transform:scale(1.35) rotate(-8deg)}100%{transform:scale(1)}}
-.trust-row.pw-seen .trust-pill:nth-child(1) svg{animation:pw-pop .5s ease .75s both}
-.trust-row.pw-seen .trust-pill:nth-child(2) svg{animation:pw-pop .5s ease .93s both}
-.trust-row.pw-seen .trust-pill:nth-child(3) svg{animation:pw-pop .5s ease 1.11s both}
+/* 3 ▸ Trust pill icon pops — REMOVED after self-review: the pills already
+   rise in with the hero entrance; popping their icons 0.75-1.6s later was a
+   second effect on the same element, colliding with the chip stagger and
+   count-up in the busiest window of the page. */
 
 /* 4 ▸ Search focus — gradient glow layer + subtle lift; placeholder dims */
 .search-hero-wrap{transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
@@ -678,7 +676,7 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 /* 12 ▸ Reduced motion — kill everything in this layer AND the pre-existing hero
    idle animations; force entrance-hidden elements visible. */
 @media (prefers-reduced-motion: reduce){
-  .hero-content>*,.pop-band-chip,.recent-chip,.trust-row.pw-seen .trust-pill svg,
+  .hero-content>*,.pop-band-chip,.recent-chip,
   #themeIcon.pw-theming,.fc5 .fc-icon,.tp-progress-fill::after{animation:none!important}
   .hero-mesh,.float-card,.skeleton{animation:none!important}
   .mega-drop .mm-link{opacity:1!important;transform:none!important;transition:none!important}
@@ -742,7 +740,6 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
    screens (blur + large-layer transforms are the two priciest effects). */
 @media (max-width: 768px){
   .search-hero-wrap::before{display:none}
-  .hero-mesh{animation:mesh-drift 14s ease-in-out infinite alternate}
 }
 
 /* 9 ▸ Reduced motion — kill this whole layer; force final states */
@@ -762,9 +759,10 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
    section exists; why-cards already reveal (pass 1). Restraint is the design. */
 
 /* 1 ▸ THE focal point: dropzone "sonar" invite ring — one soft pulse every
-   3.8s (mostly at rest), starts after the hero entrance settles, and stops
+   3.8s (mostly at rest), starts at 2.6s — after entrance, chips AND count-up
+   have all settled (sequential choreography, not simultaneous) — and stops
    the moment the user engages (hover/drag) = invitation accepted. */
-.hero-dropzone::after{content:"";position:absolute;inset:-3px;border-radius:inherit;border:2px solid var(--blue-500);opacity:0;pointer-events:none;animation:pw-sonar 3.8s ease-out 1.8s infinite}
+.hero-dropzone::after{content:"";position:absolute;inset:-3px;border-radius:inherit;border:2px solid var(--blue-500);opacity:0;pointer-events:none;animation:pw-sonar 3.8s ease-out 2.6s infinite}
 @keyframes pw-sonar{0%{opacity:0;transform:scale(1)}10%{opacity:.5}32%{opacity:0;transform:scale(1.03)}100%{opacity:0;transform:scale(1)}}
 .hero-dropzone:hover::after,.hero-dropzone.dragover::after{animation:none;opacity:0}
 
@@ -782,11 +780,11 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 .pw-burst i{position:absolute;left:50%;top:50%;width:7px;height:7px;border-radius:50%;opacity:1;animation:pw-particle .85s cubic-bezier(.16,.84,.44,1) forwards}
 @keyframes pw-particle{to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
 
-/* 4 ▸ Get Pro: one shimmer sweep every 9s (sweep lasts ~0.6s, then rests) —
-   periodic enough to catch the eye once or twice in a 30s visit, rare enough
-   not to read as a scam popup. */
+/* 4 ▸ Get Pro: exactly TWO shimmer sweeps (at ~4.6s and ~13.6s), then still
+   forever. Self-review verdict: an infinite cycle starts reading as a nag by
+   the 3rd repetition — twice registers the button, then it earns its silence. */
 .nav-pro-btn{overflow:hidden;position:relative}
-.nav-pro-btn::after{content:"";position:absolute;top:0;bottom:0;width:40%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.45),transparent);transform:translateX(-180%) skewX(-18deg);animation:pw-cta-sheen 9s linear 4s infinite;pointer-events:none}
+.nav-pro-btn::after{content:"";position:absolute;top:0;bottom:0;width:40%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.45),transparent);transform:translateX(-180%) skewX(-18deg);animation:pw-cta-sheen 9s linear 4s 2;pointer-events:none}
 @keyframes pw-cta-sheen{0%{transform:translateX(-180%) skewX(-18deg)}7%{transform:translateX(320%) skewX(-18deg)}100%{transform:translateX(320%) skewX(-18deg)}}
 
 /* reduced motion: the entire attraction layer goes still */
@@ -2574,14 +2572,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 (function(){
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function init(){
-    /* 1 ▸ trust pills: pop once when 60% visible */
-    var tr = document.querySelector('.trust-row');
-    if (tr){
-      if (reduced || !window.IntersectionObserver) tr.classList.add('pw-seen');
-      else new IntersectionObserver(function(es, io){
-        es.forEach(function(e){ if (e.isIntersecting){ tr.classList.add('pw-seen'); io.disconnect(); } });
-      }, {threshold: .6}).observe(tr);
-    }
+    /* (trust-pill pop trigger removed in self-review — see #pw-polish CSS note) */
     /* 2 ▸ below-fold reveals: reuse the page's .reveal/.visible convention */
     var targets = document.querySelectorAll('.spot-inner,.why-card,.footer-grid');
     if (reduced || !window.IntersectionObserver){
@@ -2684,7 +2675,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if (sub && /\b49\b/.test(sub.textContent) && !sub.querySelector('.pw-count')){
       sub.innerHTML = sub.innerHTML.replace(/\b49\b/, '<span class="pw-count">0</span>');
       var c = sub.querySelector('.pw-count');
-      if (c) setTimeout(function(){ countUp(c, 49, 900); }, 500); /* after entrance settles */
+      if (c) setTimeout(function(){ countUp(c, 49, 900); }, 1400); /* after entrance AND chip stagger settle (self-review re-sequencing) */
     }
     /* 2 ▸ conversion payoff — watch the app reveal the download button */
     var dl = document.getElementById('tpBtnDownload');
