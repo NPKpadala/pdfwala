@@ -550,6 +550,30 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 @media(max-width:768px){.hero{padding:64px 20px 72px}.footer-grid{grid-template-columns:1fr 1fr}.tp-hero{padding:14px 16px}}
 @media(max-width:480px){.footer-grid{grid-template-columns:1fr}.nav-inner{padding:0 16px}}
 </style>
+<style id="pw-motion">
+/* ── PDFWala motion system ──────────────────────────────────────────────
+   One motion-type config, applied by the classifier script (see #pw-motion-js).
+   Tool icons get class .pw-mi; their clickable ancestor gets data-motion="<type>".
+   Transform/opacity only (GPU-composited); ~200ms; spring overshoot easing
+   cubic-bezier(.34,1.56,.64,1) ≈ Framer spring(stiffness 300, damping 20). */
+.pw-mi{transition:transform .2s cubic-bezier(.34,1.56,.64,1);transform-origin:50% 50%;will-change:transform;display:inline-block}
+[data-motion]:hover{cursor:pointer}
+[data-motion="merge"]:hover    .pw-mi{transform:scaleX(.68)}                     /* shapes converge */
+[data-motion="split"]:hover    .pw-mi{transform:scaleX(1.35)}                    /* shapes pull apart */
+[data-motion="compress"]:hover .pw-mi{transform:scaleY(.6) scaleX(1.1)}          /* squash down */
+[data-motion="rotate"]:hover   .pw-mi{transform:rotate(90deg)}                   /* quarter spin */
+[data-motion="convert"]:hover  .pw-mi{transform:perspective(120px) rotateY(180deg);transition-duration:.32s} /* format flip */
+[data-motion="up"]:hover       .pw-mi{transform:translateY(-3px)}                /* arrow direction */
+[data-motion="down"]:hover     .pw-mi{transform:translateY(3px)}
+[data-motion="lock"]:hover     .pw-mi{animation:pw-lock-shake .42s cubic-bezier(.36,.07,.19,.97) both} /* lock clicks shut */
+[data-motion="default"]:hover  .pw-mi{transform:scale(1.18);filter:drop-shadow(0 0 5px currentColor)}
+@keyframes pw-lock-shake{
+  0%{transform:rotate(0)} 20%{transform:rotate(-11deg)} 45%{transform:rotate(9deg)}
+  65%{transform:rotate(-5deg)} 82%{transform:rotate(2.5deg)} 100%{transform:rotate(0)}}
+@media (prefers-reduced-motion: reduce){
+  .pw-mi{transition:none!important;animation:none!important}
+  [data-motion]:hover .pw-mi{transform:none!important;filter:none!important;animation:none!important}}
+</style>
 </head>
 <body>
 
@@ -2256,6 +2280,56 @@ document.addEventListener('DOMContentLoaded',()=>{
   window.addEventListener('online',()=>{document.getElementById('statusDot').className='status-dot';document.getElementById('statusText').textContent='All systems online';toast('Back online','success');});
   window.addEventListener('offline',()=>{document.getElementById('statusDot').className='status-dot offline';document.getElementById('statusText').textContent='You are offline';toast('No internet connection','error');});
 });
+</script>
+<script id="pw-motion-js">
+/* ── PDFWala motion classifier ──────────────────────────────────────────
+   Assigns a motion TYPE (see #pw-motion CSS) to every tool entry point by
+   its slug/icon — no per-tool animation code. A new tool is classified
+   automatically by the keyword rules; to hand-tune one, add a single line
+   to PW_MOTION_OVERRIDES. Unmatched tools fall back to "default" and are
+   listed once in the console for review. */
+(function(){
+  var PW_MOTION_OVERRIDES = {
+    // 'some-slug': 'rotate',   // ← one line per manual tweak
+  };
+  var SLUG_RULES = [
+    [/merge|combine|alternate|images-to/, 'merge'],
+    [/split|extract/,                     'split'],
+    [/compress|resize|crop|minif/,        'compress'],
+    [/rotate|organize/,                   'rotate'],
+    [/flip|-to-|convert|ocr/,             'convert'],
+    [/protect|unlock|lock|encrypt|sign|redact|repair/, 'lock'],
+    [/watermark|page-numbers|header/,     'down'],
+  ];
+  var ICON_RULES = { 'ic-merge':'merge','ic-split':'split','ic-compress':'compress',
+    'ic-rotate':'rotate','ic-lock':'lock','ic-unlock':'lock','ic-shield':'lock',
+    'ic-sign':'lock','ic-redact':'lock','ic-repair':'lock',
+    'ic-upload':'up','ic-download':'down' };
+  function classify(slug, icon){
+    if (PW_MOTION_OVERRIDES[slug]) return PW_MOTION_OVERRIDES[slug];
+    for (var i=0;i<SLUG_RULES.length;i++) if (SLUG_RULES[i][0].test(slug)) return SLUG_RULES[i][1];
+    if (icon && ICON_RULES[icon]) return ICON_RULES[icon];
+    return 'default';
+  }
+  function init(){
+    var flagged = [];
+    document.querySelectorAll('[onclick*="openTool("]').forEach(function(el){
+      var m = (el.getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
+      if (!m) return;
+      var svg = el.querySelector('svg');
+      if (!svg) return;
+      var use = svg.querySelector('use');
+      var icon = use ? (use.getAttribute('href')||'').replace('#','') : '';
+      var type = classify(m[1], icon);
+      el.setAttribute('data-motion', type);
+      svg.classList.add('pw-mi');
+      if (type === 'default') flagged.push(m[1]);
+    });
+    if (flagged.length) console.info('[pw-motion] default-fallback tools (review):', Array.from(new Set(flagged)).join(', '));
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
 </script>
 </body>
 </html>
