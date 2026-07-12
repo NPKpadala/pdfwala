@@ -687,6 +687,74 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   .why-card.reveal{transition-delay:0s!important}
   .reveal{opacity:1!important;transform:none!important;transition:none!important}}
 </style>
+<style id="pw-polish-2">
+/* ── PDFWala polish pass 2: tool pages, errors, empty states, footer, mobile ──
+   Companion to #pw-motion + #pw-polish. GPU-only; reduced-motion killed below. */
+
+/* 1 ▸ Tool page entrance — panels rise when the tool page is shown (display
+   toggle restarts CSS animations, so this replays on every openTool). */
+@keyframes pw-rise2{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.tp-panel{animation:pw-rise2 .4s cubic-bezier(.22,1,.36,1) both}
+.tp-panel:nth-of-type(2){animation-delay:.1s}
+/* drag-over: gentle scale pulse on top of the existing border/glow treatment */
+.tp-dropzone.dragover{animation:pw-dz-pulse 1.1s ease-in-out infinite}
+@keyframes pw-dz-pulse{0%,100%{transform:scale(1.012)}50%{transform:scale(1.028)}}
+.tp-dropzone:active{transform:scale(.995)}
+
+/* 2 ▸ File-selected confirmation — items rise in, icon pops (re-renders on add) */
+@keyframes pw-pop2{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.25)}100%{transform:scale(1);opacity:1}}
+.tp-file-item{animation:pw-rise2 .3s ease both}
+.tp-file-item .tp-fi-icon svg{animation:pw-pop2 .4s cubic-bezier(.34,1.56,.64,1) .08s both}
+
+/* 3 ▸ Upload progress — brand fill already set; shift to emerald on completion
+   (.pw-done toggled by #pw-polish-2-js watching the fill width) */
+.tp-progress-fill{transition:width .3s ease,background .5s ease}
+.tp-progress-fill.pw-done{background:linear-gradient(90deg,var(--emerald-500),var(--emerald-400))}
+
+/* 4 ▸ Error states — soft red pulse (2 beats, then settles); deliberately NOT a
+   shake. Applies to every error toast (invalid type / too large / failed). */
+.toast.error{overflow:hidden}
+.toast.error::before{content:"";position:absolute;inset:0;background:rgba(244,63,94,.09);opacity:0;animation:pw-err-pulse .9s ease 2;pointer-events:none}
+@keyframes pw-err-pulse{0%,100%{opacity:0}50%{opacity:1}}
+.toast.error .toast-bar{transform-origin:50% 50%;animation:pw-err-bar .9s ease 2}
+@keyframes pw-err-bar{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.6)}}
+
+/* 5 ▸ Empty states — search "no results" breathes instead of sitting dead */
+.search-no-results{animation:pw-rise2 .25s ease both}
+.search-no-results::before{content:"🔍";display:block;font-size:20px;margin-bottom:6px;animation:pw-breathe 2.4s ease-in-out infinite}
+@keyframes pw-breathe{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.1);opacity:.9}}
+
+/* 6 ▸ Footer — underline draws left→right (transform-only scaleX, not width) */
+.footer-col a{position:relative}
+.footer-col a::after{content:"";position:absolute;left:0;bottom:-2px;width:100%;height:1.5px;border-radius:1px;background:linear-gradient(90deg,var(--blue-500),var(--violet-500));transform:scaleX(0);transform-origin:left center;transition:transform .22s ease}
+@media (hover: hover){.footer-col a:hover::after{transform:scaleX(1)}}
+.footer-col a:active{opacity:.6}
+.mob-link:active{opacity:.55}
+
+/* 7 ▸ Typography rhythm — gradient bar draws under section headings on first
+   scroll-into-view (.pw-seen via JS). Chosen over hue-shifting text: these
+   headings are solid-color, so hue-rotate would be a no-op/gimmick. */
+.section-title{position:relative}
+.section-title::after{content:"";display:block;width:52px;height:3px;border-radius:2px;margin:10px auto 0;background:linear-gradient(90deg,var(--blue-500),var(--violet-500));transform:scaleX(0);transform-origin:center;transition:transform .6s cubic-bezier(.22,1,.36,1) .15s}
+.section-title.pw-seen::after{transform:scaleX(1)}
+
+/* 8 ▸ Mobile lightening — drop the blurred glow layer and mesh sway on small
+   screens (blur + large-layer transforms are the two priciest effects). */
+@media (max-width: 768px){
+  .search-hero-wrap::before{display:none}
+  .hero-mesh{animation:mesh-drift 14s ease-in-out infinite alternate}
+}
+
+/* 9 ▸ Reduced motion — kill this whole layer; force final states */
+@media (prefers-reduced-motion: reduce){
+  .tp-panel,.tp-file-item,.tp-file-item .tp-fi-icon svg,.search-no-results,
+  .search-no-results::before,.toast.error::before,.toast.error .toast-bar,
+  .tp-dropzone.dragover{animation:none!important}
+  .tp-dropzone.dragover,.tp-dropzone:active{transform:none!important}
+  .footer-col a::after,.section-title::after{transition:none!important}
+  .section-title::after{transform:scaleX(1)!important}
+  .tp-progress-fill{transition:width .3s ease!important}}
+</style>
 </head>
 <body>
 
@@ -2492,6 +2560,46 @@ document.addEventListener('DOMContentLoaded',()=>{
     if (btn && ic && !reduced) btn.addEventListener('click', function(){
       ic.classList.remove('pw-theming'); void ic.getBoundingClientRect(); ic.classList.add('pw-theming');
     });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+<script id="pw-polish-2-js">
+/* ── Polish pass 2 triggers ─────────────────────────────────────────────────
+   (1) section-title gradient bar on first scroll-into-view,
+   (2) progress watcher: emerald shift at 100% + live "% · PDFWala" tab title
+   during processing (restored after). Animations themselves live in CSS. */
+(function(){
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function init(){
+    /* 1 ▸ heading underline draw, once per heading */
+    var heads = document.querySelectorAll('.section-title');
+    if (reduced || !window.IntersectionObserver){
+      heads.forEach(function(h){ h.classList.add('pw-seen'); });
+    } else {
+      var io = new IntersectionObserver(function(es){
+        es.forEach(function(e){ if (e.isIntersecting){ e.target.classList.add('pw-seen'); io.unobserve(e.target); } });
+      }, {threshold: .5});
+      heads.forEach(function(h){ io.observe(h); });
+    }
+    /* 2 ▸ progress fill watcher — width is set by the app's own polling code;
+       we only mirror it (done-state class + tab title). */
+    var fill = document.getElementById('tpProgressFill');
+    if (fill && window.MutationObserver){
+      var baseTitle = document.title, ticking = false;
+      new MutationObserver(function(){
+        var w = parseInt((fill.style.width || '0'), 10);
+        if (w > 0 && w < 100){
+          ticking = true;
+          fill.classList.remove('pw-done');
+          document.title = '⏳ ' + w + '% · PDFWala';
+        } else if (w >= 100){
+          fill.classList.add('pw-done');
+          if (ticking){ document.title = '✅ Done · PDFWala'; setTimeout(function(){ document.title = baseTitle; }, 2500); ticking = false; }
+        } else if (ticking){ document.title = baseTitle; ticking = false; }
+      }).observe(fill, {attributes: true, attributeFilter: ['style']});
+    }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
