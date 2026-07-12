@@ -669,15 +669,15 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 .tp-progress-fill::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:translateX(-100%);animation:pw-sheen 1.4s ease-in-out infinite}
 @keyframes pw-sheen{to{transform:translateX(100%)}}
 
-/* 11 ▸ Hero "processing" float-card — icon pulse sells the live feel */
-.fc5 .fc-icon{animation:pw-proc 1.6s ease-in-out infinite}
-@keyframes pw-proc{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.18)}}
+/* 11 ▸ fc5 'Processing' icon pulse — REMOVED after self-review (green-lit):
+   a third ambient element on an already-bobbing hero; peripheral decoration
+   that failed the "would removing this make the page worse?" test. */
 
 /* 12 ▸ Reduced motion — kill everything in this layer AND the pre-existing hero
    idle animations; force entrance-hidden elements visible. */
 @media (prefers-reduced-motion: reduce){
   .hero-content>*,.pop-band-chip,.recent-chip,
-  #themeIcon.pw-theming,.fc5 .fc-icon,.tp-progress-fill::after{animation:none!important}
+  #themeIcon.pw-theming,.tp-progress-fill::after{animation:none!important}
   .hero-mesh,.float-card,.skeleton{animation:none!important}
   .mega-drop .mm-link{opacity:1!important;transform:none!important;transition:none!important}
   .search-hero-wrap{transition:none!important}
