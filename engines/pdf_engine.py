@@ -2276,6 +2276,101 @@ def _split_header_docx(path: str) -> dict:
     return stats
 
 
+def _recover_rules_docx(docx_path: str, pdf_path: str) -> dict:
+    """Recover standalone horizontal rules (section separator lines) that
+    pdf2docx silently drops. pdf2docx consumes vector strokes only as table-
+    border / text-style hints; a full-width rule under a heading (resumes,
+    letterheads, forms) matches neither, so it vanishes from the DOCX.
+
+    For each drawn horizontal rule in the source PDF we find the text line
+    immediately ABOVE it, locate that text's paragraph in the DOCX (in reading
+    order, full text incl. hyperlink runs), and apply a bottom border
+    (w:pPr/w:pBdr/w:bottom). Exact-anchor matching only — unmatched rules are
+    skipped, never guessed. Best-effort; never raises."""
+    stats = {"rules_recovered": 0}
+    try:
+        import fitz as _fitz
+        from docx import Document as _Doc
+        from docx.oxml.ns import qn
+        from docx.oxml import OxmlElement
+    except Exception:
+        return stats
+    try:
+        def _norm(s):
+            return re.sub(r"\s+", " ", s or "").strip().lower()
+
+        # 1) collect (page_order, anchor_text) for each standalone rule
+        anchors = []
+        pdf = _fitz.open(pdf_path)
+        try:
+            for page in pdf:
+                pw = page.rect.width
+                draws = page.get_drawings()
+                h_rules = [d["rect"] for d in draws
+                           if d["rect"].height < 3 and d["rect"].width > pw * 0.25]
+                if not h_rules or len(h_rules) > 20:
+                    continue
+                # table-grid pages: vertical strokes present -> pdf2docx already
+                # treated these as borders; do not double-draw
+                if any(d["rect"].width < 3 and d["rect"].height > 20 for d in draws):
+                    continue
+                # text lines with bottoms (group words by block/line)
+                lines = {}
+                for w in page.get_text("words"):
+                    key = (w[5], w[6])
+                    ln = lines.setdefault(key, {"y1": w[3], "words": []})
+                    ln["y1"] = max(ln["y1"], w[3])
+                    ln["words"].append((w[0], w[4]))
+                line_list = [( v["y1"], " ".join(t for _, t in sorted(v["words"])) )
+                             for v in lines.values()]
+                for rect in sorted(h_rules, key=lambda r: r.y0):
+                    above = [(y1, txt) for y1, txt in line_list
+                             if y1 <= rect.y0 + 1 and rect.y0 - y1 < 20 and txt.strip()]
+                    if above:
+                        anchors.append(_norm(max(above)[1]))
+        finally:
+            pdf.close()
+        if not anchors:
+            return stats
+
+        # 2) anchor each rule to its DOCX paragraph, in order; add bottom border
+        doc = _Doc(docx_path)
+        paras = doc.paragraphs
+        full = []
+        for p in paras:
+            full.append(_norm("".join((t.text or "") for t in p._p.iter(qn("w:t")))))
+        start = 0
+        for anchor in anchors:
+            hit = None
+            for i in range(start, len(paras)):
+                t = full[i]
+                if not t:
+                    continue
+                if t == anchor or (len(anchor) >= 6 and (anchor in t or t in anchor)):
+                    hit = i
+                    break
+            if hit is None:
+                continue
+            start = hit + 1
+            pPr = paras[hit]._p.get_or_add_pPr()
+            if pPr.find(qn("w:pBdr")) is not None:
+                continue                            # already has a border
+            pBdr = OxmlElement("w:pBdr")
+            bottom = OxmlElement("w:bottom")
+            bottom.set(qn("w:val"), "single")
+            bottom.set(qn("w:sz"), "6")
+            bottom.set(qn("w:space"), "1")
+            bottom.set(qn("w:color"), "auto")
+            pBdr.append(bottom)
+            pPr.append(pBdr)
+            stats["rules_recovered"] += 1
+        if stats["rules_recovered"]:
+            doc.save(docx_path)
+    except Exception as ex:
+        log.warning(f"pdf_to_word: rule recovery skipped ({ex})")
+    return stats
+
+
 def _recover_hyperlinks(docx_path: str, pdf_path: str) -> dict:
     """Phase 4B — recover contact/hyperlink TEXT that pdf2docx drops.
 
@@ -2822,6 +2917,10 @@ def pdf_to_word(ctx: JobContext) -> dict:
     # onto the smaller tagline; MS Word then overlaps them). Conservative.
     header = _split_header_docx(ctx.output_path)
 
+    # Recover standalone horizontal rules (section separators) pdf2docx drops —
+    # re-read them from the source PDF and re-apply as paragraph bottom borders.
+    rules = _recover_rules_docx(ctx.output_path, ctx.input_path)
+
     # Phase 3 — semantic reconstruction: literal bullet/numbered paragraphs
     # become real editable Word lists (numbering.xml + numPr). Additive.
     ctx.set_progress(98)
@@ -2839,14 +2938,16 @@ def pdf_to_word(ctx: JobContext) -> dict:
              f"repaired {repair['changed']}/{repair['runs']} runs, "
              f"{reflow['headings_promoted']} headings, {reflow['lines_merged']} merges, "
              f"{semantic['list_items']} list items, "
-             f"{links['links_recovered']} links recovered")
+             f"{links['links_recovered']} links recovered, "
+             f"{rules['rules_recovered']} rules recovered")
 
     ctx.set_progress(100)
     return {"pages": page_count, "runs_repaired": repair["changed"],
             "headings_promoted": reflow["headings_promoted"],
             "lines_merged": reflow["lines_merged"],
             "list_items": semantic["list_items"],
-            "links_recovered": links["links_recovered"]}
+            "links_recovered": links["links_recovered"],
+            "rules_recovered": rules["rules_recovered"]}
 
 
 @register("pdf_to_excel")
