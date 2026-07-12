@@ -2645,6 +2645,15 @@ def _ocr_pdf_to_docx(pdf_path: str, docx_path: str, lang: str = "eng",
 _DOCLING_CONVERTER = None
 _DOCLING_TRIED = False
 
+# Docling runs ML models on CPU here (~10-15s/page). Above this page count a
+# doc NEVER routes to Docling, whatever its layout: worst case stays ~5 min
+# (20 x 15s) — far inside the 1800s task limit and fair to the 2-slot office
+# queue — while real-world complex docs (invoices, brochures, forms, papers)
+# are overwhelmingly under 20 pages. Longer docs take the chunked pdf2docx
+# path (or the Tesseract OCR path if scanned): slightly lower fidelity,
+# but bounded and never worse than pre-Docling production behaviour.
+_DOCLING_MAX_PAGES = int(os.getenv("DOCLING_MAX_PAGES", "20"))
+
 
 def _get_docling_converter():
     """Lazily build + cache a Docling DocumentConverter. Returns None if Docling
@@ -2665,10 +2674,33 @@ def _get_docling_converter():
 def _pdf_is_complex(doc) -> bool:
     """True when a (text-bearing) PDF has layout pdf2docx handles poorly — real
     tables or multi-column text — so it should route to Docling. Conservative:
-    single-column, table-free docs (most resumes/letters) stay on the fast path."""
+    single-column, table-free docs (most resumes/letters) stay on the fast path.
+
+    Sampling is spread across the document (first 3 pages + middle + last)
+    rather than front-only, so a doc whose tables/columns start later is not
+    misrouted by luck of its opening pages. Cost is at most 2 extra sampled
+    pages (only docs <= _DOCLING_MAX_PAGES ever reach this check)."""
     try:
-        for pno in range(min(len(doc), 3)):
+        n = len(doc)
+        sample = sorted({p for p in (0, 1, 2, n // 2, n - 1) if 0 <= p < n})
+        for pno in sample:
             page = doc[pno]
+            # Chart veto: pages dominated by many SMALL filled vector shapes
+            # (pie slices, bars — measured: chart pages have >=9, tables/
+            # invoices <=3, brochures <=6) are CHARTS, not tables. Docling
+            # folds chart text (axis labels, legends) into picture regions and
+            # drops it, while pdf2docx extracts it fully — so chart pages must
+            # not trigger the Docling route via their gridlines/legend columns.
+            try:
+                pa = page.rect.width * page.rect.height
+                small_fills = sum(
+                    1 for x in page.get_drawings()
+                    if x["type"] in ("f", "fs")
+                    and (x["rect"].width * x["rect"].height) < pa * 0.03)
+                if small_fills >= 8:
+                    continue
+            except Exception:
+                pass
             try:
                 for t in page.find_tables().tables:
                     if getattr(t, "row_count", 0) >= 2 and getattr(t, "col_count", 0) >= 2:
@@ -2762,11 +2794,19 @@ def pdf_to_word(ctx: JobContext) -> dict:
     page_count = 0
     scanned = False
     complex_layout = False
+    docling_eligible = False
+    pdf_text_len = 0
     if FITZ_OK:
         doc = fitz.open(ctx.input_path)
         page_count = len(doc)
         scanned = TESSERACT_OK and _pdf_is_scanned(doc)
-        complex_layout = (not scanned) and _pdf_is_complex(doc)
+        # Page-count guard: big docs NEVER route to Docling (CPU ~10-15s/page —
+        # a 300-page doc would block an office-queue slot for over an hour).
+        # They take the chunked pdf2docx path (or Tesseract OCR if scanned).
+        docling_eligible = 0 < page_count <= _DOCLING_MAX_PAGES
+        complex_layout = docling_eligible and (not scanned) and _pdf_is_complex(doc)
+        if complex_layout:
+            pdf_text_len = sum(len(p.get_text("text")) for p in doc)
         doc.close()
 
     ctx.set_progress(5)
@@ -2777,9 +2817,22 @@ def pdf_to_word(ctx: JobContext) -> dict:
     # (scrambled columns, lost tables, garbled OCR). Simple single-column text
     # stays on the fast pdf2docx path below. Docling unavailability or any failure
     # falls through to the existing paths, so output is never worse than before.
-    if scanned or complex_layout:
+    if docling_eligible and (scanned or complex_layout):
         try:
             dl = _convert_with_docling(ctx.input_path, ctx.output_path)
+            # Content-volume guard: Docling folds vector CHARTS into picture
+            # regions, silently dropping their text (axis labels, legends) that
+            # pdf2docx would have extracted. If the bridge output carries less
+            # than half of the PDF's own text layer, treat it as a Docling
+            # failure and fall back — enforcing the "never worse than pdf2docx"
+            # contract. (Skipped for scans: they have no text layer to compare.)
+            if dl is not None and not scanned and pdf_text_len > 200:
+                xml = zipfile.ZipFile(ctx.output_path).read("word/document.xml").decode("utf-8", "ignore")
+                docx_text_len = len("".join(re.findall(r"<w:t[^>]*>([^<]*)</w:t>", xml)))
+                if docx_text_len < pdf_text_len * 0.5:
+                    raise ProcessingError(
+                        f"Docling output too sparse ({docx_text_len} vs "
+                        f"{pdf_text_len} chars in source) — content folded into images")
             if dl is not None and os.path.exists(ctx.output_path) and os.path.getsize(ctx.output_path) > 0:
                 ctx.set_progress(93)
                 repair = _repair_docx(ctx.output_path)      # fi/fl ligature + spacing repair
