@@ -755,6 +755,46 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
   .section-title::after{transform:scaleX(1)!important}
   .tp-progress-fill{transition:width .3s ease!important}}
 </style>
+<style id="pw-attract">
+/* ── PDFWala attraction layer: FOUR conversion moments, nothing else ─────────
+   1 dropzone invite ring · 2 hero count-up · 3 conversion payoff · 4 Pro sheen.
+   Deliberate skips: no counter/rating element exists to animate; no vs-competitor
+   section exists; why-cards already reveal (pass 1). Restraint is the design. */
+
+/* 1 ▸ THE focal point: dropzone "sonar" invite ring — one soft pulse every
+   3.8s (mostly at rest), starts after the hero entrance settles, and stops
+   the moment the user engages (hover/drag) = invitation accepted. */
+.hero-dropzone::after{content:"";position:absolute;inset:-3px;border-radius:inherit;border:2px solid var(--blue-500);opacity:0;pointer-events:none;animation:pw-sonar 3.8s ease-out 1.8s infinite}
+@keyframes pw-sonar{0%{opacity:0;transform:scale(1)}10%{opacity:.5}32%{opacity:0;transform:scale(1.03)}100%{opacity:0;transform:scale(1)}}
+.hero-dropzone:hover::after,.hero-dropzone.dragover::after{animation:none;opacity:0}
+
+/* 2 ▸ Count-up number (hero "49 other tools") — tabular digits so the sentence
+   doesn't jitter while counting. Value driven by #pw-attract-js. */
+.pw-count{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text)}
+
+/* 3 ▸ Conversion payoff: download button POPS in with a glow flash; brand
+   particle burst (spawned once per session by JS). */
+@keyframes pw-dl-pop{0%{transform:scale(.55);opacity:0}55%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.tp-btn-download.pw-dl-hero{animation:pw-dl-pop .5s cubic-bezier(.34,1.56,.64,1) both;position:relative}
+.tp-btn-download.pw-dl-hero::after{content:"";position:absolute;inset:-4px;border-radius:inherit;border:2px solid var(--emerald-400);opacity:0;animation:pw-dl-ring .9s ease-out .15s 2}
+@keyframes pw-dl-ring{0%{opacity:.7;transform:scale(.96)}100%{opacity:0;transform:scale(1.15)}}
+.pw-burst{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.pw-burst i{position:absolute;left:50%;top:50%;width:7px;height:7px;border-radius:50%;opacity:1;animation:pw-particle .85s cubic-bezier(.16,.84,.44,1) forwards}
+@keyframes pw-particle{to{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
+
+/* 4 ▸ Get Pro: one shimmer sweep every 9s (sweep lasts ~0.6s, then rests) —
+   periodic enough to catch the eye once or twice in a 30s visit, rare enough
+   not to read as a scam popup. */
+.nav-pro-btn{overflow:hidden;position:relative}
+.nav-pro-btn::after{content:"";position:absolute;top:0;bottom:0;width:40%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.45),transparent);transform:translateX(-180%) skewX(-18deg);animation:pw-cta-sheen 9s linear 4s infinite;pointer-events:none}
+@keyframes pw-cta-sheen{0%{transform:translateX(-180%) skewX(-18deg)}7%{transform:translateX(320%) skewX(-18deg)}100%{transform:translateX(320%) skewX(-18deg)}}
+
+/* reduced motion: the entire attraction layer goes still */
+@media (prefers-reduced-motion: reduce){
+  .hero-dropzone::after,.nav-pro-btn::after,.tp-btn-download.pw-dl-hero,
+  .tp-btn-download.pw-dl-hero::after,.pw-burst i{animation:none!important}
+  .hero-dropzone::after,.nav-pro-btn::after{opacity:0!important}}
+</style>
 </head>
 <body>
 
@@ -2585,6 +2625,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
     /* 2 ▸ progress fill watcher — width is set by the app's own polling code;
        we only mirror it (done-state class + tab title). */
+    /* (see #pw-attract-js for the download-button payoff watcher) */
     var fill = document.getElementById('tpProgressFill');
     if (fill && window.MutationObserver){
       var baseTitle = document.title, ticking = false;
@@ -2599,6 +2640,65 @@ document.addEventListener('DOMContentLoaded',()=>{
           if (ticking){ document.title = '✅ Done · PDFWala'; setTimeout(function(){ document.title = baseTitle; }, 2500); ticking = false; }
         } else if (ticking){ document.title = baseTitle; ticking = false; }
       }).observe(fill, {attributes: true, attributeFilter: ['style']});
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+<script id="pw-attract-js">
+/* ── Attraction layer triggers (companion to #pw-attract CSS) ───────────────
+   (1) hero "49" counts up on load; (2) download-button payoff: pop class +
+   once-per-session brand particle burst when the button is revealed. */
+(function(){
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function countUp(el, target, ms){
+    if (reduced){ el.textContent = target; return; }
+    var t0 = null;
+    function step(ts){
+      if (!t0) t0 = ts;
+      var p = Math.min((ts - t0) / ms, 1), e = 1 - Math.pow(1 - p, 3); /* ease-out cubic */
+      el.textContent = Math.round(e * target);
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  function burst(host){
+    var colors = ['var(--blue-500)','var(--violet-500)','var(--cyan-500)','var(--emerald-400)'];
+    var b = document.createElement('div'); b.className = 'pw-burst'; b.setAttribute('aria-hidden','true');
+    for (var i = 0; i < 10; i++){
+      var d = document.createElement('i');
+      var a = (Math.PI * 2 * i) / 10 + Math.random() * .5, r = 42 + Math.random() * 26;
+      d.style.setProperty('--dx', Math.cos(a) * r + 'px');
+      d.style.setProperty('--dy', Math.sin(a) * r - 12 + 'px');
+      d.style.background = colors[i % colors.length];
+      b.appendChild(d);
+    }
+    host.appendChild(b);
+    setTimeout(function(){ b.remove(); }, 1000);
+  }
+  function init(){
+    /* 1 ▸ hero claim count-up ("49 other tools") — makes the breadth claim feel
+       measured rather than asserted. */
+    var sub = document.querySelector('.hero-sub');
+    if (sub && /\b49\b/.test(sub.textContent) && !sub.querySelector('.pw-count')){
+      sub.innerHTML = sub.innerHTML.replace(/\b49\b/, '<span class="pw-count">0</span>');
+      var c = sub.querySelector('.pw-count');
+      if (c) setTimeout(function(){ countUp(c, 49, 900); }, 500); /* after entrance settles */
+    }
+    /* 2 ▸ conversion payoff — watch the app reveal the download button */
+    var dl = document.getElementById('tpBtnDownload');
+    if (dl && window.MutationObserver){
+      new MutationObserver(function(){
+        var visible = dl.style.display !== 'none' && dl.offsetParent !== null;
+        if (visible && !dl.classList.contains('pw-dl-hero')){
+          dl.classList.add('pw-dl-hero');
+          if (!reduced && !sessionStorage.getItem('pw-celebrated')){
+            try { sessionStorage.setItem('pw-celebrated', '1'); } catch(e){}
+            var host = dl.parentElement; if (host){ host.style.position = 'relative'; burst(host); }
+          }
+        } else if (!visible) dl.classList.remove('pw-dl-hero'); /* re-arm for next conversion pop */
+      }).observe(dl, {attributes: true, attributeFilter: ['style']});
     }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
