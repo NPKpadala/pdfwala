@@ -574,7 +574,9 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 .pw-edit-wrap::after{content:"";position:absolute;left:14%;bottom:-2px;height:2px;width:0;border-radius:1px;background:currentColor;transition:width .15s ease-out}
 [data-motion="edit"]:hover .pw-edit-wrap::after{width:72%}
 /* touch fallback: hover never fires on tap — give a subtle press-in on :active.
-   Placed AFTER the bucket rules so it wins the equal-specificity tie while pressed. */
+   ⚠ ORDER-DEPENDENT: this wins over the :hover bucket rules by SOURCE ORDER, not
+   specificity (they tie at 0,3,0) — it MUST stay below every [data-motion=...]
+   bucket rule above; reordering these blocks silently breaks tap feedback. */
 [data-motion]:active .pw-mi{transform:scale(.9);transition:transform .1s ease-out;animation:none}
 @keyframes pw-lock-shake{
   0%{transform:rotate(0)} 20%{transform:rotate(-11deg)} 45%{transform:rotate(9deg)}
