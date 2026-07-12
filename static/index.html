@@ -566,13 +566,23 @@ footer{background:var(--bg-2);border-top:1px solid var(--border);padding:64px 28
 [data-motion="up"]:hover       .pw-mi{transform:translateY(-3px)}                /* arrow direction */
 [data-motion="down"]:hover     .pw-mi{transform:translateY(3px)}
 [data-motion="lock"]:hover     .pw-mi{animation:pw-lock-shake .42s cubic-bezier(.36,.07,.19,.97) both} /* lock clicks shut */
+[data-motion="edit"]:hover     .pw-mi{transform:rotate(-8deg) translateY(-1px)}  /* pencil tilts to write */
 [data-motion="default"]:hover  .pw-mi{transform:scale(1.18);filter:drop-shadow(0 0 5px currentColor)}
+/* edit bucket: underline draws left-to-right under the icon (pseudo-element on
+   the icon's wrapper — svg can't host ::after; width transition is cheapest). */
+.pw-edit-wrap{position:relative}
+.pw-edit-wrap::after{content:"";position:absolute;left:14%;bottom:-2px;height:2px;width:0;border-radius:1px;background:currentColor;transition:width .15s ease-out}
+[data-motion="edit"]:hover .pw-edit-wrap::after{width:72%}
+/* touch fallback: hover never fires on tap — give a subtle press-in on :active.
+   Placed AFTER the bucket rules so it wins the equal-specificity tie while pressed. */
+[data-motion]:active .pw-mi{transform:scale(.9);transition:transform .1s ease-out;animation:none}
 @keyframes pw-lock-shake{
   0%{transform:rotate(0)} 20%{transform:rotate(-11deg)} 45%{transform:rotate(9deg)}
   65%{transform:rotate(-5deg)} 82%{transform:rotate(2.5deg)} 100%{transform:rotate(0)}}
 @media (prefers-reduced-motion: reduce){
   .pw-mi{transition:none!important;animation:none!important}
-  [data-motion]:hover .pw-mi{transform:none!important;filter:none!important;animation:none!important}}
+  [data-motion]:hover .pw-mi,[data-motion]:active .pw-mi{transform:none!important;filter:none!important;animation:none!important}
+  .pw-edit-wrap::after{transition:none!important}}
 </style>
 </head>
 <body>
@@ -2293,8 +2303,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     // 'some-slug': 'rotate',   // ← one line per manual tweak
   };
   var SLUG_RULES = [
+    [/^edit-/,                            'edit'],   // edit-pdf, edit-word — pencil underline
     [/merge|combine|alternate|images-to/, 'merge'],
-    [/split|extract/,                     'split'],
+    [/split|extract|remove-pages/,        'split'],
     [/compress|resize|crop|minif/,        'compress'],
     [/rotate|organize/,                   'rotate'],
     [/flip|-to-|convert|ocr/,             'convert'],
@@ -2311,9 +2322,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     if (icon && ICON_RULES[icon]) return ICON_RULES[icon];
     return 'default';
   }
-  function init(){
-    var flagged = [];
-    document.querySelectorAll('[onclick*="openTool("]').forEach(function(el){
+  function tagAll(root, flagged){
+    // querySelectorAll on purpose: the same slug appears in the nav dropdown,
+    // mobile menu, chip band AND recent bar — every instance gets tagged.
+    root.querySelectorAll('[onclick*="openTool("]').forEach(function(el){
       var m = (el.getAttribute('onclick')||'').match(/openTool\('([^']+)'/);
       if (!m) return;
       var svg = el.querySelector('svg');
@@ -2323,9 +2335,19 @@ document.addEventListener('DOMContentLoaded',()=>{
       var type = classify(m[1], icon);
       el.setAttribute('data-motion', type);
       svg.classList.add('pw-mi');
-      if (type === 'default') flagged.push(m[1]);
+      if (type === 'edit' && svg.parentElement) svg.parentElement.classList.add('pw-edit-wrap');
+      if (type === 'default' && flagged) flagged.push(m[1]);
     });
+  }
+  function init(){
+    var flagged = [];
+    tagAll(document, flagged);
     if (flagged.length) console.info('[pw-motion] default-fallback tools (review):', Array.from(new Set(flagged)).join(', '));
+    // Recent-tools chips are re-rendered dynamically (renderRecent innerHTML)
+    // after every tool use — re-tag that container whenever it changes.
+    var recent = document.getElementById('recentToolsChips');
+    if (recent && window.MutationObserver)
+      new MutationObserver(function(){ tagAll(recent, null); }).observe(recent, {childList: true});
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
