@@ -2622,6 +2622,309 @@ def _map_fonts_docx(path: str) -> dict:
     return stats
 
 
+# ── Vector-graphics recovery (feature-flag VECTOR_RASTERIZE) ────────────────
+# pdf2docx silently drops path-based artwork (bar/pie/line charts, diagrams):
+# captions survive, the drawing vanishes. This pass detects vector-graphic
+# regions in the source PDF, rasterizes JUST those regions (200 dpi, white bg)
+# and inserts them as inline images at their reading-order slot in the DOCX.
+# Detection was tuned on the 114-doc gold set + synthetic traps: 21/21 true
+# artwork found, 0 false positives (table rulings, signature lines, page
+# borders, banner/sidebar fills, form shading all vetoed).
+_VG_GAP = 36.0            # first-pass bbox merge distance (pt)
+_VG_MIN_WH = 40.0         # minimum region side (pt) — skips bullets/icons
+_VG_TEXT_COV_MAX = 0.04   # charts measured 0.0; text furniture >= 0.042
+_VG_IMG_OVER_MAX = 0.50   # already embedded as raster by pdf2docx
+_VG_PAGE_COV_MAX = 0.85   # page background / border
+_VG_EV_AREA_MIN = 0.05    # chart-evidence drawings must cover >=5% of cluster
+_VG_DPI = 200
+
+
+def _vg_enabled() -> bool:
+    return os.environ.get("VECTOR_RASTERIZE", "0").lower() not in ("0", "false", "")
+
+
+def _vg_classify(d) -> str:
+    """ruling = hairline (table grids, underlines, header/footer rules,
+    signature lines) — never seeds a region; tiny = dots/dashes; else shape."""
+    r = d["rect"]
+    if r.width < 3 and r.height < 3:
+        return "tiny"
+    if (r.height <= 2.0 and r.width >= 30) or (r.width <= 2.0 and r.height >= 30):
+        return "ruling"
+    return "shape"
+
+
+def _vg_is_evidence(d) -> bool:
+    """Chart evidence: filled shapes (bars/pies/areas), bezier curves, a dense
+    2-D polyline, or a thick diagonal stroke (line-chart segments — table
+    rulings are hairline AND axis-aligned, so their bbox is thin). Stroke-only
+    rectangles are NOT evidence — table frames / text boxes / page furniture."""
+    if d.get("fill") is not None:
+        return True
+    n_lines = 0
+    for it in d["items"]:
+        if it[0] == "c":
+            return True
+        if it[0] == "l":
+            n_lines += 1
+    r = d["rect"]
+    if n_lines >= 4 and r.width > 10 and r.height > 10:
+        return True
+    return ((d.get("width") or 0) >= 2.0 and n_lines >= 1
+            and r.width > 5 and r.height > 5)
+
+
+def _vg_blocked(c, o, barriers):
+    """A text line between two boxes is a merge barrier: it keeps captions out
+    of artwork regions (two stacked figures with 'Fig 1' between them must stay
+    two regions, each anchored to its own caption)."""
+    if c.y0 >= o.y1:                                  # o above c
+        band = fitz.Rect(min(c.x0, o.x0), o.y1, max(c.x1, o.x1), c.y0)
+    elif o.y0 >= c.y1:                                # c above o
+        band = fitz.Rect(min(c.x0, o.x0), c.y1, max(c.x1, o.x1), o.y0)
+    else:
+        return False                                  # vertical overlap: no band
+    if band.is_empty:
+        return False
+    return any(b.intersects(band) and not (b & band).is_empty for b in barriers)
+
+
+def _vg_merge(clusters, gap, barriers=()):
+    """Iterative bbox merge while boxes come within `gap` pt of each other and
+    no text-line barrier separates them."""
+    changed = True
+    while changed:
+        changed = False
+        out = []
+        while clusters:
+            c = clusters.pop()
+            grown = fitz.Rect(c.x0 - gap, c.y0 - gap, c.x1 + gap, c.y1 + gap)
+            hit = next((i for i, o in enumerate(out)
+                        if grown.intersects(o) and not _vg_blocked(c, o, barriers)),
+                       None)
+            if hit is not None:
+                out[hit] |= c
+                changed = True
+            else:
+                out.append(c)
+        clusters = out
+    return clusters
+
+
+def _vg_merge_series(clusters):
+    """Second pass: merge bar-series members — clusters that vertically overlap
+    >=50% of the shorter one with a horizontal gap <=60pt (bars in a series
+    share a baseline; vertically stacked distinct figures do not)."""
+    changed = True
+    while changed:
+        changed = False
+        out = []
+        while clusters:
+            c = clusters.pop()
+            hit = None
+            for i, o in enumerate(out):
+                vo = min(c.y1, o.y1) - max(c.y0, o.y0)
+                if vo <= 0 or vo / min(c.height, o.height) < 0.5:
+                    continue
+                if max(c.x0, o.x0) - min(c.x1, o.x1) <= 60:
+                    hit = i
+                    break
+            if hit is not None:
+                out[hit] |= c
+                changed = True
+            else:
+                out.append(c)
+        clusters = out
+    return clusters
+
+
+def _vector_graphic_regions(page):
+    """Detect chart/diagram vector regions on a page. Returns list[fitz.Rect]."""
+    shapes, rulings, evidence, curves = [], [], [], []
+    for d in page.get_drawings():
+        k = _vg_classify(d)
+        if k == "shape":
+            r = fitz.Rect(d["rect"])
+            shapes.append(r)
+            if _vg_is_evidence(d):
+                evidence.append(r)
+            if any(it[0] == "c" for it in d["items"]):
+                curves.append(r)
+        elif k == "ruling":
+            rulings.append(fitz.Rect(d["rect"]))
+    if not evidence:
+        return []
+    barriers = []
+    try:
+        for b in page.get_text("dict")["blocks"]:
+            for ln in b.get("lines", []):
+                if len("".join(s["text"] for s in ln.get("spans", [])).strip()) >= 8:
+                    barriers.append(fitz.Rect(ln["bbox"]))
+    except Exception:
+        pass
+    clusters = _vg_merge_series(_vg_merge(shapes, _VG_GAP, barriers))
+
+    words = page.get_text("words")
+    imgs = []
+    for x in page.get_images():
+        try:
+            r = fitz.Rect(page.get_image_bbox(x))
+            if not r.is_empty:
+                imgs.append(r)
+        except Exception:
+            pass
+    parea = abs(page.rect) or 1.0
+    pr = page.rect
+    out = []
+    for c in clusters:
+        if c.width < _VG_MIN_WH or c.height < _VG_MIN_WH:
+            continue
+        if abs(c) / parea > _VG_PAGE_COV_MAX:
+            continue
+        # edge-furniture veto: banners/sidebars span (almost) the full page
+        # width or height, or hug 2+ page edges — design chrome, not artwork
+        if c.width >= pr.width * 0.90 or c.height >= pr.height * 0.90:
+            continue
+        if sum((abs(c.x0 - pr.x0) < 4, abs(c.x1 - pr.x1) < 4,
+                abs(c.y0 - pr.y0) < 4, abs(c.y1 - pr.y1) < 4)) >= 2:
+            continue
+        if sum(abs(fitz.Rect(w[:4]) & c) for w in words) / abs(c) > _VG_TEXT_COV_MAX:
+            continue
+        if imgs and sum(abs(i & c) for i in imgs) / abs(c) > _VG_IMG_OVER_MAX:
+            continue
+        if sum(abs(e & c) for e in evidence) / abs(c) < _VG_EV_AREA_MIN:
+            continue
+        # curve-skip: pdf2docx's own figure rasterizer HANDLES regions that
+        # contain bezier curves (pies, donuts, marker dots — measured: it
+        # embeds them correctly placed), and taking those over regressed SSIM
+        # up to -0.61 on the gold set. It DROPS curve-free artwork (bar
+        # charts, straight-line diagrams) — recover only those.
+        if any(cv.intersects(c) for cv in curves):
+            continue
+        # axis pickup: rulings touching the cluster (chart axes), never rulings
+        # merely nearby (protects adjacent tables)
+        for r in rulings:
+            if r.intersects(c):
+                c |= r
+        out.append(c)
+    out.sort(key=lambda c: (c.y0, c.x0))          # reading order
+    return out
+
+
+def _vg_anchor(page, region):
+    """Nearest text line below (caption) else above the region: (snippet, where).
+    The snippet locates the region's reading-order slot in the DOCX."""
+    best_below, best_above = None, None
+    try:
+        blocks = page.get_text("dict")["blocks"]
+    except Exception:
+        return None, "below"
+    for b in blocks:
+        for ln in b.get("lines", []):
+            txt = "".join(s["text"] for s in ln.get("spans", [])).strip()
+            if len(txt) < 8:
+                continue
+            y0, y1 = ln["bbox"][1], ln["bbox"][3]
+            if y0 >= region.y1 - 2:                       # below the artwork
+                if best_below is None or y0 < best_below[0]:
+                    best_below = (y0, txt)
+            elif y1 <= region.y0 + 2:                     # above the artwork
+                if best_above is None or y1 > best_above[0]:
+                    best_above = (y1, txt)
+    if best_below:
+        return best_below[1], "below"
+    if best_above:
+        return best_above[1], "above"
+    return None, "below"
+
+
+def _vg_norm(s: str) -> str:
+    return re.sub(r"\s+", " ", s or "").strip().casefold()
+
+
+def _vg_collect(pdf_path: str):
+    """Phase A (pre-conversion): detect + rasterize artwork regions, then write
+    a temp copy of the PDF with those regions REDACTED. pdf2docx converts the
+    redacted copy, so it can neither mangle the artwork with its own broken
+    curve rendering nor scatter stray chart-label text — the region lives only
+    in our faithful raster. Returns (found, redacted_path) or (None, None)."""
+    if not (_vg_enabled() and FITZ_OK):
+        return None, None
+    try:
+        found = []                     # (png, w_pt, snippet, where)
+        doc = fitz.open(pdf_path)
+        try:
+            any_redact = False
+            for page in doc:
+                regions = _vector_graphic_regions(page)
+                if not regions:
+                    continue
+                for region in regions:
+                    pm = page.get_pixmap(clip=region, dpi=_VG_DPI, alpha=False)
+                    snippet, where = _vg_anchor(page, region)
+                    found.append((pm.tobytes("png"), region.width, snippet, where))
+                    page.add_redact_annot(region)
+                # keep raster images (regions overlapping them were vetoed);
+                # remove vector line-art touching the region — IF_COVERED
+                # misses wedges whose bbox rounds a hair past the region edge,
+                # leaving pdf2docx's mangled duplicate in the output
+                page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE,
+                                      graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED)
+                any_redact = True
+            if not found:
+                return None, None
+            redacted = None
+            if any_redact:
+                fd, redacted = tempfile.mkstemp(suffix=".pdf", prefix="vg_redact_")
+                os.close(fd)
+                doc.save(redacted)
+        finally:
+            doc.close()
+        return found, redacted
+    except Exception as ex:
+        log.warning(f"pdf_to_word: vector-graphics collect skipped ({ex})")
+        return None, None
+
+
+def _vg_insert(docx_path: str, found) -> dict:
+    """Phase B (post-conversion): insert each recovered raster inline at its
+    reading-order slot — immediately above its caption line (anchor 'below')
+    or after the preceding text line (anchor 'above'). Never raises."""
+    stats = {"vector_images": 0}
+    if not found:
+        return stats
+    try:
+        from io import BytesIO
+        from docx import Document as _Doc
+        from docx.shared import Emu
+
+        d = _Doc(docx_path)
+        sec = d.sections[0]
+        content_w_pt = float(sec.page_width.pt - sec.left_margin.pt
+                             - sec.right_margin.pt)
+        paras = d.paragraphs
+        norm_texts = [_vg_norm(p.text) for p in paras]
+        for png, w_pt, snippet, where in found:
+            width = Emu(int(min(w_pt, content_w_pt) * 12700))
+            anchor = None
+            if snippet:
+                key = _vg_norm(snippet)[:40]
+                anchor = next((p for p, t in zip(paras, norm_texts)
+                               if t and (t.startswith(key) or key in t)), None)
+            new_p = d.add_paragraph()                # created at body end…
+            new_p.add_run().add_picture(BytesIO(png), width=width)
+            if anchor is not None:                   # …then moved into place
+                if where == "below":                 # caption stays a sibling below
+                    anchor._p.addprevious(new_p._p)
+                else:
+                    anchor._p.addnext(new_p._p)
+            stats["vector_images"] += 1
+        d.save(docx_path)
+    except Exception as ex:
+        log.warning(f"pdf_to_word: vector-graphics insert skipped ({ex})")
+    return stats
+
+
 def _semantic_docx(path: str) -> dict:
     """Phase 3 entry point: semantic list reconstruction (+ future: hyperlinks).
     Additive, high-confidence, never raises."""
@@ -2940,6 +3243,13 @@ def pdf_to_word(ctx: JobContext) -> dict:
                 "runs_repaired": repair["changed"], "headings_promoted": 0,
                 "lines_merged": 0, "list_items": 0, "links_recovered": 0}
 
+    # Phase 6 pre-pass (flag VECTOR_RASTERIZE) — detect + rasterize path-based
+    # artwork (charts/diagrams) that pdf2docx drops or mangles, and redact those
+    # regions from a temp copy so pdf2docx converts clean text-only pages. The
+    # faithful rasters are inserted after conversion (see _vg_insert below).
+    vg_found, vg_src = _vg_collect(ctx.input_path)
+    pdf2docx_input = vg_src or ctx.input_path
+
     # For files > 100 pages, convert in chunks to avoid pdf2docx memory exhaustion
     CHUNK_THRESHOLD = 100
     if page_count > CHUNK_THRESHOLD:
@@ -2954,7 +3264,7 @@ def pdf_to_word(ctx: JobContext) -> dict:
                 start = ci * chunk_size
                 end   = min(start + chunk_size, page_count)
                 chunk_out = os.path.join(tmp_dir, f"chunk_{ci:04d}.docx")
-                cv = Pdf2DocxConverter(ctx.input_path)
+                cv = Pdf2DocxConverter(pdf2docx_input)
                 try:
                     cv.convert(chunk_out, start=start, end=end)
                 finally:
@@ -3012,7 +3322,7 @@ def pdf_to_word(ctx: JobContext) -> dict:
                 shutil.rmtree(tmp_dir, ignore_errors=True)
     else:
         # Standard single-pass conversion
-        cv = Pdf2DocxConverter(ctx.input_path)
+        cv = Pdf2DocxConverter(pdf2docx_input)
         try:
             cv.convert(ctx.output_path, start=0, end=None)
         finally:
@@ -3056,12 +3366,22 @@ def pdf_to_word(ctx: JobContext) -> dict:
     # Phase 5 — remap Linux/open fonts (Noto/Liberation/DejaVu/…) to Word-native
     # families so Microsoft Word stops substituting them. Deterministic, run-only.
     fonts = _map_fonts_docx(ctx.output_path)
+
+    # Phase 6 post-pass — insert the recovered artwork rasters inline at their
+    # reading-order slot. Additive, never raises.
+    vg = _vg_insert(ctx.output_path, vg_found)
+    if vg_src:
+        try:
+            os.unlink(vg_src)
+        except OSError:
+            pass
     log.info(f"[{ctx.job_id}] pdf_to_word: {page_count} pages, "
              f"repaired {repair['changed']}/{repair['runs']} runs, "
              f"{reflow['headings_promoted']} headings, {reflow['lines_merged']} merges, "
              f"{semantic['list_items']} list items, "
              f"{links['links_recovered']} links recovered, "
-             f"{rules['rules_recovered']} rules recovered")
+             f"{rules['rules_recovered']} rules recovered, "
+             f"{vg['vector_images']} vector images recovered")
 
     ctx.set_progress(100)
     return {"pages": page_count, "runs_repaired": repair["changed"],
@@ -3069,7 +3389,8 @@ def pdf_to_word(ctx: JobContext) -> dict:
             "lines_merged": reflow["lines_merged"],
             "list_items": semantic["list_items"],
             "links_recovered": links["links_recovered"],
-            "rules_recovered": rules["rules_recovered"]}
+            "rules_recovered": rules["rules_recovered"],
+            "vector_images": vg["vector_images"]}
 
 
 @register("pdf_to_excel")

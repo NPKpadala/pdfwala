@@ -1,0 +1,27 @@
+{
+  "docType": "chart",
+  "layoutVariant": "A",
+  "title": "Regional Sales Summary 2025",
+  "charts": [
+    {
+      "figure": 1,
+      "chartType": "bar",
+      "title": "Units sold by region",
+      "labels": [
+        "Alpha",
+        "Bravo",
+        "Chile",
+        "Delta",
+        "Echo"
+      ],
+      "values": [
+        120,
+        340,
+        210,
+        405,
+        280
+      ]
+    }
+  ],
+  "footnote": "All figures are unaudited management estimates."
+}

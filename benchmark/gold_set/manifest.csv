@@ -113,3 +113,6 @@ pdfs/ocr_scan_005_B.pdf,ocr_scan,B,ground_truth/ocr_scan_005_B.json
 pdfs/ocr_scan_006_C.pdf,ocr_scan,C,ground_truth/ocr_scan_006_C.json
 pdfs/ocr_scan_007_A.pdf,ocr_scan,A,ground_truth/ocr_scan_007_A.json
 pdfs/ocr_scan_008_B.pdf,ocr_scan,B,ground_truth/ocr_scan_008_B.json
+pdfs/chart_001_A.pdf,chart,A,ground_truth/chart_001_A.json
+pdfs/chart_002_B.pdf,chart,B,ground_truth/chart_002_B.json
+pdfs/chart_003_C.pdf,chart,C,ground_truth/chart_003_C.json

@@ -190,3 +190,36 @@ unmaintained** (Artifex-hosted, MIT-relicensed, no active development). Any fix 
 **Refs:** Phase 6.9 (brochure root-cause diagnosis), Phase 6.10 (parse_section mechanism +
 risk assessment), and this entry's predecessor (the original 2→3 page-overflow finding,
 now merged here). Related engine subsystem: `_reflow_docx` / two-column-row reconstruction.
+
+## Phase 6 — Vector-graphics recovery  [IMPLEMENTED 2026-07-16, DARK — flag VECTOR_RASTERIZE, default off]
+
+**Problem:** pdf2docx silently drops path-based artwork with no curves (bar charts,
+straight-line diagrams): caption survives, drawing vanishes. (Curve-bearing figures —
+pies, donuts, line charts with markers — pdf2docx's own figure rasterizer embeds
+correctly; measured, do NOT take those over: doing so regressed SSIM up to −0.61.)
+
+**Design (engines/pdf_engine.py, `_vg_*`):**
+1. Detect regions via `get_drawings()`: hairlines (table grids/underlines/signature
+   rules) never seed; clusters need *chart evidence* (fills / curves / dense polyline /
+   thick diagonal stroke ≥2pt) covering ≥5% of area; text-line barriers keep captions
+   out of regions; vetoes: <40×40pt, >85% page, ≥90% page-width/height or 2+ edges
+   (banners/sidebars), text coverage >4% (charts measured 0.0; furniture ≥0.042),
+   raster-image overlap >50%; **curve-skip** (pdf2docx handles those itself).
+2. Redact detected regions from a temp copy (LINE_ART_REMOVE_IF_TOUCHED, keep images)
+   so pdf2docx cannot mangle the artwork or scatter its label text; convert that copy.
+3. Rasterize each region (200 dpi, white bg) and insert inline at its reading-order
+   slot: immediately above its caption line (anchor 'below') / after the preceding
+   line — caption stays a sibling paragraph. EMU width = source pt size, clamped.
+
+**Gold results (117 docs, flag ON vs OFF):** recall unchanged on ALL docs (macro
+0.975); 108/114 baseline docs byte-identical; new chart class recall 1.0 with artwork
+present in all 3; image_heavy_001_A SSIM +0.42. BUT 5 chart-dense docs lose SSIM
+(−0.09..−0.26) with page overflow (+0.5..+1): pdf2docx's text layout is already ~1.28×
+looser than source, so pages with multiple recovered charts cannot absorb the re-added
+artwork height — no placement fixes this (floating anchors would overlap the text
+pdf2docx pulled up into the collapsed art gaps).
+
+**Status: DARK.** Enable only after the page-density/page_ratio phase tightens
+pdf2docx output. Traps verified 0-FP: ruled/merged-cell tables, landscape wide table,
+watermarks, brochure banner fills, resume sidebars, invoice logo boxes, form shading.
+Test corpus: gold `chart_00{1,2,3}` (bar/pie/line, in manifest), /tmp/bev synthetics.
