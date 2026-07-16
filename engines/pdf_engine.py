@@ -1789,7 +1789,7 @@ def _repair_text(text: str) -> str:
     return text
 
 
-def _repair_docx(path: str) -> dict:
+def _repair_docx(path: str, doc=None) -> dict:
     """Apply _repair_text to every run in the DOCX (body paragraphs + table
     cells), in place. Returns counts for benchmarking. Never raises — a repair
     failure must not fail an otherwise-good conversion."""
@@ -1842,13 +1842,15 @@ def _repair_docx(path: str) -> dict:
                     stats["changed"] += 1
 
     try:
-        doc = _Doc(path)
+        _own_doc = doc is None
+        doc = doc if doc is not None else _Doc(path)
         _fix_paragraphs(doc.paragraphs)
         for table in doc.tables:
             for row in table.rows:
                 for cell in row.cells:
                     _fix_paragraphs(cell.paragraphs)
-        doc.save(path)
+        if _own_doc:
+            doc.save(path)
     except Exception as ex:
         log.warning(f"pdf_to_word: text repair skipped ({ex})")
     return stats
@@ -2002,7 +2004,7 @@ def _fix_heading_wrap(paras) -> int:
     return fixed
 
 
-def _reflow_docx(path: str) -> dict:
+def _reflow_docx(path: str, doc=None) -> dict:
     """Phase 2 structural pass: heading promotion + consistent heading spacing +
     conservative wrapped-line merge. Additive and high-confidence; never raises
     (must not fail a good conversion)."""
@@ -2014,7 +2016,8 @@ def _reflow_docx(path: str) -> dict:
     except Exception:
         return stats
     try:
-        doc = _Doc(path)
+        _own_doc = doc is None
+        doc = doc if doc is not None else _Doc(path)
         body = doc.paragraphs
         body_size = _body_font_size(body)
         # Detect a full-page fixed vector overlay (pdf2docx renders the source's
@@ -2057,7 +2060,8 @@ def _reflow_docx(path: str) -> dict:
         stats["indents_cleared"] = _fix_heading_wrap(body)
         # 3) Conservative wrapped-line merge (usually a no-op on pdf2docx output).
         stats["lines_merged"] = _merge_wrapped_lines(doc.paragraphs)
-        doc.save(path)
+        if _own_doc:
+            doc.save(path)
     except Exception as ex:
         log.warning(f"pdf_to_word: reflow skipped ({ex})")
     return stats
@@ -2287,7 +2291,7 @@ def _add_hyperlink_run(paragraph, url: str, text: str, template_run=None):
     return hl
 
 
-def _split_header_docx(path: str) -> dict:
+def _split_header_docx(path: str, doc=None) -> dict:
     """Split a top-of-document paragraph that glues a large NAME/title run onto
     the same line as a much smaller subtitle run. pdf2docx merges e.g.
     'PRAVEEN KUMAR PADALA  Linux Infrastructure & Systems Administrator' into one
@@ -2303,7 +2307,8 @@ def _split_header_docx(path: str) -> dict:
     except Exception:
         return stats
     try:
-        doc = _Doc(path)
+        _own_doc = doc is None
+        doc = doc if doc is not None else _Doc(path)
         # Clear spurious left/right indents on centered header lines. pdf2docx
         # sets absolute EMU indents (e.g. 94pt/101pt) that shrink the centring box
         # so a large name wraps to two lines even though the page has room. A
@@ -2347,13 +2352,14 @@ def _split_header_docx(path: str) -> dict:
             stats["headers_split"] += 1
             break                                # only the header block, once
         if stats["headers_split"] or stats["indents_cleared"]:
-            doc.save(path)
+            if _own_doc:
+                doc.save(path)
     except Exception as ex:
         log.warning(f"pdf_to_word: header split skipped ({ex})")
     return stats
 
 
-def _recover_rules_docx(docx_path: str, pdf_path: str) -> dict:
+def _recover_rules_docx(docx_path: str, pdf_path: str, doc=None) -> dict:
     """Recover standalone horizontal rules (section separator lines) that
     pdf2docx silently drops. pdf2docx consumes vector strokes only as table-
     border / text-style hints; a full-width rule under a heading (resumes,
@@ -2411,7 +2417,8 @@ def _recover_rules_docx(docx_path: str, pdf_path: str) -> dict:
             return stats
 
         # 2) anchor each rule to its DOCX paragraph, in order; add bottom border
-        doc = _Doc(docx_path)
+        _own_doc = doc is None
+        doc = doc if doc is not None else _Doc(docx_path)
         paras = doc.paragraphs
         full = []
         for p in paras:
@@ -2442,7 +2449,8 @@ def _recover_rules_docx(docx_path: str, pdf_path: str) -> dict:
             pPr.append(pBdr)
             stats["rules_recovered"] += 1
         if stats["rules_recovered"]:
-            doc.save(docx_path)
+            if _own_doc:
+                doc.save(docx_path)
     except Exception as ex:
         log.warning(f"pdf_to_word: rule recovery skipped ({ex})")
     return stats
@@ -2451,7 +2459,7 @@ def _recover_rules_docx(docx_path: str, pdf_path: str) -> dict:
 _RTL_RE = re.compile(r"[֐-ࣿיִ-﷿ﹰ-﻿]")
 
 
-def _fix_rtl_docx(path: str) -> dict:
+def _fix_rtl_docx(path: str, doc=None) -> dict:
     """G7 — mark right-to-left text properly: any run whose alphabetic content
     is dominantly Arabic/Hebrew gets <w:rtl/>, and its paragraph <w:bidi/>.
     Formatting-only (no glyph reordering — pdf2docx output order is left as
@@ -2461,7 +2469,8 @@ def _fix_rtl_docx(path: str) -> dict:
         from docx import Document as _Doc
         from docx.oxml import OxmlElement
         from docx.oxml.ns import qn
-        doc = _Doc(path)
+        _own_doc = doc is None
+        doc = doc if doc is not None else _Doc(path)
         for p in doc.paragraphs:
             para_rtl = False
             for r in p.runs:
@@ -2481,13 +2490,14 @@ def _fix_rtl_docx(path: str) -> dict:
                     pPr.insert(0, bidi)
                     stats["rtl_paragraphs"] += 1
         if stats["rtl_runs"]:
-            doc.save(path)
+            if _own_doc:
+                doc.save(path)
     except Exception as ex:
         log.warning(f"pdf_to_word: RTL pass skipped ({ex})")
     return stats
 
 
-def _recover_form_fields(docx_path: str, pdf_path: str) -> dict:
+def _recover_form_fields(docx_path: str, pdf_path: str, doc=None) -> dict:
     """G10 — AcroForm widgets are invisible to pdf2docx (labels survive, the
     fields vanish). Read page.widgets() from the source and append a real Word
     content control to the paragraph holding each field's label: text fields
@@ -2549,7 +2559,8 @@ def _recover_form_fields(docx_path: str, pdf_path: str) -> dict:
             src.close()
         if not found:
             return stats
-        doc = _Doc(docx_path)
+        _own_doc = doc is None
+        doc = doc if doc is not None else _Doc(docx_path)
         paras = doc.paragraphs
         for label, sdt_xml in found[:100]:
             target = None
@@ -2562,7 +2573,8 @@ def _recover_form_fields(docx_path: str, pdf_path: str) -> dict:
             target._p.append(parse_xml(sdt_xml))
             stats["form_fields"] += 1
         if stats["form_fields"]:
-            doc.save(docx_path)
+            if _own_doc:
+                doc.save(docx_path)
     except Exception as ex:
         log.warning(f"pdf_to_word: form-field pass skipped ({ex})")
     return stats
@@ -2577,7 +2589,7 @@ def _hf_norm(s: str) -> str:
     return _HF_NUM_RE.sub("#", re.sub(r"\s+", " ", s or "").strip().casefold())
 
 
-def _recover_headers_footers(docx_path: str, pdf_path: str) -> dict:
+def _recover_headers_footers(docx_path: str, pdf_path: str, doc=None) -> dict:
     """G6 — pdf2docx inlines running headers/footers into the body. Detect
     lines that repeat (digits wildcarded) on >=60% of pages inside the top or
     bottom 10% band of the SOURCE pages (>=3 pages required), remove those
@@ -2624,7 +2636,8 @@ def _recover_headers_footers(docx_path: str, pdf_path: str) -> dict:
         if not headers and not footers:
             return stats
 
-        doc = _Doc(docx_path)
+        _own_doc = doc is None
+        doc = doc if doc is not None else _Doc(docx_path)
         hf_keys = {_hf_norm(t) for t in headers + footers}
         removed = 0
         for p in list(doc.paragraphs):
@@ -2665,13 +2678,14 @@ def _recover_headers_footers(docx_path: str, pdf_path: str) -> dict:
         if footers:
             _write(sec.footer, footers, True)
             stats["footer_lines"] = len(footers)
-        doc.save(docx_path)
+        if _own_doc:
+            doc.save(docx_path)
     except Exception as ex:
         log.warning(f"pdf_to_word: header/footer pass skipped ({ex})")
     return stats
 
 
-def _fix_superscripts_docx(path: str) -> dict:
+def _fix_superscripts_docx(path: str, doc=None) -> dict:
     """G5 — pdf2docx flattens footnote/reference markers to inline small runs
     (size survives, vertical alignment doesn't). Restore <w:vertAlign
     superscript> on runs that are unmistakably markers: 1-3 chars from
@@ -2680,7 +2694,8 @@ def _fix_superscripts_docx(path: str) -> dict:
     stats = {"superscripts": 0}
     try:
         from docx import Document as _Doc
-        doc = _Doc(path)
+        _own_doc = doc is None
+        doc = doc if doc is not None else _Doc(path)
         for p in doc.paragraphs:
             runs = p.runs
             sizes = [r.font.size.pt for r in runs if r.font.size]
@@ -2713,7 +2728,8 @@ def _fix_superscripts_docx(path: str) -> dict:
                 r.font.superscript = True
                 stats["superscripts"] += 1
         if stats["superscripts"]:
-            doc.save(path)
+            if _own_doc:
+                doc.save(path)
     except Exception as ex:
         log.warning(f"pdf_to_word: superscript pass skipped ({ex})")
     return stats
@@ -2781,7 +2797,7 @@ def _linkify_paragraphs(doc, limit: int = 100) -> int:
     return n
 
 
-def _recover_hyperlinks(docx_path: str, pdf_path: str) -> dict:
+def _recover_hyperlinks(docx_path: str, pdf_path: str, doc=None) -> dict:
     """Phase 4B — recover contact/hyperlink TEXT that pdf2docx drops.
 
     pdf2docx frequently emits an orphan hyperlink relationship but omits the
@@ -2798,7 +2814,8 @@ def _recover_hyperlinks(docx_path: str, pdf_path: str) -> dict:
         return stats
     try:
         from docx.oxml.ns import qn
-        doc = _Doc(docx_path)
+        _own_doc = doc is None
+        doc = doc if doc is not None else _Doc(docx_path)
         # Full visible text INCLUDING hyperlink runs. python-docx's Paragraph.text
         # silently DROPS text inside <w:hyperlink> elements, so a plain
         # "\n".join(p.text ...) is blind to links pdf2docx already created — which
@@ -2857,7 +2874,8 @@ def _recover_hyperlinks(docx_path: str, pdf_path: str) -> dict:
                     _add_hyperlink_run(contact, uri, disp, tmpl)
                     stats["links_recovered"] += 1
         if stats["links_recovered"]:
-            doc.save(docx_path)
+            if _own_doc:
+                doc.save(docx_path)
     except Exception as ex:
         log.warning(f"pdf_to_word: hyperlink recovery skipped ({ex})")
     return stats
@@ -2955,7 +2973,7 @@ def _lookup_font(base: str):
     return None
 
 
-def _map_fonts_docx(path: str) -> dict:
+def _map_fonts_docx(path: str, doc=None) -> dict:
     """Phase 5 — remap non-Word fonts on every run to a Word-native family.
     Only run.font.name is changed (weight/size/italic untouched); never rewrites
     Word-native or bullet fonts. Additive, reversible, never raises."""
@@ -2978,13 +2996,15 @@ def _map_fonts_docx(path: str) -> dict:
                     stats["runs_remapped"] += 1
                     stats["families"].add(f"{_normalize_font(name)}->{target}")
     try:
-        doc = _Doc(path)
+        _own_doc = doc is None
+        doc = doc if doc is not None else _Doc(path)
         _fix(doc.paragraphs)
         for t in doc.tables:
             for row in t.rows:
                 for cell in row.cells:
                     _fix(cell.paragraphs)
-        doc.save(path)
+        if _own_doc:
+            doc.save(path)
     except Exception as ex:
         log.warning(f"pdf_to_word: font mapping skipped ({ex})")
     stats["families"] = sorted(stats["families"])
@@ -3255,7 +3275,7 @@ def _vg_collect(pdf_path: str):
         return None, None
 
 
-def _vg_insert(docx_path: str, found) -> dict:
+def _vg_insert(docx_path: str, found, doc=None) -> dict:
     """Phase B (post-conversion): insert each recovered raster inline at its
     reading-order slot — immediately above its caption line (anchor 'below')
     or after the preceding text line (anchor 'above'). Never raises."""
@@ -3267,7 +3287,8 @@ def _vg_insert(docx_path: str, found) -> dict:
         from docx import Document as _Doc
         from docx.shared import Emu
 
-        d = _Doc(docx_path)
+        _own_doc = doc is None
+        d = doc if doc is not None else _Doc(docx_path)
         sec = d.sections[0]
         content_w_pt = float(sec.page_width.pt - sec.left_margin.pt
                              - sec.right_margin.pt)
@@ -3288,13 +3309,14 @@ def _vg_insert(docx_path: str, found) -> dict:
                 else:
                     anchor._p.addnext(new_p._p)
             stats["vector_images"] += 1
-        d.save(docx_path)
+        if _own_doc:
+            d.save(docx_path)
     except Exception as ex:
         log.warning(f"pdf_to_word: vector-graphics insert skipped ({ex})")
     return stats
 
 
-def _semantic_docx(path: str) -> dict:
+def _semantic_docx(path: str, doc=None) -> dict:
     """Phase 3 entry point: semantic list reconstruction (+ future: hyperlinks).
     Additive, high-confidence, never raises."""
     stats = {"list_items": 0, "list_groups": 0}
@@ -3303,10 +3325,12 @@ def _semantic_docx(path: str) -> dict:
     except Exception:
         return stats
     try:
-        doc = _Doc(path)
+        _own_doc = doc is None
+        doc = doc if doc is not None else _Doc(path)
         if getattr(doc.part, "numbering_part", None) is not None:
             stats.update(_reconstruct_lists(doc))
-        doc.save(path)
+        if _own_doc:
+            doc.save(path)
     except Exception as ex:
         log.warning(f"pdf_to_word: semantic pass skipped ({ex})")
     return stats
@@ -3326,7 +3350,7 @@ def _pdf_is_scanned(doc) -> bool:
         return False
 
 
-def _hybrid_ocr_docx(docx_path: str, pdf_path: str, lang: str = "eng") -> dict:
+def _hybrid_ocr_docx(docx_path: str, pdf_path: str, lang: str = "eng", doc=None) -> dict:
     """G9 — hybrid documents (mostly digital + some scanned pages). The router
     is all-or-nothing: a doc with ONE text-bearing page takes the pdf2docx
     path, so its scanned pages arrive as full-page images with zero text.
@@ -3354,7 +3378,8 @@ def _hybrid_ocr_docx(docx_path: str, pdf_path: str, lang: str = "eng") -> dict:
                              and src[i].get_images()]
             if not scanned_pages or len(scanned_pages) == len(src):
                 return stats                      # pure digital / pure scan
-            doc = _Doc(docx_path)
+            _own_doc = doc is None
+            doc = doc if doc is not None else _Doc(docx_path)
             # full-page inline images in body order (page_overlay heuristic)
             _EXT = ("{http://schemas.openxmlformats.org/drawingml/2006/"
                     "wordprocessingDrawing}extent")
@@ -3386,7 +3411,8 @@ def _hybrid_ocr_docx(docx_path: str, pdf_path: str, lang: str = "eng") -> dict:
                     stats["ocr_chars"] += len(para_txt)
                 stats["ocr_pages"] += 1
             if stats["ocr_chars"]:
-                doc.save(docx_path)
+                if _own_doc:
+                    doc.save(docx_path)
         finally:
             src.close()
     except Exception as ex:
@@ -3794,61 +3820,79 @@ def pdf_to_word(ctx: JobContext) -> dict:
             "encrypted, or have an unsupported structure. Try OCR first."
         )
 
+    # Q1 — single-Document pipeline: open the DOCX ONCE, run every post pass
+    # against the live object, save ONCE at the end (was 13 zip round-trips,
+    # measured at 31-50% of total conversion wall time). If the open fails,
+    # live stays None and each pass falls back to its own open/save.
+    ctx.set_progress(93)
+    live = None
+    try:
+        from docx import Document as _LiveDoc
+        live = _LiveDoc(ctx.output_path)
+    except Exception as _lex:
+        log.warning(f"[{ctx.job_id}] live-Document mode unavailable ({_lex})")
+
     # Text-repair pass — fixes dropped ligatures / soft-hyphens / punctuation
     # spacing while preserving layout and run formatting. Best-effort.
-    ctx.set_progress(93)
-    repair = _repair_docx(ctx.output_path)
+    repair = _repair_docx(ctx.output_path, doc=live)
 
     # Phase 2 — document-intelligence layer: heading promotion, consistent
     # heading spacing, conservative wrapped-line merge. Runs after text repair;
     # additive/high-confidence, so it can't regress documents it can't read.
     ctx.set_progress(96)
-    reflow = _reflow_docx(ctx.output_path)
+    reflow = _reflow_docx(ctx.output_path, doc=live)
 
     # Split a merged 'NAME  subtitle' header line (pdf2docx glues the large name
     # onto the smaller tagline; MS Word then overlaps them). Conservative.
-    header = _split_header_docx(ctx.output_path)
+    header = _split_header_docx(ctx.output_path, doc=live)
 
     # Recover standalone horizontal rules (section separators) pdf2docx drops —
     # re-read them from the source PDF and re-apply as paragraph bottom borders.
-    rules = _recover_rules_docx(ctx.output_path, ctx.input_path)
+    rules = _recover_rules_docx(ctx.output_path, ctx.input_path, doc=live)
 
     # G5 — restore superscript on footnote/reference markers (size survived
     # pdf2docx, vertical alignment didn't). Strict conditions, additive.
-    _fix_superscripts_docx(ctx.output_path)
+    _fix_superscripts_docx(ctx.output_path, doc=live)
 
     # Phase 3 — semantic reconstruction: literal bullet/numbered paragraphs
     # become real editable Word lists (numbering.xml + numPr). Additive.
     ctx.set_progress(98)
-    semantic = _semantic_docx(ctx.output_path)
+    semantic = _semantic_docx(ctx.output_path, doc=live)
 
     # Phase 4B — recover contact/hyperlink text pdf2docx dropped (email/LinkedIn/
     # GitHub), reading it back from the source PDF's link annotations.
     ctx.set_progress(99)
-    links = _recover_hyperlinks(ctx.output_path, ctx.input_path)
+    links = _recover_hyperlinks(ctx.output_path, ctx.input_path, doc=live)
 
     # G9 — hybrid docs: OCR the scanned pages of a mostly-digital PDF and add
     # their text after each page image (all-or-nothing router misses these).
     hybrid = _hybrid_ocr_docx(ctx.output_path, ctx.input_path,
-                              lang=_sanitise_tesseract_lang(ctx.params.get("lang", "eng")))
+                              lang=_sanitise_tesseract_lang(ctx.params.get("lang", "eng")),
+                              doc=live)
 
     # G6 — move repeating top/bottom-band lines into real headers/footers
     # (pure page numbers become a live PAGE field).
-    hf = _recover_headers_footers(ctx.output_path, ctx.input_path)
+    hf = _recover_headers_footers(ctx.output_path, ctx.input_path, doc=live)
 
     # G7 — mark Arabic/Hebrew runs RTL (w:rtl + w:bidi).
-    rtl = _fix_rtl_docx(ctx.output_path)
+    rtl = _fix_rtl_docx(ctx.output_path, doc=live)
 
     # G10 — re-create AcroForm fields as editable Word content controls.
-    forms = _recover_form_fields(ctx.output_path, ctx.input_path)
+    forms = _recover_form_fields(ctx.output_path, ctx.input_path, doc=live)
 
     # Phase 5 — remap Linux/open fonts (Noto/Liberation/DejaVu/…) to Word-native
     # families so Microsoft Word stops substituting them. Deterministic, run-only.
-    fonts = _map_fonts_docx(ctx.output_path)
+    fonts = _map_fonts_docx(ctx.output_path, doc=live)
 
     # Phase 6 post-pass — insert the recovered artwork rasters inline at their
     # reading-order slot. Additive, never raises.
-    vg = _vg_insert(ctx.output_path, vg_found)
+    vg = _vg_insert(ctx.output_path, vg_found, doc=live)
+    if live is not None:
+        try:
+            live.save(ctx.output_path)
+        except Exception as _sex:
+            log.error(f"[{ctx.job_id}] live-Document save failed ({_sex}); "
+                      f"output keeps the raw pdf2docx conversion")
     if vg_src:
         try:
             os.unlink(vg_src)
