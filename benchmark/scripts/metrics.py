@@ -68,6 +68,15 @@ def _docx_text(docx_path):
         for row in tbl.rows:
             for cell in row.cells:
                 parts.append(cell.text)
+    # Running headers/footers are real document text (the G6 pass moves
+    # repeating body lines into them) — score them too.
+    try:
+        for sec in d.sections:
+            for zone in (sec.header, sec.footer):
+                for p in zone.paragraphs:
+                    parts.append(p.text)
+    except Exception:
+        pass
     return "\n".join(parts)
 
 

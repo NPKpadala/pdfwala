@@ -2448,6 +2448,229 @@ def _recover_rules_docx(docx_path: str, pdf_path: str) -> dict:
     return stats
 
 
+_RTL_RE = re.compile(r"[֐-ࣿיִ-﷿ﹰ-﻿]")
+
+
+def _fix_rtl_docx(path: str) -> dict:
+    """G7 — mark right-to-left text properly: any run whose alphabetic content
+    is dominantly Arabic/Hebrew gets <w:rtl/>, and its paragraph <w:bidi/>.
+    Formatting-only (no glyph reordering — pdf2docx output order is left as
+    extracted). Never raises."""
+    stats = {"rtl_runs": 0, "rtl_paragraphs": 0}
+    try:
+        from docx import Document as _Doc
+        from docx.oxml import OxmlElement
+        from docx.oxml.ns import qn
+        doc = _Doc(path)
+        for p in doc.paragraphs:
+            para_rtl = False
+            for r in p.runs:
+                t = r.text or ""
+                rtl_chars = len(_RTL_RE.findall(t))
+                alpha = sum(1 for ch in t if ch.isalpha())
+                if rtl_chars and alpha and rtl_chars / alpha > 0.5:
+                    rPr = r._r.get_or_add_rPr()
+                    if rPr.find(qn("w:rtl")) is None:
+                        rPr.append(OxmlElement("w:rtl"))
+                        stats["rtl_runs"] += 1
+                    para_rtl = True
+            if para_rtl:
+                pPr = p._p.get_or_add_pPr()
+                if pPr.find(qn("w:bidi")) is None:
+                    bidi = OxmlElement("w:bidi")
+                    pPr.insert(0, bidi)
+                    stats["rtl_paragraphs"] += 1
+        if stats["rtl_runs"]:
+            doc.save(path)
+    except Exception as ex:
+        log.warning(f"pdf_to_word: RTL pass skipped ({ex})")
+    return stats
+
+
+def _recover_form_fields(docx_path: str, pdf_path: str) -> dict:
+    """G10 — AcroForm widgets are invisible to pdf2docx (labels survive, the
+    fields vanish). Read page.widgets() from the source and append a real Word
+    content control to the paragraph holding each field's label: text fields
+    become plain-text <w:sdt> carrying the current value (or a fill-in line),
+    checkboxes become w14 checkbox controls with the correct checked state.
+    Never raises."""
+    stats = {"form_fields": 0}
+    if not FITZ_OK:
+        return stats
+    try:
+        from docx import Document as _Doc
+        from docx.oxml import parse_xml
+        from docx.oxml.ns import qn
+
+        _NS = ('xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+               'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"')
+
+        def _esc(s):
+            return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+        found = []                                   # (label_snippet, sdt_xml)
+        src = fitz.open(pdf_path)
+        try:
+            for page in src:
+                words = page.get_text("words")
+                for w in page.widgets() or []:
+                    ft = w.field_type
+                    rect = fitz.Rect(w.rect)
+                    # label = nearest text left of / above the widget
+                    best, bestd = None, 1e9
+                    for x0, y0, x1, y1, token, *_ in words:
+                        wr = fitz.Rect(x0, y0, x1, y1)
+                        if wr.y1 <= rect.y1 + 2 and wr.x1 <= rect.x1:
+                            d = abs(wr.y1 - rect.y1) * 3 + max(0.0, rect.x0 - wr.x1)
+                            if d < bestd:
+                                bestd, best = d, token
+                    if ft == fitz.PDF_WIDGET_TYPE_CHECKBOX:
+                        on = w.field_value not in (None, "", "Off", False)
+                        sdt = (
+                            f'<w:sdt {_NS}><w:sdtPr><w14:checkbox>'
+                            f'<w14:checked w14:val="{1 if on else 0}"/>'
+                            f'<w14:checkedState w14:val="2612" w14:font="MS Gothic"/>'
+                            f'<w14:uncheckedState w14:val="2610" w14:font="MS Gothic"/>'
+                            f'</w14:checkbox></w:sdtPr><w:sdtContent><w:r>'
+                            f'<w:rPr><w:rFonts w:ascii="MS Gothic" w:hAnsi="MS Gothic"/></w:rPr>'
+                            f'<w:t>{"☒" if on else "☐"}</w:t>'
+                            f'</w:r></w:sdtContent></w:sdt>')
+                    elif ft in (fitz.PDF_WIDGET_TYPE_TEXT, fitz.PDF_WIDGET_TYPE_COMBOBOX,
+                                fitz.PDF_WIDGET_TYPE_LISTBOX):
+                        val = _esc(str(w.field_value or "")) or "        "
+                        sdt = (
+                            f'<w:sdt {_NS}><w:sdtPr><w:alias w:val="{_esc(w.field_name)}"/>'
+                            f'<w:text/></w:sdtPr><w:sdtContent><w:r><w:rPr><w:u w:val="single"/></w:rPr>'
+                            f'<w:t xml:space="preserve">{val}</w:t></w:r></w:sdtContent></w:sdt>')
+                    else:
+                        continue
+                    found.append((best, sdt))
+        finally:
+            src.close()
+        if not found:
+            return stats
+        doc = _Doc(docx_path)
+        paras = doc.paragraphs
+        for label, sdt_xml in found[:100]:
+            target = None
+            if label:
+                target = next((p for p in paras if label in p.text), None)
+            if target is None:
+                target = paras[-1] if paras else None
+            if target is None:
+                continue
+            target._p.append(parse_xml(sdt_xml))
+            stats["form_fields"] += 1
+        if stats["form_fields"]:
+            doc.save(docx_path)
+    except Exception as ex:
+        log.warning(f"pdf_to_word: form-field pass skipped ({ex})")
+    return stats
+
+
+_HF_NUM_RE = re.compile(r"\d+")
+
+
+def _hf_norm(s: str) -> str:
+    """Normalize a header/footer candidate: collapse whitespace, wildcard the
+    digits so 'Page 1' / 'Page 2' / … count as the SAME repeating line."""
+    return _HF_NUM_RE.sub("#", re.sub(r"\s+", " ", s or "").strip().casefold())
+
+
+def _recover_headers_footers(docx_path: str, pdf_path: str) -> dict:
+    """G6 — pdf2docx inlines running headers/footers into the body. Detect
+    lines that repeat (digits wildcarded) on >=60% of pages inside the top or
+    bottom 10% band of the SOURCE pages (>=3 pages required), remove those
+    paragraphs from the DOCX body, and write them into the real section
+    header/footer. A candidate that is nothing but a page number becomes a
+    live PAGE field. Never raises."""
+    stats = {"header_lines": 0, "footer_lines": 0}
+    if not FITZ_OK:
+        return stats
+    try:
+        from docx import Document as _Doc
+        from docx.oxml import OxmlElement
+        from docx.oxml.ns import qn
+        import collections as _coll
+
+        src = fitz.open(pdf_path)
+        try:
+            n_pages = len(src)
+            if n_pages < 3:
+                return stats
+            top_counts, bot_counts = _coll.Counter(), _coll.Counter()
+            top_raw, bot_raw = {}, {}
+            for page in src:
+                h = page.rect.height
+                seen_t, seen_b = set(), set()
+                for b in page.get_text("dict")["blocks"]:
+                    for ln in b.get("lines", []):
+                        txt = "".join(s["text"] for s in ln.get("spans", [])).strip()
+                        if not (2 <= len(txt) <= 120):
+                            continue
+                        key = _hf_norm(txt)
+                        y0, y1 = ln["bbox"][1], ln["bbox"][3]
+                        if y1 <= h * 0.10 and key not in seen_t:
+                            top_counts[key] += 1; top_raw.setdefault(key, txt)
+                            seen_t.add(key)
+                        elif y0 >= h * 0.90 and key not in seen_b:
+                            bot_counts[key] += 1; bot_raw.setdefault(key, txt)
+                            seen_b.add(key)
+        finally:
+            src.close()
+        need = max(3, int(n_pages * 0.6))
+        headers = [top_raw[k] for k, c in top_counts.items() if c >= need]
+        footers = [bot_raw[k] for k, c in bot_counts.items() if c >= need]
+        if not headers and not footers:
+            return stats
+
+        doc = _Doc(docx_path)
+        hf_keys = {_hf_norm(t) for t in headers + footers}
+        removed = 0
+        for p in list(doc.paragraphs):
+            if _hf_norm(p.text) in hf_keys and p.text.strip():
+                p._p.getparent().remove(p._p)
+                removed += 1
+        if not removed:
+            return stats                      # body doesn't carry them → no-op
+
+        def _write(zone, lines, is_footer):
+            zone.is_linked_to_previous = False
+            para = zone.paragraphs[0]
+            for r in list(para.runs):
+                r._r.getparent().remove(r._r)
+            first = True
+            for txt in lines:
+                if not first:
+                    para = zone.add_paragraph()
+                first = False
+                nums = list(_HF_NUM_RE.finditer(txt))
+                if is_footer and len(nums) == 1:
+                    # exactly one number in a repeating footer line = the page
+                    # number ('7', 'Page 7', '- 7 -') → live PAGE field
+                    m = nums[0]
+                    if txt[:m.start()]:
+                        para.add_run(txt[:m.start()])
+                    fld = OxmlElement("w:fldSimple")
+                    fld.set(qn("w:instr"), " PAGE ")
+                    para._p.append(fld)
+                    if txt[m.end():]:
+                        para.add_run(txt[m.end():])
+                else:
+                    para.add_run(txt)
+        sec = doc.sections[0]
+        if headers:
+            _write(sec.header, headers, False)
+            stats["header_lines"] = len(headers)
+        if footers:
+            _write(sec.footer, footers, True)
+            stats["footer_lines"] = len(footers)
+        doc.save(docx_path)
+    except Exception as ex:
+        log.warning(f"pdf_to_word: header/footer pass skipped ({ex})")
+    return stats
+
+
 def _fix_superscripts_docx(path: str) -> dict:
     """G5 — pdf2docx flattens footnote/reference markers to inline small runs
     (size survives, vertical alignment doesn't). Restore <w:vertAlign
@@ -3609,6 +3832,16 @@ def pdf_to_word(ctx: JobContext) -> dict:
     hybrid = _hybrid_ocr_docx(ctx.output_path, ctx.input_path,
                               lang=_sanitise_tesseract_lang(ctx.params.get("lang", "eng")))
 
+    # G6 — move repeating top/bottom-band lines into real headers/footers
+    # (pure page numbers become a live PAGE field).
+    hf = _recover_headers_footers(ctx.output_path, ctx.input_path)
+
+    # G7 — mark Arabic/Hebrew runs RTL (w:rtl + w:bidi).
+    rtl = _fix_rtl_docx(ctx.output_path)
+
+    # G10 — re-create AcroForm fields as editable Word content controls.
+    forms = _recover_form_fields(ctx.output_path, ctx.input_path)
+
     # Phase 5 — remap Linux/open fonts (Noto/Liberation/DejaVu/…) to Word-native
     # families so Microsoft Word stops substituting them. Deterministic, run-only.
     fonts = _map_fonts_docx(ctx.output_path)
@@ -3628,7 +3861,9 @@ def pdf_to_word(ctx: JobContext) -> dict:
              f"{links['links_recovered']} links recovered, "
              f"{rules['rules_recovered']} rules recovered, "
              f"{vg['vector_images']} vector images recovered, "
-             f"{hybrid['ocr_pages']} hybrid pages OCRed")
+             f"{hybrid['ocr_pages']} hybrid pages OCRed, "
+             f"hf={hf['header_lines']}/{hf['footer_lines']}, "
+             f"rtl={rtl['rtl_runs']}, forms={forms['form_fields']}")
 
     ctx.set_progress(100)
     return {"pages": page_count, "runs_repaired": repair["changed"],
@@ -3638,7 +3873,8 @@ def pdf_to_word(ctx: JobContext) -> dict:
             "links_recovered": links["links_recovered"],
             "rules_recovered": rules["rules_recovered"],
             "vector_images": vg["vector_images"],
-            "hybrid_ocr_pages": hybrid["ocr_pages"]}
+            "hybrid_ocr_pages": hybrid["ocr_pages"],
+            "form_fields": forms["form_fields"]}
 
 
 @register("pdf_to_excel")
