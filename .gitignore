@@ -70,3 +70,10 @@ target/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
+# Benchmark corpora + generated conversion artifacts live on the server only —
+# they are test DATA (PDFs) and regenerable outputs, not source code (kept out
+# of git to keep the repo lean). Scripts/docs/reports stay tracked.
+benchmark/outputs/
+benchmark/gold_set/
+benchmark/gold_set_v2/
+benchmark/datasets/
