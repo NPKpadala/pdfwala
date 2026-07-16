@@ -122,14 +122,22 @@ def _require(flag: bool, op: str, lib: str) -> None:
 
 
 def _sanitise_html(raw: str) -> str:
-    """Strip dangerous tags / event handlers from user-supplied HTML."""
+    """Strip dangerous tags / event handlers from user-supplied HTML.
+
+    Previously fell back to a regex strip if `bleach` wasn't installed —
+    but the fallback only handled <script> + quoted on* handlers and
+    missed iframe, object, embed, javascript: URIs, unquoted handlers,
+    SVG vectors, and CSS expression(). bleach is a pinned dependency in
+    requirements.txt so the fallback is no longer reachable; we now hard-
+    require it instead of letting a missing module silently downgrade
+    the sanitiser.
+    """
     if not BLEACH_OK:
-        # Fallback: minimal manual strip; better than nothing if bleach missing.
-        import re
-        out = re.sub(r"<\s*script.*?</script\s*>", "", raw, flags=re.I | re.S)
-        out = re.sub(r"\son[a-z]+\s*=\s*\"[^\"]*\"", "", out, flags=re.I)
-        out = re.sub(r"\son[a-z]+\s*=\s*'[^']*'", "", out, flags=re.I)
-        return out
+        raise ProcessingError(
+            "HTML sanitiser unavailable: install 'bleach' (declared in "
+            "requirements.txt). Refusing to render user HTML without a "
+            "trustworthy sanitiser."
+        )
 
     cleaner = bleach.Cleaner(
         tags=_ALLOWED_TAGS,
@@ -138,7 +146,31 @@ def _sanitise_html(raw: str) -> str:
         strip=True,
         strip_comments=True,
     )
-    return cleaner.clean(raw)
+    cleaned = cleaner.clean(raw)
+    # Belt-and-braces: drop <img> whose src is anything other than an
+    # inline `data:` URI. LibreOffice will happily fetch http(s) and file://
+    # references at render time — that's SSRF + local file disclosure.
+    # bleach already filters by tag/attr, but img/src passes its filter,
+    # so we re-scrub specifically that pair.
+    return _strip_remote_image_srcs(cleaned)
+
+
+def _strip_remote_image_srcs(html: str) -> str:
+    """Inside the bleach-cleaned HTML, neutralise any <img src> that
+    isn't an inline data URI. We do not fetch, even from same-origin.
+    """
+    if not BS4_OK:
+        # If bs4 isn't installed (it's in requirements.txt) be defensive and
+        # drop the entire <img> tag with a regex.
+        import re
+        return re.sub(r"<img\b[^>]*\bsrc=(\"|')(?!data:)[^\"']+\1[^>]*>",
+                      "", html, flags=re.I)
+    soup = BeautifulSoup(html, "html.parser")
+    for img in soup.find_all("img"):
+        src = (img.get("src") or "").strip().lower()
+        if not src.startswith("data:"):
+            img.decompose()
+    return str(soup)
 
 
 def _make_css_sanitizer():
@@ -250,7 +282,13 @@ def pdf_to_editor_html(ctx: JobContext):
         _pdf_to_docx(ctx.input_path, docx_path, max_pages=page_count or _MAX_LOAD_PAGE_COUNT)
         t1 = time.perf_counter()
         html_raw, warnings = _docx_to_html(docx_path)
-        html = _pretty_html(html_raw)
+        # Sanitise BEFORE returning to the browser. Mammoth turns the DOCX
+        # into HTML; that HTML is later injected into the editor DOM, so
+        # treat it as untrusted exactly like a user-pasted save payload.
+        # (Earlier this only ran _pretty_html — purely cosmetic cleanup —
+        # which left script/iframe/onerror vectors intact if a hostile
+        # DOCX was uploaded.)
+        html = _sanitise_html(_pretty_html(html_raw))
         t2 = time.perf_counter()
     finally:
         shutil.rmtree(work, ignore_errors=True)

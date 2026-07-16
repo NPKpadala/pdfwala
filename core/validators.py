@@ -46,9 +46,16 @@ MIN_FILE_SIZE_BYTES = 10  # Reject 0-byte and near-empty files
 
 def validate_path_safe(path: str, label: str = "path") -> str:
     """
-    Resolve path and verify it's within an allowed directory.
-    Prevents path traversal attacks.
-    Returns the resolved absolute path.
+    Resolve `path` and verify it lives inside one of the configured data
+    directories (uploads / outputs / temp). Prevents path traversal AND
+    arbitrary-filesystem read/write when a route receives a server-trusted
+    path that was actually attacker-influenced.
+
+    The previous version had:
+      * a `if ".." in str_path` check that ran AFTER Path.resolve() — the
+        resolve step already collapses `..`, so the check was dead code, and
+      * NO allowed-directory containment check at all, despite the docstring
+        promising one.
     """
     if not path:
         raise ValidationError(f"{label} is required")
@@ -58,12 +65,28 @@ def validate_path_safe(path: str, label: str = "path") -> str:
     except Exception:
         raise ValidationError(f"Invalid {label}: {path}")
 
-    # Path traversal guard
-    str_path = str(resolved)
-    if ".." in str_path:
-        raise ValidationError(f"Invalid characters in {label}")
+    # Containment: must be inside one of the configured data dirs.
+    allowed_roots = [
+        Path(getattr(Config, "UPLOAD_FOLDER", "")).resolve(),
+        Path(getattr(Config, "OUTPUT_FOLDER", "")).resolve(),
+        Path(getattr(Config, "TEMP_FOLDER",   "")).resolve(),
+    ]
+    allowed_roots = [r for r in allowed_roots if str(r)]   # drop unset
 
-    return str_path
+    if allowed_roots:
+        in_allowed = False
+        for root in allowed_roots:
+            try:
+                resolved.relative_to(root)   # raises if outside
+                in_allowed = True
+                break
+            except ValueError:
+                continue
+        if not in_allowed:
+            # Leak only the label, not the attempted path (avoid echoing user input).
+            raise ValidationError(f"{label} is outside the allowed data directories")
+
+    return str(resolved)
 
 
 def validate_input_path(input_path: str) -> str:

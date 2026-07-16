@@ -260,6 +260,8 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - ./static:/usr/share/nginx/html:ro
       - /var/www/certbot:/var/www/certbot:ro
+      - ./nginx/.htpasswd-demo:/etc/nginx/.htpasswd-demo:ro
+      - /etc/ssl/cloudflare:/etc/ssl/cloudflare:ro
     depends_on:
       - app
     healthcheck:

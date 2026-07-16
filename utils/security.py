@@ -91,21 +91,68 @@ def verify_api_key(provided: str, expected: str) -> bool:
 
 class SafeRegex:
     """
-    ReDoS-safe regex wrapper.
-    V14 FIX: _DANGEROUS pattern itself was a potential ReDoS. Simplified to
-    detect common catastrophic backtracking patterns without being one.
+    Best-effort ReDoS defence for user-supplied regexes.
+
+    Reality check on guarantees: CPython's stock `re` module runs match
+    operations in C while holding the GIL — a runaway pattern cannot be
+    interrupted from another Python thread, so the thread-timeout below
+    only catches pathological cases that briefly yield (long inputs,
+    intermediate object construction). To get a *real* upper bound we
+    combine three layers:
+
+      1. Reject patterns that contain known catastrophic-backtracking shapes
+         BEFORE compiling.
+      2. Cap the length of the input string each operation sees (CPU is
+         polynomial-or-worse in input length for these patterns; capping
+         the input bounds worst-case wall time).
+      3. Best-effort thread timeout for the eventual return path.
+
+    Length cap can be tightened/loosened per call site. Pattern allowlist
+    starts from "obviously dangerous shapes" — not exhaustive, but the
+    common ones (`(a+)+`, `(a|a)*`, `(.*)*`, `(a*)*$`, `(a|aa)*`) all hit.
     """
 
-    # Simplified danger detector - checks for nested quantifiers
-    _DANGEROUS = re.compile(r'(\(\w+[+*]\w*[+*]|\w+[+*]{2,})')
+    # Stricter than V14: catches nested quantifiers behind groups, alternations
+    # with overlap, and trailing greedy stars that classic ReDoS exploits use.
+    _DANGEROUS = re.compile(
+        r"""
+        (?:
+          # (X+)+ , (X*)* , (X+)* , (X*)+   — classic nested quantifier
+          \(  [^()]{1,80} [\+\*] [^()]{0,20} \) [\+\*]
+        | # \w+[+*]\w*[+*]                    — sloppy version of the above
+          \w+ [\+\*] \w* [\+\*]
+        | # (X|X)+                            — alternation with quantifier
+          \( [^()|]{1,40} \| [^()|]{1,40} \) [\+\*]
+        | # (.*)+   (.+)+   (.*)*             — greedy-anything-then-quantifier
+          \( \.[\+\*] \) [\+\*]
+        )
+        """,
+        re.VERBOSE,
+    )
+    # Hard cap on input string length to bound worst-case CPU even if the
+    # pattern slips past the allowlist. 100 KB is more than enough for one
+    # PDF page's text layer.
+    _MAX_INPUT_BYTES = 100 * 1024
 
     def __init__(self, pattern: str, timeout_seconds: float = 2.0):
+        if len(pattern) > 1024:
+            raise ValueError("Pattern too long (max 1024 chars)")
         if self._DANGEROUS.search(pattern):
             raise ValueError(
-                "Pattern rejected: potential ReDoS vulnerability detected"
+                "Pattern rejected: contains a shape commonly associated with "
+                "catastrophic-backtracking ReDoS"
             )
         self._pat     = re.compile(pattern)
         self._timeout = timeout_seconds
+
+    @staticmethod
+    def _bound_input(s: str) -> str:
+        """Truncate over-long inputs. Each call site can pre-cap further."""
+        if s is None:
+            return ""
+        if len(s) > SafeRegex._MAX_INPUT_BYTES:
+            return s[:SafeRegex._MAX_INPUT_BYTES]
+        return s
 
     def _run_with_timeout(self, method, *args):
         result = [None]
@@ -121,19 +168,27 @@ class SafeRegex:
         t.start()
         t.join(self._timeout)
         if t.is_alive():
+            # NOTE: best-effort — see class docstring.
             raise TimeoutError(f"Regex timed out after {self._timeout}s")
         if error[0]:
             raise error[0]
         return result[0]
 
     def search(self, s: str):
-        return self._run_with_timeout(self._pat.search, s)
+        return self._run_with_timeout(self._pat.search, self._bound_input(s))
 
     def match(self, s: str):
-        return self._run_with_timeout(self._pat.match, s)
+        return self._run_with_timeout(self._pat.match, self._bound_input(s))
 
     def finditer(self, s: str):
-        return self._pat.finditer(s)
+        # finditer is now bounded too — V14 returned the raw iterator with no
+        # protection, letting `redact_pdf` evaluate an attacker pattern against
+        # the entire document. We materialise the matches under the same
+        # timeout/length budget as search/match.
+        return self._run_with_timeout(
+            lambda x: list(self._pat.finditer(x)),
+            self._bound_input(s),
+        )
 
     @classmethod
     def compile(cls, pattern: str, timeout_seconds: float = 2.0) -> "SafeRegex":

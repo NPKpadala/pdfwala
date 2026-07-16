@@ -13,8 +13,14 @@ class AuthService:
 
     @staticmethod
     def get_user_id(request: Request) -> str:
+        # Prefer proxy-set headers — CF-Connecting-IP (Cloudflare) and
+        # X-Real-IP (nginx) are both set by our reverse proxy and overwrite
+        # any value the client tried to inject. X-Forwarded-For is a fallback
+        # because clients CAN spoof it, so it must come after the trusted ones.
         return (
             request.headers.get("X-User-ID")
+            or request.headers.get("CF-Connecting-IP", "").strip()
+            or request.headers.get("X-Real-IP", "").strip()
             or request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
             or request.remote_addr
             or "anonymous"
