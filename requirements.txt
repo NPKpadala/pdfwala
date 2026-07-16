@@ -24,6 +24,9 @@ reportlab==4.1.0
 
 # Office processing
 python-docx==1.1.0
+# chunked >100-page PDF→Word merge: carries styles/numbering/hyperlink rels
+# across chunks (raw body deepcopy degrades chunk-2+ links to plain text)
+docxcompose==1.4.0
 openpyxl==3.1.2
 python-pptx==0.6.23
 msoffcrypto-tool==5.3.0

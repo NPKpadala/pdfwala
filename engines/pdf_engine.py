@@ -1799,6 +1799,17 @@ def _repair_docx(path: str) -> dict:
     except Exception:
         return stats
 
+    _MONO_FONTS = ("consolas", "couriernew", "courier", "dejavusansmono",
+                   "notosansmono", "notomono", "liberationmono", "nimbusmono",
+                   "menlo", "monaco", "sourcecodepro", "firacode", "jetbrainsmono")
+
+    def _is_mono(run) -> bool:
+        """Code/monospace runs must never be 'repaired': identifiers are not
+        English words — dictionary-gated ligature reinsertion could turn a
+        legitimate token like 'elds' inside a stack trace into 'fields'."""
+        n = re.sub(r"[^a-z]", "", (run.font.name or "").lower())
+        return any(n.startswith(m) for m in _MONO_FONTS)
+
     def _fix_paragraphs(paras):
         for para in paras:
             runs = para.runs
@@ -1808,6 +1819,8 @@ def _repair_docx(path: str) -> dict:
             # form is a real word and the left stem alone is not (i.e. it was a
             # wrap break, not a compound like "enterprise-scale").
             for i in range(len(runs) - 1):
+                if _is_mono(runs[i]):
+                    continue
                 m = re.search(r"([A-Za-z]{2,})-$", runs[i].text)
                 if not m:
                     continue
@@ -1821,6 +1834,8 @@ def _repair_docx(path: str) -> dict:
                     stats["changed"] += 1
             for run in runs:
                 stats["runs"] += 1
+                if _is_mono(run):
+                    continue
                 new = _repair_text(run.text)
                 if new != run.text:
                     run.text = new
@@ -3167,7 +3182,6 @@ def pdf_to_word(ctx: JobContext) -> dict:
     scanned = False
     complex_layout = False
     docling_eligible = False
-    pdf_text_len = 0
     if FITZ_OK:
         doc = fitz.open(ctx.input_path)
         page_count = len(doc)
@@ -3199,19 +3213,10 @@ def pdf_to_word(ctx: JobContext) -> dict:
     if docling_eligible and scanned:
         try:
             dl = _convert_with_docling(ctx.input_path, ctx.output_path)
-            # Content-volume guard: Docling folds vector CHARTS into picture
-            # regions, silently dropping their text (axis labels, legends) that
-            # pdf2docx would have extracted. If the bridge output carries less
-            # than half of the PDF's own text layer, treat it as a Docling
-            # failure and fall back — enforcing the "never worse than pdf2docx"
-            # contract. (Skipped for scans: they have no text layer to compare.)
-            if dl is not None and not scanned and pdf_text_len > 200:
-                xml = zipfile.ZipFile(ctx.output_path).read("word/document.xml").decode("utf-8", "ignore")
-                docx_text_len = len("".join(re.findall(r"<w:t[^>]*>([^<]*)</w:t>", xml)))
-                if docx_text_len < pdf_text_len * 0.5:
-                    raise ProcessingError(
-                        f"Docling output too sparse ({docx_text_len} vs "
-                        f"{pdf_text_len} chars in source) — content folded into images")
+            # NB: the old content-volume guard (DOCX text < 50% of PDF text ->
+            # fall back) was removed as dead code: it belonged to the retired
+            # born-digital Docling route. This branch is scanned-only, and a
+            # scan has no text layer to compare against.
             if dl is not None and os.path.exists(ctx.output_path) and os.path.getsize(ctx.output_path) > 0:
                 ctx.set_progress(93)
                 repair = _repair_docx(ctx.output_path)      # fi/fl ligature + spacing repair
@@ -3271,11 +3276,18 @@ def pdf_to_word(ctx: JobContext) -> dict:
                 start = ci * chunk_size
                 end   = min(start + chunk_size, page_count)
                 chunk_out = os.path.join(tmp_dir, f"chunk_{ci:04d}.docx")
-                cv = Pdf2DocxConverter(pdf2docx_input)
                 try:
-                    cv.convert(chunk_out, start=start, end=end)
-                finally:
-                    cv.close()
+                    cv = Pdf2DocxConverter(pdf2docx_input)
+                    try:
+                        cv.convert(chunk_out, start=start, end=end)
+                    finally:
+                        cv.close()
+                except Exception as ex:
+                    raise ProcessingError(
+                        f"PDF to Word conversion failed on pages {start + 1}-{end} "
+                        f"({type(ex).__name__}: {ex}). If the file is password-"
+                        f"protected, remove the protection first (Unlock PDF)."
+                    )
                 if os.path.exists(chunk_out) and os.path.getsize(chunk_out) > 0:
                     chunk_docxs.append(chunk_out)
                 ctx.set_progress(5 + int((ci + 1) / n_chunks * 85))
@@ -3287,28 +3299,45 @@ def pdf_to_word(ctx: JobContext) -> dict:
             if len(chunk_docxs) == 1:
                 shutil.copy(chunk_docxs[0], ctx.output_path)
             else:
-                # Merge via python-docx compose
+                # Preferred: docxcompose — merges styles/numbering/RELATIONSHIPS,
+                # so hyperlinks and images from chunks 2..N stay live. The raw
+                # deepcopy fallback below keeps body text but degrades chunk-2+
+                # hyperlinks to plain text (r:id rels are not carried over —
+                # measured on a 120-page doc: 50/120 links survived).
+                merged = False
                 try:
+                    from docxcompose.composer import Composer
                     from docx import Document as _DocxDoc
-                    from docx.oxml.ns import qn
-                    import copy
-
-                    base_doc = _DocxDoc(chunk_docxs[0])
+                    comp = Composer(_DocxDoc(chunk_docxs[0]))
                     for chunk_path in chunk_docxs[1:]:
-                        src = _DocxDoc(chunk_path)
-                        # Add page break before each chunk
-                        from docx.oxml import OxmlElement
-                        br = OxmlElement("w:p")
-                        r  = OxmlElement("w:r")
-                        rPr = OxmlElement("w:rPr")
-                        pb  = OxmlElement("w:lastRenderedPageBreak")
-                        rPr.append(pb)
-                        r.append(rPr)
-                        br.append(r)
-                        base_doc.element.body.append(br)
-                        for element in src.element.body:
-                            base_doc.element.body.append(copy.deepcopy(element))
-                    base_doc.save(ctx.output_path)
+                        comp.append(_DocxDoc(chunk_path))
+                    comp.save(ctx.output_path)
+                    merged = os.path.getsize(ctx.output_path) > 0
+                except Exception as comp_ex:
+                    log.warning(f"[{ctx.job_id}] docxcompose merge unavailable/failed "
+                                f"({comp_ex}); using raw body merge")
+                try:
+                    if not merged:
+                        from docx import Document as _DocxDoc
+                        from docx.oxml.ns import qn
+                        import copy
+
+                        base_doc = _DocxDoc(chunk_docxs[0])
+                        for chunk_path in chunk_docxs[1:]:
+                            src = _DocxDoc(chunk_path)
+                            # Add page break before each chunk
+                            from docx.oxml import OxmlElement
+                            br = OxmlElement("w:p")
+                            r  = OxmlElement("w:r")
+                            rPr = OxmlElement("w:rPr")
+                            pb  = OxmlElement("w:lastRenderedPageBreak")
+                            rPr.append(pb)
+                            r.append(rPr)
+                            br.append(r)
+                            base_doc.element.body.append(br)
+                            for element in src.element.body:
+                                base_doc.element.body.append(copy.deepcopy(element))
+                        base_doc.save(ctx.output_path)
                 except Exception as merge_ex:
                     # Do NOT silently ship only the first chunk — that drops the
                     # majority of the document without telling the user. Fail
@@ -3329,11 +3358,20 @@ def pdf_to_word(ctx: JobContext) -> dict:
                 shutil.rmtree(tmp_dir, ignore_errors=True)
     else:
         # Standard single-pass conversion
-        cv = Pdf2DocxConverter(pdf2docx_input)
         try:
-            cv.convert(ctx.output_path, start=0, end=None)
-        finally:
-            cv.close()
+            cv = Pdf2DocxConverter(pdf2docx_input)
+            try:
+                cv.convert(ctx.output_path, start=0, end=None)
+            finally:
+                cv.close()
+        except ProcessingError:
+            raise
+        except Exception as ex:
+            raise ProcessingError(
+                f"PDF to Word conversion failed ({type(ex).__name__}: {ex}). "
+                f"If the file is password-protected, remove the protection "
+                f"first (Unlock PDF); if it is damaged, try Repair PDF."
+            )
 
     if not os.path.exists(ctx.output_path) or os.path.getsize(ctx.output_path) == 0:
         raise ProcessingError(
