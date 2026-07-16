@@ -2517,6 +2517,13 @@ def _recover_hyperlinks(docx_path: str, pdf_path: str) -> dict:
 # the Symbol/Wingdings fonts used by our bullets, are never touched.
 # Compact (separator-free, lowercase) keys → Word-native family.
 _FONT_MAP = {
+    # PDF base-14 standard fonts → the metric-identical Word family. These are
+    # the single most common names in real PDFs (Helvetica alone appears in
+    # 105/114 gold docs) and Word has no font by these names, so every run kept
+    # "Helvetica" was silently substituted at open time. Arial/Times New Roman/
+    # Courier New ARE the Windows metric clones of these exact fonts.
+    "helvetica": "Arial", "times": "Times New Roman",
+    "timesroman": "Times New Roman", "courier": "Courier New",
     # metric-identical clones (safest, zero reflow)
     "carlito": "Calibri", "caladea": "Cambria",
     "liberationsans": "Arial", "liberationserif": "Times New Roman",
