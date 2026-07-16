@@ -2859,20 +2859,27 @@ def pdf_to_word(ctx: JobContext) -> dict:
         # a 300-page doc would block an office-queue slot for over an hour).
         # They take the chunked pdf2docx path (or Tesseract OCR if scanned).
         docling_eligible = 0 < page_count <= _DOCLING_MAX_PAGES
-        complex_layout = docling_eligible and (not scanned) and _pdf_is_complex(doc)
-        if complex_layout:
-            pdf_text_len = sum(len(p.get_text("text")) for p in doc)
+        # Routing is scanned-only (see router comment). The complexity detector
+        # (_pdf_is_complex) is retained for future use but no longer routes —
+        # born-digital docs keep their visual design on the pdf2docx path.
+        complex_layout = False
         doc.close()
 
     ctx.set_progress(5)
 
     # ── Engine router ─────────────────────────────────────────────────────────
-    # Hard docs (scanned / multi-column / real tables) go to the Docling layout
-    # engine, which reads structure correctly where pdf2docx architecturally fails
-    # (scrambled columns, lost tables, garbled OCR). Simple single-column text
-    # stays on the fast pdf2docx path below. Docling unavailability or any failure
-    # falls through to the existing paths, so output is never worse than before.
-    if docling_eligible and (scanned or complex_layout):
+    # Docling is used ONLY where pdf2docx architecturally fails: SCANNED docs
+    # (no text layer — pdf2docx emits nothing; Docling+OCR recovered the gold
+    # ocr_scan class 0.0 -> 0.95 recall).
+    #
+    # Born-digital docs with tables/columns deliberately STAY on pdf2docx:
+    # measured on the gold set, pdf2docx already extracts their text (table_heavy
+    # 0.94 recall pre-Docling) while preserving the visual design (fonts, sizes,
+    # colours, column geometry). Docling's semantic rebuild flattens designed
+    # documents into a generic style-less Word file — full text, zero identity —
+    # which users compare unfavourably to layout-preserving converters. Visual
+    # fidelity wins for anything that HAS a text layer.
+    if docling_eligible and scanned:
         try:
             dl = _convert_with_docling(ctx.input_path, ctx.output_path)
             # Content-volume guard: Docling folds vector CHARTS into picture
