@@ -2448,6 +2448,116 @@ def _recover_rules_docx(docx_path: str, pdf_path: str) -> dict:
     return stats
 
 
+def _fix_superscripts_docx(path: str) -> dict:
+    """G5 — pdf2docx flattens footnote/reference markers to inline small runs
+    (size survives, vertical alignment doesn't). Restore <w:vertAlign
+    superscript> on runs that are unmistakably markers: 1-3 chars from
+    {digits, *, †, ‡}, at ≤72% of the paragraph's dominant font size,
+    immediately after a run ending in a word character. Never raises."""
+    stats = {"superscripts": 0}
+    try:
+        from docx import Document as _Doc
+        doc = _Doc(path)
+        for p in doc.paragraphs:
+            runs = p.runs
+            sizes = [r.font.size.pt for r in runs if r.font.size]
+            if len(runs) < 2 or not sizes:
+                continue
+            dominant = max(set(sizes), key=sizes.count)
+            if dominant < 9:
+                continue
+            for i in range(1, len(runs)):
+                r = runs[i]
+                t = (r.text or "").strip()
+                if not (0 < len(t) <= 3 and all(ch in "0123456789*†‡" for ch in t)):
+                    continue
+                if not (r.font.size and r.font.size.pt <= dominant * 0.72):
+                    continue
+                # previous non-empty run, looking through space-only runs but
+                # NOT tabs (a tab is real visual separation, not a marker)
+                prev = ""
+                for j in range(i - 1, -1, -1):
+                    pj = runs[j].text or ""
+                    if "\t" in pj:
+                        break
+                    if pj.strip():
+                        prev = pj.rstrip()
+                        break
+                if not (prev and (prev[-1].isalnum() or prev[-1] in ").%\"'")):
+                    continue
+                if r.font.superscript:
+                    continue
+                r.font.superscript = True
+                stats["superscripts"] += 1
+        if stats["superscripts"]:
+            doc.save(path)
+    except Exception as ex:
+        log.warning(f"pdf_to_word: superscript pass skipped ({ex})")
+    return stats
+
+
+_LINKIFY_RE = re.compile(
+    r"(https?://[^\s<>\"\)\]]+[^\s<>\"\)\].,;:!?]"          # explicit URL
+    r"|www\.[^\s<>\"\)\]]+[^\s<>\"\)\].,;:!?]"              # www. shorthand
+    r"|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})")    # email
+
+
+def _linkify_paragraphs(doc, limit: int = 100) -> int:
+    """B4 follow-up — make URL/email tokens that sit in the DOCX as PLAIN TEXT
+    clickable, on every page (pdf2docx keeps the visible text of many link
+    annotations but drops the relationship, so past page 1 links went dead).
+    Wraps the token in a real <w:hyperlink> in place — no text is added or
+    removed. python-docx's p.runs excludes runs already inside hyperlinks, so
+    existing links are never touched. Returns the number of links created."""
+    import copy as _copy
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    from docx.opc.constants import RELATIONSHIP_TYPE as RT
+
+    n = 0
+    for p in doc.paragraphs:
+        if n >= limit:
+            break
+        for run in list(p.runs):
+            m = _LINKIFY_RE.search(run.text or "")
+            if not m:
+                continue
+            tok = m.group(0)
+            if "@" in tok and not tok.startswith("http"):
+                uri = "mailto:" + tok
+            elif tok.startswith("www."):
+                uri = "https://" + tok
+            else:
+                uri = tok
+            try:
+                r_id = doc.part.relate_to(uri, RT.HYPERLINK, is_external=True)
+            except Exception:
+                continue
+            pre, post = run.text[:m.start()], run.text[m.end():]
+            hl = OxmlElement("w:hyperlink")
+            hl.set(qn("r:id"), r_id)
+            lr = OxmlElement("w:r")
+            rPr = (_copy.deepcopy(run._r.rPr) if run._r.rPr is not None
+                   else OxmlElement("w:rPr"))
+            u = OxmlElement("w:u"); u.set(qn("w:val"), "single"); rPr.append(u)
+            c = OxmlElement("w:color"); c.set(qn("w:val"), "0563C1"); rPr.append(c)
+            lr.append(rPr)
+            t = OxmlElement("w:t"); t.text = tok
+            t.set(qn("xml:space"), "preserve"); lr.append(t)
+            hl.append(lr)
+            run._r.addnext(hl)
+            if post:                                # tail text after the link
+                nr = _copy.deepcopy(run._r)
+                for tt in nr.findall(qn("w:t")):
+                    nr.remove(tt)
+                t2 = OxmlElement("w:t"); t2.text = post
+                t2.set(qn("xml:space"), "preserve"); nr.append(t2)
+                hl.addnext(nr)
+            run.text = pre
+            n += 1
+    return n
+
+
 def _recover_hyperlinks(docx_path: str, pdf_path: str) -> dict:
     """Phase 4B — recover contact/hyperlink TEXT that pdf2docx drops.
 
@@ -2504,25 +2614,27 @@ def _recover_hyperlinks(docx_path: str, pdf_path: str) -> dict:
                 continue                            # display text already visible → skip (no dup)
             missing.append((uri, disp)); seen_uri.add(uri)
         pdf.close()
-        if not missing:
-            return stats
-        # Find the contact paragraph: near the top, contains a phone/"|"/comma.
-        contact = None
-        for p in doc.paragraphs[:8]:
-            t = p.text
-            if ("|" in t or re.search(r"\d{6,}", t)) and p.runs:
-                contact = p
-        if contact is None:
-            return stats
-        tmpl = contact.runs[-1] if contact.runs else None
-        for uri, disp in missing:
-            if contact.runs and not contact.text.rstrip().endswith(("|", "·", "•")):
-                contact.add_run("  |  ")
-            elif not contact.text.endswith(" "):
-                contact.add_run(" ")
-            _add_hyperlink_run(contact, uri, disp, tmpl)
-            stats["links_recovered"] += 1
-        doc.save(docx_path)
+        # B4 — linkify plain-text URLs/emails on EVERY page (in-place wrap).
+        stats["links_recovered"] += _linkify_paragraphs(doc)
+        # Contact-band pass: re-add link text pdf2docx dropped entirely (page 1).
+        if missing:
+            # Find the contact paragraph: near the top, contains a phone/"|".
+            contact = None
+            for p in doc.paragraphs[:8]:
+                t = p.text
+                if ("|" in t or re.search(r"\d{6,}", t)) and p.runs:
+                    contact = p
+            if contact is not None:
+                tmpl = contact.runs[-1] if contact.runs else None
+                for uri, disp in missing:
+                    if contact.runs and not contact.text.rstrip().endswith(("|", "·", "•")):
+                        contact.add_run("  |  ")
+                    elif not contact.text.endswith(" "):
+                        contact.add_run(" ")
+                    _add_hyperlink_run(contact, uri, disp, tmpl)
+                    stats["links_recovered"] += 1
+        if stats["links_recovered"]:
+            doc.save(docx_path)
     except Exception as ex:
         log.warning(f"pdf_to_word: hyperlink recovery skipped ({ex})")
     return stats
@@ -2561,6 +2673,18 @@ _FONT_MAP = {
     "cmr": "Times New Roman", "cmss": "Arial", "cmtt": "Consolas",
     "freesans": "Arial", "freeserif": "Times New Roman", "freemono": "Courier New",
     "opensans": "Arial", "roboto": "Arial", "lato": "Arial",
+    # frequent web/print families → same-class Word-native family (sans→Arial,
+    # serif→Georgia/TNR, mono→Consolas). Not metric twins, but far better than
+    # Word's blind substitution of an unknown name.
+    "inter": "Arial", "worksans": "Arial", "ubuntu": "Arial",
+    "firasans": "Arial", "sourcesanspro": "Arial", "sourcesans": "Arial",
+    "ibmplexsans": "Arial", "helveticaneue": "Arial",
+    "merriweather": "Georgia", "ptserif": "Georgia",
+    "sourceserifpro": "Georgia", "sourceserif": "Georgia",
+    "ibmplexserif": "Georgia", "ptsans": "Arial",
+    "sourcecodepro": "Consolas", "firacode": "Consolas",
+    "jetbrainsmono": "Consolas", "ibmplexmono": "Consolas",
+    "ubuntumono": "Consolas",
 }
 # Never rewrite: already Word-native, or our bullet glyph fonts.
 _FONT_KEEP = {
@@ -2977,6 +3101,74 @@ def _pdf_is_scanned(doc) -> bool:
         return len(doc) > 0
     except Exception:
         return False
+
+
+def _hybrid_ocr_docx(docx_path: str, pdf_path: str, lang: str = "eng") -> dict:
+    """G9 — hybrid documents (mostly digital + some scanned pages). The router
+    is all-or-nothing: a doc with ONE text-bearing page takes the pdf2docx
+    path, so its scanned pages arrive as full-page images with zero text.
+    This pass OCRs exactly those pages and inserts the recovered text right
+    after each page image (image kept for visual fidelity, text added for
+    search/selection/editing).
+
+    Anchoring: pdf2docx emits one full-page-sized inline image per image-only
+    page, in page order — so the k-th full-page image in the DOCX body maps to
+    the k-th scanned source page. STRICT count validation: if the counts
+    disagree, do nothing. Never raises."""
+    stats = {"ocr_pages": 0, "ocr_chars": 0}
+    if not (TESSERACT_OK and FITZ_OK):
+        return stats
+    try:
+        import pytesseract
+        from PIL import Image as _Img
+        from docx import Document as _Doc
+        from docx.oxml.ns import qn
+
+        src = fitz.open(pdf_path)
+        try:
+            scanned_pages = [i for i in range(len(src))
+                             if len(src[i].get_text("text").strip()) < 10
+                             and src[i].get_images()]
+            if not scanned_pages or len(scanned_pages) == len(src):
+                return stats                      # pure digital / pure scan
+            doc = _Doc(docx_path)
+            # full-page inline images in body order (page_overlay heuristic)
+            _EXT = ("{http://schemas.openxmlformats.org/drawingml/2006/"
+                    "wordprocessingDrawing}extent")
+            anchors = []
+            for p in doc.paragraphs:
+                for ext in p._p.iter(_EXT):
+                    if (int(ext.get("cx", 0)) > 4_500_000
+                            and int(ext.get("cy", 0)) > 4_500_000):
+                        anchors.append(p)
+                        break
+            if len(anchors) != len(scanned_pages):
+                log.info(f"hybrid-ocr: anchor/page count mismatch "
+                         f"({len(anchors)} images vs {len(scanned_pages)} scanned"
+                         f" pages) — skipping")
+                return stats
+            mat = fitz.Matrix(300 / 72.0, 300 / 72.0)
+            for anchor, pno in zip(anchors, scanned_pages):
+                pm = src[pno].get_pixmap(matrix=mat, colorspace=fitz.csGRAY)
+                img = _Img.frombytes("L", (pm.width, pm.height), pm.samples)
+                text = pytesseract.image_to_string(img, lang=lang) or ""
+                last = anchor._p
+                for para_txt in re.split(r"\n\s*\n", text):
+                    para_txt = " ".join(para_txt.split())
+                    if len(para_txt) < 3:
+                        continue
+                    np_ = doc.add_paragraph(para_txt)
+                    last.addnext(np_._p)
+                    last = np_._p
+                    stats["ocr_chars"] += len(para_txt)
+                stats["ocr_pages"] += 1
+            if stats["ocr_chars"]:
+                doc.save(docx_path)
+        finally:
+            src.close()
+    except Exception as ex:
+        log.warning(f"pdf_to_word: hybrid OCR pass skipped ({ex})")
+    return stats
 
 
 def _ocr_pdf_to_docx(pdf_path: str, docx_path: str, lang: str = "eng",
@@ -3398,6 +3590,10 @@ def pdf_to_word(ctx: JobContext) -> dict:
     # re-read them from the source PDF and re-apply as paragraph bottom borders.
     rules = _recover_rules_docx(ctx.output_path, ctx.input_path)
 
+    # G5 — restore superscript on footnote/reference markers (size survived
+    # pdf2docx, vertical alignment didn't). Strict conditions, additive.
+    _fix_superscripts_docx(ctx.output_path)
+
     # Phase 3 — semantic reconstruction: literal bullet/numbered paragraphs
     # become real editable Word lists (numbering.xml + numPr). Additive.
     ctx.set_progress(98)
@@ -3407,6 +3603,11 @@ def pdf_to_word(ctx: JobContext) -> dict:
     # GitHub), reading it back from the source PDF's link annotations.
     ctx.set_progress(99)
     links = _recover_hyperlinks(ctx.output_path, ctx.input_path)
+
+    # G9 — hybrid docs: OCR the scanned pages of a mostly-digital PDF and add
+    # their text after each page image (all-or-nothing router misses these).
+    hybrid = _hybrid_ocr_docx(ctx.output_path, ctx.input_path,
+                              lang=_sanitise_tesseract_lang(ctx.params.get("lang", "eng")))
 
     # Phase 5 — remap Linux/open fonts (Noto/Liberation/DejaVu/…) to Word-native
     # families so Microsoft Word stops substituting them. Deterministic, run-only.
@@ -3426,7 +3627,8 @@ def pdf_to_word(ctx: JobContext) -> dict:
              f"{semantic['list_items']} list items, "
              f"{links['links_recovered']} links recovered, "
              f"{rules['rules_recovered']} rules recovered, "
-             f"{vg['vector_images']} vector images recovered")
+             f"{vg['vector_images']} vector images recovered, "
+             f"{hybrid['ocr_pages']} hybrid pages OCRed")
 
     ctx.set_progress(100)
     return {"pages": page_count, "runs_repaired": repair["changed"],
@@ -3435,7 +3637,8 @@ def pdf_to_word(ctx: JobContext) -> dict:
             "list_items": semantic["list_items"],
             "links_recovered": links["links_recovered"],
             "rules_recovered": rules["rules_recovered"],
-            "vector_images": vg["vector_images"]}
+            "vector_images": vg["vector_images"],
+            "hybrid_ocr_pages": hybrid["ocr_pages"]}
 
 
 @register("pdf_to_excel")
