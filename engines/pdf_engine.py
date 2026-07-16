@@ -2193,12 +2193,63 @@ def _strip_marker(para, marker_re):
         n -= take
 
 
+_ROMAN_RE = re.compile(r"^\s*[ivx]+[.)]\s+", re.I)
+
+
+def _split_br_lists(doc) -> int:
+    """P2 — pdf2docx often emits a whole multi-level list as ONE paragraph
+    with <w:br/> separators, which hides every marker from the per-paragraph
+    list reconstructor. Split such paragraphs at their break-runs when at
+    least two segments start with a list marker. Returns paragraphs created."""
+    import copy as _copy
+    from docx.oxml.ns import qn
+    made = 0
+    for p in list(doc.paragraphs):
+        br_runs = [r for r in p._p.findall(qn("w:r")) if r.find(qn("w:br")) is not None]
+        if not br_runs:
+            continue
+        # count segments that start with a marker
+        segs = re.split(r"\n", p.text)
+        starts = sum(1 for s in segs if _LIST_BULLET_RE.match(s.strip())
+                     or _LIST_NUMBER_RE.match(s.strip()) or _LIST_ALPHA_RE.match(s.strip()))
+        if starts < 2:
+            continue
+        cur = p._p
+        for br in br_runs:
+            newp = _copy.deepcopy(cur)
+            for el in list(newp):
+                if el.tag != qn("w:pPr"):
+                    newp.remove(el)
+            moving = False
+            for el in list(cur):
+                if el is br:
+                    cur.remove(el); moving = True
+                    continue
+                if moving and el.tag != qn("w:pPr"):
+                    cur.remove(el); newp.append(el)
+            cur.addnext(newp)
+            cur = newp
+            made += 1
+    return made
+
+
+def _marker_type_level(t: str) -> int:
+    """Nesting level from marker TYPE: 1. -> 0, a. -> 1, i./ii. -> 2."""
+    t = t.strip()
+    if _LIST_NUMBER_RE.match(t):
+        return 0
+    if _ROMAN_RE.match(t):
+        return 2
+    return 1
+
+
 def _reconstruct_lists(doc) -> dict:
     """Convert contiguous literal-marker paragraphs into real editable Word
     lists. Bullets always convert (unambiguous). Numbered/alpha convert only in
     runs of >=2 to avoid mistaking a lone "1. Introduction" heading for a list.
     Nesting via distinct left-indent tiers. Returns counts."""
     stats = {"list_items": 0, "list_groups": 0}
+    stats["br_splits"] = _split_br_lists(doc)
     numbering_el = doc.part.numbering_part.element
     bullet_num = decimal_num = None
     paras = doc.paragraphs
@@ -2257,8 +2308,11 @@ def _reconstruct_lists(doc) -> dict:
             else:
                 gt = (g.text or "")
                 gmre = _LIST_NUMBER_RE if _LIST_NUMBER_RE.match(gt) else _LIST_ALPHA_RE
+            lvl = (indent_level(g, base_indent) if kind == "bullet"
+                   else max(indent_level(g, base_indent),
+                            _marker_type_level(g.text or "")))
             _strip_marker(g, gmre)
-            _apply_numpr(g, indent_level(g, base_indent), num_id)
+            _apply_numpr(g, lvl, num_id)
             stats["list_items"] += 1
         stats["list_groups"] += 1
         i = j
@@ -2685,15 +2739,52 @@ def _recover_headers_footers(docx_path: str, pdf_path: str, doc=None) -> dict:
     return stats
 
 
-def _fix_superscripts_docx(path: str, doc=None) -> dict:
+def _collect_script_markers(pdf_path: str):
+    """P1 — read sub/superscript markers from the SOURCE PDF, where baseline
+    geometry still exists (the DOCX only keeps the size). For each text line,
+    spans at <=80% of the line's dominant font size whose baseline sits >=1.5pt
+    above (sup) or below (sub) the dominant baseline are collected IN ORDER as
+    (text, kind). The DOCX pass consumes this queue positionally."""
+    out = []
+    try:
+        doc = fitz.open(pdf_path)
+        try:
+            for page in doc:
+                for b in page.get_text("dict")["blocks"]:
+                    for ln in b.get("lines", []):
+                        spans = [s for s in ln.get("spans", []) if s["text"].strip()]
+                        if len(spans) < 2:
+                            continue
+                        big = max(s["size"] for s in spans)
+                        base = max((s for s in spans if s["size"] >= big - 0.1),
+                                   key=lambda s: len(s["text"]))["origin"][1]
+                        for s in spans:
+                            t = s["text"].strip()
+                            if s["size"] > big * 0.80 or not (0 < len(t) <= 3):
+                                continue
+                            dy = s["origin"][1] - base
+                            if dy <= -1.5:
+                                out.append((t, "superscript"))
+                            elif dy >= 1.5:
+                                out.append((t, "subscript"))
+        finally:
+            doc.close()
+    except Exception:
+        pass
+    return out
+
+
+def _fix_superscripts_docx(path: str, pdf_path: str = None, doc=None) -> dict:
     """G5 — pdf2docx flattens footnote/reference markers to inline small runs
     (size survives, vertical alignment doesn't). Restore <w:vertAlign
     superscript> on runs that are unmistakably markers: 1-3 chars from
     {digits, *, †, ‡}, at ≤72% of the paragraph's dominant font size,
     immediately after a run ending in a word character. Never raises."""
-    stats = {"superscripts": 0}
+    stats = {"superscripts": 0, "subscripts": 0}
     try:
         from docx import Document as _Doc
+        markers = _collect_script_markers(pdf_path) if pdf_path else []
+        mqueue = list(markers)
         _own_doc = doc is None
         doc = doc if doc is not None else _Doc(path)
         for p in doc.paragraphs:
@@ -2707,10 +2798,18 @@ def _fix_superscripts_docx(path: str, doc=None) -> dict:
             for i in range(1, len(runs)):
                 r = runs[i]
                 t = (r.text or "").strip()
-                if not (0 < len(t) <= 3 and all(ch in "0123456789*†‡" for ch in t)):
+                if not (0 < len(t) <= 3):
                     continue
-                if not (r.font.size and r.font.size.pt <= dominant * 0.72):
+                if not (r.font.size and r.font.size.pt <= dominant * 0.80):
                     continue
+                # PDF-driven: consume the geometry queue — it tells us the
+                # DIRECTION (sub vs sup), which the DOCX alone cannot.
+                kind = None
+                for qi, (qt, qk) in enumerate(mqueue):
+                    if qt == t:
+                        kind = qk; del mqueue[:qi + 1]; break
+                if kind is None and not all(ch in "0123456789*†‡" for ch in t):
+                    continue                     # no geometry + not digit-like
                 # previous non-empty run, looking through space-only runs but
                 # NOT tabs (a tab is real visual separation, not a marker)
                 prev = ""
@@ -2723,11 +2822,15 @@ def _fix_superscripts_docx(path: str, doc=None) -> dict:
                         break
                 if not (prev and (prev[-1].isalnum() or prev[-1] in ").%\"'")):
                     continue
-                if r.font.superscript:
+                if r.font.superscript or r.font.subscript:
                     continue
-                r.font.superscript = True
-                stats["superscripts"] += 1
-        if stats["superscripts"]:
+                if kind == "subscript":
+                    r.font.subscript = True
+                    stats["subscripts"] += 1
+                else:
+                    r.font.superscript = True
+                    stats["superscripts"] += 1
+        if stats["superscripts"] or stats["subscripts"]:
             if _own_doc:
                 doc.save(path)
     except Exception as ex:
@@ -3029,7 +3132,15 @@ _VG_DPI = 200
 
 
 def _vg_enabled() -> bool:
-    return os.environ.get("VECTOR_RASTERIZE", "0").lower() not in ("0", "false", "")
+    # Default ON since 2026-07-16: a real user torture-test showed the
+    # alternative is worse — pdf2docx extracts chart axis values as a garbled
+    # text blob ("8038624555Q1Q2Q3Q4"). The _VG_DOC_CAP below keeps the
+    # chart-dense overflow cases (the reason it shipped dark) on the old path.
+    return os.environ.get("VECTOR_RASTERIZE", "1").lower() not in ("0", "false", "")
+
+
+_VG_DOC_CAP = 2   # >2 artwork regions per doc = chart-dense: rasters would
+                  # overflow pages (gold: SSIM -0.23..-0.26 on such docs), skip.
 
 
 def _vg_classify(d) -> str:
@@ -3243,9 +3354,12 @@ def _vg_collect(pdf_path: str):
         found = []                     # (png, w_pt, snippet, where)
         doc = fitz.open(pdf_path)
         try:
+            # two-phase: count first — chart-dense docs stay on the old path
+            per_page = [(page, _vector_graphic_regions(page)) for page in doc]
+            if sum(len(r) for _, r in per_page) > _VG_DOC_CAP:
+                return None, None
             any_redact = False
-            for page in doc:
-                regions = _vector_graphic_regions(page)
+            for page, regions in per_page:
                 if not regions:
                     continue
                 for region in regions:
@@ -3852,7 +3966,7 @@ def pdf_to_word(ctx: JobContext) -> dict:
 
     # G5 — restore superscript on footnote/reference markers (size survived
     # pdf2docx, vertical alignment didn't). Strict conditions, additive.
-    _fix_superscripts_docx(ctx.output_path, doc=live)
+    _fix_superscripts_docx(ctx.output_path, pdf_path=ctx.input_path, doc=live)
 
     # Phase 3 — semantic reconstruction: literal bullet/numbered paragraphs
     # become real editable Word lists (numbering.xml + numPr). Additive.
