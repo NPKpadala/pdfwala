@@ -1950,35 +1950,90 @@ def _merge_wrapped_lines(paras) -> int:
 SENT_END_CHARS = (".", "?", "!", ":", ";")
 
 
+def _fix_heading_wrap(paras) -> int:
+    """Clear the artificial right indent pdf2docx puts on heading/title
+    paragraphs to mirror empty space next to them in the source PDF. In DOCX
+    flow layout that indent serves no purpose — but inside a narrow column it
+    forces a single-line title to WRAP, shifting every following line and
+    breaking alignment with any fixed vector overlay (rules/bullet dots drawn
+    as one anchored page graphic). Clearing it on a LEFT-aligned single-line
+    heading can only widen its box: it cannot overlap anything or introduce a
+    wrap. Applies to Heading-styled or title-sized (>=16pt) short paragraphs
+    with right indent >= 0.5 inch. Returns count cleared."""
+    from docx.enum.text import WD_ALIGN_PARAGRAPH as _AL
+    fixed = 0
+    for p in paras:
+        t = (p.text or "").strip()
+        if not t or "\n" in p.text or len(t) > 60:
+            continue
+        if p.alignment not in (None, _AL.LEFT, _AL.JUSTIFY):
+            continue                       # right/center alignment depends on it
+        sizes = [r.font.size.pt for r in p.runs if r.font.size]
+        title_sized = bool(sizes) and max(sizes) >= 16
+        if not (p.style.name.lower().startswith("heading") or title_sized):
+            continue
+        pf = p.paragraph_format
+        ri = pf.right_indent
+        if ri is not None and ri.pt >= 36:     # >= 0.5"
+            pf.right_indent = None
+            fixed += 1
+    return fixed
+
+
 def _reflow_docx(path: str) -> dict:
     """Phase 2 structural pass: heading promotion + consistent heading spacing +
     conservative wrapped-line merge. Additive and high-confidence; never raises
     (must not fail a good conversion)."""
-    stats = {"headings_promoted": 0, "lines_merged": 0}
+    stats = {"headings_promoted": 0, "lines_merged": 0, "indents_cleared": 0}
     try:
         from docx import Document as _Doc
         from docx.shared import Pt
+        from docx.oxml.ns import qn
     except Exception:
         return stats
     try:
         doc = _Doc(path)
         body = doc.paragraphs
         body_size = _body_font_size(body)
+        # Detect a full-page fixed vector overlay (pdf2docx renders the source's
+        # rules/bullet-dots/decorations as ONE page-sized anchored drawing).
+        # When present, the text flow must keep the SOURCE geometry exactly —
+        # any spacing we add shifts text against the fixed artwork (strikes
+        # through titles, floating bullet dots). So: styles yes, spacing no.
+        page_overlay = False
+        try:
+            import re as _re
+            _xml = doc.element.body.xml
+            for cx, cy in _re.findall(r'<wp:extent cx="(\d+)" cy="(\d+)"', _xml):
+                if int(cx) > 4_500_000 and int(cy) > 4_500_000:   # ≳5in × 5in
+                    page_overlay = True
+                    break
+        except Exception:
+            pass
         # 1) Promote section headings. We set the Heading STYLE (semantic: nav
         # pane / TOC / accessibility) but keep each run's explicit font size/
         # bold/colour, so visual appearance is preserved — structure without
         # restyling. Promoted headings also get consistent spacing so sections
         # read evenly (normalization applied only to what we changed).
+        first_content = next((p for p in body if (p.text or "").strip()), None)
         for p in body:
             if p.style.name == "Normal" and _is_heading(p, body_size):
                 try:
                     p.style = doc.styles["Heading 1"]
-                    p.paragraph_format.space_before = Pt(12)
-                    p.paragraph_format.space_after = Pt(4)
+                    # Normalise heading spacing EXCEPT (a) the document's first
+                    # content (its spacing is source geometry) and (b) any doc
+                    # with a full-page fixed overlay, where changed spacing
+                    # shifts text against the anchored artwork.
+                    if p is not first_content and not page_overlay:
+                        p.paragraph_format.space_before = Pt(12)
+                        p.paragraph_format.space_after = Pt(4)
                     stats["headings_promoted"] += 1
                 except Exception:
                     pass
-        # 2) Conservative wrapped-line merge (usually a no-op on pdf2docx output).
+        # 2) Un-narrow headings/titles that pdf2docx boxed in with an artificial
+        # right indent (prevents title wrap + fixed-overlay collisions).
+        stats["indents_cleared"] = _fix_heading_wrap(body)
+        # 3) Conservative wrapped-line merge (usually a no-op on pdf2docx output).
         stats["lines_merged"] = _merge_wrapped_lines(doc.paragraphs)
         doc.save(path)
     except Exception as ex:
