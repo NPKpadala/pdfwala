@@ -223,3 +223,34 @@ pdf2docx pulled up into the collapsed art gaps).
 pdf2docx output. Traps verified 0-FP: ruled/merged-cell tables, landscape wide table,
 watermarks, brochure banner fills, resume sidebars, invoice logo boxes, form shading.
 Test corpus: gold `chart_00{1,2,3}` (bar/pie/line, in manifest), /tmp/bev synthetics.
+
+## Page-density phase — DIAGNOSED, no safe lever; VECTOR_RASTERIZE stays dark [2026-07-16]
+
+**Question:** can the ~1.28× page_ratio be tightened enough to enable the dark
+VECTOR_RASTERIZE flag (whose only cost was page overflow on chart-dense docs)?
+
+**Measured (resume_002_B, page_ratio 2.0, worst class):**
+- Isolated our spacing contribution: raw pdf2docx space_before=90pt, after our
+  reflow=99pt (+9) / space_after 1→13pt (+12). Small.
+- **Zeroed ALL paragraph spacing → still renders 2 pages.** So the overflow is
+  NOT spacing. Two-column signal on the source: 20 left-half spans vs 10
+  right-half = a **sidebar/two-column resume that pdf2docx flattens into one
+  long single-column stream**, doubling the height.
+- contract_001_A: our reflow adds 0pt (already spaced) — no lever there either.
+
+**Conclusion:** the page-density overflow is the **column-flattening** problem,
+not tunable spacing. That fix (detect columns → reorder+repack paragraphs in
+column order, per-page) is the SAME high-risk item deferred in the section
+above: it needs a unified two-mode column-detection project WITH direct MS Word
+render validation, and must not be attempted piecemeal. No safe spacing change
+moves page_ratio.
+
+**VECTOR_RASTERIZE decision: STAYS DARK (default off).** Enabling it would stack
+chart-height overflow on top of an unfixable-here page-density gap on exactly
+the chart-dense docs it targets. The detector/rasterizer are proven correct and
+one env var away; they wait on the column-reconstruction project, which is the
+real unlock for both this and the resume_B/brochure_D overflow classes.
+
+**Roadmap now:** the only remaining PDF→Word structural item is the gated
+column-reconstruction project (unlocks page-density + VECTOR_RASTERIZE together).
+Everything else on the external-review list is shipped.
