@@ -2196,6 +2196,23 @@ def _strip_marker(para, marker_re):
 _ROMAN_RE = re.compile(r"^\s*[ivx]+[.)]\s+", re.I)
 
 
+def _iter_all_paragraphs(doc):
+    """Yield every paragraph in document order INCLUDING table cells (nested
+    tables too). pdf2docx renders complex layouts as tables, so passes that
+    only walk doc.paragraphs silently skip most of such documents — the
+    2026-07-17 regression class (dead links, flat lists, no vertAlign)."""
+    def _walk_tables(tables):
+        for t in tables:
+            for row in t.rows:
+                for cell in row.cells:
+                    for p in cell.paragraphs:
+                        yield p
+                    yield from _walk_tables(cell.tables)
+    for p in doc.paragraphs:
+        yield p
+    yield from _walk_tables(doc.tables)
+
+
 def _split_br_lists(doc) -> int:
     """P2 — pdf2docx often emits a whole multi-level list as ONE paragraph
     with <w:br/> separators, which hides every marker from the per-paragraph
@@ -2204,7 +2221,7 @@ def _split_br_lists(doc) -> int:
     import copy as _copy
     from docx.oxml.ns import qn
     made = 0
-    for p in list(doc.paragraphs):
+    for p in list(_iter_all_paragraphs(doc)):
         br_runs = [r for r in p._p.findall(qn("w:r")) if r.find(qn("w:br")) is not None]
         if not br_runs:
             continue
@@ -2252,7 +2269,7 @@ def _reconstruct_lists(doc) -> dict:
     stats["br_splits"] = _split_br_lists(doc)
     numbering_el = doc.part.numbering_part.element
     bullet_num = decimal_num = None
-    paras = doc.paragraphs
+    paras = list(_iter_all_paragraphs(doc))
 
     def indent_level(p, base_indent):
         # Real nesting indents ~0.3"+ deeper. Small left-indent differences in
@@ -2525,7 +2542,7 @@ def _fix_rtl_docx(path: str, doc=None) -> dict:
         from docx.oxml.ns import qn
         _own_doc = doc is None
         doc = doc if doc is not None else _Doc(path)
-        for p in doc.paragraphs:
+        for p in _iter_all_paragraphs(doc):
             para_rtl = False
             for r in p.runs:
                 t = r.text or ""
@@ -2643,6 +2660,66 @@ def _hf_norm(s: str) -> str:
     return _HF_NUM_RE.sub("#", re.sub(r"\s+", " ", s or "").strip().casefold())
 
 
+def _fix_page_geometry(docx_path: str, pdf_path: str, doc=None) -> dict:
+    """G3 — pdf2docx can emit every section with the FIRST page's size, so a
+    landscape page in a mixed document renders portrait. Map the source pages
+    onto the DOCX's page-level sections (a page section = a sectPr whose
+    w:type is not 'continuous'; the body's trailing sectPr closes the last
+    page) and rewrite w:pgSz w/h/orient from the source page rect.
+    If the page-section count does not match the PDF page count, fall back to
+    fixing only the uniform-orientation case. Never raises."""
+    stats = {"sections_fixed": 0}
+    if not FITZ_OK:
+        return stats
+    try:
+        from docx import Document as _Doc
+        from docx.oxml.ns import qn
+        src = fitz.open(pdf_path)
+        try:
+            dims = []
+            for pg in src:
+                r = pg.rect
+                w, h = (r.height, r.width) if pg.rotation in (90, 270) else (r.width, r.height)
+                dims.append((round(w * 20), round(h * 20)))     # pt -> twips
+        finally:
+            src.close()
+        if not dims:
+            return stats
+        _own_doc = doc is None
+        doc = doc if doc is not None else _Doc(docx_path)
+        page_sects = []
+        for s in doc.sections:
+            t = s._sectPr.find(qn("w:type"))
+            if t is None or t.get(qn("w:val")) != "continuous":
+                page_sects.append(s._sectPr)
+        if len(page_sects) == len(dims):
+            mapping = zip(page_sects, dims)
+        elif len({(w > h) for w, h in dims}) == 1:
+            mapping = ((sp, dims[0]) for sp in page_sects)      # uniform orient
+        else:
+            return stats
+        for sp, (w, h) in mapping:
+            pg = sp.find(qn("w:pgSz"))
+            if pg is None:
+                continue
+            cur = (int(pg.get(qn("w:w"), 0)), int(pg.get(qn("w:h"), 0)))
+            want_land = w > h
+            if cur == (w, h) and (cur[0] > cur[1]) == want_land and                (pg.get(qn("w:orient")) == "landscape") == want_land:
+                continue
+            pg.set(qn("w:w"), str(w))
+            pg.set(qn("w:h"), str(h))
+            if want_land:
+                pg.set(qn("w:orient"), "landscape")
+            elif pg.get(qn("w:orient")):
+                del pg.attrib[qn("w:orient")]
+            stats["sections_fixed"] += 1
+        if stats["sections_fixed"] and _own_doc:
+            doc.save(docx_path)
+    except Exception as ex:
+        log.warning(f"pdf_to_word: page-geometry pass skipped ({ex})")
+    return stats
+
+
 def _recover_headers_footers(docx_path: str, pdf_path: str, doc=None) -> dict:
     """G6 — pdf2docx inlines running headers/footers into the body. Detect
     lines that repeat (digits wildcarded) on >=60% of pages inside the top or
@@ -2732,6 +2809,19 @@ def _recover_headers_footers(docx_path: str, pdf_path: str, doc=None) -> dict:
         if footers:
             _write(sec.footer, footers, True)
             stats["footer_lines"] = len(footers)
+        # Stamp the references onto EVERY sectPr: OOXML inheritance from the
+        # previous section is honored by MS Word but NOT by LibreOffice (our
+        # render path) or naive checkers — pages after section 1 lost their
+        # header/footer. Reusing the same rId across sections is legal.
+        import copy as _copy
+        first = doc.sections[0]._sectPr
+        refs = [el for el in first
+                if el.tag in (qn("w:headerReference"), qn("w:footerReference"))]
+        for s in doc.sections[1:]:
+            sp = s._sectPr
+            for ref in refs:
+                if sp.find(ref.tag) is None:
+                    sp.insert(0, _copy.deepcopy(ref))
         if _own_doc:
             doc.save(docx_path)
     except Exception as ex:
@@ -2746,29 +2836,45 @@ def _collect_script_markers(pdf_path: str):
     above (sup) or below (sub) the dominant baseline are collected IN ORDER as
     (text, kind). The DOCX pass consumes this queue positionally."""
     out = []
+    keyed = []
     try:
         doc = fitz.open(pdf_path)
         try:
-            for page in doc:
+            for pno, page in enumerate(doc):
                 for b in page.get_text("dict")["blocks"]:
-                    for ln in b.get("lines", []):
-                        spans = [s for s in ln.get("spans", []) if s["text"].strip()]
-                        if len(spans) < 2:
+                    # block-level pairing: PyMuPDF often puts a raised/lowered
+                    # marker on its own single-span line, so per-line grouping
+                    # misses it. Compare every small span against the nearest
+                    # big span in the same block instead.
+                    spans = [s for ln in b.get("lines", [])
+                             for s in ln.get("spans", []) if s["text"].strip()]
+                    if len(spans) < 2:
+                        continue
+                    big_sz = max(s["size"] for s in spans)
+                    bigs = [s for s in spans if s["size"] >= big_sz * 0.9]
+                    for s in sorted(spans, key=lambda s: (s["origin"][1], s["origin"][0])):
+                        t = s["text"].strip()
+                        if s["size"] > big_sz * 0.80 or not (0 < len(t) <= 3):
                             continue
-                        big = max(s["size"] for s in spans)
-                        base = max((s for s in spans if s["size"] >= big - 0.1),
-                                   key=lambda s: len(s["text"]))["origin"][1]
-                        for s in spans:
-                            t = s["text"].strip()
-                            if s["size"] > big * 0.80 or not (0 < len(t) <= 3):
-                                continue
-                            dy = s["origin"][1] - base
-                            if dy <= -1.5:
-                                out.append((t, "superscript"))
-                            elif dy >= 1.5:
-                                out.append((t, "subscript"))
+                        # baseline = MEDIAN of nearby big-span baselines: PyMuPDF
+                        # rebaselines the span FOLLOWING a raised/lowered marker
+                        # to the marker's y, so any single neighbour can lie.
+                        ys = sorted(g["origin"][1] for g in bigs
+                                    if abs(g["origin"][1] - s["origin"][1]) <= 8)
+                        if not ys:
+                            continue
+                        base = ys[len(ys) // 2]
+                        dy = s["origin"][1] - base
+                        if dy <= -1.5:
+                            keyed.append(((pno, base, s["origin"][0]), t, "superscript"))
+                        elif dy >= 1.5:
+                            keyed.append(((pno, base, s["origin"][0]), t, "subscript"))
         finally:
             doc.close()
+        # READING order (page, line baseline, x) — must match the DOCX's run
+        # order for positional queue consumption; raw marker y would sort a
+        # superscript above its own line.
+        out = [(t, k) for _, t, k in sorted(keyed)]
     except Exception:
         pass
     return out
@@ -2784,44 +2890,55 @@ def _fix_superscripts_docx(path: str, pdf_path: str = None, doc=None) -> dict:
     try:
         from docx import Document as _Doc
         markers = _collect_script_markers(pdf_path) if pdf_path else []
-        mqueue = list(markers)
+        # per-token queues: only the order of SAME-text markers must match the
+        # DOCX run order; interleaving of different tokens must not desync it
+        import collections as _c
+        mqueue = _c.defaultdict(list)
+        for mt, mk in markers:
+            mqueue[mt].append(mk)
         _own_doc = doc is None
         doc = doc if doc is not None else _Doc(path)
-        for p in doc.paragraphs:
+        for p in _iter_all_paragraphs(doc):
             runs = p.runs
             sizes = [r.font.size.pt for r in runs if r.font.size]
-            if len(runs) < 2 or not sizes:
+            if not runs or not sizes:
                 continue
             dominant = max(set(sizes), key=sizes.count)
-            if dominant < 9:
-                continue
-            for i in range(1, len(runs)):
+            for i in range(len(runs)):
                 r = runs[i]
                 t = (r.text or "").strip()
                 if not (0 < len(t) <= 3):
                     continue
-                if not (r.font.size and r.font.size.pt <= dominant * 0.80):
+                sz = r.font.size.pt if r.font.size else None
+                if sz is not None and sz > 8.5:
                     continue
                 # PDF-driven: consume the geometry queue — it tells us the
-                # DIRECTION (sub vs sup), which the DOCX alone cannot.
-                kind = None
-                for qi, (qt, qk) in enumerate(mqueue):
-                    if qt == t:
-                        kind = qk; del mqueue[:qi + 1]; break
-                if kind is None and not all(ch in "0123456789*†‡" for ch in t):
-                    continue                     # no geometry + not digit-like
-                # previous non-empty run, looking through space-only runs but
-                # NOT tabs (a tab is real visual separation, not a marker)
-                prev = ""
-                for j in range(i - 1, -1, -1):
-                    pj = runs[j].text or ""
-                    if "\t" in pj:
-                        break
-                    if pj.strip():
-                        prev = pj.rstrip()
-                        break
-                if not (prev and (prev[-1].isalnum() or prev[-1] in ").%\"'")):
-                    continue
+                # DIRECTION (sub vs sup), which the DOCX alone cannot. A queue
+                # hit is geometry-PROVEN, so the DOCX-side layout guards below
+                # do not apply (pdf2docx often isolates markers in their own
+                # tiny paragraph, e.g. inside table cells).
+                kind = mqueue[t].pop(0) if mqueue.get(t) else None
+                if kind is None:
+                    # DOCX-only fallback: strict layout guards (needs real size)
+                    if sz is None or not all(ch in "0123456789*†‡" for ch in t):
+                        continue
+                    biggest = max(sizes)
+                    if i == 0 or biggest < 9 or sz > biggest * 0.80:
+                        continue
+                if kind is None:
+                    # fallback also needs a word right before the marker,
+                    # looking through space-only runs but NOT tabs (a tab is
+                    # real visual separation, not a marker)
+                    prev = ""
+                    for j in range(i - 1, -1, -1):
+                        pj = runs[j].text or ""
+                        if "\t" in pj:
+                            break
+                        if pj.strip():
+                            prev = pj.rstrip()
+                            break
+                    if not (prev and (prev[-1].isalnum() or prev[-1] in ").%\"'")):
+                        continue
                 if r.font.superscript or r.font.subscript:
                     continue
                 if kind == "subscript":
@@ -2857,7 +2974,7 @@ def _linkify_paragraphs(doc, limit: int = 100) -> int:
     from docx.opc.constants import RELATIONSHIP_TYPE as RT
 
     n = 0
-    for p in doc.paragraphs:
+    for p in _iter_all_paragraphs(doc):
         if n >= limit:
             break
         for run in list(p.runs):
@@ -3994,6 +4111,9 @@ def pdf_to_word(ctx: JobContext) -> dict:
     # G10 — re-create AcroForm fields as editable Word content controls.
     forms = _recover_form_fields(ctx.output_path, ctx.input_path, doc=live)
 
+    # G3 — restore per-page size/orientation (landscape pages).
+    geom = _fix_page_geometry(ctx.output_path, ctx.input_path, doc=live)
+
     # Phase 5 — remap Linux/open fonts (Noto/Liberation/DejaVu/…) to Word-native
     # families so Microsoft Word stops substituting them. Deterministic, run-only.
     fonts = _map_fonts_docx(ctx.output_path, doc=live)
@@ -4021,7 +4141,8 @@ def pdf_to_word(ctx: JobContext) -> dict:
              f"{vg['vector_images']} vector images recovered, "
              f"{hybrid['ocr_pages']} hybrid pages OCRed, "
              f"hf={hf['header_lines']}/{hf['footer_lines']}, "
-             f"rtl={rtl['rtl_runs']}, forms={forms['form_fields']}")
+             f"rtl={rtl['rtl_runs']}, forms={forms['form_fields']}, "
+             f"geom={geom['sections_fixed']}")
 
     ctx.set_progress(100)
     return {"pages": page_count, "runs_repaired": repair["changed"],
