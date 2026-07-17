@@ -2549,6 +2549,17 @@ def _fix_rtl_docx(path: str, doc=None) -> dict:
                 rtl_chars = len(_RTL_RE.findall(t))
                 alpha = sum(1 for ch in t if ch.isalpha())
                 if rtl_chars and alpha and rtl_chars / alpha > 0.5:
+                    # Shaped presentation-form runs (Arabic Presentation Forms
+                    # A/B, U+FB50-FEFF): NFKC-fold to base letters so Word
+                    # (which does its own bidi + shaping) renders and searches
+                    # them correctly. NO reversal: PyMuPDF extraction already
+                    # reorders RTL text to LOGICAL order (verified empirically
+                    # — reversing corrupted correct output).
+                    pres = sum(1 for ch in t if "ﭐ" <= ch <= "﻿")
+                    if pres >= rtl_chars * 0.5:
+                        import unicodedata as _ud
+                        r.text = _ud.normalize("NFKC", t)
+                        stats["rtl_folded"] = stats.get("rtl_folded", 0) + 1
                     rPr = r._r.get_or_add_rPr()
                     if rPr.find(qn("w:rtl")) is None:
                         rPr.append(OxmlElement("w:rtl"))

@@ -139,3 +139,95 @@ def test_nested_list_numpr_depth(tmp_path):
     assert xml.count("<w:numPr>") >= 6, f"numPr={xml.count('<w:numPr>')}, want >=6"
     lvls = {int(v) for v in re.findall(r'<w:ilvl w:val="(\d+)"', xml)}
     assert {0, 1, 2} <= lvls, f"list depth levels missing: got {sorted(lvls)}"
+
+
+def test_footer_page_field_not_literal(tmp_path):
+    """G6 delta: a repeating 'Page N' footer must become a live PAGE field
+    (w:fldSimple w:instr=PAGE or instrText), never literal per-page numbers."""
+    def build(d):
+        for i in range(5):
+            p = d.new_page(width=612, height=792)
+            p.insert_text((72, 40), "Confidential Running Header", fontsize=9)
+            p.insert_text((72, 200), f"Chapter {i + 1} body paragraph.", fontsize=11)
+            p.insert_text((290, 770), f"Page {i + 1}", fontsize=9)
+
+    pdf, z, xml = _convert(tmp_path, build, "pagefield")
+    ftrs = [n for n in z.namelist() if re.match(r"word/footer\d+\.xml", n)]
+    assert ftrs, "footer part missing"
+    fx = "".join(z.read(f).decode() for f in ftrs)
+    assert ('w:instr=" PAGE "' in fx or "PAGE" in "".join(
+        re.findall(r"<w:instrText[^>]*>([^<]*)</w:instrText>", fx))), \
+        "footer lacks a live PAGE field"
+    hdrs = [n for n in z.namelist() if re.match(r"word/header\d+\.xml", n)]
+    assert any("Confidential" in z.read(h).decode() for h in hdrs)
+
+
+def test_form_fields_full_pipeline(tmp_path):
+    """G10: AcroForm text field + checkbox become Word content controls with
+    value/state preserved, through the full conversion pipeline."""
+    def build(d):
+        p = d.new_page(width=612, height=792)
+        p.insert_text((72, 80), "Application Form", fontsize=14)
+        p.insert_text((72, 150), "Applicant Name:", fontsize=11)
+        w = fitz.Widget(); w.field_name = "name"
+        w.field_type = fitz.PDF_WIDGET_TYPE_TEXT
+        w.rect = fitz.Rect(170, 138, 420, 156); w.field_value = "Asha Verma"
+        p.add_widget(w)
+        p.insert_text((72, 200), "Subscribed:", fontsize=11)
+        w = fitz.Widget(); w.field_name = "subscribed"
+        w.field_type = fitz.PDF_WIDGET_TYPE_CHECKBOX
+        w.rect = fitz.Rect(150, 190, 166, 206); w.field_value = True
+        p.add_widget(w)
+
+    pdf, z, xml = _convert(tmp_path, build, "acro")
+    assert xml.count("<w:sdt>") >= 2, "content controls missing"
+    assert "w14:checkbox" in xml, "checkbox control missing"
+    assert "Asha Verma" in xml, "text field value lost"
+
+
+def test_dense_chart_becomes_image(tmp_path):
+    """Chart recovery: a curve-free vector bar chart (the class pdf2docx
+    drops/mangles) must arrive as an embedded image, with caption text kept."""
+    def build(d):
+        p = d.new_page(width=612, height=792)
+        p.insert_text((72, 60), "Metrics Overview", fontsize=14)
+        x0, y0 = 90, 400
+        p.draw_line(fitz.Point(x0 - 8, y0), fitz.Point(x0 + 330, y0))
+        p.draw_line(fitz.Point(x0 - 8, y0), fitz.Point(x0 - 8, y0 - 250))
+        for i, v in enumerate([70, 45, 88, 52, 63]):
+            p.draw_rect(fitz.Rect(x0 + i * 64, y0 - v * 2.5, x0 + 44 + i * 64, y0),
+                        fill=(0.2, 0.45, 0.85))
+        p.insert_text((72, 440), "Fig. 1 - weekly throughput.", fontsize=9)
+
+    pdf, z, xml = _convert(tmp_path, build, "densechart")
+    media = [n for n in z.namelist() if n.startswith("word/media/")]
+    assert media, "vector chart not rasterized to an embedded image"
+    text = re.sub(r"<[^>]+>", "", xml)
+    assert "Fig. 1" in text, "caption lost"
+
+
+def test_rtl_logical_order(tmp_path):
+    """G7: real-world PDFs store Arabic as shaped PRESENTATION FORMS in VISUAL
+    (left-to-right drawn) order. Output runs must be logical-order base
+    letters (U+0645 U+0631 U+062D U+0628 U+0627 = مرحبا) with w:bidi + w:rtl."""
+    visual_isolated = "ﺍﺏﺡﺮﻡ"   # alef beh hah reh meem
+    logical = "مرحبا"           # meem reh hah beh alef
+
+    import glob as _glob
+    fonts = (_glob.glob("/usr/share/fonts/**/NotoNaskhArabic-Reg*.ttf", recursive=True)
+             or _glob.glob("/usr/share/fonts/**/NotoSansArabic-Reg*.ttf", recursive=True)
+             or _glob.glob("/usr/share/fonts/**/DejaVuSans.ttf", recursive=True))
+    if not fonts:
+        pytest.skip("no Arabic-capable font in image")
+
+    def build(d):
+        p = d.new_page(width=612, height=792)
+        p.insert_text((72, 100), "Greeting follows:", fontsize=11)
+        p.insert_font(fontname="arab", fontfile=fonts[0])
+        p.insert_text((200, 150), visual_isolated, fontsize=12, fontname="arab")
+
+    pdf, z, xml = _convert(tmp_path, build, "rtl")
+    assert "<w:bidi/>" in xml, "paragraph bidi missing"
+    assert "<w:rtl/>" in xml, "run rtl missing"
+    text = re.sub(r"<[^>]+>", "", xml)
+    assert logical in text, "Arabic not converted to logical-order base letters"
